@@ -10,7 +10,7 @@ const BabyCard = () => {
   const { baby } = useBaby();
   const intl = useIntl();
   const passedDayFromStartDate = Math.ceil(
-    (new Date().getTime() - new Date(baby.startDate).getTime()) /
+    (new Date().getTime() - new Date(baby?.startDate || '').getTime()) /
       (1000 * 60 * 60 * 24)
   );
   const passedWeeks = Math.ceil(passedDayFromStartDate / 7);
@@ -19,7 +19,7 @@ const BabyCard = () => {
 
   if (!baby?.dueDate) {
     return (
-      <div className={styles.container} onClick={() => navigate("/intro") }>
+      <div className={styles.container} onClick={() => navigate('/intro')}>
         <div>
           <Typography.Title level={2} className={styles.title}>
             {intl.formatMessage({
@@ -55,7 +55,7 @@ const BabyCard = () => {
           )}
         </Typography.Title>
         <Typography.Text className={styles.subtitle}>
-          Baby due date: {new Date(baby.dueDate).toLocaleDateString()}
+          Baby due date: {new Date(baby?.dueDate).toLocaleDateString()}
         </Typography.Text>
       </div>
       <Icon

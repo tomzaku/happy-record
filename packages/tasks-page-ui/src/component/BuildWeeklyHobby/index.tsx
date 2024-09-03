@@ -69,15 +69,6 @@ const BuildWeeklyHobby = ({ className, values, setValues }: Props) => {
             { label: 'Sat', value: Day.Sat },
             { label: 'Sun', value: Day.Sun },
           ]}
-        /* classNameOption={styles.button} */
-        /* getClassNameActiveOption={option => { */
-        /*   switch (option.value as EisenhowerMatrix) { */
-        /*     case EisenhowerMatrix.Do: return styles.do */
-        /*     case EisenhowerMatrix.Eliminate: return styles.eliminate */
-        /*     case EisenhowerMatrix.Delegate: return styles.delegate */
-        /*     case EisenhowerMatrix.Schedule: return styles.schedule */
-        /*   } */
-        /* }} */
         />
       </a.div>
     </>

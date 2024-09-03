@@ -9,7 +9,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/react-motion": "^0.0.33"
+    "@types/react-motion": "^0.0.33",
+    "@types/uuid": "^10.0.0"
   },
   "dependencies": {
     "use-long-press": "^2.0.2"

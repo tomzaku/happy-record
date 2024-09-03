@@ -75,7 +75,10 @@ export const useChecklist = () => {
     const id = v4();
     setChecklist({
       ...checklist,
-      [id]: checklistToAdd,
+      [id]: {
+        ...checklistToAdd,
+        id,
+      },
     });
   };
 

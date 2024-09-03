@@ -11,7 +11,7 @@ const BodyMetricChart = () => {
   React.useEffect(() => {
     updateChartDate();
   }, []);
-  const options = {
+  const options: any = {
     stroke: {
       curve: 'smooth',
     },

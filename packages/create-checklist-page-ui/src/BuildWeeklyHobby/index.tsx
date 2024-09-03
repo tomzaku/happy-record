@@ -17,7 +17,7 @@ import { Day } from '@dreamer/tasks-page-common';
 type Props = {
   className?: string;
   values?: Day[];
-  setValues: (values?: Day[]) => void;
+  setValues: (values: Day[]) => void;
 };
 
 const BuildWeeklyHobby = ({ className, values, setValues }: Props) => {
@@ -45,7 +45,7 @@ const BuildWeeklyHobby = ({ className, values, setValues }: Props) => {
               if (checked) {
                 setValues([Day.Mon]);
               } else {
-                setValues(undefined);
+                setValues([]);
               }
             }}
           />

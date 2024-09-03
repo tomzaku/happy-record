@@ -2,8 +2,12 @@ import { useLocalStorage } from '../../hook/useLocalStorage';
 
 const BABY_STORAGE_KEY = 'baby';
 
+type Baby = {
+  dueDate?: string;
+  startDate?: string;
+};
 export const useBaby = () => {
-  const [baby, setBaby] = useLocalStorage(BABY_STORAGE_KEY, {
+  const [baby, setBaby] = useLocalStorage<Baby>(BABY_STORAGE_KEY, {
     // dueDate: new Date(
     //   new Date().getTime() + 40 * 7 * 24 * 60 * 60 * 1000
     // ).toISOString(),
