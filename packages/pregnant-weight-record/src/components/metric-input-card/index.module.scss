@@ -1,0 +1,61 @@
+@import '@moon-ui/app-scss/function';
+@import '@moon-ui/app-scss/color';
+
+.header {
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.iconSuccess {
+  position: absolute;
+  right: -20px;
+  bottom: -30px;
+}
+
+.numberInput {
+  font-size: toRem(20px);
+  width: 100px;
+  text-align: center;
+  padding: 6px;
+  margin-left: 6px;
+}
+
+.kgText {
+  font-size: toRem(20px);
+  margin-left: 6px;
+  width: 50px;
+}
+
+.titleAnswer {
+  font-size: toRem(20px);
+  margin-left: 6px;
+  width: 120px;
+}
+
+.iconAnswerContainer {
+  flex: 1
+}
+
+.inputContainer {
+  display: flex;
+  // justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  margin-bottom: 12px;
+}
+
+.questionTitle {
+  text-align: center;
+}
+
+.divider {
+  border-top: 3px dashed var(--card-shadow);
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.editFooter {
+  display: flex;
+  justify-content: flex-end;
+}

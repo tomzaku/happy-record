@@ -1,0 +1,11 @@
+{
+	"name": "@pregnant/pregnant-intro",
+	"version": "1.0.0",
+	"main": "src/index.tsx",
+	"license": "MIT",
+	"dependencies": {
+		"@iconify/react": "^5.0.2",
+		"@moon-ui/date-picker": "^1.0.0",
+		"uuid": "^10.0.0"
+	}
+}

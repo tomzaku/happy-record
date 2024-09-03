@@ -1,7 +1,7 @@
 import IconDone from '@moon-ui/icon/IconDone';
 import Button from './DefaultButton';
 
-import cx from 'classnames'
+import cx from 'classnames';
 
 import styles from './MultiSelectButton.module.scss';
 
@@ -18,7 +18,7 @@ type Props<T> = {
 function MultiSelectButton<T>({
   options,
   values = [],
-  setValues = () => { },
+  setValues = () => {},
 }: Props<T>) {
   return (
     <div className={styles.container}>
@@ -26,6 +26,7 @@ function MultiSelectButton<T>({
         const isSelected = values.includes(option.value);
         return (
           <Button
+            key={`${option.label}-${option.value}`}
             type="ghost"
             className={cx(styles.button, isSelected && styles.activeButton)}
             onClick={() => {
@@ -34,13 +35,15 @@ function MultiSelectButton<T>({
                 : setValues([...values, option.value]);
             }}
           >
-            <IconDone className={cx(styles.icon, isSelected && styles.activeIcon)} />
+            <IconDone
+              className={cx(styles.icon, isSelected && styles.activeIcon)}
+            />
             {option.label}
           </Button>
         );
       })}
     </div>
   );
-};
+}
 
 export default MultiSelectButton;

@@ -1,0 +1,105 @@
+import { useState } from 'react';
+import List from '@moon-ui/list';
+import { Icon } from '@iconify/react';
+
+// Hooks
+import { useIntl } from '@dreamer/translation';
+import Input from '@moon-ui/input';
+
+// Utils
+import cx from 'classnames';
+
+import styles from './index.module.scss';
+import Button from '@moon-ui/button/src/DefaultButton';
+
+type Props = {
+  selectedIcon: string;
+  setSelectedIcon: (icon: string) => void;
+  className?: string;
+};
+
+const IconPicker = ({ selectedIcon, setSelectedIcon, className }: Props) => {
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [icons, setIcons] = useState<string[]>([]);
+
+  const intl = useIntl();
+
+  const searchIcons = async (term: string) => {
+    const results = await fetch(
+      `https://api.iconify.design/search?query=${term}`
+    );
+    const data = await results.json();
+    data?.icons?.length > 0 && setIcons(data.icons);
+  };
+
+  const handleIconClick = (icon: string) => {
+    setSelectedIcon(icon);
+    setIcons([]);
+    setSearchTerm('');
+  };
+
+  return (
+    <div className={cx(className, styles.container)}>
+      <List.ItemMeta
+        logo={<Icon width={24} icon={'tdesign:icon'} />}
+        title={intl.formatMessage({
+          defaultMessage: 'Icons',
+          id: 'icon-picker.title',
+        })}
+        description={intl.formatMessage({
+          defaultMessage: 'Select icons',
+          id: 'icon-picker.subtitle',
+        })}
+        rightComponent={<Icon width={24} icon={selectedIcon} />}
+      />
+      <Input
+        placeholder="Search icons..."
+        border="dash"
+        value={searchTerm}
+        onChange={e => {
+          setSearchTerm(e.target.value);
+          searchIcons(e.target.value);
+        }}
+        className={styles.iconSearchInput}
+      />
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '10px',
+          maxHeight: '300px',
+          overflowY: 'scroll',
+        }}
+      >
+        {icons.map(icon => (
+          <div
+            key={icon}
+            onClick={() => handleIconClick(icon)}
+            style={{
+              padding: '10px',
+              border: '2px solid transparent',
+              cursor: 'pointer',
+            }}
+          >
+            <Icon icon={icon} width="24" height="24" />
+          </div>
+        ))}
+      </div>
+      {icons.length !== 0 && (
+        <div className={styles.footer}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setIcons([]);
+              setSearchTerm('');
+            }}
+          >
+            CLOSE
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default IconPicker;

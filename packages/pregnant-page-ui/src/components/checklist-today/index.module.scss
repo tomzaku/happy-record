@@ -1,0 +1,42 @@
+@import '@moon-ui/app-scss/color';
+@import 'include-media/dist/include-media';
+@import '@moon-ui/app-scss/metric';
+@import '@moon-ui/app-scss/color';
+
+.container {
+  @include media('<=tablet') {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+}
+
+.checklistItem {
+  display: flex;
+  border-bottom: 1px solid var(--card-border);
+  align-items: center;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+
+.checklistItem {
+  display: flex;
+  border-bottom: 1px solid var(--card-border);
+  align-items: center;
+
+}
+
+.lastChecklistItem {
+  border-bottom: none;
+}
+
+.checkbox {
+  height: 24px;
+  width: 24px;
+}
+
+.title {
+  flex: 1;
+  margin-left: 6px;
+}
+

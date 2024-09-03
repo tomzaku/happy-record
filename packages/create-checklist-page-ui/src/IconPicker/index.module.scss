@@ -1,0 +1,18 @@
+@import '@moon-ui/app-scss/function';
+.iconSearchInput {
+  box-sizing: border-box;
+  margin: 0 12px;
+  flex: 1;
+  font-size: toRem(16px);
+  padding: 12px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+}

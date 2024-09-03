@@ -4,7 +4,7 @@ export enum TaskStatus {
   Done = 'Done',
   Overdue = 'Overdue',
   Close = 'Close',
-  Pause = 'Pause'
+  Pause = 'Pause',
 }
 
 export enum EisenhowerMatrix {
@@ -14,12 +14,12 @@ export enum EisenhowerMatrix {
   Eliminate = 'eliminate',
 }
 
-export enum Day  {
- Mon = 'mon',
- Tue = 'tue',
- Thu = 'thu',
- Wed = 'wed',
- Fri = 'fri',
- Sat = 'sat',
- Sun = 'sun'
+export enum Day {
+  Mon = 'mon',
+  Tue = 'tue',
+  Thu = 'thu',
+  Wed = 'wed',
+  Fri = 'fri',
+  Sat = 'sat',
+  Sun = 'sun',
 }

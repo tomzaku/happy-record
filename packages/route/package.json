@@ -18,6 +18,10 @@
     "@dreamer/setting-page-ui": "^1.0.0",
     "@dreamer/tasks-page-common": "^1.0.0",
     "@dreamer/tasks-page-ui": "^1.0.0",
+    "@pregnant/create-checklist-page-ui": "^1.0.0",
+    "@pregnant/pregnant-intro": "^1.0.0",
+    "@pregnant/pregnant-page-ui": "^1.0.0",
+    "@pregnant/pregnant-weight-record": "^1.0.0",
     "react-router-dom": "^6.3.0"
   },
   "devDependencies": {

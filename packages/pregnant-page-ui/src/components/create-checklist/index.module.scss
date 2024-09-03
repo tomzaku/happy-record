@@ -1,0 +1,11 @@
+@import 'include-media/dist/include-media';
+
+.addChecklist {
+  color: #D2D2D2;
+  margin-top: 6px;
+
+  @include media('<=tablet') {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+}

@@ -1,0 +1,19 @@
+@import '@moon-ui/app-scss/color';
+@import '@moon-ui/app-scss/function';
+@import 'include-media/dist/include-media';
+
+.container {
+  background: var(--card-background);
+  box-sizing: border-box;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px var(--card-shadow);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  @include media('<=tablet') {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+}

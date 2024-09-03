@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 
 import cx from 'classnames';
 
@@ -11,19 +11,21 @@ type Props = React.DetailedHTMLProps<
   border?: 'dash' | 'solid';
 };
 
-const Input = React.forwardRef<HTMLInputElement, Props>(({ className, border, ...restProps }, ref) => {
-  return (
-    <input
-      ref={ref}
-      className={cx(
-        styles.container,
-        border === 'dash' && styles.dash,
-        border === 'solid' && styles.solid,
-        className
-      )}
-      {...restProps}
-    />
-  );
-})
+const Input = React.forwardRef<HTMLInputElement, Props>(
+  ({ className, border, ...restProps }, ref) => {
+    return (
+      <input
+        ref={ref}
+        className={cx(
+          styles.container,
+          border === 'dash' && styles.dash,
+          border === 'solid' && styles.solid,
+          className
+        )}
+        {...restProps}
+      />
+    );
+  }
+);
 
-export default Input
+export default Input;

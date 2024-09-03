@@ -1,0 +1,72 @@
+@import '@moon-ui/app-scss/function';
+@import '@moon-ui/app-scss/color';
+
+.menu {
+  height: 25px;
+  margin-bottom: 20px;
+}
+
+.input {
+  border: 0;
+  box-sizing: border-box;
+  background: transparent;
+  font-size: toRem(20px);
+  min-height: 36px;
+  resize: none;
+  width: 100%;
+  color: var(--text-color);
+
+  &::placeholder {
+    color: var(--text-placeholder-color);
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.dashed {
+  border: 0;
+  border-top: 3px dashed var(--create-task-dashed-border);
+  height: 0;
+  width: 100%;
+}
+
+.container {
+  padding-bottom: 24px;
+}
+
+.submitButton {
+  padding: 10px 20px;
+  border: none;
+  flex: 1;
+  border-radius: 5px;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  background: linear-gradient(to right, #ff7e5f, #feb47b);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: background 0.3s ease;
+
+  &:hover {
+    background: linear-gradient(to right, #feb47b, #ff7e5f);
+  }
+}
+
+.footer {
+  position: fixed;
+  display: flex;
+  bottom: 0;
+  left: 0;
+  padding: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+.footerCenter {
+  max-width: 600px;
+  display: flex;
+  width: 100%;
+}

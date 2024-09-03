@@ -1,0 +1,65 @@
+@import '@moon-ui/app-scss/color';
+@import 'include-media/dist/include-media';
+@import '@moon-ui/app-scss/function';
+
+.container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.label {
+  font-size: toRem(20px);
+  min-height: 36px;
+  color: var(--text-color);
+  margin-block: 0;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.card {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.datePicker {
+  font-size: toRem(22px);
+  width: 250px;
+  text-align: center;
+}
+
+.datePickerContainer {
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  display: flex;
+}
+
+.checklistItem {
+  display: flex;
+  border-bottom: 1px solid var(--card-border);
+  align-items: center;
+}
+
+.checklistBody {
+  flex: 1;
+  margin-left: 6px;
+}
+
+.checkbox {
+  height: 24px;
+  width: 24px;
+}
+
+.footer {
+  @include media('<=tablet') {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  display: flex;
+  flex-direction: column;
+  background: var(--card-background);
+  box-shadow: 0 2px 25px var(--card-shadow);
+  box-sizing: border-box;
+  padding: 12px;
+}
