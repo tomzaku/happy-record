@@ -3,22 +3,32 @@ import { Icon } from '@iconify/react';
 import Button from '@moon-ui/button';
 import Checkbox from '@moon-ui/checkbox';
 import Card from '@moon-ui/card';
+
 import { useIntl } from '@dreamer/translation';
+import {
+  useBaby,
+  useChecklistTemplates,
+  useLocalStorage,
+} from '@dreamer/global';
 
 import styles from './index.module.scss';
-import { useBaby, useChecklistTemplates } from '@dreamer/global';
 
 const PregnantIntro = () => {
+  const [isNew, setIsNew] = useLocalStorage('user_new', false);
   const intl = useIntl();
 
   const { baby, setBaby, calculateStartDateFromDueDate } = useBaby();
   const {
-    getRecommendChecklistTemplates: getRecommendChecklists,
+    getRecommendChecklistTemplates,
     selectedChecklistTemplates: selectedChecklists,
     updateSelectedChecklistTemplate: updateSelectedChecklists,
   } = useChecklistTemplates();
 
-  const onSubmit = () => {};
+  const onSubmit = () => {
+    setIsNew(false);
+    window.location.reload();
+  };
+
   return (
     <>
       <div className={styles.container}>
@@ -60,7 +70,7 @@ const PregnantIntro = () => {
                 defaultMessage: 'Ready for your daily pregnancy checklist?',
               })}
             </p>
-            {getRecommendChecklists().map(({ id, title, avatar }) => (
+            {getRecommendChecklistTemplates().map(({ id, title, avatar }) => (
               <div key={id} className={styles.checklistItem}>
                 <Icon
                   color={avatar.color || '#8A8A8A'}

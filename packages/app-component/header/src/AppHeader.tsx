@@ -1,4 +1,5 @@
-import IconSetting from '@moon-ui/icon/IconSetting';
+// import IconSetting from '@moon-ui/icon/IconSetting';
+import { Icon } from '@iconify/react';
 
 // Hooks
 import { useNavigate } from 'react-router-dom';
@@ -13,10 +14,12 @@ const Header = () => {
         PREGNANCY
       </div>
       <div className={styles.menu}></div>
-      <IconSetting
+      <Icon
         className={styles.right}
+        width={24}
+        icon="ic:outline-checklist"
         onClick={() => {
-          navigate('/setting');
+          navigate('/checklist-template');
         }}
       />
     </div>

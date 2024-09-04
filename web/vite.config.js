@@ -11,22 +11,22 @@ export default defineConfig({
     VitePWA({
       injectRegister: 'auto',
       manifest: {
-        name: 'Dreamer',
-        short_name: 'Dreamer',
+        name: 'Happy Pregnancy',
+        short_name: 'Pregency',
         description: 'Make your dreams come true',
         icons: [
           {
-            src: './logo/dreamer-192x192.png',
+            src: './logo/happy-pregnancy-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: './logo/dreamer-512x512.png',
+            src: './logo/happy-pregnancy-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: './logo/dreamer-512x512.png',
+            src: './logo/happy-pregnancy-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',

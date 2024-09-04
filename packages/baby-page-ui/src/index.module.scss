@@ -1,0 +1,31 @@
+@import '@moon-ui/app-scss/color';
+@import 'include-media/dist/include-media';
+@import '@moon-ui/app-scss/function';
+
+.label {
+  font-size: toRem(20px);
+  min-height: 36px;
+  color: var(--text-color);
+  margin-block: 0;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.card {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.datePicker {
+  font-size: toRem(22px);
+  width: 250px;
+  text-align: center;
+}
+
+.datePickerContainer {
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  display: flex;
+}
+
