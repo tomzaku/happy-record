@@ -1,7 +1,5 @@
-import React from 'react';
 import MultiSelectButton from '@moon-ui/button/src/MultiSelectButton';
 import List from '@moon-ui/list';
-import Radio from '@moon-ui/radio';
 import Toggle from '@moon-ui/toggle';
 import IconCalendar from '@moon-ui/icon/IconCalendar';
 

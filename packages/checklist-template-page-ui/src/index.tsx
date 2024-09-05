@@ -18,8 +18,19 @@ const ChecklistTemplatePageUi = () => {
   const intl = useIntl();
 
   const getRepeatText = (repeat?: { dayOfWeek: string }) => {
-    const text = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const text = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const days = repeat?.dayOfWeek?.split(',') || [];
+    if (days.includes('*')) {
+      return [
+        {
+          enabled: true,
+          text: intl.formatMessage({
+            id: 'PregnantIntro.repeat.everyday',
+            defaultMessage: 'Every day',
+          }),
+        },
+      ];
+    }
     return [0, 1, 2, 3, 4, 5, 6].map(i => {
       return {
         day: i,

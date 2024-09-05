@@ -12,25 +12,34 @@ export type ChecklistTemplate = {
     dayOfMonth: string;
     month: string;
     dayOfWeek: string;
+    startedAt: string;
+    completedAt?: string;
   };
   avatar: {
     type: string;
     name: string;
     color?: string;
   };
+  createdAt: string;
+};
+
+const common = {
+  repeat: {
+    minute: '0',
+    hour: '8',
+    dayOfMonth: '*',
+    month: '*',
+    dayOfWeek: '*',
+    startedAt: new Date().toISOString(),
+  },
+  createdAt: new Date().toISOString(),
 };
 
 const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
   {
     id: v4(),
     title: 'Drink water',
-    repeat: {
-      minute: '0',
-      hour: '8',
-      dayOfMonth: '*',
-      month: '*',
-      dayOfWeek: '*',
-    },
+    ...common,
     avatar: {
       type: 'icon',
       name: 'mdi:water',
@@ -40,13 +49,7 @@ const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
   {
     id: v4(),
     title: 'Drink Orange juice',
-    repeat: {
-      minute: '0',
-      hour: '8',
-      dayOfMonth: '*',
-      month: '*',
-      dayOfWeek: '*',
-    },
+    ...common,
     avatar: {
       type: 'icon',
       name: 'noto-v1:tropical-drink',
@@ -56,13 +59,7 @@ const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
   {
     id: v4(),
     title: 'Take vitamin supplement',
-    repeat: {
-      minute: '0',
-      hour: '8',
-      dayOfMonth: '*',
-      month: '*',
-      dayOfWeek: '*',
-    },
+    ...common,
     avatar: {
       type: 'icon',
       name: 'game-icons:medicines',
@@ -72,13 +69,7 @@ const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
   {
     id: v4(),
     title: 'Eat fruits(banana, seeds) and vegetables',
-    repeat: {
-      minute: '0',
-      hour: '8',
-      dayOfMonth: '*',
-      month: '*',
-      dayOfWeek: '*',
-    },
+    ...common,
     avatar: {
       type: 'icon',
       name: 'twemoji:pot-of-food',
@@ -88,13 +79,7 @@ const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
   {
     id: v4(),
     title: 'Exercise',
-    repeat: {
-      minute: '0',
-      hour: '8',
-      dayOfMonth: '*',
-      month: '*',
-      dayOfWeek: '*',
-    },
+    ...common,
     avatar: {
       type: 'icon',
       name: 'healthicons:exercise-yoga-outline',
@@ -103,13 +88,7 @@ const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
   {
     id: v4(),
     title: 'Sleep early',
-    repeat: {
-      minute: '0',
-      hour: '8',
-      dayOfMonth: '*',
-      month: '*',
-      dayOfWeek: '*',
-    },
+    ...common,
     avatar: {
       type: 'icon',
       name: 'fxemoji:sleeping',
@@ -118,13 +97,7 @@ const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
   {
     id: v4(),
     title: 'Drink milk',
-    repeat: {
-      minute: '0',
-      hour: '8',
-      dayOfMonth: '*',
-      month: '*',
-      dayOfWeek: '*',
-    },
+    ...common,
     avatar: {
       type: 'icon',
       name: 'icon-park-outline:milk',
@@ -150,7 +123,7 @@ export const useChecklistTemplates = () => {
   >(SELECTED_CHECKLISTS_TEMPLATE_KEY, []);
 
   const addChecklistTemplate = (
-    currentChecklistTemplate: Omit<ChecklistTemplate, 'id'>
+    currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt'>
   ) => {
     const id = v4();
     setChecklistTemplate({
@@ -158,6 +131,7 @@ export const useChecklistTemplates = () => {
       [id]: {
         ...currentChecklistTemplate,
         id,
+        createdAt: new Date().toISOString(),
       },
     });
     updateSelectedChecklistTemplate([...selectedChecklistTemplates, id]);

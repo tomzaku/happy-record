@@ -32,7 +32,6 @@ const BodyMetricChart = () => {
       data: chartData?.bellySizes,
     },
   ];
-  console.log('SERIES', series, options);
   if (
     !chartData ||
     !chartData.categories ||

@@ -17,7 +17,7 @@ const Header = () => {
       <Icon
         className={styles.right}
         width={24}
-        icon="ic:outline-checklist"
+        icon="solar:checklist-minimalistic-linear"
         onClick={() => {
           navigate('/checklist-template');
         }}

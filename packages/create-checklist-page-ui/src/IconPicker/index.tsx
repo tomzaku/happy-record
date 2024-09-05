@@ -10,7 +10,7 @@ import Input from '@moon-ui/input';
 import cx from 'classnames';
 
 import styles from './index.module.scss';
-import Button from '@moon-ui/button/src/DefaultButton';
+import Button from '@moon-ui/button';
 
 type Props = {
   selectedIcon: string;
@@ -21,6 +21,8 @@ type Props = {
 const IconPicker = ({ selectedIcon, setSelectedIcon, className }: Props) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [icons, setIcons] = useState<string[]>([]);
+
+  const [showSearchView, setShowSearchView] = useState<boolean>(false);
 
   const intl = useIntl();
 
@@ -34,8 +36,7 @@ const IconPicker = ({ selectedIcon, setSelectedIcon, className }: Props) => {
 
   const handleIconClick = (icon: string) => {
     setSelectedIcon(icon);
-    setIcons([]);
-    setSearchTerm('');
+    setShowSearchView(false);
   };
 
   return (
@@ -50,53 +51,85 @@ const IconPicker = ({ selectedIcon, setSelectedIcon, className }: Props) => {
           defaultMessage: 'Select icons',
           id: 'icon-picker.subtitle',
         })}
-        rightComponent={<Icon width={24} icon={selectedIcon} />}
-      />
-      <Input
-        placeholder="Search icons..."
-        border="dash"
-        value={searchTerm}
-        onChange={e => {
-          setSearchTerm(e.target.value);
-          searchIcons(e.target.value);
-        }}
-        className={styles.iconSearchInput}
-      />
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '10px',
-          maxHeight: '300px',
-          overflowY: 'scroll',
-        }}
-      >
-        {icons.map(icon => (
-          <div
-            key={icon}
-            onClick={() => handleIconClick(icon)}
-            style={{
-              padding: '10px',
-              border: '2px solid transparent',
-              cursor: 'pointer',
-            }}
-          >
-            <Icon icon={icon} width="24" height="24" />
+        rightComponent={
+          <div className={styles.rightContainer}>
+            <Button
+              type="ghost"
+              onClick={() => {
+                if (showSearchView) {
+                  setShowSearchView(false);
+                } else {
+                  setShowSearchView(true);
+                }
+              }}
+              className={styles.searchButton}
+            >
+              <>
+                {showSearchView
+                  ? intl.formatMessage({
+                      defaultMessage: 'Close',
+                      id: 'icon-picker.close',
+                    })
+                  : intl.formatMessage({
+                      defaultMessage: 'Search',
+                      id: 'icon-picker.search',
+                    })}
+                <div className={styles.divider} />
+                <Icon width={24} icon={selectedIcon} />
+              </>
+            </Button>
           </div>
-        ))}
-      </div>
-      {icons.length !== 0 && (
-        <div className={styles.footer}>
-          <Button
-            size="sm"
-            onClick={() => {
-              setIcons([]);
-              setSearchTerm('');
+        }
+      />
+      {showSearchView && (
+        <>
+          <Input
+            placeholder="Search icons..."
+            border="dash"
+            value={searchTerm}
+            onChange={e => {
+              setSearchTerm(e.target.value);
+              searchIcons(e.target.value);
+            }}
+            className={styles.iconSearchInput}
+          />
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '10px',
+              maxHeight: '300px',
+              overflowY: 'scroll',
             }}
           >
-            CLOSE
-          </Button>
-        </div>
+            {icons.map(icon => (
+              <div
+                key={icon}
+                onClick={() => handleIconClick(icon)}
+                style={{
+                  padding: '10px',
+                  border: '2px solid transparent',
+                  cursor: 'pointer',
+                }}
+              >
+                <Icon icon={icon} width="24" height="24" />
+              </div>
+            ))}
+          </div>
+          {icons.length !== 0 && (
+            <div className={styles.footer}>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setIcons([]);
+                  setSearchTerm('');
+                }}
+              >
+                CLOSE
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

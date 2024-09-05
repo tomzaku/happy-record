@@ -2,16 +2,18 @@ import React from 'react';
 import Card from '@moon-ui/card';
 import Button from '@moon-ui/button';
 import TextareaAutosize from 'react-textarea-autosize';
-import styles from './index.module.scss';
-
-// Hooks
-import { useIntl } from '@dreamer/translation';
+import StartDaySelector from './StartDaySelector';
 import BuildWeeklyHobby from './BuildWeeklyHobby';
 import { Day } from '@dreamer/tasks-page-common';
 import IconPicker from './IconPicker';
+import Hr from './hr';
 
+// Hooks
+import { useIntl } from '@dreamer/translation';
 import { useNavigate } from 'react-router-dom';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
+
+import styles from './index.module.scss';
 
 const getDay = () => {
   const today = new Date();
@@ -34,6 +36,7 @@ const CreateChecklistPage = () => {
 
     if (weeklyHobbies.length === 7)
       return {
+        startedAt: new Date().toISOString(),
         dayOfWeek: '*',
         minute: '0',
         hour: '8',
@@ -41,6 +44,7 @@ const CreateChecklistPage = () => {
         month: '*',
       };
     return {
+      startedAt: new Date().toISOString(),
       minute: '0',
       hour: '8',
       dayOfMonth: '*',
@@ -86,10 +90,13 @@ const CreateChecklistPage = () => {
         />
         <hr className={styles.dashed} />
         <BuildWeeklyHobby values={weeklyHobbies} setValues={setWeeklyHobbies} />
+        <Hr />
         <IconPicker
           selectedIcon={selectedIcon}
           setSelectedIcon={setSelectedIcon}
         />
+        <Hr />
+        <StartDaySelector />
       </Card>
       <div className={styles.footer}>
         <div className={styles.footerCenter}>
