@@ -116,19 +116,6 @@ const IconPicker = ({ selectedIcon, setSelectedIcon, className }: Props) => {
               </div>
             ))}
           </div>
-          {icons.length !== 0 && (
-            <div className={styles.footer}>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setIcons([]);
-                  setSearchTerm('');
-                }}
-              >
-                CLOSE
-              </Button>
-            </div>
-          )}
         </>
       )}
     </div>
