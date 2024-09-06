@@ -67,7 +67,7 @@ const PregnantIntro = () => {
             <p className={styles.label}>
               {intl.formatMessage({
                 id: 'PregnantIntro.checklists',
-                defaultMessage: 'Ready for your daily pregnancy checklist?',
+                defaultMessage: "Pick the tasks you'd love to do every day!",
               })}
             </p>
             {getRecommendChecklistTemplates().map(({ id, title, avatar }) => (
