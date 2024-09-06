@@ -9,18 +9,23 @@ import styles from './index.module.scss';
 import Card from '@moon-ui/card';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { useBodyMetric } from '@dreamer/global';
+import MetricCalendar from '../metric-calendar';
 
 const MetricInputCard = () => {
   const [weight, setWeight] = React.useState(40.2);
   const [bellySize, setBellySize] = React.useState(50.2);
-  const { addBodyMetric, currentBodyMetric } = useBodyMetric();
+  const { addBodyMetric, currentBodyMetric, currentDay } = useBodyMetric();
   const [isMetricRecorded, setIsMetricRecorded] = React.useState(
     !!currentBodyMetric
   );
+  React.useEffect(() => {
+    setIsMetricRecorded(!!currentBodyMetric);
+  }, [currentBodyMetric]);
   const intl = useIntl();
   if (isMetricRecorded && currentBodyMetric) {
     return (
       <Card>
+        <MetricCalendar />
         <div className={styles.header}>
           <Icon
             width={100}
@@ -88,13 +93,23 @@ const MetricInputCard = () => {
   }
   return (
     <Card>
+      <MetricCalendar />
       <div>
         <Typography.Title level={3} className={styles.questionTitle}>
-          {intl.formatMessage({
-            id: 'pregnant-weight-record.label-pregnant-weight',
-            defaultMessage:
-              "What's your weight today? And how's your belly growing, mama?",
-          })}
+          {intl.formatMessage(
+            {
+              id: 'pregnant-weight-record.label-pregnant-weight',
+              defaultMessage:
+                "What's your weight {{day}}? And how's your belly growing, mama?",
+            },
+            {
+              day:
+                new Date(currentDay).toLocaleString() ===
+                new Date().toLocaleString()
+                  ? 'today'
+                  : new Date(currentDay).toLocaleDateString(),
+            }
+          )}
         </Typography.Title>
       </div>
       <div className={styles.divider} />
@@ -142,6 +157,7 @@ const MetricInputCard = () => {
           addBodyMetric({
             weight,
             bellySize,
+            createdAt: currentDay.toISOString(),
           });
           setIsMetricRecorded(true);
         }}

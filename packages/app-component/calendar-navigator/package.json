@@ -1,5 +1,5 @@
 {
-  "name": "@pregnant/pregnant-weight-record",
+  "name": "@dreamer/calendar-navigator",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.tsx",
@@ -9,8 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@dreamer/calendar-navigator": "^1.0.0",
-    "apexcharts": "^3.53.0",
-    "react-apexcharts": "^1.4.1"
+    "@moon-ui/app-scss": "^1.0.0",
+    "@moon-ui/avatar": "^1.0.0",
+    "@moon-ui/icon": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/react-motion": "^0.0.33"
   }
 }

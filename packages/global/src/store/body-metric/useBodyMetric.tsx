@@ -24,8 +24,12 @@ const useChartDataStore = create<ChartData>(set => ({
 type CurrentBodyMetric = {
   currentBodyMetric?: BodyMetric;
   setCurrentBodyMetric: (newCurrentBodyMetric?: BodyMetric) => void;
+  currentDay: Date;
+  setCurrentDay: (newCurrentDay: Date) => void;
 };
 const useCurrentBodyMetric = create<CurrentBodyMetric>(set => ({
+  currentDay: new Date(),
+  setCurrentDay: (newCurrentDay: Date) => set({ currentDay: newCurrentDay }),
   currentBodyMetric: undefined,
   setCurrentBodyMetric: (newCurrentBodyMetric?: BodyMetric) =>
     set({ currentBodyMetric: newCurrentBodyMetric }),
@@ -36,7 +40,8 @@ export const useBodyMetric = () => {
     Record<string, BodyMetric>
   >(BODY_METRIC_KEY, {});
   const { chartData, setChartData } = useChartDataStore();
-  const { currentBodyMetric, setCurrentBodyMetric } = useCurrentBodyMetric();
+  const { currentBodyMetric, setCurrentBodyMetric, currentDay, setCurrentDay } =
+    useCurrentBodyMetric();
   const getChartData = (newBodyMetric = bodyMetric) => {
     const sortedByDateData = Object.values(newBodyMetric).sort(
       (a, b) =>
@@ -63,59 +68,68 @@ export const useBodyMetric = () => {
     const newChartData = getChartData(newBodyMetric);
     setChartData(newChartData);
   };
-  const addBodyMetric = (
-    currentBodyMetric: Omit<BodyMetric, 'id' | 'createdAt'>
-  ) => {
+  const addBodyMetric = (currentBodyMetric: Omit<BodyMetric, 'id'>) => {
     const foundSameDayBodyMetric = Object.values(bodyMetric).find(
       bodyMetric =>
         new Date(bodyMetric.createdAt).toLocaleDateString() ===
-        new Date().toLocaleDateString()
+        new Date(currentBodyMetric.createdAt).toLocaleDateString()
     );
     let newBodyMetric;
+    let id = foundSameDayBodyMetric?.id || '';
     if (foundSameDayBodyMetric) {
       newBodyMetric = {
         ...bodyMetric,
         [foundSameDayBodyMetric.id]: {
           ...foundSameDayBodyMetric,
           ...currentBodyMetric,
-          createdAt: new Date().toISOString(),
         },
       };
     } else {
-      const id = v4();
+      id = v4();
       newBodyMetric = {
         ...bodyMetric,
         [id]: {
           ...currentBodyMetric,
           id,
-          createdAt: new Date().toISOString(),
         },
       };
     }
 
     setBodyMetric(newBodyMetric);
     updateChartDate(newBodyMetric);
-    updateCurrentBodyMetric({ newBodyMetric });
+    setCurrentBodyMetric(newBodyMetric[id]);
   };
 
-  const updateCurrentBodyMetric = ({
-    newBodyMetric,
-  }: {
-    newBodyMetric: Record<string, BodyMetric>;
-  }) => {
-    const newCurrentBodyMetric = Object.values(newBodyMetric).find(
-      bodyMetric => {
-        return (
-          new Date(bodyMetric.createdAt).toLocaleDateString() ===
-          new Date().toLocaleDateString()
-        );
-      }
+  // const updateCurrentBodyMetric = ({
+  //   newBodyMetric,
+  // }: {
+  //   newBodyMetric: Record<string, BodyMetric>;
+  // }) => {
+  //   const newCurrentBodyMetric = Object.values(newBodyMetric).find(
+  //     bodyMetric => {
+  //       return (
+  //         new Date(bodyMetric.createdAt).toLocaleDateString() ===
+  //         new Date().toLocaleDateString()
+  //       );
+  //     }
+  //   );
+  //   setCurrentBodyMetric(newCurrentBodyMetric);
+  // };
+
+  const updateCurrentBodyMetric = ({ date }: { date: Date }) => {
+    const foundSameDayBodyMetric = Object.values(bodyMetric).find(
+      bodyMetric =>
+        new Date(bodyMetric.createdAt).toLocaleDateString() ===
+        date.toLocaleDateString()
     );
-    setCurrentBodyMetric(newCurrentBodyMetric);
+    console.log('>FOUND', foundSameDayBodyMetric);
+    setCurrentBodyMetric(foundSameDayBodyMetric);
+    setCurrentDay(date);
+    return foundSameDayBodyMetric;
   };
 
   React.useEffect(() => {
-    updateCurrentBodyMetric({ newBodyMetric: bodyMetric });
+    updateCurrentBodyMetric({ date: new Date() });
   }, []);
 
   return {
@@ -125,5 +139,7 @@ export const useBodyMetric = () => {
     updateChartDate,
     setChartData,
     currentBodyMetric,
+    updateCurrentBodyMetric,
+    currentDay,
   };
 };

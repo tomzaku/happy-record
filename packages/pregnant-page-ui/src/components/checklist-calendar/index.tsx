@@ -29,6 +29,7 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
           onClick={() => onDateChange(minus1Day(date))}
           width={30}
           icon="basil:skip-prev-outline"
+          className={styles.icon}
         />
         <div
           className={styles.currentContainer}
@@ -40,6 +41,7 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
           onClick={() => onDateChange(plus1Day(date))}
           width={30}
           icon="basil:skip-next-outline"
+          className={styles.icon}
         />
       </div>
     </div>
