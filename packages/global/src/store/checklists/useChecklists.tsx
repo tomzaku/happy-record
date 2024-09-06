@@ -37,22 +37,25 @@ export const useChecklist = () => {
         new Date(currentChecklist.startedAt).toLocaleDateString() ===
         date.toLocaleDateString()
     );
-    const checklistsTodayTemplateIds = checklistsToday.map(
-      c => c.checklistTemplateId
-    );
     const checklistTemplatesTodayIds = getChecklistTemplateIdsByGivingDate({
       date,
-    }).filter(i => !checklistsTodayTemplateIds.includes(i));
-    const checklists: Checklist[] = [
-      ...checklistsToday,
-      ...checklistTemplatesTodayIds.map(id => ({
-        id: v4(),
-        title: checklistTemplate[id].title,
-        checklistTemplateId: id,
-        startedAt: new Date().toISOString(),
-        endedAt: new Date(new Date().setHours(23, 59, 59, 999)).toISOString(),
-      })),
-    ];
+    });
+    const checklists: Checklist[] = checklistTemplatesTodayIds.map(id => {
+      const foundChecklist = checklistsToday.find(
+        c => c.checklistTemplateId === id
+      );
+      if (foundChecklist) {
+        return foundChecklist;
+      } else {
+        return {
+          id: v4(),
+          title: checklistTemplate[id].title,
+          checklistTemplateId: id,
+          startedAt: new Date().toISOString(),
+          endedAt: new Date(new Date().setHours(23, 59, 59, 999)).toISOString(),
+        };
+      }
+    });
     return {
       checklistIds: checklists.map(checklist => checklist.id),
       checklist: checklists.reduce(

@@ -23,10 +23,14 @@ const getDay = () => {
 const CreateChecklistPage = () => {
   const [checklistText, setChecklistText] = React.useState('');
   const [weeklyHobbies, setWeeklyHobbies] = React.useState<Day[]>([getDay()]);
+  const [startedAt, setStartedAt] = React.useState(
+    new Date().toISOString().split('T')[0]
+  );
   const intl = useIntl();
   const [selectedIcon, setSelectedIcon] = React.useState(
     'material-symbols:checklist'
   );
+  const [selectedColor, setSelectedColor] = React.useState('#607d8b');
   const { addChecklistTemplate } = useChecklistTemplates();
   const { addChecklist } = useChecklist();
   const navigate = useNavigate();
@@ -79,10 +83,11 @@ const CreateChecklistPage = () => {
         <TextareaAutosize
           placeholder={intl.formatMessage({
             id: 'CreateChecklist.label-create-checklist-input-placeholder',
-            defaultMessage: 'Write your checklist here',
+            defaultMessage: 'Write your task here',
           })}
           className={styles.input}
           maxRows={3}
+          autoFocus
           onChange={e => {
             setChecklistText(e.currentTarget.value);
           }}
@@ -94,9 +99,11 @@ const CreateChecklistPage = () => {
         <IconPicker
           selectedIcon={selectedIcon}
           setSelectedIcon={setSelectedIcon}
+          selectedColor={selectedColor}
+          setSelectedColor={setSelectedColor}
         />
         <Hr />
-        <StartDaySelector />
+        <StartDaySelector date={startedAt} setDate={setStartedAt} />
       </Card>
       <div className={styles.footer}>
         <div className={styles.footerCenter}>
@@ -111,6 +118,7 @@ const CreateChecklistPage = () => {
                 avatar: {
                   type: 'icon',
                   name: selectedIcon,
+                  color: selectedColor,
                 },
               });
               // If not repeat we need to create a checklist onetime.
@@ -118,7 +126,7 @@ const CreateChecklistPage = () => {
                 addChecklist({
                   title: checklistText,
                   checklistTemplateId: id,
-                  startedAt: new Date().toISOString(),
+                  startedAt,
                   endedAt: new Date(
                     new Date().setHours(23, 59, 59, 999)
                   ).toISOString(),

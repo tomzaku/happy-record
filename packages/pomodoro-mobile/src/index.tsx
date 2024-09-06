@@ -4,7 +4,6 @@ import ShortBreak from './component/ShortBreak';
 import LongBreak from './component/LongBreak';
 import Typography from '@moon-ui/typography';
 import Pomodoro from './component/Pomodoro';
-import Intro from './component/Intro';
 import Header from './component/Header';
 import IconMusic from '@moon-ui/icon/IconMusic';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
@@ -13,7 +12,6 @@ import cx from 'classnames';
 
 // Hooks
 import { useIntl } from '@dreamer/translation';
-import { useTask } from '@dreamer/tasks-page-common';
 import { useGlobalTool } from '@dreamer/global-tool-common';
 import { useWakeLockPwa } from '@dreamer/global';
 

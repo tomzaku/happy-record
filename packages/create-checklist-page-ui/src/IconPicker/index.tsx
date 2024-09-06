@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import List from '@moon-ui/list';
 import { Icon } from '@iconify/react';
+import Button from '@moon-ui/button';
+import ColorPicker, { ColorView } from '../ColorPicker';
 
 // Hooks
 import { useIntl } from '@dreamer/translation';
@@ -10,17 +12,25 @@ import Input from '@moon-ui/input';
 import cx from 'classnames';
 
 import styles from './index.module.scss';
-import Button from '@moon-ui/button';
 
 type Props = {
   selectedIcon: string;
   setSelectedIcon: (icon: string) => void;
   className?: string;
+  selectedColor: string;
+  setSelectedColor: (color: string) => void;
 };
 
-const IconPicker = ({ selectedIcon, setSelectedIcon, className }: Props) => {
+const IconPicker = ({
+  selectedIcon,
+  setSelectedIcon,
+  className,
+  selectedColor,
+  setSelectedColor,
+}: Props) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [icons, setIcons] = useState<string[]>([]);
+  const [showColorView, setShowColorView] = useState<boolean>(false);
 
   const [showSearchView, setShowSearchView] = useState<boolean>(false);
 
@@ -60,6 +70,7 @@ const IconPicker = ({ selectedIcon, setSelectedIcon, className }: Props) => {
                   setShowSearchView(false);
                 } else {
                   setShowSearchView(true);
+                  setShowColorView(false);
                 }
               }}
               className={styles.searchButton}
@@ -75,12 +86,32 @@ const IconPicker = ({ selectedIcon, setSelectedIcon, className }: Props) => {
                       id: 'icon-picker.search',
                     })}
                 <div className={styles.divider} />
-                <Icon width={24} icon={selectedIcon} />
+                <Icon width={24} icon={selectedIcon} color={selectedColor} />
               </>
             </Button>
+            <ColorView
+              value={selectedColor}
+              onClick={() => {
+                if (showColorView) {
+                  setShowColorView(false);
+                } else {
+                  setShowColorView(true);
+                  setShowSearchView(false);
+                }
+              }}
+            />
           </div>
         }
       />
+      {showColorView && (
+        <ColorPicker
+          value={selectedColor}
+          setValue={value => {
+            setShowColorView(false);
+            setSelectedColor(value);
+          }}
+        />
+      )}
       {showSearchView && (
         <>
           <Input
@@ -112,7 +143,12 @@ const IconPicker = ({ selectedIcon, setSelectedIcon, className }: Props) => {
                   cursor: 'pointer',
                 }}
               >
-                <Icon icon={icon} width="24" height="24" />
+                <Icon
+                  icon={icon}
+                  width="24"
+                  height="24"
+                  color={selectedColor}
+                />
               </div>
             ))}
           </div>

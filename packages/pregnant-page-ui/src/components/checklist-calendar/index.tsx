@@ -17,7 +17,7 @@ const plus1Day = (date: Date) => {
 const ChecklistCalendar = ({ date, onDateChange }: Props) => {
   const isToday =
     new Date(date).toLocaleDateString() === new Date().toLocaleDateString();
-  const title = isToday ? 'Checklist Today' : 'Checklist';
+  const title = isToday ? 'Tasks Today' : 'Tasks';
   const dateText = isToday ? 'Today' : new Date(date).toLocaleDateString();
   return (
     <div className={styles.container}>

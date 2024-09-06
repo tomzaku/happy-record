@@ -1,0 +1,22 @@
+@import '@moon-ui/app-scss/metric';
+
+.color {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.selected {
+  border: 2px solid var(--card-border);
+  box-sizing: border-box;
+  border-radius: 3px;
+}
+
+.container {
+  display: flex;
+  padding: 0 $spacing-md;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}

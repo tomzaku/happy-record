@@ -6,7 +6,13 @@ import { useIntl } from '@dreamer/translation';
 
 import styles from './index.module.scss';
 
-const StartDaySelector = () => {
+const StartDaySelector = ({
+  date,
+  setDate,
+}: {
+  date: string;
+  setDate: (date: string) => void;
+}) => {
   const intl = useIntl();
   return (
     <div>
@@ -17,10 +23,16 @@ const StartDaySelector = () => {
           id: 'label-start-day.label',
         })}
         description={intl.formatMessage({
-          defaultMessage: 'Select the first day of the week',
+          defaultMessage: 'Select the first day',
           id: 'label-start-day.description',
         })}
-        rightComponent={<DatePicker className={styles.input} />}
+        rightComponent={
+          <DatePicker
+            value={date}
+            onChange={e => setDate(e.target.value)}
+            className={styles.input}
+          />
+        }
       ></List.ItemMeta>
     </div>
   );

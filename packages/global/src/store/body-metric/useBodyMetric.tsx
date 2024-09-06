@@ -1,4 +1,5 @@
 import React from 'react';
+import { create } from 'zustand';
 import { useLocalStorage } from '../../hook';
 import { v4 } from 'uuid';
 
@@ -11,13 +12,20 @@ type BodyMetric = {
 
 const BODY_METRIC_KEY = 'body_metric';
 
+type ChartData = {
+  chartData: any;
+  setChartData: (newChartData: any) => void;
+};
+const useChartDataStore = create<ChartData>(set => ({
+  chartData: {},
+  setChartData: (newChartData: any) => set({ chartData: newChartData }),
+}));
+
 export const useBodyMetric = () => {
   const [bodyMetric, setBodyMetric] = useLocalStorage<
     Record<string, BodyMetric>
   >(BODY_METRIC_KEY, {});
-  // const [chartData, setChartData] = useLocalStorage<any>('CHART_DATA_KEY', {});
-  const [chartData, setChartData] = React.useState<any>({});
-
+  const { chartData, setChartData } = useChartDataStore();
   const getChartData = (newBodyMetric = bodyMetric) => {
     const sortedByDateData = Object.values(newBodyMetric).sort(
       (a, b) =>

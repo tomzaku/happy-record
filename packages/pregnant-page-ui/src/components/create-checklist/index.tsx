@@ -19,7 +19,7 @@ const CreateChecklist = () => {
       >
         {intl.formatMessage({
           id: 'checklist-create.label-create-checklist',
-          defaultMessage: 'Create Checklist',
+          defaultMessage: 'Create Task',
         })}
       </Button>
     </div>
