@@ -13,11 +13,12 @@ import { useBodyMetric } from '@dreamer/global';
 const MetricInputCard = () => {
   const [weight, setWeight] = React.useState(40.2);
   const [bellySize, setBellySize] = React.useState(50.2);
-  const { addBodyMetric, getMetricToday } = useBodyMetric();
-  const [metricToday, setMetricToday] = React.useState(getMetricToday());
-  const [isMetricRecorded, setIsMetricRecorded] = React.useState(!!metricToday);
+  const { addBodyMetric, currentBodyMetric } = useBodyMetric();
+  const [isMetricRecorded, setIsMetricRecorded] = React.useState(
+    !!currentBodyMetric
+  );
   const intl = useIntl();
-  if (isMetricRecorded && metricToday) {
+  if (isMetricRecorded && currentBodyMetric) {
     return (
       <Card>
         <div className={styles.header}>
@@ -47,7 +48,7 @@ const MetricInputCard = () => {
             type="number"
             readOnly
             className={styles.numberInput}
-            value={metricToday.weight}
+            value={currentBodyMetric.weight}
             step="0.01"
             min={20}
             max={120}
@@ -66,7 +67,7 @@ const MetricInputCard = () => {
             type="number"
             readOnly
             className={styles.numberInput}
-            value={metricToday.bellySize}
+            value={currentBodyMetric.bellySize}
             step="0.01"
             min={20}
             max={120}

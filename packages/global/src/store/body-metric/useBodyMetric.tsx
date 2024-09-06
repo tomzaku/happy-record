@@ -21,11 +21,22 @@ const useChartDataStore = create<ChartData>(set => ({
   setChartData: (newChartData: any) => set({ chartData: newChartData }),
 }));
 
+type CurrentBodyMetric = {
+  currentBodyMetric?: BodyMetric;
+  setCurrentBodyMetric: (newCurrentBodyMetric?: BodyMetric) => void;
+};
+const useCurrentBodyMetric = create<CurrentBodyMetric>(set => ({
+  currentBodyMetric: undefined,
+  setCurrentBodyMetric: (newCurrentBodyMetric?: BodyMetric) =>
+    set({ currentBodyMetric: newCurrentBodyMetric }),
+}));
+
 export const useBodyMetric = () => {
   const [bodyMetric, setBodyMetric] = useLocalStorage<
     Record<string, BodyMetric>
   >(BODY_METRIC_KEY, {});
   const { chartData, setChartData } = useChartDataStore();
+  const { currentBodyMetric, setCurrentBodyMetric } = useCurrentBodyMetric();
   const getChartData = (newBodyMetric = bodyMetric) => {
     const sortedByDateData = Object.values(newBodyMetric).sort(
       (a, b) =>
@@ -84,23 +95,35 @@ export const useBodyMetric = () => {
 
     setBodyMetric(newBodyMetric);
     updateChartDate(newBodyMetric);
+    updateCurrentBodyMetric({ newBodyMetric });
   };
 
-  const getMetricToday = () => {
-    return Object.values(bodyMetric).find(bodyMetric => {
-      return (
-        new Date(bodyMetric.createdAt).toLocaleDateString() ===
-        new Date().toLocaleDateString()
-      );
-    });
+  const updateCurrentBodyMetric = ({
+    newBodyMetric,
+  }: {
+    newBodyMetric: Record<string, BodyMetric>;
+  }) => {
+    const newCurrentBodyMetric = Object.values(newBodyMetric).find(
+      bodyMetric => {
+        return (
+          new Date(bodyMetric.createdAt).toLocaleDateString() ===
+          new Date().toLocaleDateString()
+        );
+      }
+    );
+    setCurrentBodyMetric(newCurrentBodyMetric);
   };
+
+  React.useEffect(() => {
+    updateCurrentBodyMetric({ newBodyMetric: bodyMetric });
+  }, []);
 
   return {
     addBodyMetric,
-    getMetricToday,
     getChartData,
     chartData,
     updateChartDate,
     setChartData,
+    currentBodyMetric,
   };
 };

@@ -1,28 +1,26 @@
 import Card from '@moon-ui/card';
 import { Icon } from '@iconify/react';
 import Typography from '@moon-ui/typography';
-import React from 'react';
 
 import { useNavigate } from 'react-router-dom';
 import { useBodyMetric } from '@dreamer/global';
 
 import styles from './index.module.scss';
 const BodyMetricCard = () => {
-  const { getMetricToday } = useBodyMetric();
-  const [metricToday, setMetricToday] = React.useState(getMetricToday());
+  const { currentBodyMetric } = useBodyMetric();
 
   const navigate = useNavigate();
-  if (metricToday) {
+  if (currentBodyMetric) {
     return (
       <Card
         onClick={() => navigate('/weight-record')}
         className={styles.container}
       >
         <Typography.Title level={2} noMargin className={styles.title}>
-          Your weight: {metricToday?.weight} kg
+          Your weight: {currentBodyMetric?.weight} kg
         </Typography.Title>
         <Typography.Text className={styles.subtitle}>
-          Your belly size: {metricToday?.bellySize} cm
+          Your belly size: {currentBodyMetric?.bellySize} cm
         </Typography.Text>
         <Icon
           className={styles.babyLogo}
