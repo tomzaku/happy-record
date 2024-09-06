@@ -21,6 +21,12 @@ const MetricInputCard = () => {
   React.useEffect(() => {
     setIsMetricRecorded(!!currentBodyMetric);
   }, [currentBodyMetric]);
+  React.useEffect(() => {
+    if (currentBodyMetric) {
+      setWeight(currentBodyMetric.weight);
+      setBellySize(currentBodyMetric.bellySize);
+    }
+  }, [currentBodyMetric]);
   const intl = useIntl();
   if (isMetricRecorded && currentBodyMetric) {
     return (
@@ -104,8 +110,8 @@ const MetricInputCard = () => {
             },
             {
               day:
-                new Date(currentDay).toLocaleString() ===
-                new Date().toLocaleString()
+                new Date(currentDay).toLocaleDateString() ===
+                new Date().toLocaleDateString()
                   ? 'today'
                   : new Date(currentDay).toLocaleDateString(),
             }

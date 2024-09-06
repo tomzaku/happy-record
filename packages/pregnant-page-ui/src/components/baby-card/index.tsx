@@ -9,11 +9,12 @@ import styles from './index.module.scss';
 const BabyCard = () => {
   const { baby } = useBaby();
   const intl = useIntl();
-  const passedDayFromStartDate = Math.ceil(
-    (new Date().getTime() - new Date(baby?.startDate || '').getTime()) /
-      (1000 * 60 * 60 * 24)
-  );
-  const passedWeeks = Math.ceil(passedDayFromStartDate / 7);
+  const passedDayFromStartDate =
+    Math.floor(
+      (new Date().getTime() - new Date(baby?.startDate || '').getTime()) /
+        (1000 * 60 * 60 * 24)
+    ) - 1;
+  const passedWeeks = Math.floor(passedDayFromStartDate / 7);
   const passedDays = passedDayFromStartDate % 7;
   const navigate = useNavigate();
 

@@ -122,7 +122,6 @@ export const useBodyMetric = () => {
         new Date(bodyMetric.createdAt).toLocaleDateString() ===
         date.toLocaleDateString()
     );
-    console.log('>FOUND', foundSameDayBodyMetric);
     setCurrentBodyMetric(foundSameDayBodyMetric);
     setCurrentDay(date);
     return foundSameDayBodyMetric;
