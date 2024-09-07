@@ -20,7 +20,7 @@ const BabyCard = () => {
 
   if (!baby?.dueDate) {
     return (
-      <div className={styles.container} onClick={() => navigate('/intro')}>
+      <div className={styles.container} onClick={() => navigate('/baby')}>
         <div>
           <Typography.Title level={2} className={styles.title}>
             {intl.formatMessage({
@@ -41,7 +41,7 @@ const BabyCard = () => {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} onClick={() => navigate('/baby')}>
       <div>
         <Typography.Title level={2} className={styles.title}>
           {intl.formatMessage(

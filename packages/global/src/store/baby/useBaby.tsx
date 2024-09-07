@@ -2,9 +2,14 @@ import { useLocalStorage } from '../../hook/useLocalStorage';
 
 const BABY_STORAGE_KEY = 'baby';
 
+export enum Gender {
+  Male = 'MALE',
+  Female = 'FEMALE',
+}
 type Baby = {
   dueDate?: string;
   startDate?: string;
+  gender?: Gender;
 };
 export const useBaby = () => {
   const [baby, setBaby] = useLocalStorage<Baby>(BABY_STORAGE_KEY, {

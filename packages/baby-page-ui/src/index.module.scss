@@ -13,7 +13,7 @@
 
 .card {
   display: flex;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   cursor: pointer;
 }
 
@@ -28,5 +28,52 @@
   justify-content: center;
   flex: 1;
   display: flex;
+}
+
+.genderButton {
+  width: 80px;
+  height: 35px;
+  padding: 0;
+  margin-left: 6px;
+}
+
+.selectedButton {
+  border: 1px dashed var(--button-default-background);
+}
+
+
+.footer {
+  position: fixed;
+  display: flex;
+  bottom: 20px;
+  left: 0;
+  padding: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+.footerCenter {
+  max-width: 600px;
+  display: flex;
+  width: 100%;
+}
+
+.submitButton {
+  padding: 10px 20px;
+  border: none;
+  flex: 1;
+  border-radius: 5px;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  background: linear-gradient(to right, #ff7e5f, #feb47b);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: background 0.3s ease;
+
+  &:hover {
+    background: linear-gradient(to right, #feb47b, #ff7e5f);
+  }
 }
 
