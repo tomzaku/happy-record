@@ -6,6 +6,7 @@ import PregnantPage from '@pregnant/pregnant-page-ui';
 import PregnantCreateChecklistPage from '@pregnant/create-checklist-page-ui';
 import PregnantWeightRecord from '@pregnant/pregnant-weight-record';
 import ChecklistTemplatePageUi from '@pregnant/checklist-template-page-ui';
+import StoryPageUi from '@pregnant/story-page-ui'
 
 // Hocs
 import { useLocalStorage } from '@dreamer/global';
@@ -37,6 +38,7 @@ const AppRouter = () => {
             ></Route>
             <Route path="/setting" element={<SettingPage />}></Route>
             <Route path="/baby" element={<BabyPageUi />}></Route>
+            <Route path="/story" element={<StoryPageUi />}></Route>
           </>
         )}
       </Routes>

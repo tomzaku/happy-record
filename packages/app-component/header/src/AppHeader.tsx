@@ -13,15 +13,24 @@ const Header = () => {
       <div className={styles.left} onClick={() => navigate('/')}>
         PREGNANCY
       </div>
-      <div className={styles.menu}></div>
-      <Icon
-        className={styles.right}
-        width={24}
-        icon="solar:checklist-minimalistic-linear"
-        onClick={() => {
-          navigate('/checklist-template');
-        }}
-      />
+      <div className={styles.menu}>
+        <Icon
+          className={styles.right}
+          width={24}
+          icon="bytesize:book"
+          onClick={() => {
+            navigate('/story');
+          }}
+        />
+        <Icon
+          className={styles.right}
+          width={24}
+          icon="solar:checklist-minimalistic-linear"
+          onClick={() => {
+            navigate('/checklist-template');
+          }}
+        />
+      </div>
     </div>
   );
 };

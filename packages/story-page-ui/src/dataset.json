@@ -1,68 +1,554 @@
 [
     {
-        "title": "Cô Bé Lọ Lem",
-        "full_detail_story": "Ngày xưa có một cô bé tên là Lọ Lem, sống cùng với mẹ kế và hai chị gái ác độc. Dù bị đối xử tồi tệ, cô bé vẫn luôn tốt bụng và chăm chỉ. Một ngày, cô được phép tham dự buổi dạ hội tại cung điện nhờ sự giúp đỡ của một bà tiên. Tại buổi dạ hội, cô thu hút ánh nhìn của hoàng tử và cả hai yêu nhau ngay lập tức. Khi đồng hồ điểm nửa đêm, cô phải chạy về và đánh mất một chiếc giày. Hoàng tử tìm kiếm khắp nơi và cuối cùng tìm thấy Lọ Lem, hai người sống hạnh phúc mãi mãi.",
-        "summary": "Câu chuyện về một cô bé hiền lành, bị mẹ kế và các chị gái ngược đãi, được giúp đỡ bởi bà tiên để tham dự buổi dạ hội và gặp gỡ hoàng tử. Hoàng tử tìm kiếm và cuối cùng nhận ra cô bé là Lọ Lem, và hai người sống hạnh phúc.",
-        "lesson": "Lòng tốt và kiên nhẫn sẽ được đền đáp xứng đáng, và mọi khó khăn sẽ qua đi nếu ta không bỏ cuộc."
+        "identify_key": "su_tich_cay_vu_sua",
+        "name": "Sự tích cây vú sữa",
+        "detail": "Ngày xưa, có một cậu bé rất nghịch ngợm, thường làm cha mẹ buồn lòng. Một ngày nọ, sau khi gây ra lỗi lầm lớn, cậu sợ hãi và bỏ nhà đi. Mẹ cậu thương con, ngày ngày mong con trở về, nhưng đợi mãi không thấy. Khi cậu bé quay lại, mẹ cậu đã hóa thành một cái cây với quả ngọt. Quả cây mọng nước, thơm ngon như dòng sữa mẹ. Từ đó, người ta gọi cây ấy là cây vú sữa.",
+        "lesson": "Truyện nhắc nhở con người về tình mẫu tử thiêng liêng, lòng hiếu thảo và sự trân trọng đối với gia đình."
     },
     {
-        "title": "Cô Bé Quàng Khăn Đỏ",
-        "full_detail_story": "Có một cô bé đáng yêu sống với bà ngoại. Cô bé thường quàng khăn đỏ và được gọi là Cô Bé Quàng Khăn Đỏ. Một ngày, mẹ cô bảo cô mang đồ ăn đến cho bà ngoại, nhưng cô bé không nghe lời và đi vào rừng, nơi gặp một con sói. Sói đã lừa cô bé và đến trước bà ngoại, giả dạng bà ngoại để ăn thịt cô. Nhưng cuối cùng, một thợ săn đã cứu cô bé và bà ngoại, và sói bị tiêu diệt.",
-        "summary": "Câu chuyện về Cô Bé Quàng Khăn Đỏ, người bị con sói lừa trong rừng. Cô và bà ngoại được cứu bởi một thợ săn và sói bị tiêu diệt.",
-        "lesson": "Luôn luôn nghe lời người lớn và cẩn thận khi gặp người lạ."
+        "identify_key": "su_tich_trau_cau",
+        "name": "Sự tích trầu cau",
+        "detail": "Xưa kia, có hai anh em sinh đôi vô cùng thân thiết, không bao giờ rời xa nhau. Sau khi người anh kết hôn, mối quan hệ giữa hai người dần rạn nứt vì người em hiểu lầm rằng người anh không còn yêu thương mình nữa. Buồn bã, người em bỏ đi và chết hóa thành tảng đá. Người anh sau khi biết chuyện đã khóc cho đến khi kiệt sức và hóa thành cây cau. Người vợ sau cùng cũng hóa thành dây trầu quấn quanh cây cau.",
+        "lesson": "Câu chuyện khuyên người ta biết trân trọng tình thân, không nên để hiểu lầm chia cắt những mối quan hệ quý giá."
     },
     {
-        "title": "Sọ Dừa",
-        "full_detail_story": "Có một chàng trai sống trong một ngôi làng nghèo, tên là Sọ Dừa. Anh bị cha mẹ bỏ rơi và sống một cuộc đời khó khăn. Tuy nhiên, anh không từ bỏ và luôn giữ tinh thần lạc quan. Một ngày, anh gặp một nàng công chúa và cùng nàng chiến đấu chống lại những thế lực xấu. Cuối cùng, chàng trai trở thành hoàng tử và sống hạnh phúc với công chúa.",
-        "summary": "Câu chuyện về chàng trai Sọ Dừa, người vượt qua khó khăn và trở thành hoàng tử, nhờ sự kiên nhẫn và lòng tốt của mình.",
-        "lesson": "Không bao giờ từ bỏ và luôn kiên nhẫn trong cuộc sống, dù gặp nhiều khó khăn."
+        "identify_key": "su_tich_ho_guom",
+        "name": "Sự tích Hồ Gươm",
+        "detail": "Trong thời kỳ kháng chiến chống giặc ngoại xâm, Lê Lợi được thần Kim Quy trao cho thanh gươm thần để đánh giặc. Với sự trợ giúp của gươm thần, ông đã đánh bại quân xâm lược và giành lại độc lập cho đất nước. Sau khi hoàn thành sứ mệnh, Lê Lợi đi dạo trên hồ, thần Kim Quy xuất hiện và đòi lại gươm. Ông trao trả gươm và từ đó hồ được gọi là Hồ Gươm, biểu tượng cho sự hòa bình và tự do.",
+        "lesson": "Truyện dạy về lòng yêu nước, tinh thần chiến đấu vì độc lập dân tộc và sự đền đáp ơn nghĩa đối với những gì đã giúp đỡ mình."
     },
     {
-        "title": "Bạch Tuyết và Bảy Chú Lùn",
-        "full_detail_story": "Bạch Tuyết là một công chúa xinh đẹp nhưng bị mẹ kế độc ác ghen ghét. Mẹ kế đã ra lệnh cho một thợ săn giết Bạch Tuyết, nhưng ông đã không thể làm điều đó và thả cô vào rừng. Bạch Tuyết tìm thấy một ngôi nhà nhỏ và sống với bảy chú lùn. Mẹ kế phát hiện ra cô còn sống và đã nhiều lần cố gắng giết cô bằng các thủ đoạn khác nhau. Cuối cùng, Bạch Tuyết được một hoàng tử cứu và họ sống hạnh phúc.",
-        "summary": "Câu chuyện về Bạch Tuyết, công chúa xinh đẹp bị mẹ kế độc ác ghen ghét. Cô sống với bảy chú lùn và cuối cùng được cứu bởi hoàng tử.",
-        "lesson": "Lòng tốt và sự lạc quan sẽ được đền đáp, và ác ý sẽ bị trừng phạt."
+        "identify_key": "tam_cam",
+        "name": "Tấm Cám",
+        "detail": "Tấm là một cô gái mồ côi cha mẹ, sống với dì ghẻ và em gái cùng cha khác mẹ là Cám. Tấm thường bị hành hạ, bắt làm những công việc nặng nhọc. Một ngày, Tấm được Bụt giúp đỡ đi dự hội và trở thành vợ vua. Cám và dì ghẻ ganh ghét, nhiều lần hãm hại Tấm nhưng đều thất bại. Cuối cùng, sự tốt bụng và lòng nhân từ của Tấm đã chiến thắng sự độc ác của Cám và dì ghẻ.",
+        "lesson": "Truyện ca ngợi sự lương thiện, lòng kiên trì vượt qua nghịch cảnh và cái thiện luôn chiến thắng cái ác."
     },
     {
-        "title": "Nàng Tiên Cá",
-        "full_detail_story": "Nàng tiên cá Ariel sống dưới biển và yêu một hoàng tử trên mặt đất. Cô muốn trở thành người để được ở bên hoàng tử và đã trao đổi giọng nói của mình với phù thủy biển để có được đôi chân. Tuy nhiên, mọi việc không suôn sẻ, và cô phải đối mặt với nhiều thử thách. Cuối cùng, tình yêu chân thành của Ariel và sự hy sinh của cô đã giúp cô trở lại làm tiên cá và sống hạnh phúc với hoàng tử.",
-        "summary": "Câu chuyện về nàng tiên cá Ariel, người hy sinh giọng nói của mình để trở thành người và yêu hoàng tử. Cô cuối cùng trở lại với hình dạng tiên cá và sống hạnh phúc.",
-        "lesson": "Tình yêu chân thành và sự hy sinh sẽ dẫn đến hạnh phúc cuối cùng."
+        "identify_key": "thach_sanh",
+        "name": "Thạch Sanh",
+        "detail": "Thạch Sanh là con trai của Ngọc Hoàng đầu thai xuống trần làm người thường. Sau khi cha mẹ mất, chàng sống một mình trong rừng sâu. Một ngày, chàng gặp hoàng tử Lý Thông và bị lợi dụng để diệt chằn tinh. Mặc dù bị lừa dối và chịu nhiều thiệt thòi, nhưng Thạch Sanh vẫn thể hiện lòng dũng cảm và trung thành. Sau khi tiêu diệt nhiều loài yêu quái và giành lại công bằng, Thạch Sanh được vua gả công chúa và sống hạnh phúc.",
+        "lesson": "Câu chuyện đề cao lòng dũng cảm, sự trung thực và niềm tin vào công lý, đồng thời phê phán lòng tham và sự lừa dối."
     },
     {
-        "title": "Người Bạn Của Loài Rồng",
-        "full_detail_story": "Có một người bạn tên là Tom sống trong một ngôi làng nhỏ. Một ngày, một con rồng đến phá hoại làng. Tom quyết định giúp đỡ và tìm cách giải quyết vấn đề. Anh đã giúp con rồng bằng cách chữa trị vết thương của nó và làm cho nó cảm thấy tốt hơn. Cuối cùng, con rồng trở thành bạn của Tom và giúp bảo vệ làng khỏi các nguy hiểm khác.",
-        "summary": "Câu chuyện về Tom, người đã giúp đỡ con rồng và trở thành bạn của nó. Con rồng sau đó giúp bảo vệ làng khỏi các nguy hiểm.",
-        "lesson": "Lòng nhân ái và sự giúp đỡ có thể biến kẻ thù thành bạn và mang lại lợi ích cho cộng đồng."
+        "identify_key": "su_tich_con_rong_chau_tien",
+        "name": "Sự tích Con Rồng Cháu Tiên",
+        "detail": "Truyện kể về nguồn gốc của dân tộc Việt Nam, khi Lạc Long Quân, một vị thần rồng, kết duyên cùng Âu Cơ, một nàng tiên. Hai người sinh ra 100 trứng, nở thành 100 người con. Sau đó, Lạc Long Quân và Âu Cơ chia nhau 50 con lên núi, 50 con xuống biển, từ đó hình thành nên dân tộc Việt Nam ngày nay.",
+        "lesson": "Truyện ca ngợi sự đoàn kết, nguồn gốc thiêng liêng và lòng tự hào về dân tộc Việt."
     },
     {
-        "title": "Công Chúa và Hạt Đậu",
-        "full_detail_story": "Một hoàng tử tìm kiếm một công chúa thực sự để kết hôn. Một ngày, một cô gái tuyên bố mình là công chúa và đến cung điện. Để kiểm tra, hoàng hậu đặt một hạt đậu dưới mười chiếc đệm. Công chúa cảm thấy không thoải mái và không thể ngủ. Hoàng tử nhận ra rằng cô gái thực sự là công chúa và họ kết hôn.",
-        "summary": "Câu chuyện về một hoàng tử tìm kiếm công chúa thực sự và phát hiện ra cô gái qua sự nhạy cảm với hạt đậu dưới nhiều lớp đệm.",
-        "lesson": "Những phẩm chất thật sự không thể che giấu và sẽ được phát hiện khi có sự kiểm tra chân thực."
+        "identify_key": "su_tich_cay_khe",
+        "name": "Sự tích cây khế",
+        "detail": "Có hai anh em, sau khi cha mẹ mất, người anh tham lam chiếm hết tài sản, chỉ để lại cho người em một cây khế. Người em chăm sóc cây khế và một ngày, một con chim thần đến ăn khế, hứa sẽ trả vàng. Người em được chim đưa đến một hòn đảo đầy vàng bạc. Người anh tham lam cũng muốn như vậy nhưng vì lòng tham quá mức, đã chết khi trở về.",
+        "lesson": "Truyện phê phán lòng tham và ca ngợi sự chăm chỉ, lòng nhân hậu."
     },
     {
-        "title": "Hoàng Tử Ếch",
-        "full_detail_story": "Có một công chúa nọ, trong một lần vui chơi, cô làm rơi một quả bóng vàng vào một cái giếng. Một con ếch đã giúp cô lấy lại quả bóng, nhưng đổi lại cô phải hứa cho ếch ăn cùng và sống trong cung điện. Cô không giữ lời hứa, nhưng khi ếch trở thành hoàng tử, cô nhận ra tình yêu đích thực của mình và họ sống hạnh phúc.",
-        "summary": "Câu chuyện về công chúa và con ếch, người đã giúp cô lấy lại quả bóng vàng. Con ếch sau đó trở thành hoàng tử và cô nhận ra tình yêu chân thành.",
-        "lesson": "Giữ lời hứa và tôn trọng những người đã giúp đỡ bạn là điều quan trọng trong cuộc sống."
+        "identify_key": "son_tinh_thuy_tinh",
+        "name": "Sơn Tinh Thủy Tinh",
+        "detail": "Vua Hùng kén rể cho con gái là Mỵ Nương. Có hai người đến xin cưới là Sơn Tinh, vị thần núi, và Thủy Tinh, vị thần nước. Vua ra lệnh ai mang sính lễ đến trước sẽ cưới được Mỵ Nương. Sơn Tinh đến trước và cưới Mỵ Nương. Thủy Tinh giận dữ, dâng nước lên đánh Sơn Tinh, nhưng năm nào cũng thua.",
+        "lesson": "Câu chuyện giải thích hiện tượng lũ lụt và ca ngợi sự kiên cường của con người trước thiên nhiên."
     },
     {
-        "title": "Cô Bé Mặc Áo Đỏ",
-        "full_detail_story": "Cô bé Mặc Áo Đỏ là một cô gái nhỏ sống cùng mẹ. Một ngày, mẹ cô gửi cô bé mang bánh đến bà ngoại. Cô bé đã đi qua một con đường rừng và gặp một con sói. Sói lừa cô bé và đến trước bà ngoại, ăn thịt bà và giả làm bà ngoại. Nhưng cô bé phát hiện ra và được cứu bởi một người thợ săn, sói bị tiêu diệt.",
-        "summary": "Câu chuyện về cô bé Mặc Áo Đỏ, người bị con sói lừa và phải được cứu bởi một thợ săn. Sói bị tiêu diệt và cô bé học được bài học quý giá.",
-        "lesson": "Cẩn thận với những người lạ và luôn chú ý đến những dấu hiệu cảnh báo nguy hiểm."
+        "identify_key": "su_tich_hoa_dao",
+        "name": "Sự tích hoa đào",
+        "detail": "Ngày xưa, có một cây đào khổng lồ trên núi Sóc Sơn, dưới gốc cây có hai vị thần bảo vệ dân làng khỏi ma quỷ. Mỗi khi hai vị thần vắng mặt, ma quỷ lại lộng hành. Để ngăn ma quỷ, dân làng treo cành đào trong nhà mỗi dịp Tết, tạo thành phong tục ngày Tết cổ truyền.",
+        "lesson": "Truyện giải thích về nguồn gốc phong tục treo cành đào trong ngày Tết, biểu tượng của may mắn và hạnh phúc."
     },
     {
-        "title": "Chú Chó Hóa Rồng",
-        "full_detail_story": "Có một chú chó tên là Max, sống hạnh phúc với chủ của mình. Một ngày, chú chó giúp đỡ một phù thủy và được thưởng bằng cách biến thành một con rồng. Với sức mạnh mới của mình, Max đã giúp đỡ các cư dân trong làng và bảo vệ họ khỏi các mối đe dọa. Cuối cùng, chú chó trở lại hình dạng cũ và vẫn sống hạnh phúc với chủ của mình.",
-        "summary": "Câu chuyện về chú chó Max, người giúp đỡ phù thủy và được biến thành rồng. Sau khi giúp đỡ cư dân, chú chó trở lại hình dạng cũ và sống hạnh phúc.",
-        "lesson": "Giúp đỡ người khác và hành động tốt sẽ được đền đáp, và giá trị thực sự không phụ thuộc vào hình dạng bên ngoài."
+        "identify_key": "su_tich_thach_sung",
+        "name": "Sự tích Thạch Sùng",
+        "detail": "Thạch Sùng là một kẻ giàu có nhưng kiêu ngạo và keo kiệt. Một ngày, Thạch Sùng thách đấu tài sản với một người giàu khác. Trong cuộc thách đấu, Thạch Sùng thua và mất hết tài sản, cuối cùng chết hóa thành loài thằn lằn, suốt đời kêu 'thạch sùng' vì tiếc của.",
+        "lesson": "Truyện khuyên nhủ con người về hậu quả của lòng tham và sự kiêu ngạo."
     },
     {
-        "title": "Cô Bé Bán Diêm",
-        "full_detail_story": "Cô bé bán diêm sống trong cảnh nghèo khổ và bị bỏ rơi. Cô bé phải bán diêm để kiếm sống trong những ngày đông lạnh giá. Trong khi ngồi trên đường phố, cô bé châm lửa các que diêm và nhìn thấy những hình ảnh đẹp trong ngọn lửa. Cuối cùng, cô bé qua đời và được lên thiên đàng, nơi cô sẽ không còn phải chịu khổ nữa.",
-        "summary": "Câu chuyện về cô bé bán diêm, người sống trong nghèo khổ và tìm thấy sự an ủi trong những ngọn lửa diêm. Cuối cùng, cô bé được lên thiên đàng.",
-        "lesson": "Ngay cả trong những hoàn cảnh khó khăn nhất, hy vọng và ước mơ có thể mang lại sự an ủi và bình yên."
-    }
+        "identify_key": "su_tich_banh_chung_banh_day",
+        "name": "Sự tích bánh chưng, bánh dày",
+        "detail": "Vua Hùng muốn truyền ngôi, ông ra lệnh các con dâng lễ vật, ai có lễ vật quý nhất sẽ được truyền ngôi. Lang Liêu, con thứ, dâng bánh chưng và bánh dày, tượng trưng cho đất và trời. Vua Hùng hài lòng và truyền ngôi cho Lang Liêu, từ đó bánh chưng, bánh dày trở thành món ăn truyền thống trong ngày Tết.",
+        "lesson": "Truyện ca ngợi sự sáng tạo và lòng hiếu thảo, đồng thời giải thích nguồn gốc của bánh chưng, bánh dày."
+    },
+    {
+        "identify_key": "su_tich_dua_hau",
+        "name": "Sự tích dưa hấu",
+        "detail": "Mai An Tiêm bị vua đày ra đảo vì bị cho là kiêu ngạo. Trên đảo, An Tiêm trồng được một loại quả lạ và khắc tên mình lên vỏ quả để gửi ra ngoài. Loại quả này được mọi người yêu thích và đặt tên là dưa hấu. Sau này, An Tiêm được vua tha tội và gọi trở về.",
+        "lesson": "Truyện đề cao tinh thần tự lực, ý chí kiên cường và niềm tin vào khả năng của bản thân."
+    },
+    {
+        "identify_key": "su_tich_cay_neu",
+        "name": "Sự tích cây nêu",
+        "detail": "Ngày xưa, quỷ chiếm đất của người, bắt người phải trả tiền để canh tác. Bụt giúp người dân trồng cây nêu để đánh đuổi quỷ. Cây nêu cao đến mức quỷ không thể quay lại. Từ đó, mỗi dịp Tết, người dân trồng cây nêu để xua đuổi ma quỷ và cầu mong may mắn.",
+        "lesson": "Truyện giải thích phong tục trồng cây nêu trong dịp Tết và khuyên nhủ về lòng biết ơn."
+    },
+    {
+        "identify_key": "su_tich_con_muoi",
+        "name": "Sự tích con muỗi",
+        "detail": "Ngày xưa, có một đôi vợ chồng yêu thương nhau. Người vợ không may qua đời, người chồng khóc thương. Một vị thần giúp người vợ sống lại nhưng cảnh báo rằng nàng sẽ chết nếu chồng nàng làm đau nàng lần nữa. Một ngày nọ, người chồng lỡ làm đau vợ, và nàng biến thành con muỗi, bay đi hút máu.",
+        "lesson": "Truyện giải thích về nguồn gốc của loài muỗi và nhắc nhở về sự trân trọng người thân."
+    },
+    {
+        "identify_key": "su_tich_ho_ba_be",
+        "name": "Sự tích hồ Ba Bể",
+        "detail": "Ngày xưa, ở vùng núi có một bà cụ nghèo giúp đỡ một con rắn hóa thân thành thiếu niên. Để đền ơn, thiếu niên đã cứu dân làng khỏi một trận lũ lụt lớn. Sau trận lụt, nơi đó trở thành hồ Ba Bể, một trong những hồ nước tự nhiên lớn nhất Việt Nam.",
+        "lesson": "Truyện đề cao lòng tốt, sự nhân hậu và tình người, đồng thời giải thích nguồn gốc của hồ Ba Bể."
+    },
+    {
+        "identify_key": "su_tich_con_rong_chau_tien",
+        "name": "Sự tích Con Rồng Cháu Tiên",
+        "detail": "Truyện kể về nguồn gốc của dân tộc Việt Nam, khi Lạc Long Quân, một vị thần rồng, kết duyên cùng Âu Cơ, một nàng tiên. Hai người sinh ra 100 trứng, nở thành 100 người con. Sau đó, Lạc Long Quân và Âu Cơ chia nhau 50 con lên núi, 50 con xuống biển, từ đó hình thành nên dân tộc Việt Nam ngày nay.",
+        "lesson": "Truyện ca ngợi sự đoàn kết, nguồn gốc thiêng liêng và lòng tự hào về dân tộc Việt."
+    },
+    {
+        "identify_key": "su_tich_cay_khe",
+        "name": "Sự tích cây khế",
+        "detail": "Có hai anh em, sau khi cha mẹ mất, người anh tham lam chiếm hết tài sản, chỉ để lại cho người em một cây khế. Người em chăm sóc cây khế và một ngày, một con chim thần đến ăn khế, hứa sẽ trả vàng. Người em được chim đưa đến một hòn đảo đầy vàng bạc. Người anh tham lam cũng muốn như vậy nhưng vì lòng tham quá mức, đã chết khi trở về.",
+        "lesson": "Truyện phê phán lòng tham và ca ngợi sự chăm chỉ, lòng nhân hậu."
+    },
+    {
+        "identify_key": "son_tinh_thuy_tinh",
+        "name": "Sơn Tinh Thủy Tinh",
+        "detail": "Vua Hùng kén rể cho con gái là Mỵ Nương. Có hai người đến xin cưới là Sơn Tinh, vị thần núi, và Thủy Tinh, vị thần nước. Vua ra lệnh ai mang sính lễ đến trước sẽ cưới được Mỵ Nương. Sơn Tinh đến trước và cưới Mỵ Nương. Thủy Tinh giận dữ, dâng nước lên đánh Sơn Tinh, nhưng năm nào cũng thua.",
+        "lesson": "Câu chuyện giải thích hiện tượng lũ lụt và ca ngợi sự kiên cường của con người trước thiên nhiên."
+    },
+    {
+        "identify_key": "su_tich_thach_sung",
+        "name": "Sự tích Thạch Sùng",
+        "detail": "Thạch Sùng là một kẻ giàu có nhưng kiêu ngạo và keo kiệt. Một ngày, Thạch Sùng thách đấu tài sản với một người giàu khác. Trong cuộc thách đấu, Thạch Sùng thua và mất hết tài sản, cuối cùng chết hóa thành loài thằn lằn, suốt đời kêu 'thạch sùng' vì tiếc của.",
+        "lesson": "Truyện khuyên nhủ con người về hậu quả của lòng tham và sự kiêu ngạo."
+    },
+    {
+        "identify_key": "su_tich_banh_chung_banh_day",
+        "name": "Sự tích bánh chưng, bánh dày",
+        "detail": "Vua Hùng muốn truyền ngôi, ông ra lệnh các con dâng lễ vật, ai có lễ vật quý nhất sẽ được truyền ngôi. Lang Liêu, con thứ, dâng bánh chưng và bánh dày, tượng trưng cho đất và trời. Vua Hùng hài lòng và truyền ngôi cho Lang Liêu, từ đó bánh chưng, bánh dày trở thành món ăn truyền thống trong ngày Tết.",
+        "lesson": "Truyện ca ngợi sự sáng tạo và lòng hiếu thảo, đồng thời giải thích nguồn gốc của bánh chưng, bánh dày."
+    },
+    {
+        "identify_key": "su_tich_dua_hau",
+        "name": "Sự tích dưa hấu",
+        "detail": "Mai An Tiêm bị vua đày ra đảo vì bị cho là kiêu ngạo. Trên đảo, An Tiêm trồng được một loại quả lạ và khắc tên mình lên vỏ quả để gửi ra ngoài. Loại quả này được mọi người yêu thích và đặt tên là dưa hấu. Sau này, An Tiêm được vua tha tội và gọi trở về.",
+        "lesson": "Truyện đề cao tinh thần tự lực, ý chí kiên cường và niềm tin vào khả năng của bản thân."
+    },
+    {
+        "identify_key": "su_tich_cay_neu",
+        "name": "Sự tích cây nêu",
+        "detail": "Ngày xưa, quỷ chiếm đất của người, bắt người phải trả tiền để canh tác. Bụt giúp người dân trồng cây nêu để đánh đuổi quỷ. Cây nêu cao đến mức quỷ không thể quay lại. Từ đó, mỗi dịp Tết, người dân trồng cây nêu để xua đuổi ma quỷ và cầu mong may mắn.",
+        "lesson": "Truyện giải thích phong tục trồng cây nêu trong dịp Tết và khuyên nhủ về lòng biết ơn."
+    },
+    {
+        "identify_key": "su_tich_con_muoi",
+        "name": "Sự tích con muỗi",
+        "detail": "Ngày xưa, có một đôi vợ chồng yêu thương nhau. Người vợ không may qua đời, người chồng khóc thương. Một vị thần giúp người vợ sống lại nhưng cảnh báo rằng nàng sẽ chết nếu chồng nàng làm đau nàng lần nữa. Một ngày nọ, người chồng lỡ làm đau vợ, và nàng biến thành con muỗi, bay đi hút máu.",
+        "lesson": "Truyện giải thích về nguồn gốc của loài muỗi và nhắc nhở về sự trân trọng người thân."
+    },
+    {
+        "identify_key": "su_tich_ho_ba_be",
+        "name": "Sự tích hồ Ba Bể",
+        "detail": "Ngày xưa, ở vùng núi có một bà cụ nghèo giúp đỡ một con rắn hóa thân thành thiếu niên. Để đền ơn, thiếu niên đã cứu dân làng khỏi một trận lũ lụt lớn. Sau trận lụt, nơi đó trở thành hồ Ba Bể, một trong những hồ nước tự nhiên lớn nhất Việt Nam.",
+        "lesson": "Truyện đề cao lòng tốt, sự nhân hậu và tình người, đồng thời giải thích nguồn gốc của hồ Ba Bể."
+    },
+    {
+        "identify_key": "su_tich_cay_bang_lang",
+        "name": "Sự tích cây bằng lăng",
+        "detail": "Ngày xưa, có một đôi bạn thân là Lan và Bằng. Hai người lớn lên bên nhau và hứa hẹn sẽ mãi mãi không rời xa nhau. Nhưng một ngày, Bằng bị bệnh nặng và qua đời. Lan đau buồn khóc bên mộ của Bằng và sau đó cũng hóa thành một loài hoa tím mang tên Bằng Lăng. Loài hoa ấy nở mỗi mùa hè, tượng trưng cho tình bạn vĩnh cửu.",
+        "lesson": "Truyện ca ngợi tình bạn chân thành, sự thủy chung và lòng nhớ thương đối với những người đã khuất."
+    },
+    {
+        "identify_key": "su_tich_hoa_sen",
+        "name": "Sự tích hoa sen",
+        "detail": "Ngày xưa, trong một ngôi làng nghèo có một cô gái tên Sen rất chăm chỉ và hiền lành. Một ngày, cô gặp phải những điều không may và chết trẻ. Sau khi cô qua đời, một loài hoa mọc lên từ nơi cô nằm xuống, vươn lên từ bùn lầy nhưng vẫn tinh khiết và đẹp đẽ. Người ta gọi đó là hoa sen, biểu tượng cho sự trong sáng và thanh cao.",
+        "lesson": "Truyện dạy về đức tính kiên trì, vượt qua nghịch cảnh và giữ gìn sự thanh cao trong mọi hoàn cảnh."
+    },
+    {
+        "identify_key": "su_tich_hoa_mai",
+        "name": "Sự tích hoa mai",
+        "detail": "Ngày xưa, có một cô gái tên Mai rất giỏi võ nghệ, luôn giúp đỡ dân làng đánh đuổi yêu quái. Một ngày, cô hy sinh trong trận chiến với yêu quái để bảo vệ dân làng. Sau khi chết, cô hóa thành một cây mai, nở hoa vào mỗi dịp Tết. Người dân tin rằng hoa mai mang lại may mắn và bình an cho họ.",
+        "lesson": "Câu chuyện ca ngợi lòng dũng cảm, sự hy sinh vì cộng đồng và biểu tượng của may mắn trong dịp năm mới."
+    },
+    {
+        "identify_key": "su_tich_da_trang",
+        "name": "Sự tích Dã Tràng",
+        "detail": "Dã Tràng là một người nông dân lương thiện, sau khi bị oan ức và mất tất cả, anh cầu xin trời đất cho anh được hóa thành một con vật để có thể giúp đời. Sau khi chết, anh hóa thành con Dã Tràng, ngày ngày xe cát ở bờ biển. Dù biết công việc của mình vô ích, nhưng Dã Tràng vẫn kiên trì, không bao giờ bỏ cuộc.",
+        "lesson": "Truyện dạy về đức tính kiên trì, lòng trung thành và sự quyết tâm dù biết rằng công việc có thể vô ích."
+    },
+    {
+        "identify_key": "su_tich_thach_bich",
+        "name": "Sự tích Thạch Bích",
+        "detail": "Ngày xưa, có một nàng tiên xinh đẹp tên Thạch Bích sống trên núi. Một ngày, nàng bị một con quỷ gian ác đuổi khỏi nhà. Thạch Bích lang thang xuống trần gian và giúp đỡ nhiều người dân. Sau khi chết, nàng hóa thành vách đá cao sừng sững, bảo vệ dân làng khỏi những cơn lũ dữ và hiểm họa từ thiên nhiên.",
+        "lesson": "Câu chuyện đề cao lòng nhân hậu, sự bảo vệ cộng đồng và hình ảnh của người hùng không màng danh lợi."
+    },
+    {
+        "identify_key": "su_tich_con_kien",
+        "name": "Sự tích con kiến",
+        "detail": "Ngày xưa, có một người nông dân nghèo tên Kiên rất chăm chỉ và tốt bụng. Một ngày, Kiên bị một vị quan tham lam hãm hại và bị biến thành con kiến. Dù phải sống cuộc sống nhỏ bé, Kiên vẫn không ngừng làm việc chăm chỉ, tìm kiếm thức ăn để nuôi gia đình kiến của mình.",
+        "lesson": "Truyện dạy về sự chăm chỉ, kiên nhẫn và việc sống có trách nhiệm dù ở bất kỳ hoàn cảnh nào."
+    },
+    {
+        "identify_key": "su_tich_chim_quoc",
+        "name": "Sự tích chim quốc",
+        "detail": "Ngày xưa, có một chàng trai tên Quốc rất hiếu thảo với cha mẹ. Một ngày, Quốc ra ngoài làm ăn xa và hứa sẽ quay lại thăm cha mẹ. Tuy nhiên, Quốc bị lạc đường và không thể trở về. Khi chết, anh hóa thành loài chim Quốc, mỗi đêm kêu gọi cha mẹ trong nỗi nhớ thương da diết.",
+        "lesson": "Truyện ca ngợi lòng hiếu thảo và tình cảm gia đình, đồng thời giải thích về tiếng kêu của loài chim Quốc."
+    },
+    {
+        "identify_key": "su_tich_cau_vong",
+        "name": "Sự tích cầu vồng",
+        "detail": "Ngày xưa, có hai chị em mồ côi sống cùng nhau rất yêu thương nhau. Một ngày, hai chị em bị lạc trong rừng và không tìm được đường về. Thương cảm cho tình cảm của hai chị em, ông trời đã tạo ra cầu vồng để chỉ đường cho họ về nhà. Từ đó, cầu vồng trở thành biểu tượng cho hy vọng và sự đoàn kết.",
+        "lesson": "Truyện đề cao tình thân, lòng yêu thương và hy vọng, đồng thời giải thích về hiện tượng cầu vồng sau mưa."
+    },
+    {
+        "identify_key": "su_tich_ong_ba_khuyen",
+        "name": "Sự tích Ông Bà Khuyên",
+        "detail": "Ngày xưa, có một cặp vợ chồng già tên Khuyên sống rất hiền lành và được dân làng yêu mến. Họ không có con cái và sau khi qua đời, dân làng đã lập miếu thờ. Mỗi khi ai đó gặp khó khăn, họ đến miếu thờ ông bà Khuyên để cầu nguyện và thường được giúp đỡ, dẫn đường.",
+        "lesson": "Câu chuyện ca ngợi lòng nhân hậu và tình người, khuyên nhủ về sự kính trọng đối với những người đã khuất."
+    },
+    {
+        "identify_key": "su_tich_hoa_phuong",
+        "name": "Sự tích hoa phượng",
+        "detail": "Ngày xưa, có một chàng trai và một cô gái yêu nhau say đắm, nhưng vì gia đình cấm cản, họ không thể đến với nhau. Chàng trai buồn bã ra đi và chết. Nơi chàng trai nằm xuống mọc lên một loài hoa đỏ rực, tượng trưng cho tình yêu nồng cháy. Loài hoa ấy được gọi là hoa phượng, thường nở vào mùa hè, khi lòng người ngập tràn cảm xúc.",
+        "lesson": "Truyện ca ngợi tình yêu chân thành, mãnh liệt và giải thích về loài hoa phượng, biểu tượng của tình yêu và tuổi trẻ."
+    },
+      {
+    "identify_key": "su_tich_con_meo_va_qua_dao",
+    "name": "Sự tích con mèo và quả đào",
+    "detail": "Ngày xưa, mèo và chuột là bạn thân thiết. Nhưng một ngày, mèo bị chuột lừa và bị mất quả đào mà mình trồng. Từ đó, mèo quyết tâm không còn chơi với chuột nữa và bắt đầu săn bắt chuột để trả thù. Đó là lý do tại sao mèo và chuột luôn thù địch nhau.",
+    "lesson": "Truyện dạy về sự trung thực và cảnh giác trước sự lừa dối trong tình bạn."
+  },
+  {
+    "identify_key": "su_tich_con_khoc",
+    "name": "Sự tích con khóc",
+    "detail": "Có một cặp vợ chồng già rất yêu thương nhau nhưng không có con. Một ngày, họ nhặt được một em bé từ rừng sâu và nuôi nấng như con. Tuy nhiên, đứa trẻ luôn khóc không ngừng. Sau này, khi em bé trở lại làng, người ta mới biết rằng đó là linh hồn của đứa trẻ đã mất.",
+    "lesson": "Truyện nói về lòng yêu thương và sự kỳ vọng vào con cái, cùng với sự chấp nhận của những mất mát."
+  },
+  {
+    "identify_key": "su_tich_hoa_giay",
+    "name": "Sự tích hoa giấy",
+    "detail": "Ngày xưa, có một người đàn bà nghèo nhưng khéo tay, cô thường làm hoa giấy để kiếm sống. Một ngày, khi làm hoa dâng cho một vị thần, vị thần đã biến những bông hoa giấy của cô thành hoa thật như một phần thưởng cho lòng kiên trì và sự tài hoa.",
+    "lesson": "Truyện dạy về sự kiên nhẫn và tài năng, cũng như lòng biết ơn đối với những điều nhỏ bé trong cuộc sống."
+  },
+  {
+    "identify_key": "su_tich_hoa_mua",
+    "name": "Sự tích hoa mùa",
+    "detail": "Ngày xưa, mỗi mùa trong năm đều có một loài hoa đặc trưng. Các vị thần cai quản mỗi mùa đều tạo ra loài hoa để tượng trưng cho vẻ đẹp và đặc điểm của mùa đó. Đó là lý do tại sao mỗi mùa lại có một loại hoa nở, như hoa mai vào mùa xuân, hoa phượng vào mùa hè.",
+    "lesson": "Truyện giải thích sự đa dạng của thiên nhiên và giá trị của từng mùa trong năm."
+  },
+  {
+    "identify_key": "su_tich_hoang_hon",
+    "name": "Sự tích hoàng hôn",
+    "detail": "Ngày xưa, mặt trời và mặt trăng yêu nhau nhưng không thể gặp mặt vì phải chiếu sáng ở hai thế giới khác nhau. Một ngày, họ quyết định gặp nhau vào lúc giao thoa giữa ngày và đêm, tạo ra cảnh hoàng hôn. Từ đó, hoàng hôn trở thành thời khắc đẹp nhất của ngày.",
+    "lesson": "Truyện ca ngợi tình yêu và sự gặp gỡ định mệnh, đồng thời giải thích về hiện tượng hoàng hôn."
+  },
+  {
+    "identify_key": "su_tich_lo_ren",
+    "name": "Sự tích lò rèn",
+    "detail": "Có một người thợ rèn rất giỏi, nhưng ông chỉ dùng tài năng của mình để giúp người dân nghèo sửa chữa nông cụ mà không lấy tiền. Một ngày, ông được vua ban thưởng và mở một lò rèn lớn để phục vụ mọi người. Lò rèn của ông đã trở thành biểu tượng của sự cần cù và tài năng.",
+    "lesson": "Truyện ca ngợi sự cần cù và tài năng, cũng như lòng tốt giúp đỡ người khác."
+  },
+  {
+    "identify_key": "su_tich_con_tom",
+    "name": "Sự tích con tôm",
+    "detail": "Ngày xưa, tôm là loài sinh vật nhỏ bé nhưng rất chăm chỉ. Một ngày, tôm bị các loài khác chê bai vì ngoại hình xấu xí. Để chứng minh khả năng của mình, tôm đã vượt qua mọi thử thách và cuối cùng trở thành một loài vật quan trọng trong đời sống của con người.",
+    "lesson": "Truyện dạy về sự kiên nhẫn, nỗ lực vượt qua khó khăn và tầm quan trọng của mỗi loài trong hệ sinh thái."
+  },
+  {
+    "identify_key": "su_tich_chim_khuyen",
+    "name": "Sự tích chim khuyên",
+    "detail": "Ngày xưa, có một cô gái nghèo rất yêu thương cha mẹ. Một ngày, cô biến thành chim khuyên để có thể chăm sóc cha mẹ từ xa. Từ đó, chim khuyên luôn bay quanh ngôi nhà của những người nghèo, biểu tượng cho lòng hiếu thảo và sự chăm sóc.",
+    "lesson": "Truyện ca ngợi lòng hiếu thảo và sự hy sinh, đồng thời giải thích về loài chim khuyên."
+  },
+  {
+    "identify_key": "su_tich_con_hac",
+    "name": "Sự tích con hạc",
+    "detail": "Ngày xưa, hạc là loài chim được các vị tiên yêu thích vì sự thanh cao và kiên nhẫn. Một ngày, hạc giúp các vị tiên vận chuyển thuốc trường sinh cho con người. Từ đó, hạc trở thành biểu tượng của sự trường thọ và thanh khiết.",
+    "lesson": "Truyện dạy về lòng tốt và sự kiên nhẫn, đồng thời giải thích về biểu tượng của con hạc trong văn hóa."
+  },
+  {
+    "identify_key": "su_tich_mui_ten",
+    "name": "Sự tích mũi tên",
+    "detail": "Ngày xưa, có một chàng trai giỏi bắn cung. Một ngày, anh chế tạo ra một mũi tên phép có thể bắn trúng bất kỳ mục tiêu nào. Nhưng anh chỉ sử dụng nó để bảo vệ làng xóm và không bao giờ lạm dụng. Mũi tên ấy trở thành biểu tượng cho lòng dũng cảm và sự chính trực.",
+    "lesson": "Truyện ca ngợi lòng dũng cảm, sự chính trực và sự sử dụng sức mạnh đúng cách."
+  },
+  {
+    "identify_key": "su_tich_cau_noi",
+    "name": "Sự tích cầu nối",
+    "detail": "Có một dòng sông ngăn cách hai ngôi làng, và dân làng không thể qua lại. Một ngày, một người đàn ông đã xây dựng một chiếc cầu để nối hai bên sông, giúp dân làng dễ dàng qua lại. Từ đó, cầu nối trở thành biểu tượng của sự đoàn kết và lòng yêu thương.",
+    "lesson": "Truyện ca ngợi lòng đoàn kết và tinh thần xây dựng, tạo mối quan hệ tốt đẹp giữa con người."
+  },
+  {
+    "identify_key": "su_tich_hoa_dong_tien",
+    "name": "Sự tích hoa đồng tiền",
+    "detail": "Có một cô gái nghèo nhưng luôn giúp đỡ người khác mà không đòi hỏi gì. Một ngày, cô được một vị thần ban cho một loài hoa đặc biệt, tượng trưng cho sự giàu có và may mắn. Loài hoa ấy được gọi là hoa đồng tiền, mang lại sự thịnh vượng cho người trồng.",
+    "lesson": "Truyện dạy về lòng nhân hậu và sự sẻ chia, cùng với niềm tin rằng lòng tốt sẽ được đền đáp."
+  },
+  {
+    "identify_key": "su_tich_con_de",
+    "name": "Sự tích con dê",
+    "detail": "Ngày xưa, dê là một loài vật yếu đuối và hay bị các loài khác bắt nạt. Một ngày, dê quyết định rèn luyện để trở nên mạnh mẽ hơn và cuối cùng trở thành loài vật kiên cường. Từ đó, dê trở thành biểu tượng của sức mạnh và lòng quyết tâm.",
+    "lesson": "Truyện dạy về sự kiên trì và nỗ lực để vượt qua khó khăn, và ý chí rèn luyện bản thân."
+  },
+  {
+    "identify_key": "su_tich_hoa_quynh",
+    "name": "Sự tích hoa quỳnh",
+    "detail": "Ngày xưa, có một nàng tiên tên Quỳnh rất xinh đẹp nhưng lại chọn sống ẩn dật, chỉ nở hoa vào ban đêm. Hoa quỳnh nở vào lúc yên bình nhất của đêm, tượng trưng cho sự tinh khiết và bí ẩn. Người ta tin rằng hoa quỳnh mang lại may mắn cho những ai được chiêm ngưỡng.",
+    "lesson": "Truyện ca ngợi sự tinh khiết và bí ẩn, đồng thời khuyến khích con người tôn trọng vẻ đẹp của sự tĩnh lặng."
+  },
+    {
+    "identify_key": "su_tich_bau_trang",
+    "name": "Sự tích bầu trắng",
+    "detail": "Ngày xưa, có một chàng trai hiền lành sống trong một ngôi làng nhỏ. Một ngày, chàng phát hiện ra một cây bầu trắng kỳ diệu, có khả năng chữa lành mọi bệnh tật. Chàng chia sẻ quả bầu với mọi người trong làng, giúp họ khỏi bệnh. Từ đó, bầu trắng trở thành biểu tượng của sự chữa lành và tình thương.",
+    "lesson": "Truyện ca ngợi lòng nhân ái và tấm lòng chia sẻ, đồng thời giải thích về biểu tượng của cây bầu trắng."
+  },
+  {
+    "identify_key": "su_tich_con_rong",
+    "name": "Sự tích con rồng",
+    "detail": "Có một vị vua đã biến thành rồng để bảo vệ đất nước khỏi kẻ thù. Rồng đã sử dụng sức mạnh của mình để giữ cho vương quốc yên bình và thịnh vượng. Khi vua qua đời, nhân dân đã lập đền thờ rồng và tưởng nhớ đến sự hy sinh của ông. Con rồng trở thành biểu tượng của sức mạnh và sự bảo vệ.",
+    "lesson": "Truyện dạy về lòng yêu nước và sự hy sinh vì lợi ích của cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_cau_may",
+    "name": "Sự tích cầu mây",
+    "detail": "Ngày xưa, có một cặp đôi yêu nhau nhưng bị chia cắt bởi một con sông lớn. Để có thể gặp nhau, họ đã xây dựng một chiếc cầu mây để nối liền hai bờ. Cầu mây trở thành biểu tượng của tình yêu vĩnh cửu và sự kết nối không thể tách rời.",
+    "lesson": "Truyện ca ngợi tình yêu mạnh mẽ và sự nỗ lực để vượt qua mọi thử thách để ở bên nhau."
+  },
+  {
+    "identify_key": "su_tich_ba_muoi",
+    "name": "Sự tích bà mười",
+    "detail": "Có một bà lão tên Mười rất nhân hậu và chăm sóc những đứa trẻ mồ côi trong làng. Khi bà qua đời, dân làng đã lập miếu thờ bà để nhớ về công lao và lòng tốt của bà. Bà Mười trở thành biểu tượng của lòng nhân ái và sự chăm sóc trẻ em.",
+    "lesson": "Truyện dạy về lòng nhân ái, sự chăm sóc và tình yêu thương đối với trẻ em và cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_hoa_ha",
+    "name": "Sự tích hoa hạ",
+    "detail": "Ngày xưa, có một cô gái tên Hạ rất xinh đẹp và hiền lành. Cô yêu một chàng trai nhưng bị chia ly vì những rủi ro trong cuộc sống. Sau khi qua đời, cô hóa thành một loài hoa màu đỏ tươi, nở vào mùa hè. Hoa hạ trở thành biểu tượng của tình yêu và sự quyến rũ.",
+    "lesson": "Truyện ca ngợi tình yêu và vẻ đẹp, đồng thời giải thích về sự hiện diện của hoa hạ trong mùa hè."
+  },
+  {
+    "identify_key": "su_tich_cau_trang",
+    "name": "Sự tích cầu trắng",
+    "detail": "Ngày xưa, có một ngôi làng bị chia cắt bởi một dòng sông. Một ngày, một người lạ đến và xây dựng một chiếc cầu trắng bắc qua sông, giúp dân làng dễ dàng giao thương. Cầu trắng trở thành biểu tượng của sự kết nối và hòa bình giữa các cộng đồng.",
+    "lesson": "Truyện dạy về sự kết nối, hòa bình và tầm quan trọng của cơ sở hạ tầng trong đời sống cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_con_ngoc",
+    "name": "Sự tích con ngọc",
+    "detail": "Có một viên ngọc quý giá được bảo vệ bởi một con rồng. Rồng giao cho một chàng trai tốt bụng nhiệm vụ giữ viên ngọc này để nó không rơi vào tay kẻ xấu. Chàng trai đã hoàn thành nhiệm vụ của mình và viên ngọc trở thành biểu tượng của sự bảo vệ và tinh khiết.",
+    "lesson": "Truyện ca ngợi sự trung thực và trách nhiệm, cũng như tầm quan trọng của việc bảo vệ những giá trị quý báu."
+  },
+  {
+    "identify_key": "su_tich_con_con",
+    "name": "Sự tích con cò",
+    "detail": "Ngày xưa, có một con cò trắng rất thông minh và hiền lành. Một ngày, con cò cứu một đứa trẻ khỏi nguy hiểm và được cảm ơn bằng cách trở thành loài chim biểu tượng của sự may mắn và hòa bình. Từ đó, con cò trở thành biểu tượng của sự tốt bụng và sự cứu giúp.",
+    "lesson": "Truyện dạy về lòng tốt, sự cứu giúp và việc trở thành biểu tượng của những phẩm chất cao quý."
+  },
+  {
+    "identify_key": "su_tich_hoa_trang",
+    "name": "Sự tích hoa trăng",
+    "detail": "Có một nàng tiên sống trên mặt trăng, mỗi đêm nàng gieo ánh sáng từ trăng xuống trần gian. Một ngày, nàng đã phải hy sinh ánh sáng của mình để cứu một ngôi làng khỏi bóng tối. Hoa trăng, một loại hoa trắng sáng, mọc lên để nhớ về sự hy sinh của nàng.",
+    "lesson": "Truyện ca ngợi lòng hy sinh và sự chăm sóc, cũng như biểu tượng của sự thuần khiết và ánh sáng."
+  },
+  {
+    "identify_key": "su_tich_cay_xoan",
+    "name": "Sự tích cây xoan",
+    "detail": "Ngày xưa, có một người đàn bà sống với con gái trong một ngôi làng nhỏ. Khi người mẹ qua đời, cây xoan mọc lên từ nơi bà được chôn cất. Cây xoan có thể chữa bệnh và giúp đỡ người dân trong làng. Nó trở thành biểu tượng của sự bảo vệ và lòng từ bi.",
+    "lesson": "Truyện dạy về sự từ bi, lòng nhân ái và tầm quan trọng của việc giúp đỡ người khác trong cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_con_ca",
+    "name": "Sự tích con cá",
+    "detail": "Ngày xưa, có một con cá nhỏ nhưng dũng cảm, luôn giúp đỡ các loài sinh vật khác trong nước. Một ngày, cá giúp cứu một hoàng tử và được thưởng một chiếc vảy vàng, trở thành biểu tượng của sự dũng cảm và lòng nhân ái.",
+    "lesson": "Truyện dạy về sự dũng cảm và lòng nhân ái, cũng như giá trị của việc giúp đỡ người khác trong cuộc sống."
+  },
+     {
+    "identify_key": "su_tich_hoa_vang",
+    "name": "Sự tích hoa vàng",
+    "detail": "Ngày xưa, có một nàng tiên sống trong rừng sâu, mỗi ngày nàng chăm sóc một vườn hoa đặc biệt. Những bông hoa này có khả năng chữa bệnh và mang lại hạnh phúc. Một ngày, một cô gái nghèo được nàng tiên giúp đỡ bằng hoa vàng, và từ đó hoa vàng trở thành biểu tượng của hạnh phúc và sức khỏe.",
+    "lesson": "Truyện dạy về sự tốt bụng và lòng nhân ái, cũng như giá trị của những điều nhỏ bé mang lại hạnh phúc."
+  },
+  {
+    "identify_key": "su_tich_chim_lan",
+    "name": "Sự tích chim lân",
+    "detail": "Ngày xưa, có một loài chim kỳ diệu có khả năng bảo vệ và mang lại sự thịnh vượng. Chim lân sống trong rừng sâu và chỉ xuất hiện khi có những người xứng đáng. Những ai nhìn thấy chim lân sẽ gặp may mắn và thành công trong cuộc sống.",
+    "lesson": "Truyện ca ngợi sự may mắn và sự bảo vệ, đồng thời giải thích về biểu tượng của chim lân trong văn hóa."
+  },
+  {
+    "identify_key": "su_tich_hoa_da",
+    "name": "Sự tích hoa dạ",
+    "detail": "Ngày xưa, có một cô gái rất xinh đẹp và hiền lành. Cô thường ra vườn vào ban đêm để ngắm sao và chăm sóc cho một loài hoa đặc biệt nở vào ban đêm. Hoa dạ trở thành biểu tượng của sự quyến rũ và vẻ đẹp thanh thoát, nở vào lúc tối tăm nhất của đêm.",
+    "lesson": "Truyện dạy về sự thanh thoát và vẻ đẹp của sự quyến rũ, cùng với sự tôn trọng vẻ đẹp của bóng tối."
+  },
+  {
+    "identify_key": "su_tich_con_ron",
+    "name": "Sự tích con rùa",
+    "detail": "Ngày xưa, có một con rùa già thông minh và hiền lành. Rùa giúp đỡ nhiều loài động vật khác và trở thành một nhân vật quan trọng trong nhiều câu chuyện. Con rùa là biểu tượng của trí tuệ, sự kiên nhẫn và tuổi thọ dài.",
+    "lesson": "Truyện ca ngợi trí tuệ và sự kiên nhẫn, đồng thời giải thích về biểu tượng của con rùa trong văn hóa."
+  },
+  {
+    "identify_key": "su_tich_cau_cam",
+    "name": "Sự tích cầu cấm",
+    "detail": "Ngày xưa, có một cây cầu được xây dựng qua một con sông. Tuy nhiên, cầu cấm không cho phép bất kỳ ai qua lại mà không được phép. Một ngày, một chàng trai và một cô gái yêu nhau nhưng không thể gặp nhau vì cầu cấm. Câu chuyện về họ trở thành một bài học về tình yêu và sự kiên trì.",
+    "lesson": "Truyện dạy về tình yêu kiên trì và sự cố gắng vượt qua mọi trở ngại để duy trì mối quan hệ."
+  },
+  {
+    "identify_key": "su_tich_hoa_hoa",
+    "name": "Sự tích hoa hoa",
+    "detail": "Ngày xưa, có một loài hoa đặc biệt mọc trong khu vườn của một vị thần. Hoa hoa chỉ nở vào ban đêm và tỏa sáng như những ngôi sao. Loài hoa này được xem là biểu tượng của sự sáng suốt và may mắn, và nó chỉ dành cho những người có tâm hồn trong sáng.",
+    "lesson": "Truyện ca ngợi sự sáng suốt và tầm quan trọng của việc duy trì tâm hồn trong sáng."
+  },
+  {
+    "identify_key": "su_tich_con_nai",
+    "name": "Sự tích con nai",
+    "detail": "Ngày xưa, có một con nai rất hiền lành và có khả năng chữa bệnh bằng tiếng hót của mình. Con nai thường giúp đỡ những người bệnh và bị thương trong rừng. Sau khi qua đời, con nai trở thành biểu tượng của sự chữa lành và lòng từ bi.",
+    "lesson": "Truyện dạy về lòng từ bi và sự chăm sóc, cùng với giá trị của việc giúp đỡ người khác."
+  },
+  {
+    "identify_key": "su_tich_cay_ban",
+    "name": "Sự tích cây bần",
+    "detail": "Ngày xưa, có một cây bần mọc ở ven sông, có khả năng chống lại mọi thảm họa thiên nhiên. Cây bần giúp bảo vệ ngôi làng khỏi lũ lụt và bão tố. Cây bần trở thành biểu tượng của sự kiên cường và sức mạnh, đồng thời giúp bảo vệ cộng đồng.",
+    "lesson": "Truyện ca ngợi sức mạnh và sự kiên cường, cùng với tầm quan trọng của việc bảo vệ cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_hoa_nho",
+    "name": "Sự tích hoa nhó",
+    "detail": "Ngày xưa, có một loài hoa nhỏ bé mọc trên đỉnh núi cao. Hoa nhó chỉ nở vào ban đêm và có hương thơm nhẹ nhàng, mang lại sự bình yên cho những người mệt mỏi. Hoa nhó trở thành biểu tượng của sự yên bình và sự thư thái.",
+    "lesson": "Truyện dạy về sự bình yên và giá trị của những điều nhỏ bé trong cuộc sống."
+  },
+  {
+    "identify_key": "su_tich_cau_hoang",
+    "name": "Sự tích cầu hoàng",
+    "detail": "Ngày xưa, có một chiếc cầu đặc biệt được làm từ vàng, giúp người dân dễ dàng qua lại giữa các làng. Cầu hoàng chỉ xuất hiện vào những thời điểm quan trọng và giúp kết nối cộng đồng. Cầu hoàng trở thành biểu tượng của sự kết nối và sự thịnh vượng.",
+    "lesson": "Truyện ca ngợi sự kết nối và tầm quan trọng của việc duy trì mối quan hệ giữa các cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_hoa_bang",
+    "name": "Sự tích hoa bàng",
+    "detail": "Ngày xưa, có một loài hoa bàng mọc trên các cánh đồng rộng lớn. Hoa bàng có màu vàng tươi và nở vào mùa thu, mang lại sự may mắn và thịnh vượng cho người nông dân. Loài hoa này trở thành biểu tượng của mùa thu và sự bội thu.",
+    "lesson": "Truyện dạy về sự bội thu và tầm quan trọng của mùa thu trong nền nông nghiệp."
+  },
+    {
+    "identify_key": "su_tich_con_huou",
+    "name": "Sự tích con hươu",
+    "detail": "Ngày xưa, có một con hươu lớn, rất thông minh và hiền lành, sống trong khu rừng. Con hươu thường giúp đỡ các loài động vật khác khi gặp khó khăn. Khi con hươu qua đời, các loài động vật trong rừng đã lập đền thờ để tưởng nhớ và cảm ơn con hươu. Con hươu trở thành biểu tượng của trí tuệ và lòng tốt.",
+    "lesson": "Truyện dạy về trí tuệ, lòng tốt và tầm quan trọng của việc giúp đỡ người khác."
+  },
+  {
+    "identify_key": "su_tich_cay_nho",
+    "name": "Sự tích cây nhót",
+    "detail": "Ngày xưa, có một cây nhót cổ thụ mọc trong khu rừng, có khả năng mang lại sự thịnh vượng và may mắn. Mỗi khi cây ra quả, người dân trong làng đều gặp may mắn và thành công. Cây nhót trở thành biểu tượng của sự thịnh vượng và sự may mắn.",
+    "lesson": "Truyện ca ngợi sự thịnh vượng và may mắn, cùng với giá trị của những điều tốt đẹp trong cuộc sống."
+  },
+  {
+    "identify_key": "su_tich_hoa_thao",
+    "name": "Sự tích hoa thảo",
+    "detail": "Ngày xưa, có một loài hoa nhỏ bé nhưng có hương thơm ngọt ngào mọc ở các cánh đồng. Hoa thảo được xem là biểu tượng của tình yêu và sự lãng mạn. Những đôi tình nhân thường tặng nhau hoa thảo để thể hiện tình cảm của mình.",
+    "lesson": "Truyện dạy về tình yêu, sự lãng mạn và tầm quan trọng của việc thể hiện tình cảm với người mình yêu."
+  },
+  {
+    "identify_key": "su_tich_con_cu",
+    "name": "Sự tích con cú",
+    "detail": "Ngày xưa, có một con cú rất thông minh, sống trên đỉnh núi cao. Con cú giúp đỡ các loài động vật trong việc tìm kiếm thức ăn và bảo vệ khỏi kẻ thù. Khi con cú qua đời, nó trở thành biểu tượng của trí tuệ và sự cảnh giác.",
+    "lesson": "Truyện ca ngợi trí tuệ và sự cảnh giác, cùng với giá trị của việc giúp đỡ cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_cay_me",
+    "name": "Sự tích cây me",
+    "detail": "Ngày xưa, có một cây me lớn, có khả năng giải quyết mọi mâu thuẫn trong làng. Dân làng thường đến cây me để cầu nguyện và nhờ cây giúp giải quyết những vấn đề khó khăn. Cây me trở thành biểu tượng của sự hòa giải và sự bình an.",
+    "lesson": "Truyện dạy về sự hòa giải và tầm quan trọng của việc duy trì hòa bình trong cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_hoa_mau",
+    "name": "Sự tích hoa mâu",
+    "detail": "Ngày xưa, có một loài hoa mọc trên các cánh đồng vào mùa thu, có màu đỏ tươi và hương thơm đặc biệt. Hoa mâu được xem là biểu tượng của sự kiên cường và lòng dũng cảm, và thường được dùng để trang trí trong các lễ hội lớn.",
+    "lesson": "Truyện ca ngợi sự kiên cường và lòng dũng cảm, cùng với giá trị của sự trang trọng trong các lễ hội."
+  },
+  {
+    "identify_key": "su_tich_cau_xanh",
+    "name": "Sự tích cầu xanh",
+    "detail": "Ngày xưa, có một cây cầu xanh được xây dựng qua một con sông lớn. Cầu xanh không chỉ giúp người dân dễ dàng qua lại mà còn bảo vệ họ khỏi các mối nguy hiểm trong hành trình. Cầu xanh trở thành biểu tượng của sự bảo vệ và kết nối.",
+    "lesson": "Truyện dạy về sự bảo vệ, kết nối và tầm quan trọng của cơ sở hạ tầng trong đời sống cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_con_dai",
+    "name": "Sự tích con dại",
+    "detail": "Ngày xưa, có một con dại rất hiền lành, sống trong khu rừng và chăm sóc các loài động vật nhỏ. Con dại luôn giúp đỡ những loài động vật gặp khó khăn và trở thành biểu tượng của sự chăm sóc và tình yêu thương.",
+    "lesson": "Truyện ca ngợi lòng chăm sóc và tình yêu thương, cùng với giá trị của việc giúp đỡ người khác trong cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_cay_rong",
+    "name": "Sự tích cây rồng",
+    "detail": "Ngày xưa, có một cây rồng khổng lồ mọc ở giữa khu rừng. Cây rồng có sức mạnh kỳ diệu giúp bảo vệ khu rừng khỏi các mối nguy hiểm và thiên tai. Nó trở thành biểu tượng của sự bảo vệ và sức mạnh.",
+    "lesson": "Truyện dạy về sức mạnh và sự bảo vệ, cũng như giá trị của việc duy trì sự an toàn và thịnh vượng trong cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_hoa_hoang",
+    "name": "Sự tích hoa hoàng",
+    "detail": "Ngày xưa, có một loài hoa hoàng mọc trên các ngọn núi, có màu vàng rực rỡ và hương thơm ngát. Hoa hoàng được xem là biểu tượng của sự may mắn và thành công, và thường được tặng trong các dịp lễ hội.",
+    "lesson": "Truyện dạy về sự may mắn và thành công, cùng với giá trị của việc tặng quà trong các dịp lễ hội."
+  },
+  {
+    "identify_key": "su_tich_cay_mong",
+    "name": "Sự tích cây mồng",
+    "detail": "Ngày xưa, có một cây mồng mọc ở giữa một khu vườn cổ tích. Cây mồng có khả năng biến mọi ước mơ thành hiện thực, nhưng chỉ cho những ai có tấm lòng trong sáng. Cây mồng trở thành biểu tượng của sự biến hóa và ước mơ.",
+    "lesson": "Truyện ca ngợi tầm quan trọng của tấm lòng trong sáng và sức mạnh của sự biến hóa trong cuộc sống."
+  },
+     {
+    "identify_key": "su_tich_con_rong",
+    "name": "Sự tích con rồng",
+    "detail": "Ngày xưa, có một con rồng rất mạnh mẽ và uy quyền, sống ở biển sâu. Con rồng bảo vệ vùng biển khỏi những kẻ xâm lược và giữ gìn sự bình yên cho ngư dân. Con rồng trở thành biểu tượng của sức mạnh và bảo vệ.",
+    "lesson": "Truyện dạy về sức mạnh, sự bảo vệ và tầm quan trọng của việc giữ gìn sự bình yên cho cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_hoa_cay",
+    "name": "Sự tích hoa cây",
+    "detail": "Ngày xưa, có một loài hoa đặc biệt mọc trên cây, có thể chữa lành mọi bệnh tật. Người dân thường hái hoa để giúp đỡ những người ốm đau và bị thương. Hoa cây trở thành biểu tượng của sự chữa lành và lòng nhân ái.",
+    "lesson": "Truyện dạy về lòng nhân ái và tầm quan trọng của việc giúp đỡ người khác trong lúc khó khăn."
+  },
+  {
+    "identify_key": "su_tich_cay_nuoc",
+    "name": "Sự tích cây nước",
+    "detail": "Ngày xưa, có một cây nước mọc bên một nguồn suối, có khả năng cung cấp nước sạch cho cả làng. Người dân rất tôn trọng và chăm sóc cây nước, vì nó là nguồn sống chính của họ. Cây nước trở thành biểu tượng của sự sống và sự chăm sóc.",
+    "lesson": "Truyện dạy về tầm quan trọng của nguồn nước và sự chăm sóc tài nguyên thiên nhiên."
+  },
+  {
+    "identify_key": "su_tich_con_hong",
+    "name": "Sự tích con hồng",
+    "detail": "Ngày xưa, có một con hồng rất hiền lành sống trong một vườn hoa. Con hồng có khả năng làm cho mọi người xung quanh cảm thấy vui vẻ và hạnh phúc. Khi con hồng qua đời, nó trở thành biểu tượng của niềm vui và sự hạnh phúc.",
+    "lesson": "Truyện dạy về tầm quan trọng của việc mang lại niềm vui và hạnh phúc cho người khác."
+  },
+  {
+    "identify_key": "su_tich_cay_nho",
+    "name": "Sự tích cây nhô",
+    "detail": "Ngày xưa, có một cây nhô mọc trên đỉnh núi, có khả năng mang lại sự may mắn cho những ai chạm vào nó. Cây nhô trở thành biểu tượng của sự may mắn và thành công, và được người dân tôn thờ trong các dịp lễ hội.",
+    "lesson": "Truyện ca ngợi sự may mắn và tầm quan trọng của việc duy trì niềm tin vào sự thành công."
+  },
+  {
+    "identify_key": "su_tich_hoa_cung",
+    "name": "Sự tích hoa cung",
+    "detail": "Ngày xưa, có một loài hoa mọc trên một ngọn đồi, có màu sắc rực rỡ và hương thơm ngát. Hoa cung được xem là biểu tượng của sự trung thành và lòng biết ơn. Nó thường được dùng trong các buổi lễ quan trọng để tôn vinh những người đáng kính.",
+    "lesson": "Truyện dạy về sự trung thành và lòng biết ơn, cùng với giá trị của việc tôn vinh những người đáng kính."
+  },
+  {
+    "identify_key": "su_tich_cay_ngu",
+    "name": "Sự tích cây ngũ",
+    "detail": "Ngày xưa, có một cây ngũ mọc ở giữa một khu rừng rậm. Cây ngũ có khả năng làm cho mọi người gặp may mắn và thành công nếu họ đặt tay lên cây. Cây ngũ trở thành biểu tượng của sự may mắn và sự thành công trong cuộc sống.",
+    "lesson": "Truyện ca ngợi sự may mắn và thành công, cùng với giá trị của việc duy trì niềm tin vào sự thành công."
+  },
+  {
+    "identify_key": "su_tich_con_nai",
+    "name": "Sự tích con nai",
+    "detail": "Ngày xưa, có một con nai rất hiền lành và chăm sóc cho các loài động vật khác trong khu rừng. Con nai có khả năng chữa lành các vết thương và giúp đỡ những loài động vật gặp khó khăn. Con nai trở thành biểu tượng của lòng từ bi và sự chăm sóc.",
+    "lesson": "Truyện dạy về lòng từ bi và sự chăm sóc, cùng với giá trị của việc giúp đỡ người khác trong cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_hoa_cam",
+    "name": "Sự tích hoa cẩm",
+    "detail": "Ngày xưa, có một loài hoa cẩm mọc trên các cánh đồng vào mùa xuân. Hoa cẩm có màu sắc tươi sáng và hương thơm nhẹ nhàng, được coi là biểu tượng của sự tươi mới và sức sống. Hoa cẩm thường được dùng để trang trí trong các lễ hội mùa xuân.",
+    "lesson": "Truyện dạy về sự tươi mới và sức sống, cùng với giá trị của việc trang trí trong các dịp lễ hội."
+  },
+  {
+    "identify_key": "su_tich_cay_trong",
+    "name": "Sự tích cây trông",
+    "detail": "Ngày xưa, có một cây trông mọc trên một ngọn đồi cao, có khả năng bảo vệ khu rừng khỏi mọi hiểm họa. Cây trông được tôn thờ và chăm sóc bởi những người sống gần đó, vì nó là nguồn bảo vệ và an toàn cho cộng đồng.",
+    "lesson": "Truyện dạy về sự bảo vệ và an toàn, cùng với giá trị của việc duy trì sự an toàn trong cộng đồng."
+  },
+  {
+    "identify_key": "su_tich_hoa_quyt",
+    "name": "Sự tích hoa quýt",
+    "detail": "Ngày xưa, có một loài hoa quýt mọc trên các cánh đồng vào mùa thu. Hoa quýt có màu vàng tươi và hương thơm ngát, được coi là biểu tượng của sự bội thu và thành công. Hoa quýt thường được dùng trong các dịp lễ hội để cầu chúc thành công và thịnh vượng.",
+    "lesson": "Truyện dạy về sự bội thu và thành công, cùng với giá trị của việc cầu chúc cho nhau trong các dịp lễ hội."
+  }
 ]
