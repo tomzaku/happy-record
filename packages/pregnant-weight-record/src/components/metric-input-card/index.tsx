@@ -12,8 +12,8 @@ import { useBodyMetric } from '@dreamer/global';
 import MetricCalendar from '../metric-calendar';
 
 const MetricInputCard = () => {
-  const [weight, setWeight] = React.useState(40.2);
-  const [bellySize, setBellySize] = React.useState(50.2);
+  const [weight, setWeight] = React.useState(40);
+  const [bellySize, setBellySize] = React.useState(50);
   const { addBodyMetric, currentBodyMetric, currentDay } = useBodyMetric();
   const [isMetricRecorded, setIsMetricRecorded] = React.useState(
     !!currentBodyMetric

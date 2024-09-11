@@ -16,8 +16,8 @@ const BodyMetricCard = () => {
         onClick={() => navigate('/weight-record')}
         className={styles.container}
       >
-        <Typography.Title level={2} noMargin className={styles.title}>
-          Your weight: {currentBodyMetric?.weight} kg
+        <Typography.Title level={3} noMargin className={styles.title}>
+          Weight: {currentBodyMetric?.weight} kg
         </Typography.Title>
         <Typography.Text className={styles.subtitle}>
           Your belly size: {currentBodyMetric?.bellySize} cm

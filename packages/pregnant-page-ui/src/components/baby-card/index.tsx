@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useBaby } from '@dreamer/global';
 
 import styles from './index.module.scss';
+
 const BabyCard = () => {
   const { baby } = useBaby();
   const intl = useIntl();
@@ -22,7 +23,7 @@ const BabyCard = () => {
     return (
       <div className={styles.container} onClick={() => navigate('/baby')}>
         <div>
-          <Typography.Title level={2} className={styles.title}>
+          <Typography.Title level={3} className={styles.title}>
             {intl.formatMessage({
               id: 'BabyCard.label-ask-for-baby-information',
               defaultMessage: "When's the little one's due date?",
@@ -43,7 +44,7 @@ const BabyCard = () => {
   return (
     <div className={styles.container} onClick={() => navigate('/baby')}>
       <div>
-        <Typography.Title level={2} className={styles.title}>
+        <Typography.Title level={3} className={styles.title}>
           {intl.formatMessage(
             {
               id: 'BabyCard.label-passed-day',

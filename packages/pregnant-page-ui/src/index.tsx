@@ -6,13 +6,21 @@ import BabyCard from './components/baby-card';
 import ChecklistCalendar from './components/checklist-calendar';
 import ChecklistToday from './components/checklist-today';
 import CreateChecklist from './components/create-checklist';
+import LunarCalendar from './components/lunar-calendar';
+import styles from './index.module.scss';
 
 const PregnantPage = () => {
   const [startDate, setStartDate] = React.useState(new Date());
+
+  // get lunar day of the month
+
   return (
     <div>
       <BabyCard />
-      <BodyMetricCard />
+      <div className={styles.row}>
+        <BodyMetricCard />
+        <LunarCalendar />
+      </div>
       <ChecklistCalendar date={startDate} onDateChange={setStartDate} />
       <ChecklistToday date={startDate} />
       <CreateChecklist />

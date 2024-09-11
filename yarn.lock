@@ -2497,6 +2497,11 @@
     hey-listen "^1.0.8"
     tslib "^2.3.1"
 
+"@nghiavuive/lunar_date_vi@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@nghiavuive/lunar_date_vi/-/lunar_date_vi-2.0.1.tgz#725587f56975ca4163baf80d30d50658dba2f6ad"
+  integrity sha512-BCczHEHCvzYBZvexGvC9bd1lV8X1E7gRg+/dl8UXSHX3Fl66WmmLs5J8OoO3A70NrUOeYTMU1JNvDwOOepsotQ==
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -2795,6 +2800,13 @@
     json5 "^2.2.0"
     magic-string "^0.25.0"
     string.prototype.matchall "^4.0.6"
+
+"@tony801015/chinese-lunar@^0.20.2":
+  version "0.20.2"
+  resolved "https://registry.yarnpkg.com/@tony801015/chinese-lunar/-/chinese-lunar-0.20.2.tgz#fa10768d153a30acb624e1ccf49932bac486c099"
+  integrity sha512-ujYRpxZrg0WwcJSmPS9MemGHuMg8U3GFrWmHPTJjBYBKvjjAsXbt0fC3qoSSF7C9ZH/gtty3flyAYvdeD0UdHQ==
+  dependencies:
+    dayjs "^1.10.7"
 
 "@tootallnate/once@1":
   version "1.1.2"
@@ -4305,10 +4317,20 @@ date-fns@^2.29.3:
   resolved "https://registry.yarnpkg.com/date-fns/-/date-fns-2.29.3.tgz#27402d2fc67eb442b511b70bbdf98e6411cd68a8"
   integrity sha512-dDCnyH2WnnKusqvZZ6+jA1O51Ibt8ZMRNkDZdyAyK4YfbDwa/cEmuztzG5pk6hqlp9aSBPYcjOlktquahGwGeA==
 
+date-fns@^3.6.0:
+  version "3.6.0"
+  resolved "https://registry.yarnpkg.com/date-fns/-/date-fns-3.6.0.tgz#f20ca4fe94f8b754951b24240676e8618c0206bf"
+  integrity sha512-fRHTG8g/Gif+kSh50gaGEdToemgfj74aRX3swtiouboip5JDLAyDE9F11nHMIcvOaXeOC6D7SpNhi7uFyB7Uww==
+
 dateformat@^3.0.0:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/dateformat/-/dateformat-3.0.3.tgz#a6e37499a4d9a9cf85ef5872044d62901c9889ae"
   integrity sha512-jyCETtSl3VMZMWeRo7iY1FL19ges1t55hMo5yaam4Jrsm5EPL89UQkoQRyiI+Yf4k8r2ZpdngkV8hr1lIdjb3Q==
+
+dayjs@^1.10.7:
+  version "1.11.13"
+  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.11.13.tgz#92430b0139055c3ebb60150aa13e860a4b5a366c"
+  integrity sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==
 
 debug@4, debug@^4.0.1, debug@^4.1.0, debug@^4.1.1, debug@^4.3.1, debug@^4.3.2, debug@^4.3.3, debug@^4.3.4:
   version "4.3.4"

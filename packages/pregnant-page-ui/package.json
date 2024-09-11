@@ -7,5 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@nghiavuive/lunar_date_vi": "^2.0.1",
+    "@tony801015/chinese-lunar": "^0.20.2",
+    "date-fns": "^3.6.0"
+  }
 }
