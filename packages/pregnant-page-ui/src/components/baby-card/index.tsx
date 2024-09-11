@@ -1,11 +1,13 @@
 import Typography from '@moon-ui/typography';
 import { Icon } from '@iconify/react';
+import Lottie from 'lottie-react';
 
 import { useIntl } from '@dreamer/translation';
 import { useNavigate } from 'react-router-dom';
 import { useBaby } from '@dreamer/global';
 
 import styles from './index.module.scss';
+import babyLottie from '../../baby-animation-lottie.json';
 
 const BabyCard = () => {
   const { baby } = useBaby();
@@ -60,13 +62,19 @@ const BabyCard = () => {
           Baby due date: {new Date(baby?.dueDate).toLocaleDateString()}
         </Typography.Text>
       </div>
-      <Icon
+      <Lottie
         className={styles.babyLogo}
-        color={'rgba(255,255,255,0.3)'}
         width={70}
-        height={70}
-        icon="emojione-monotone:baby"
+        animationData={babyLottie}
+        loop={true}
       />
+      {/* <Icon */}
+      {/*   className={styles.babyLogo} */}
+      {/*   color={'rgba(255,255,255,0.3)'} */}
+      {/*   width={70} */}
+      {/*   height={70} */}
+      {/*   icon="emojione-monotone:baby" */}
+      {/* /> */}
     </div>
   );
 };

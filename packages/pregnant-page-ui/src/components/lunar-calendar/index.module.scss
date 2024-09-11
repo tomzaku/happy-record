@@ -1,7 +1,9 @@
 @import 'include-media/dist/include-media';
 
 .container {
-  background: linear-gradient(to right, #ff7e5f, #feb47b); // Gradient from pinkish to orange
+
+  // background: linear-gradient(to right, #3f87a6, #8f76ff);
+  border: 5px solid #0d7dc2;
   border-radius: 8px;
   padding: 12px;
   color: #fff;
@@ -25,15 +27,16 @@
 .babyLogo {
   position: absolute;
   bottom: 1px;
+  width: 30px;
   right: 3px;
 }
 
 .title {
-  color: white;
+  // color: white;
   margin-bottom: 0;
   margin-top: 0;
 }
 
 .subtitle {
-  color: white;
+  // color: white;
 }

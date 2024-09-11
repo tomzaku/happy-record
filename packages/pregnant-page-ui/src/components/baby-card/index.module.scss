@@ -9,6 +9,7 @@
   transition: transform 0.2s ease-in-out;
   position: relative;
   cursor: pointer;
+  margin-top: 20px;
 
   &:hover {
     transform: translateY(-5px);
@@ -22,8 +23,9 @@
 
 .babyLogo {
   position: absolute;
-  bottom: 1px;
-  right: 3px;
+  bottom: 5px;
+  right: 0px;
+  width: 120px;
 }
 
 .title {

@@ -24,10 +24,9 @@ const BodyMetricCard = () => {
         </Typography.Text>
         <Icon
           className={styles.babyLogo}
-          color={'rgba(255,255,255,0.3)'}
-          width={70}
-          height={70}
-          icon="emojione-monotone:pregnant-woman"
+          // color={'rgba(0,0,0,0.08)'}
+          icon="openmoji:pregnant-woman-light-skin-tone"
+          width={30}
         />
       </Card>
     );

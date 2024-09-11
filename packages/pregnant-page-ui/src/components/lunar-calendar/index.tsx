@@ -40,9 +40,10 @@ const LunarCalendar = () => {
       </div>
       <Icon
         className={styles.babyLogo}
-        color={'rgba(255,255,255,0.3)'}
-        width={70}
-        height={70}
+        // color={'rgba(0,0,0,0.08)'}
+        color={'#8f76ff'}
+        width={30}
+        height={30}
         icon="line-md:moon-rising-filled-alt-loop"
       />
     </div>

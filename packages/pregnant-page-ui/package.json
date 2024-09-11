@@ -11,6 +11,7 @@
   "dependencies": {
     "@nghiavuive/lunar_date_vi": "^2.0.1",
     "@tony801015/chinese-lunar": "^0.20.2",
-    "date-fns": "^3.6.0"
+    "date-fns": "^3.6.0",
+    "lottie-react": "^2.4.0"
   }
 }
