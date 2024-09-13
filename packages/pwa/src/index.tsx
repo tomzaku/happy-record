@@ -1,4 +1,5 @@
 /// <reference types="vite-plugin-pwa/client" />
+import React from 'react';
 import styles from './index.module.scss';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
@@ -21,6 +22,12 @@ function ReloadPrompt() {
     setOfflineReady(false);
     setNeedRefresh(false);
   };
+  React.useEffect(() => {
+    // Auto update without prompt
+    if (needRefresh) {
+      updateServiceWorker(true);
+    }
+  }, [needRefresh]);
 
   return (
     <div className={styles.container}>

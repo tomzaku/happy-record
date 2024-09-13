@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 // import mySound from '@dreamer/audio-common/assets/baby/rockabye-baby-twinkle.mp3';
 import IconPauseCircle from '@moon-ui/icon/IconPauseCircle';
@@ -8,7 +8,7 @@ import IconPlayCircle from '@moon-ui/icon/IconPlayCircle';
 import cx from 'classnames';
 
 import styles from './index.module.scss';
-import { createBasedAudio, githubGetLink } from '@dreamer/audio-common';
+import { githubGetLink } from '@dreamer/audio-common';
 import Typography from '@moon-ui/typography';
 
 type Props = {
@@ -51,17 +51,6 @@ const AudioLink = {
     id: 'twinkle-twinkle-little-star-acoustic-guitar.mp3',
   },
 };
-
-const audioList: Record<string, string> = Object.values(AudioLink).reduce(
-  (acc, { id }) => ({ ...acc, [id]: id }),
-  {}
-);
-
-// const { toggleSound, setSoundVolume, sounds, loadSounds } = createBasedAudio(
-//   audioList,
-//   githubGetLink
-// );
-//
 
 const useAudioPlayer = ({
   songList,

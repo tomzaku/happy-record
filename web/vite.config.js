@@ -10,6 +10,7 @@ export default defineConfig({
     visualizer(),
     VitePWA({
       injectRegister: 'auto',
+      registerType: 'autoUpdate',
       manifest: {
         name: 'Happy Pregnancy',
         short_name: 'Pregency',
