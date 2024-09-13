@@ -1,9 +1,11 @@
 import Card from '@moon-ui/card';
 import { Icon } from '@iconify/react';
 import Typography from '@moon-ui/typography';
+import Lottie from 'lottie-react';
 
 import { useNavigate } from 'react-router-dom';
 import { useBodyMetric } from '@dreamer/global';
+import babyLottie from '../../baby-animation-lottie.json';
 
 import styles from './index.module.scss';
 const BodyMetricCard = () => {
@@ -39,6 +41,12 @@ const BodyMetricCard = () => {
         <Typography.Title level={3} noMargin className={styles.title}>
           Let’s track your weight and belly size today!
         </Typography.Title>
+        {/* <Lottie */}
+        {/*   className={styles.babyLogo} */}
+        {/*   width={70} */}
+        {/*   animationData={babyLottie} */}
+        {/*   loop={true} */}
+        {/* /> */}
       </Card>
     );
   }

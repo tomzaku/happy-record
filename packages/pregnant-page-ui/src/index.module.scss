@@ -1,3 +1,13 @@
+.container {
+  padding-bottom: 60px;
+}
 .row {
   display: flex;
+}
+
+.player {
+  bottom: 0;
+  position: fixed;
+  width: 100%;
+  max-width: 600px;
 }
