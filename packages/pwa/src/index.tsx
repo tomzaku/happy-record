@@ -1,4 +1,4 @@
-/// <reference types="vite-plugin-pwa/client" />
+/// <reference types="vite-plugin-pwa/react" />
 import React from 'react';
 import styles from './index.module.scss';
 import { useRegisterSW } from 'virtual:pwa-register/react';
