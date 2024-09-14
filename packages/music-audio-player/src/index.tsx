@@ -50,14 +50,34 @@ const AudioLink = {
     name: 'twinkle twinkle little star acoustic guitar',
     id: 'twinkle-twinkle-little-star-acoustic-guitar.mp3',
   },
+  'einstein-baby-lullaby-academy-brahms.mp3': {
+    name: 'Baby Lullaby Music - Einstein Baby Lullaby Academy',
+    id: 'einstein-baby-lullaby-academy-brahms.mp3',
+  },
+  'einstein-baby-lullaby.mp3': {
+    name: 'Einstein Baby Lullaby',
+    id: 'einstein-baby-lullaby.mp3',
+  },
+  'piano-baby-lullabies-for-baby-sleep.mp3': {
+    id: 'piano-baby-lullabies-for-baby-sleep.mp3',
+    name: 'Piano Baby Lullabies for Baby Sleep',
+  },
+  'a-whole-new-world.mp3': {
+    id: 'a-whole-new-world.mp3',
+    name: 'A Whole New World',
+  },
+  'reflection.mp3': {
+    id: 'reflection.mp3',
+    name: 'Reflection',
+  },
 };
 
 const useAudioPlayer = ({
   songList,
-  autoPlay: autoPlayDefault = false,
+  autoPlayDefault = false,
 }: {
   songList: string[];
-  autoPlay?: boolean;
+  autoPlayDefault?: boolean;
 }) => {
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -150,7 +170,18 @@ const useAudioPlayer = ({
   };
 };
 
-const songList = Object.keys(AudioLink).map(key => githubGetLink(key));
+//Make it shuffer array
+const sufferList = (list: any[]) => {
+  const arr = [...list];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
+const songs = sufferList(Object.values(AudioLink));
+const songList = songs.map(({ id }) => githubGetLink(id));
 
 const AudioPlayer = ({ className }: Props) => {
   const {
@@ -164,7 +195,7 @@ const AudioPlayer = ({ className }: Props) => {
     duration,
   } = useAudioPlayer({
     songList,
-    autoPlay: true,
+    autoPlayDefault: true,
   });
 
   React.useEffect(() => {
@@ -198,7 +229,7 @@ const AudioPlayer = ({ className }: Props) => {
         )}
         <span className={styles.pomodoroPhase}>
           <Typography.Title level={4} className={styles.pomodoroPhaseText}>
-            {Object.values(AudioLink)[currentSongIndex].name}
+            {songs[currentSongIndex].name}
           </Typography.Title>
           <Typography.Text className={styles.time}>{`| ${Math.floor(
             currentTime / 60

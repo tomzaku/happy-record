@@ -11,20 +11,20 @@
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
     "@types/react-motion": "^0.0.33",
-    "@vitejs/plugin-react": "^2.0.1",
+    "@vitejs/plugin-react": "^4.3.1",
     "rollup-plugin-visualizer": "^5.8.1",
     "tslib": "^2.0.0",
     "typescript": "^4.6.4",
-    "vite": "^3.0.9",
-    "vite-plugin-pwa": "^0.13.1"
+    "vite": "^5.4.5",
+    "vite-plugin-pwa": "^0.20.5"
   },
   "dependencies": {
     "@dreamer/music-controller-mobile": "^1.0.0",
     "@dreamer/translation": "^1.0.0",
     "date-fns": "^2.29.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "preact": "^10.11.0",
-    "preact-compat": "^3.19.0"
+    "preact-compat": "^3.19.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }

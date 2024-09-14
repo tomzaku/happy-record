@@ -22,6 +22,7 @@ function ReloadPrompt() {
     setOfflineReady(false);
     setNeedRefresh(false);
   };
+
   React.useEffect(() => {
     // Auto update without prompt
     if (needRefresh) {

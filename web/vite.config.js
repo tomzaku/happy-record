@@ -9,6 +9,21 @@ export default defineConfig({
     react(),
     visualizer(),
     VitePWA({
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /.*\.mp3$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'audio-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 7 * 24 * 60 * 60, // 1 week
+              },
+            },
+          },
+        ],
+      },
       injectRegister: 'auto',
       registerType: 'autoUpdate',
       manifest: {
