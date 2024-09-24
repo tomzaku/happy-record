@@ -10,6 +10,7 @@
   flex: 1;
   align-items: center;
   padding: $spacing-xs $spacing-md;
+
   @media only screen and (max-width: 600px) {
     padding: $spacing-xs $spacing-md $spacing-lg $spacing-md ;
   }
@@ -45,4 +46,10 @@
 .time {
   margin-left: $spacing-sm;
   color: var(--text-description-color-invert);
+}
+
+.loadStatus {
+  color: var(--text-color-invert);
+  justify-content: flex-end;
+  display: flex;
 }

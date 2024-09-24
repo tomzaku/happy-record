@@ -10,21 +10,43 @@ export default defineConfig({
     visualizer(),
     VitePWA({
       workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /.*\.mp3$/,
-            handler: 'CacheFirst',
+            urlPattern: '*.mp3',
+            handler: 'CacheFirst', // Or NetworkFirst, StaleWhileRevalidate,CacheOnly, CacheFirst
             options: {
-              cacheName: 'audio-cache',
+              cacheName: 'media',
+              expiration: {
+                maxEntries: 40,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 1 month
+              },
+              cacheableResponse: {
+                statuses: [200, 206],
+              },
+              rangeRequests: true,
+            },
+          },
+          {
+            // Caching woff2 fonts
+            urlPattern: '*.woff2',
+            handler: 'CacheFirst', // You can also use StaleWhileRevalidate or another strategy
+            options: {
+              cacheName: 'font-cache',
               expiration: {
                 maxEntries: 20,
-                maxAgeSeconds: 7 * 24 * 60 * 60, // 1 week
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 1 month
+              },
+              cacheableResponse: {
+                statuses: [200, 206],
               },
             },
           },
+          // Other caching rules can go here
         ],
       },
       injectRegister: 'auto',
+      immediate: true,
       registerType: 'autoUpdate',
       manifest: {
         name: 'Happy Pregnancy',
