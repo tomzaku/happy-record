@@ -54,30 +54,46 @@ const useGlobalAudioPlayer = create<{
   setIsPlaying: (value: boolean) => void;
   currentSongIndex: number;
   setCurrentSongIndex: (value: number) => void;
+  songList: any[];
+  setSongList: (value: any[]) => void;
+  currentTime: number;
+  setCurrentTime: (value: number) => void;
+  duration: number;
+  setDuration: (value: number) => void;
 }>(set => ({
   isPlaying: false,
   setIsPlaying: (value: boolean) => set({ isPlaying: value }),
   currentSongIndex: 0,
   setCurrentSongIndex: (value: number) => set({ currentSongIndex: value }),
-}))
+  songList: [],
+  setSongList: (value: any[]) => set({ songList: value }),
+  currentTime: 0,
+  setCurrentTime: (value: number) => set({ currentTime: value }),
+  duration: 0,
+  setDuration: (value: number) => set({ duration: value }),
+}));
 
 const audioElements: HTMLAudioElement[] = [];
 
 export const useAudioPlayer = ({
-  songList: songListInitial = [],
   autoPlayDefault = false,
 }: {
-  songList?: any[];
   autoPlayDefault?: boolean;
 }) => {
-  const [songList, setSongList] = React.useState(songListInitial);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
-  const {isPlaying, setIsPlaying, currentSongIndex, setCurrentSongIndex} = useGlobalAudioPlayer()
-  // const [isPlaying, setIsPlaying] = React.useState<boolean>(false);
-  // const [currentSongIndex, setCurrentSongIndex] = React.useState<number>(0);
+  const {
+    isPlaying,
+    songList,
+    setSongList,
+    setIsPlaying,
+    currentSongIndex,
+    setCurrentSongIndex,
+    currentTime,
+    setCurrentTime,
+    duration,
+    setDuration,
+  } = useGlobalAudioPlayer();
   const [autoPlay, setAutoPlay] = React.useState<boolean>(autoPlayDefault);
-  const [currentTime, setCurrentTime] = React.useState<number>(0); // Add progress state
-  const [duration, setDuration] = React.useState<number>(0); // Add duration state
 
   const next = (songIndex?: number) => {
     // Stop the current song and play another song
@@ -118,7 +134,7 @@ export const useAudioPlayer = ({
     } else {
       newAudio = new Audio(src);
     }
-    audioRef.current = newAudio
+    audioRef.current = newAudio;
 
     newAudio.onended = () => {
       console.log('AUDIO END!!!', autoPlay);
@@ -204,7 +220,7 @@ export const useAudioPlayer = ({
       audioRef.current.pause();
       setIsPlaying(false);
     }
-  }
+  };
 
   return {
     loadSong,
