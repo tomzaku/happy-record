@@ -170,6 +170,10 @@ export const useAudioPlayer = ({
       setSongList(finalSongs);
     }
 
+    // Create a cache for our audio files
+    const cacheName = 'audio-cache-v1';
+    const cache = await caches.open(cacheName);
+
     for (let index = 0; index < finalSongs.length; index++) {
       const src = finalSongs[index];
 
@@ -178,23 +182,40 @@ export const useAudioPlayer = ({
         continue;
       }
 
-      // const src = URL.createObjectURL(file); // Convert local file to an Object URL
+      try {
+        // Check if the audio is already in cache
+        let response = await cache.match(src);
+        
+        // If not in cache, fetch and cache it
+        if (!response) {
+          response = await fetch(src);
+          await cache.put(src, response.clone());
+        }
 
-      const newAudio = new Audio(src);
-      audioElements.push(newAudio); // Store each audio element
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
 
-      // Load each song's metadata before resolving
-      await new Promise<void>((resolve, reject) => {
-        newAudio.addEventListener('loadedmetadata', () => {
-          callback(src, index);
-          resolve();
+        const newAudio = new Audio();
+        newAudio.src = objectUrl;
+        audioElements.push(newAudio);
+
+        // Load each song's metadata and data before resolving
+        await new Promise<void>((resolve, reject) => {
+          newAudio.addEventListener('loadeddata', () => {
+            callback(src, index);
+            resolve();
+          });
+
+          newAudio.addEventListener('error', e => {
+            console.error(`Error loading song: ${src}`, e);
+            reject(e);
+          });
+
+          newAudio.load();
         });
-
-        newAudio.addEventListener('error', e => {
-          console.error(`Error loading song: ${src}`, e);
-          reject(e);
-        });
-      });
+      } catch (error) {
+        console.error(`Failed to load song: ${src}`, error);
+      }
     }
 
     return audioElements;
