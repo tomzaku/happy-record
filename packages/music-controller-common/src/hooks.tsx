@@ -127,7 +127,7 @@ export const useAudioPlayer = ({
     const src = songList[index];
 
     let newAudio: any;
-    console.log('AUTO PLAY', autoPlay);
+    console.log('AUTO PLAY', autoPlay, audioElements[index]);
     if (audioElements[index]) {
       newAudio = audioElements[index];
       newAudio.currentTime = 0;
