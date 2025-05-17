@@ -9,11 +9,11 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/react-motion": "^0.0.33",
+    "@types/react-motion": "^0.0.40",
     "@types/uuid": "^10.0.0"
   },
   "dependencies": {
-    "use-long-press": "^2.0.2",
-    "zustand": "^4.5.5"
+    "use-long-press": "^2.0.0",
+    "zustand": "^5.0.4"
   }
 }

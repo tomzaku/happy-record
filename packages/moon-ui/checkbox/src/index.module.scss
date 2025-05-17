@@ -1,4 +1,4 @@
-@import '@moon-ui/app-scss/color';
+@use '@moon-ui/app-scss/color' as *;
 
 .container {
   accent-color: var(--checkbox-accent-color);

@@ -1,6 +1,6 @@
-@import '@moon-ui/app-scss/color';
-@import '@moon-ui/app-scss/metric';
-@import '@moon-ui/app-scss/function';
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
 
 .container {
   background: var(--card-background);

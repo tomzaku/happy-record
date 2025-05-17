@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/react-motion": "^0.0.33"
+    "@types/react-motion": "^0.0.40"
   },
   "dependencies": {
     "@dreamer/audio-common": "^1.0.0"

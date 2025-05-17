@@ -11,6 +11,6 @@
     "@moon-ui/typography": "^1.0.0"
   },
   "devDependencies": {
-    "@types/react-motion": "^0.0.33"
+    "@types/react-motion": "^0.0.40"
   }
 }

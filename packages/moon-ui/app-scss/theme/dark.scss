@@ -1,4 +1,4 @@
-@import './common-color';
+@use './common-color' as *;
 
 [data-theme='dark'] {
   // --background: #{$black};

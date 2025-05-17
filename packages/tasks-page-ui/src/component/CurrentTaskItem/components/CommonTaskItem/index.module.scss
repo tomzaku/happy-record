@@ -1,7 +1,7 @@
-@import '@moon-ui/app-scss/color';
-@import '@moon-ui/app-scss/metric';
-@import '@moon-ui/app-scss/function';
-@import '@dreamer/tasks-page-common/src/index';
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+@use '@dreamer/tasks-page-common/src/index' as *;
 
 .container {
   display: flex;

@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "rc-slider": "^10.0.1"
+    "rc-slider": "^11.1.8"
   }
 }

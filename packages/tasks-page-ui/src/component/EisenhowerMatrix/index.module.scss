@@ -1,4 +1,4 @@
-@import '@dreamer/tasks-page-common/src/index.scss';
+@use '@dreamer/tasks-page-common/src/index.scss' as *;
 
 .button {
   flex: 1;

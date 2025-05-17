@@ -74,6 +74,17 @@ export default defineConfig({
       },
     }),
   ],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern',
+        implementation: 'sass',
+        sassOptions: {
+          outputStyle: 'compressed',
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       react: 'preact/compat',

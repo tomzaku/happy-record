@@ -13,7 +13,6 @@ import { TaskStatus, useTask } from '@dreamer/tasks-page-common';
 import { useIntl } from '@dreamer/translation';
 
 // Enums
-import { LongPressDetectEvents } from '@dreamer/global';
 
 import styles from './index.module.scss';
 import IconTrashBin from '@moon-ui/icon/IconTrashBin';

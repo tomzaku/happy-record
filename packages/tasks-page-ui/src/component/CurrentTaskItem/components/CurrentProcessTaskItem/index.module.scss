@@ -1,6 +1,6 @@
-@import '@moon-ui/app-scss/color';
-@import '@moon-ui/app-scss/metric';
-@import '@dreamer/tasks-page-common/src/index';
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use '@dreamer/tasks-page-common/src/index' as *;
 
 .row {
   display: flex;

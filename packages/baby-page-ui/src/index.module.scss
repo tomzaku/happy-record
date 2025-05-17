@@ -1,6 +1,6 @@
-@import '@moon-ui/app-scss/color';
-@import 'include-media/dist/include-media';
-@import '@moon-ui/app-scss/function';
+@use '@moon-ui/app-scss/color' as *;
+@use 'include-media/dist/include-media' as media;
+@use '@moon-ui/app-scss/function' as *;
 
 .label {
   font-size: toRem(20px);
@@ -75,5 +75,9 @@
   &:hover {
     background: linear-gradient(to right, #feb47b, #ff7e5f);
   }
+}
+
+@include media.media('<=tablet') {
+  // ... existing code ...
 }
 

@@ -1,3 +1,3 @@
-import { useLongPress, LongPressDetectEvents } from 'use-long-press';
+import { useLongPress } from 'use-long-press';
 
-export { useLongPress, LongPressDetectEvents };
+export { useLongPress };

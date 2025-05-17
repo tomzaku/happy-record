@@ -10,9 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "@dreamer/global": "^1.0.0",
-    "date-fns": "^2.29.3"
+    "date-fns": "^4.1.0"
   },
   "devDependencies": {
-    "@types/react-motion": "^0.0.33"
+    "@types/react-motion": "^0.0.40"
   }
 }

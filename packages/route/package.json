@@ -26,9 +26,9 @@
     "@pregnant/pregnant-page-ui": "^1.0.0",
     "@pregnant/pregnant-weight-record": "^1.0.0",
     "@pregnant/story-page-ui": "^1.0.0",
-    "react-router-dom": "^6.3.0"
+    "react-router-dom": "^7.6.0"
   },
   "devDependencies": {
-    "@types/react-motion": "^0.0.33"
+    "@types/react-motion": "^0.0.40"
   }
 }

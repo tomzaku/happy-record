@@ -1,6 +1,6 @@
-@import '@moon-ui/app-scss/metric';
-@import '@moon-ui/app-scss/color';
-@import 'include-media/dist/include-media';
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/color' as *;
+@use 'include-media/dist/include-media' as media;
 
 .container {
   background: var(--drawer-background);
@@ -14,7 +14,7 @@
   position: fixed;
   top: 100%;
   z-index: $drawer-z-index;
-  @include media('>=tablet') {
+  @include media.media('>=tablet') {
     left: unset;
     max-width: 600px;
     min-width: 0;

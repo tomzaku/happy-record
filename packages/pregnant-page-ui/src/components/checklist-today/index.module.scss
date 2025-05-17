@@ -1,10 +1,9 @@
-@import '@moon-ui/app-scss/color';
-@import 'include-media/dist/include-media';
-@import '@moon-ui/app-scss/metric';
-@import '@moon-ui/app-scss/color';
+@use '@moon-ui/app-scss/color' as *;
+@use 'include-media/dist/include-media' as media;
+@use '@moon-ui/app-scss/metric' as *;
 
 .container {
-  @include media('<=tablet') {
+  @include media.media('<=tablet') {
     margin-left: 12px;
     margin-right: 12px;
   }

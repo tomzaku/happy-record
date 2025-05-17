@@ -1,13 +1,13 @@
-@import '@moon-ui/app-scss/color';
-@import '@moon-ui/app-scss/metric';
-@import 'include-media/dist/include-media';
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use 'include-media/dist/include-media' as media;
 
 .container {
   align-items: center;
   background: var(--card-background);
   display: flex;
   padding: $spacing-md;
-  @include media('<=tablet') {
+  @include media.media('<=tablet') {
     padding: $spacing-sm $spacing-md;
   }
 }

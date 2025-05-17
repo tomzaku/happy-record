@@ -1,5 +1,5 @@
 // @import '@moon-ui/app-scss/color';
-@import '@moon-ui/app-scss/metric';
+@use '@moon-ui/app-scss/metric' as *;
 
 // should map constant.ts
 $padding-slider: 10px;

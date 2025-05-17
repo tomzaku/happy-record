@@ -1,6 +1,6 @@
-@import '@moon-ui/app-scss/color';
-@import 'include-media/dist/include-media';
-@import '@moon-ui/app-scss/function';
+@use '@moon-ui/app-scss/color' as *;
+@use 'include-media/dist/include-media' as media;
+@use '@moon-ui/app-scss/function' as *;
 
 .card {
   display: flex;

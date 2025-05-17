@@ -1,4 +1,4 @@
-@import '@moon-ui/app-scss/color';
+@use '@moon-ui/app-scss/color' as *;
 
 .default {
   font-weight: 500;

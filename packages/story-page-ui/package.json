@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@dreamer/calendar-navigator": "^1.0.0",
-    "apexcharts": "^3.53.0",
-    "react-apexcharts": "^1.4.1"
+    "apexcharts": "^4.7.0",
+    "react-apexcharts": "^1.7.0"
   }
 }

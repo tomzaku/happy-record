@@ -1,6 +1,6 @@
-@import '@moon-ui/app-scss/color';
-@import '@moon-ui/app-scss/metric';
-@import 'include-media/dist/include-media';
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use 'include-media/dist/include-media' as media;
 
 .container {
   align-items: center;
@@ -21,7 +21,7 @@
   display: flex;
   margin-left: 25px;
   z-index: 1;
-  @include media('<=tablet') {
+  @include media.media('<=tablet') {
     margin-left: 10px;
   }
 }
@@ -31,7 +31,7 @@
   margin-right: 25px;
   z-index: 1;
   fill: var(--icon-color-inactive-invert);
-  @include media('<=tablet') {
+  @include media.media('<=tablet') {
     margin-right: 10px;
   }
 }

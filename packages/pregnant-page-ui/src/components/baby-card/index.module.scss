@@ -1,4 +1,4 @@
-@import 'include-media/dist/include-media';
+@use 'include-media/dist/include-media' as media;
 
 .container {
   background: linear-gradient(to right, #ff7e5f, #feb47b); // Gradient from pinkish to orange
@@ -15,7 +15,7 @@
     transform: translateY(-5px);
   }
 
-  @include media('<=tablet') {
+  @include media.media('<=tablet') {
     margin-left: 12px;
     margin-right: 12px;
   }

@@ -1,4 +1,4 @@
-@import '@moon-ui/app-scss/metric';
+@use '@moon-ui/app-scss/metric' as *;
 
 .section {
   box-sizing: border-box;

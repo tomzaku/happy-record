@@ -1,6 +1,6 @@
-@import '@moon-ui/app-scss/color';
-@import '@moon-ui/app-scss/function';
-@import 'include-media/dist/include-media';
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/function' as *;
+@use 'include-media/dist/include-media' as media;
 
 .container {
   background: var(--card-background);
@@ -12,7 +12,7 @@
   flex-direction: column;
   position: relative;
 
-  @include media('<=tablet') {
+  @include media.media('<=tablet') {
     margin-left: 12px;
     margin-right: 12px;
   }

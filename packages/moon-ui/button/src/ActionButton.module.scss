@@ -1,5 +1,5 @@
-@import '@moon-ui/app-scss/color';
-@import '@moon-ui/app-scss/function';
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/function' as *;
 
 .container {
   align-items: stretch;

@@ -1,11 +1,11 @@
-@import 'include-media/dist/include-media';
+@use 'include-media/dist/include-media' as media;
 
 .container {
   display: flex;
   align-items: center;
   margin-top: 20px;
   justify-content: space-between;
-  @include media('<=tablet') {
+  @include media.media('<=tablet') {
     margin-left: 12px;
     margin-right: 12px;
   }

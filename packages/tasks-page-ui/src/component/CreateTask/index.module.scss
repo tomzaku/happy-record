@@ -1,6 +1,6 @@
-@import '@moon-ui/app-scss/color';
-@import '@moon-ui/app-scss/function';
-@import 'include-media/dist/include-media';
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/function' as *;
+@use 'include-media/dist/include-media' as media;
 
 .container {
   background: var(--card-background);
@@ -10,7 +10,7 @@
   flex-direction: column;
   margin-top: 40px;
   position: relative;
-  @include media('<=tablet') {
+  @include media.media('<=tablet') {
     margin-top: 30px;
   }
 }
@@ -88,7 +88,7 @@
   margin-right: 6px;
   text-align: center;
   width: 60px;
-  @include media('<=tablet') {
+  @include media.media('<=tablet') {
     width: 40px;
     font-size: toRem(16px);
   }

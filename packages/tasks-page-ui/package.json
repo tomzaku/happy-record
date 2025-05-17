@@ -18,14 +18,14 @@
     "@moon-ui/icon": "^1.0.0",
     "@moon-ui/input": "^1.0.0",
     "@moon-ui/typography": "^1.0.0",
-    "@react-spring/web": "^9.5.5",
-    "@use-gesture/react": "^10.2.20",
-    "react-draggable-list": "^4.1.0",
+    "@react-spring/web": "^10.0.0",
+    "@use-gesture/react": "^10.3.1",
+    "react-draggable-list": "^4.2.1",
     "react-sortablejs": "^6.1.4",
-    "react-textarea-autosize": "^8.3.4",
-    "sortablejs": "^1.15.0"
+    "react-textarea-autosize": "^8.5.9",
+    "sortablejs": "^1.15.6"
   },
   "devDependencies": {
-    "@types/react-motion": "^0.0.33"
+    "@types/react-motion": "^0.0.40"
   }
 }
