@@ -1,13 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import IconPauseCircle from '@moon-ui/icon/IconPauseCircle';
 import IconPlayCircle from '@moon-ui/icon/IconPlayCircle';
+import { Icon } from '@iconify/react';
 
 // Utils
 import cx from 'classnames';
 
 import styles from './index.module.scss';
 import Typography from '@moon-ui/typography';
-import { songList, songs, useAudioPlayer } from '@dreamer/music-controller-common/src/hooks';
+import {
+  songList,
+  songs,
+  useAudioPlayer,
+} from '@dreamer/music-controller-common/src/hooks';
 
 const AudioPlayer = ({ className }: { className?: string }) => {
   const [songLoadedCount, setSongLoadedCount] = React.useState(0);
@@ -17,6 +22,8 @@ const AudioPlayer = ({ className }: { className?: string }) => {
     pause,
     isPlaying,
     audio,
+    next,
+    prev,
     currentTime,
     currentSongIndex,
     loadAllSongs,
@@ -27,7 +34,7 @@ const AudioPlayer = ({ className }: { className?: string }) => {
   const loadAllSongsLocal = async () => {
     await loadAllSongs({
       songs: songList,
-      callback: (src, index) => {
+      callback: () => {
         setSongLoadedCount(s => s + 1);
       },
     });
@@ -38,6 +45,7 @@ const AudioPlayer = ({ className }: { className?: string }) => {
   }, []);
 
   const togglePlay = () => {
+    console.log('>>>>>>>..IS PLAYING', isPlaying);
     if (isPlaying) {
       pause();
     } else {
@@ -47,10 +55,7 @@ const AudioPlayer = ({ className }: { className?: string }) => {
   return (
     <div className={cx(styles.container, className)}>
       {songLoadedCount !== songList.length && (
-        <Typography.Text
-          onClick={loadAllSongsLocal}
-          className={styles.loadStatus}
-        >
+        <Typography.Text className={styles.loadStatus}>
           load song{songLoadedCount}/{songList.length}
         </Typography.Text>
       )}
@@ -63,17 +68,19 @@ const AudioPlayer = ({ className }: { className?: string }) => {
         </div>
       )}
       <div className={styles.body}>
+        <Icon icon="material-symbols:skip-previous-rounded" height={24} color="white" onClick={() => prev()} />
         {isPlaying ? (
-          <IconPauseCircle className={styles.icon} onClick={togglePlay} />
+          <IconPauseCircle className={styles.icon} width={42} onClick={togglePlay} />
         ) : (
           <IconPlayCircle className={styles.icon} onClick={togglePlay} />
         )}
+        <Icon icon="material-symbols:skip-next-rounded" height={24} color="white"  onClick={() => next()} />
         <span className={styles.pomodoroPhase}>
           <Typography.Title level={4} className={styles.pomodoroPhaseText}>
-            {songs[currentSongIndex].name}
+            {`${currentSongIndex + 1}. ${songs[currentSongIndex].name}`}
           </Typography.Title>
           <Typography.Text className={styles.time}>{`| ${Math.floor(
-            currentTime / 60
+            currentTime / 60,
           )}:${Math.floor(currentTime % 60)}`}</Typography.Text>
         </span>
       </div>

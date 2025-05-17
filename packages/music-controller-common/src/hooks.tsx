@@ -1,5 +1,6 @@
 import { githubGetLink } from '@dreamer/audio-common';
 import React from 'react';
+import { create } from 'zustand';
 
 const AudioLink = {
   'date-a-live-season-1-ost.mp3': {
@@ -48,6 +49,18 @@ const AudioLink = {
   },
 };
 
+const useGlobalAudioPlayer = create<{
+  isPlaying: boolean;
+  setIsPlaying: (value: boolean) => void;
+  currentSongIndex: number;
+  setCurrentSongIndex: (value: number) => void;
+}>(set => ({
+  isPlaying: false,
+  setIsPlaying: (value: boolean) => set({ isPlaying: value }),
+  currentSongIndex: 0,
+  setCurrentSongIndex: (value: number) => set({ currentSongIndex: value }),
+}))
+
 const audioElements: HTMLAudioElement[] = [];
 
 export const useAudioPlayer = ({
@@ -58,60 +71,75 @@ export const useAudioPlayer = ({
   autoPlayDefault?: boolean;
 }) => {
   const [songList, setSongList] = React.useState(songListInitial);
-  const [audio, setAudio] = React.useState<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = React.useState<boolean>(false);
-  const [currentSongIndex, setCurrentSongIndex] = React.useState<number>(0);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const {isPlaying, setIsPlaying, currentSongIndex, setCurrentSongIndex} = useGlobalAudioPlayer()
+  // const [isPlaying, setIsPlaying] = React.useState<boolean>(false);
+  // const [currentSongIndex, setCurrentSongIndex] = React.useState<number>(0);
   const [autoPlay, setAutoPlay] = React.useState<boolean>(autoPlayDefault);
   const [currentTime, setCurrentTime] = React.useState<number>(0); // Add progress state
   const [duration, setDuration] = React.useState<number>(0); // Add duration state
 
-  const next = React.useCallback(() => {
-    const nextIndex = (currentSongIndex + 1) % songList.length;
+  const next = (songIndex?: number) => {
+    // Stop the current song and play another song
+    console.log('currentSingIndex', currentSongIndex, songList.length);
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    let nextIndex = (currentSongIndex + 1) % songList.length;
+    if (songIndex && !isNaN(songIndex)) {
+      nextIndex = songIndex;
+    }
+    console.log('nextIndex', nextIndex);
+    setCurrentSongIndex(nextIndex);
     loadSong(nextIndex);
-  }, [currentSongIndex, songList]);
+  };
 
-  const prev = React.useCallback(() => {
+  const prev = () => {
+    // Stop the current song and play another song
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
     const prevIndex =
       (currentSongIndex - 1 + songList.length) % songList.length;
     loadSong(prevIndex);
-  }, [currentSongIndex, songList]);
+    setCurrentSongIndex(prevIndex);
+  };
 
-  const loadSong = React.useCallback(
-    (index: number) => {
-      if (index < 0 || index >= songList.length) return;
+  const loadSong = (index: number) => {
+    if (index < 0 || index >= songList.length) return;
 
-      const src = songList[index];
+    const src = songList[index];
 
-      let newAudio: any;
-      if (audioElements[index]) {
-        newAudio = audioElements[index];
-      } else {
-        newAudio = new Audio(src);
+    let newAudio: any;
+    console.log('AUTO PLAY', autoPlay);
+    if (audioElements[index]) {
+      newAudio = audioElements[index];
+      newAudio.currentTime = 0;
+    } else {
+      newAudio = new Audio(src);
+    }
+    audioRef.current = newAudio
+
+    newAudio.onended = () => {
+      console.log('AUDIO END!!!', autoPlay);
+      if (autoPlay) {
+        next(index + 1);
       }
-      setAudio(newAudio);
+    };
 
-      newAudio.onended = () => {
-        if (autoPlay) {
-          next();
-        }
-      };
+    newAudio.ontimeupdate = () => {
+      setCurrentTime(newAudio.currentTime);
+      setDuration(newAudio.duration);
+    };
 
-      newAudio.ontimeupdate = () => {
-        setCurrentTime(newAudio.currentTime);
-        setDuration(newAudio.duration);
-      };
-
-      newAudio
-        .play()
-        .then(() => {
-          setIsPlaying(true);
-          setCurrentTime(0); // Reset progress when a new song starts
-        })
-        .catch(console.error);
-      setCurrentSongIndex(index);
-    },
-    [songList, autoPlay, next]
-  );
+    newAudio
+      .play()
+      .then(() => {
+        setIsPlaying(true);
+        setCurrentTime(0); // Reset progress when a new song starts
+      })
+      .catch(console.error);
+  };
   const loadAllSongs = async ({
     songs,
     callback,
@@ -130,7 +158,7 @@ export const useAudioPlayer = ({
       const src = finalSongs[index];
 
       if (audioElements[index]) {
-        callback(src, index)
+        callback(src, index);
         continue;
       }
 
@@ -153,95 +181,30 @@ export const useAudioPlayer = ({
       });
     }
 
-    // Return all audio elements for later use if necessary
     return audioElements;
-    // for (let index = 0; index < songList.length; index++) {
-    //   const song = songList[index];
-    //   const newAudio = new Audio(song);
-    //
-    //   // Create a promise that resolves when the audio metadata is loaded
-    //   await new Promise<void>((resolve, reject) => {
-    //     // Metadata includes info like duration, but not the full audio file
-    //     newAudio.addEventListener('loadedmetadata', () => {
-    //       resolve();
-    //     });
-    //
-    //     // Handle load errors
-    //     newAudio.addEventListener('error', () => {
-    //       reject(`Failed to load song metadata: ${song}`);
-    //     });
-    //   });
-    //
-    //   // Invoke the callback once the metadata is loaded
-    //   callback(song, index);
-    // }
   };
 
-  // Add the loadAllSongs method
-  // const loadAllSongs1 = useCallback(
-  //   (callback: (src: string, index: number) => void) => {
-  //     songList.forEach((src, index) => {
-  //       const newAudio = new Audio(src);
-  //       newAudio.onloadeddata = () => {
-  //         callback?.(src, index);
-  //       };
-  //       newAudio.onended = () => {
-  //         if (autoPlay && index === currentSongIndex) {
-  //           next();
-  //         }
-  //       };
-  //
-  //       newAudio.ontimeupdate = () => {
-  //         if (index === currentSongIndex) {
-  //           setCurrentTime(newAudio.currentTime);
-  //           setDuration(newAudio.duration);
-  //         }
-  //       };
-  //
-  //       if (index === currentSongIndex) {
-  //         setAudio(newAudio);
-  //         newAudio
-  //           .play()
-  //           .then(() => {
-  //             setIsPlaying(true);
-  //             setCurrentTime(0);
-  //           })
-  //           .catch(console.error);
-  //       }
-  //     });
-  //   },
-  //   [songList, autoPlay, next, currentSongIndex]
-  // );
-
-  const play = React.useCallback(async () => {
-    if (!audio) {
+  const play = async () => {
+    if (!audioRef.current) {
       loadSong(currentSongIndex);
+      setIsPlaying(true);
+    } else {
+      const currentAudio = audioElements[currentSongIndex];
+      if (currentAudio && !isPlaying) {
+        currentAudio
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(console.error);
+      }
     }
-    const currentAudio = audioElements[currentSongIndex];
-    if (currentAudio && !isPlaying) {
-      currentAudio
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(console.error);
-    }
-  }, [audio, isPlaying]);
+  };
 
-  const pause = React.useCallback(() => {
-    if (audio && isPlaying) {
-      audio.pause();
+  const pause = () => {
+    if (audioRef.current && isPlaying) {
+      audioRef.current.pause();
       setIsPlaying(false);
     }
-  }, [audio, isPlaying]);
-
-  React.useEffect(() => {
-    if (audio) {
-      audio.onended = () => {
-        if (autoPlay) {
-          next();
-        }
-      };
-    }
-  }, [audio, autoPlay, next]);
+  }
 
   return {
     loadSong,
@@ -252,7 +215,7 @@ export const useAudioPlayer = ({
     setAutoPlay: (value: boolean) => setAutoPlay(value),
     next,
     prev,
-    audio,
+    audio: audioRef.current,
     currentTime,
     duration,
     currentSongIndex,
