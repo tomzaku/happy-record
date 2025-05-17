@@ -80,7 +80,6 @@ export const useAudioPlayer = ({
 }: {
   autoPlayDefault?: boolean;
 }) => {
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const {
     isPlaying,
     songList,
@@ -94,6 +93,7 @@ export const useAudioPlayer = ({
     setDuration,
   } = useGlobalAudioPlayer();
   const [autoPlay, setAutoPlay] = React.useState<boolean>(autoPlayDefault);
+  const audioRef = React.useRef<HTMLAudioElement | null>(audioElements?.[currentSongIndex]);
 
   const next = (songIndex?: number) => {
     // Stop the current song and play another song
