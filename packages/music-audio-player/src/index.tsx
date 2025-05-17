@@ -45,7 +45,6 @@ const AudioPlayer = ({ className }: { className?: string }) => {
   }, []);
 
   const togglePlay = () => {
-    console.log('>>>>>>>..IS PLAYING', isPlaying);
     if (isPlaying) {
       pause();
     } else {
@@ -75,7 +74,6 @@ const AudioPlayer = ({ className }: { className?: string }) => {
           <IconPlayCircle className={styles.icon} onClick={togglePlay} />
         )}
         <Icon icon="material-symbols:skip-next-rounded" height={24} color="white"  onClick={() => next()} />
-        <button onClick={() => {audio.currentTime += 40}}>[s]</button>
         <span className={styles.pomodoroPhase}>
           <Typography.Title level={4} className={styles.pomodoroPhaseText}>
             {`${currentSongIndex + 1}. ${songs[currentSongIndex].name}`}
