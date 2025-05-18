@@ -5,6 +5,7 @@ import Checkbox from '@moon-ui/checkbox';
 import styles from './index.module.scss';
 import cx from 'classnames';
 import Typography from '@moon-ui/typography';
+import { useNavigate } from 'react-router-dom';
 
 const ChecklistToday = ({ date }: { date: Date }) => {
   const {
@@ -14,9 +15,12 @@ const ChecklistToday = ({ date }: { date: Date }) => {
     updateChecklist,
   } = useChecklist();
   const { checklistTemplate } = useChecklistTemplates();
+  const navigate = useNavigate();
+
   React.useEffect(() => {
     getChecklistByGivingDate({ date });
   }, [date]);
+
   return (
     <div className={styles.container}>
       {checklistByGivingDateIds.map((id, index) => {
@@ -41,6 +45,13 @@ const ChecklistToday = ({ date }: { date: Date }) => {
             <Typography.Text className={styles.title}>
               {currentChecklist?.title}
             </Typography.Text>
+            <Icon
+              className={styles.editIcon}
+              width={24}
+              height={24}
+              icon="material-symbols:edit-outline"
+              onClick={() => navigate(`/edit-checklist/${currentChecklist.checklistTemplateId}`)}
+            />
             <Checkbox
               checked={Boolean(currentChecklist?.completedAt)}
               className={styles.checkbox}

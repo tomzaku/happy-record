@@ -17,12 +17,10 @@
   padding-bottom: 12px;
 }
 
-
 .checklistItem {
   display: flex;
   border-bottom: 1px solid var(--card-border);
   align-items: center;
-
 }
 
 .lastChecklistItem {
@@ -37,5 +35,17 @@
 .title {
   flex: 1;
   margin-left: 6px;
+}
+
+.editIcon {
+  margin-right: 8px;
+  cursor: pointer;
+  color: var(--text-color);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 1;
+  }
 }
 

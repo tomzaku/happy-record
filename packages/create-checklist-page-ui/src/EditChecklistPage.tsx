@@ -15,29 +15,19 @@ import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 
 import styles from './index.module.scss';
 
-const getDaysFromRepeat = (repeat?: { dayOfWeek: string }) => {
-  if (!repeat?.dayOfWeek) return [getDay()];
-  if (repeat.dayOfWeek === '*') {
-    return [Day.Sun, Day.Mon, Day.Tue, Day.Wed, Day.Thu, Day.Fri, Day.Sat];
-  }
+const getDaysFromRepeat = (repeat?: { dayOfWeek: string }): Day[] => {
+  if (!repeat?.dayOfWeek) return [new Date().getDay() as Day];
+  if (repeat.dayOfWeek === '*') return [Day.Sun, Day.Mon, Day.Tue, Day.Wed, Day.Thu, Day.Fri, Day.Sat];
   return repeat.dayOfWeek.split(',').map(day => {
     switch (day) {
-      case '0':
-        return Day.Sun;
-      case '1':
-        return Day.Mon;
-      case '2':
-        return Day.Tue;
-      case '3':
-        return Day.Wed;
-      case '4':
-        return Day.Thu;
-      case '5':
-        return Day.Fri;
-      case '6':
-        return Day.Sat;
-      default:
-        return Day.Sun;
+      case '0': return Day.Sun;
+      case '1': return Day.Mon;
+      case '2': return Day.Tue;
+      case '3': return Day.Wed;
+      case '4': return Day.Thu;
+      case '5': return Day.Fri;
+      case '6': return Day.Sat;
+      default: return Day.Sun;
     }
   });
 };
@@ -60,6 +50,9 @@ const EditChecklistPage = () => {
   const [startedAt, setStartedAt] = React.useState(
     template?.repeat?.startedAt ? new Date(template.repeat.startedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
   );
+  const [time, setTime] = React.useState(
+    template?.repeat?.hour ? `${template.repeat.hour}:${template.repeat.minute}` : '08:00'
+  );
   const intl = useIntl();
   const [selectedIcon, setSelectedIcon] = React.useState(
     template?.avatar?.name || 'material-symbols:checklist'
@@ -73,19 +66,21 @@ const EditChecklistPage = () => {
   const calculateRepeat = () => {
     if (!weeklyHobbies || weeklyHobbies.length === 0) return undefined;
 
+    const [hours, minutes] = time.split(':').map(Number);
+
     if (weeklyHobbies.length === 7)
       return {
         startedAt: new Date().toISOString(),
         dayOfWeek: '*',
-        minute: '0',
-        hour: '8',
+        minute: minutes.toString(),
+        hour: hours.toString(),
         dayOfMonth: '*',
         month: '*',
       };
     return {
       startedAt: new Date().toISOString(),
-      minute: '0',
-      hour: '8',
+      minute: minutes.toString(),
+      hour: hours.toString(),
       dayOfMonth: '*',
       month: '*',
       dayOfWeek: weeklyHobbies
@@ -146,6 +141,21 @@ const EditChecklistPage = () => {
         />
         <hr className={styles.dashed} />
         <BuildWeeklyHobby values={weeklyHobbies} setValues={setWeeklyHobbies} />
+        <Hr />
+        <div className={styles.timeSelector}>
+          <label className={styles.timeLabel}>
+            {intl.formatMessage({
+              id: 'EditChecklist.label-time',
+              defaultMessage: 'Time',
+            })}
+          </label>
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className={styles.timeInput}
+          />
+        </div>
         <Hr />
         <IconPicker
           selectedIcon={selectedIcon}

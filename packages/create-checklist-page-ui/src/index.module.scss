@@ -71,3 +71,29 @@
   display: flex;
   width: 100%;
 }
+
+.timeSelector {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.timeLabel {
+  margin-right: 12px;
+  color: var(--text-color);
+  font-size: 16px;
+}
+
+.timeInput {
+  padding: 8px;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  font-size: 16px;
+  color: var(--text-color);
+  background: var(--card-background);
+  
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+}
