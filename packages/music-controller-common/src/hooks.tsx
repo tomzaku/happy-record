@@ -79,7 +79,7 @@ export const useAudioPlayer = ({
   autoPlayDefault = false,
 }: {
   autoPlayDefault?: boolean;
-}) => {
+} = {}) => {
   const {
     isPlaying,
     songList,
@@ -166,6 +166,7 @@ export const useAudioPlayer = ({
     // differ songs compare to songList
     const differSongs = songs.filter(song => !songList.includes(song));
     const finalSongs = [...songList, ...differSongs];
+    console.log(">DIFFERSONG", differSongs)
     if (differSongs.length) {
       setSongList(finalSongs);
     }
@@ -257,6 +258,7 @@ export const useAudioPlayer = ({
     duration,
     currentSongIndex,
     loadAllSongs,
+    songList,
   };
 };
 
