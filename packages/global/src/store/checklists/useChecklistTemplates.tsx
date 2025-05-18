@@ -152,6 +152,18 @@ export const useChecklistTemplates = () => {
     });
   };
 
+  const deleteChecklistTemplate = (id: string) => {
+    const newChecklistTemplate = { ...checklistTemplate };
+    delete newChecklistTemplate[id];
+    setChecklistTemplate(newChecklistTemplate);
+    // Also remove from selected templates if it was selected
+    if (selectedChecklistTemplates.includes(id)) {
+      updateSelectedChecklistTemplate(
+        selectedChecklistTemplates.filter(templateId => templateId !== id)
+      );
+    }
+  };
+
   const updateSelectedChecklistTemplate = (checklistIds: string[] = []) => {
     setSelectedChecklist(checklistIds);
   };
@@ -178,6 +190,7 @@ export const useChecklistTemplates = () => {
     checklistTemplate,
     addChecklistTemplate,
     updateChecklistTemplate,
+    deleteChecklistTemplate,
     selectedChecklistTemplates,
     updateSelectedChecklistTemplate,
     getRecommendChecklistTemplates,

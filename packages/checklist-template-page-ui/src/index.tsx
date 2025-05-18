@@ -1,7 +1,9 @@
+import React from 'react';
 import Card from '@moon-ui/card';
 import { Icon } from '@iconify/react';
 import Checkbox from '@moon-ui/checkbox';
 import Typography from '@moon-ui/typography';
+import WarningModal from '@moon-ui/modal/src/WarningModal';
 
 import { useChecklistTemplates } from '@dreamer/global';
 import { useIntl } from '@dreamer/translation';
@@ -15,9 +17,12 @@ const ChecklistTemplatePageUi = () => {
     getRecommendChecklistTemplates,
     selectedChecklistTemplates,
     updateSelectedChecklistTemplate,
+    deleteChecklistTemplate,
   } = useChecklistTemplates();
   const intl = useIntl();
   const navigate = useNavigate();
+  const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
+  const [templateToDelete, setTemplateToDelete] = React.useState<string | null>(null);
 
   const getRepeatText = (repeat?: { dayOfWeek: string }) => {
     const text = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -44,6 +49,25 @@ const ChecklistTemplatePageUi = () => {
       };
     });
   };
+
+  const handleDelete = (id: string) => {
+    setTemplateToDelete(id);
+    setDeleteModalVisible(true);
+  };
+
+  const confirmDelete = () => {
+    if (templateToDelete) {
+      deleteChecklistTemplate(templateToDelete);
+      setDeleteModalVisible(false);
+      setTemplateToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModalVisible(false);
+    setTemplateToDelete(null);
+  };
+
   return (
     <>
       <Card className={styles.card}>
@@ -75,6 +99,13 @@ const ChecklistTemplatePageUi = () => {
                     height={24}
                     icon="material-symbols:edit-outline"
                     onClick={() => navigate(`/edit-checklist/${id}`)}
+                  />
+                  <Icon
+                    className={styles.deleteIcon}
+                    width={24}
+                    height={24}
+                    icon="material-symbols:delete-outline"
+                    onClick={() => handleDelete(id)}
                   />
                   <Checkbox
                     checked={selectedChecklistTemplates.includes(id)}
@@ -109,6 +140,31 @@ const ChecklistTemplatePageUi = () => {
           )}
         </>
       </Card>
+      <WarningModal
+        visible={deleteModalVisible}
+        title={intl.formatMessage({
+          id: 'ChecklistTemplate.delete-confirm-title',
+          defaultMessage: 'Delete Checklist Template',
+        })}
+        primaryButtonText={intl.formatMessage({
+          id: 'ChecklistTemplate.delete-confirm-ok',
+          defaultMessage: 'Delete',
+        })}
+        primaryButtonOnClick={confirmDelete}
+        secondaryButtonText={intl.formatMessage({
+          id: 'ChecklistTemplate.delete-confirm-cancel',
+          defaultMessage: 'Cancel',
+        })}
+        secondaryButtonClick={handleCancelDelete}
+        content={
+          <Typography.Text>
+            {intl.formatMessage({
+              id: 'ChecklistTemplate.delete-confirm-message',
+              defaultMessage: 'Are you sure you want to delete this checklist template? This action cannot be undone.',
+            })}
+          </Typography.Text>
+        }
+      />
     </>
   );
 };
