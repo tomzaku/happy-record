@@ -1,8 +1,17 @@
+@use 'include-media/dist/include-media' as media;
+ 
 .container {
   padding-bottom: 60px;
 }
+
 .row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+
+  @include media.media('<=tablet') {
+    padding: 0 12px;
+  }
 }
 
 .player {

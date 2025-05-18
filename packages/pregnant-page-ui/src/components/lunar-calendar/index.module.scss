@@ -17,11 +17,6 @@
   &:hover {
     transform: translateY(-5px);
   }
-
-  @include media.media('<=tablet') {
-    // margin-left: 12px;
-    margin-right: 12px;
-  }
 }
 
 .babyLogo {

@@ -12,8 +12,8 @@
   flex-direction: column;
   position: relative;
 
-  @include media.media('<=tablet') {
-    margin-left: 12px;
-    margin-right: 12px;
-  }
+  // @include media.media('<=tablet') {
+  //   margin-left: 12px;
+  //   margin-right: 12px;
+  // }
 }
