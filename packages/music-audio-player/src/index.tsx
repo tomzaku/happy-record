@@ -21,7 +21,6 @@ const AudioPlayer = ({ className }: { className?: string }) => {
     play,
     pause,
     isPlaying,
-    audio,
     next,
     prev,
     currentTime,
@@ -32,7 +31,7 @@ const AudioPlayer = ({ className }: { className?: string }) => {
   } = useAudioPlayer({
     autoPlayDefault: true,
   });
-  console.log(">>>>>>>>SONG LISTSSS from parent", songList)
+  console.log('>>>>>>>>SONG LISTSSS from parent', songList);
   const [listSongVisible, setListSongVisible] = useState(false);
   const loadAllSongsLocal = async () => {
     await loadAllSongs({
@@ -56,7 +55,10 @@ const AudioPlayer = ({ className }: { className?: string }) => {
   };
   return (
     <div className={cx(styles.container, className)}>
-      <AudioSongListDrawer visible={listSongVisible} onClose={() => setListSongVisible(false)} />
+      <AudioSongListDrawer
+        visible={listSongVisible}
+        onClose={() => setListSongVisible(false)}
+      />
       {songLoadedCount !== songList.length && (
         <Typography.Text className={styles.loadStatus}>
           load song{songLoadedCount}/{songList.length}
@@ -88,7 +90,8 @@ const AudioPlayer = ({ className }: { className?: string }) => {
         )}
         <Icon
           icon="material-symbols:skip-next-rounded"
-          height={24}
+          height={32}
+          width={32}
           color="white"
           onClick={() => next()}
         />
@@ -100,9 +103,14 @@ const AudioPlayer = ({ className }: { className?: string }) => {
           >
             {`${currentSongIndex + 1}. ${songs[currentSongIndex].name}`}
           </Typography.Title>
-          <Typography.Text className={styles.time}>{`| ${Math.floor(
-            currentTime / 60,
-          )}:${Math.floor(currentTime % 60)}`}</Typography.Text>
+          <Icon
+            color="white"
+            onClick={() => setListSongVisible(true)}
+            icon="material-symbols:library-music-rounded"
+          />
+          {/* <Typography.Text className={styles.time}>{`| ${Math.floor( */}
+          {/*   currentTime / 60, */}
+          {/* )}:${Math.floor(currentTime % 60)}`}</Typography.Text> */}
         </span>
       </div>
     </div>
