@@ -10,9 +10,12 @@
   background: #ffffffbd;
   position: fixed;
   visibility: hidden;
-  overflow: hidden;
+  // overflow: hidden;
   top: 0;
   left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .visible {
@@ -26,7 +29,7 @@
   min-height: fill-available;
   min-height: -webkit-fill-available;
   min-width: 100vw;
-  overflow: hidden;
+  // overflow: hidden;
   transform: translateY(0%);
   position: fixed;
   top: 100%;

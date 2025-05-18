@@ -14,9 +14,8 @@ type Props = {
 };
 
 const AudioSongListDrawer = ({ visible, onClose }: Props) => {
-  const { songList, currentSongIndex, next } = useAudioPlayer();
+  const { currentSongIndex, next } = useAudioPlayer();
 
-  console.log('>SONG LIST', songList, songs);
   return (
     <Drawer className={styles.container} visible={visible} onBlur={onClose}>
       <div className={styles.header}>
