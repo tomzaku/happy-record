@@ -24,7 +24,16 @@ const AudioSongListDrawer = ({ visible, onClose }: Props) => {
       </div>
       <div className={styles.body}>
         {songs.map(({ name }, index) => (
-          <div key={index} onClick={() => next(index)} className={cx(styles.card, currentSongIndex === index && styles.cardActive)}>{name}</div>
+          <div 
+            key={index} 
+            onClick={() => next(index)} 
+            className={cx(styles.card, currentSongIndex === index && styles.cardActive)}
+          >
+            <span>{name}</span>
+            {currentSongIndex === index && (
+              <Icon className={styles.successIcon} icon="material-symbols:check-circle-rounded" />
+            )}
+          </div>
         ))}
       </div>
     </Drawer>

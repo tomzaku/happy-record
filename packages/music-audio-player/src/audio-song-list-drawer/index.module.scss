@@ -4,24 +4,50 @@
   border-radius: 20px 20px 0 0;
   display: flex;
   flex-direction: column;
+  background: white;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 24px;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
 }
 
 .body {
   overflow: auto;
+  padding: 8px 0;
 }
 
 .card {
   cursor: pointer;
   padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+  color: #333;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
 }
 
 .cardActive {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.08);
+  color: #1a73e8;
+  font-weight: 500;
+}
+
+.successIcon {
+  color: #1a73e8;
+  width: 20px;
+  height: 20px;
 }
