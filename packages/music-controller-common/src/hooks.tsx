@@ -74,6 +74,7 @@ const useGlobalAudioPlayer = create<{
 }));
 
 const audioElements: HTMLAudioElement[] = [];
+let globalAudioRef: HTMLAudioElement | null = null;
 
 export const useAudioPlayer = ({
   autoPlayDefault = false,
@@ -93,13 +94,12 @@ export const useAudioPlayer = ({
     setDuration,
   } = useGlobalAudioPlayer();
   const [autoPlay, setAutoPlay] = React.useState<boolean>(autoPlayDefault);
-  const audioRef = React.useRef<HTMLAudioElement | null>(audioElements?.[currentSongIndex]);
 
   const next = (songIndex?: number) => {
     // Stop the current song and play another song
     console.log('currentSingIndex', currentSongIndex, songList.length);
-    if (audioRef.current) {
-      audioRef.current.pause();
+    if (globalAudioRef) {
+      globalAudioRef.pause();
     }
     let nextIndex = (currentSongIndex + 1) % songList.length;
     if (songIndex && !isNaN(songIndex)) {
@@ -112,8 +112,8 @@ export const useAudioPlayer = ({
 
   const prev = () => {
     // Stop the current song and play another song
-    if (audioRef.current) {
-      audioRef.current.pause();
+    if (globalAudioRef) {
+      globalAudioRef.pause();
     }
     const prevIndex =
       (currentSongIndex - 1 + songList.length) % songList.length;
@@ -134,7 +134,7 @@ export const useAudioPlayer = ({
     } else {
       newAudio = new Audio(src);
     }
-    audioRef.current = newAudio;
+    globalAudioRef = newAudio;
 
     newAudio.onended = () => {
       console.log('AUDIO END!!!', autoPlay);
@@ -166,14 +166,9 @@ export const useAudioPlayer = ({
     // differ songs compare to songList
     const differSongs = songs.filter(song => !songList.includes(song));
     const finalSongs = [...songList, ...differSongs];
-    console.log(">DIFFERSONG", differSongs)
     if (differSongs.length) {
       setSongList(finalSongs);
     }
-
-    // Create a cache for our audio files
-    const cacheName = 'audio-cache-v1';
-    const cache = await caches.open(cacheName);
 
     for (let index = 0; index < finalSongs.length; index++) {
       const src = finalSongs[index];
@@ -183,47 +178,30 @@ export const useAudioPlayer = ({
         continue;
       }
 
-      try {
-        // Check if the audio is already in cache
-        let response = await cache.match(src);
-        
-        // If not in cache, fetch and cache it
-        if (!response) {
-          response = await fetch(src);
-          await cache.put(src, response.clone());
-        }
+      // const src = URL.createObjectURL(file); // Convert local file to an Object URL
 
-        const blob = await response.blob();
-        const objectUrl = URL.createObjectURL(blob);
+      const newAudio = new Audio(src);
+      audioElements.push(newAudio); // Store each audio element
 
-        const newAudio = new Audio();
-        newAudio.src = objectUrl;
-        audioElements.push(newAudio);
-
-        // Load each song's metadata and data before resolving
-        await new Promise<void>((resolve, reject) => {
-          newAudio.addEventListener('loadeddata', () => {
-            callback(src, index);
-            resolve();
-          });
-
-          newAudio.addEventListener('error', e => {
-            console.error(`Error loading song: ${src}`, e);
-            reject(e);
-          });
-
-          newAudio.load();
+      // Load each song's metadata before resolving
+      await new Promise<void>((resolve, reject) => {
+        newAudio.addEventListener('loadedmetadata', () => {
+          callback(src, index);
+          resolve();
         });
-      } catch (error) {
-        console.error(`Failed to load song: ${src}`, error);
-      }
+
+        newAudio.addEventListener('error', e => {
+          console.error(`Error loading song: ${src}`, e);
+          reject(e);
+        });
+      });
     }
 
     return audioElements;
   };
 
   const play = async () => {
-    if (!audioRef.current) {
+    if (!globalAudioRef) {
       loadSong(currentSongIndex);
       setIsPlaying(true);
     } else {
@@ -238,8 +216,8 @@ export const useAudioPlayer = ({
   };
 
   const pause = () => {
-    if (audioRef.current && isPlaying) {
-      audioRef.current.pause();
+    if (globalAudioRef && isPlaying) {
+      globalAudioRef.pause();
       setIsPlaying(false);
     }
   };
@@ -253,7 +231,7 @@ export const useAudioPlayer = ({
     setAutoPlay: (value: boolean) => setAutoPlay(value),
     next,
     prev,
-    audio: audioRef.current,
+    audio: globalAudioRef,
     currentTime,
     duration,
     currentSongIndex,

@@ -2,9 +2,26 @@
 @use '@moon-ui/app-scss/color' as *;
 @use 'include-media/dist/include-media' as media;
 
+.blurContainer {
+  min-height: 100vh;
+  min-height: fill-available;
+  min-height: -webkit-fill-available;
+  min-width: 100vw;
+  background: #ffffffbd;
+  position: fixed;
+  visibility: hidden;
+  overflow: hidden;
+  top: 0;
+  left: 0;
+}
+
+.visible {
+  visibility: visible;
+}
+
 .container {
   background: var(--drawer-background);
-  left: 0;
+  // left: 0;
   min-height: 100vh;
   min-height: fill-available;
   min-height: -webkit-fill-available;
@@ -14,6 +31,7 @@
   position: fixed;
   top: 100%;
   z-index: $drawer-z-index;
+
   @include media.media('>=tablet') {
     left: unset;
     max-width: 600px;
