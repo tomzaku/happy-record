@@ -5,6 +5,7 @@ import Typography from '@moon-ui/typography';
 
 import { useChecklistTemplates } from '@dreamer/global';
 import { useIntl } from '@dreamer/translation';
+import { useNavigate } from 'react-router-dom';
 
 import cn from 'classnames';
 import styles from './index.module.scss';
@@ -16,6 +17,7 @@ const ChecklistTemplatePageUi = () => {
     updateSelectedChecklistTemplate,
   } = useChecklistTemplates();
   const intl = useIntl();
+  const navigate = useNavigate();
 
   const getRepeatText = (repeat?: { dayOfWeek: string }) => {
     const text = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -67,6 +69,13 @@ const ChecklistTemplatePageUi = () => {
                       {title}
                     </Typography.Text>
                   </div>
+                  <Icon
+                    className={styles.editIcon}
+                    width={24}
+                    height={24}
+                    icon="material-symbols:edit-outline"
+                    onClick={() => navigate(`/edit-checklist/${id}`)}
+                  />
                   <Checkbox
                     checked={selectedChecklistTemplates.includes(id)}
                     onChange={event => {

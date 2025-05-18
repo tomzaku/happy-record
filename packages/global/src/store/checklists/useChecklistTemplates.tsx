@@ -140,6 +140,18 @@ export const useChecklistTemplates = () => {
     };
   };
 
+  const updateChecklistTemplate = (
+    currentChecklistTemplate: Omit<ChecklistTemplate, 'createdAt'>
+  ) => {
+    setChecklistTemplate({
+      ...checklistTemplate,
+      [currentChecklistTemplate.id]: {
+        ...currentChecklistTemplate,
+        createdAt: checklistTemplate[currentChecklistTemplate.id]?.createdAt || new Date().toISOString(),
+      },
+    });
+  };
+
   const updateSelectedChecklistTemplate = (checklistIds: string[] = []) => {
     setSelectedChecklist(checklistIds);
   };
@@ -165,6 +177,7 @@ export const useChecklistTemplates = () => {
   return {
     checklistTemplate,
     addChecklistTemplate,
+    updateChecklistTemplate,
     selectedChecklistTemplates,
     updateSelectedChecklistTemplate,
     getRecommendChecklistTemplates,

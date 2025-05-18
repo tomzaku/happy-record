@@ -4,6 +4,7 @@ import SettingPage from '@dreamer/setting-page-ui';
 import PregnantIntro from '@pregnant/pregnant-intro';
 import PregnantPage from '@pregnant/pregnant-page-ui';
 import PregnantCreateChecklistPage from '@pregnant/create-checklist-page-ui';
+import PregnantEditChecklistPage from '@pregnant/create-checklist-page-ui/src/EditChecklistPage';
 import PregnantWeightRecord from '@pregnant/pregnant-weight-record';
 import ChecklistTemplatePageUi from '@pregnant/checklist-template-page-ui';
 import StoryPageUi from '@pregnant/story-page-ui';
@@ -27,6 +28,10 @@ const AppRouter = () => {
             <Route
               path="/create-checklist"
               element={<PregnantCreateChecklistPage />}
+            ></Route>
+            <Route
+              path="/edit-checklist/:id"
+              element={<PregnantEditChecklistPage />}
             ></Route>
             <Route
               path="/weight-record"
