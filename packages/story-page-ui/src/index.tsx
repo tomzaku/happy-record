@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocalStorage } from '@dreamer/global';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
-import dataset from './dataset.json';
+import dataset from './dataset-en.json';
 import styles from './index.module.scss';
 
 const StoryPageUi = () => {
