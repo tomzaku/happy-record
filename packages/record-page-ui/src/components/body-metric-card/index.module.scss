@@ -1,0 +1,31 @@
+.container {
+  flex: 1;
+  background: linear-gradient(to right, #3f87a6, #8f76ff); // Gradient from blue
+  // border: 5px solid #0d7dc2;
+  padding: 12px;
+  color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease-in-out;
+  position: relative;
+  margin-top: 12px;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
+
+
+.title {
+  color: white;
+}
+
+.subtitle {
+  color: white;
+}
+
+.babyLogo {
+  position: absolute;
+  bottom: 5px;
+  right: 0px;
+}

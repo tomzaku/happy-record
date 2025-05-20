@@ -7,6 +7,7 @@ import BuildWeeklyHobby from './BuildWeeklyHobby';
 import { Day } from '@dreamer/tasks-page-common';
 import IconPicker from './IconPicker';
 import Hr from './hr';
+import RecordTaskSetting from './RecordTaskSetting';
 
 // Hooks
 import { useIntl } from '@dreamer/translation';
@@ -104,6 +105,9 @@ const CreateChecklistPage = () => {
         />
         <Hr />
         <StartDaySelector date={startedAt} setDate={setStartedAt} />
+        <Hr />
+        <RecordTaskSetting />
+        
       </Card>
       <div className={styles.footer}>
         <div className={styles.footerCenter}>

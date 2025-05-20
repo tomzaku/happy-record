@@ -11,43 +11,31 @@ import StoryPageUi from '@pregnant/story-page-ui';
 import Audio from '@pregnant/pregnant-audio-player';
 
 // Hocs
-import { useLocalStorage } from '@dreamer/global';
-import BabyPageUi from '@pregnant/baby-page-ui';
+import RecordPage from '@dreamer/record-page-ui';
 
 const AppRouter = () => {
-  const [isNew, setIsNew] = useLocalStorage('user_new', true);
   return (
     <BrowserRouter>
       <Header />
       <Routes>
-        {isNew ? (
-          <Route path="*" element={<PregnantIntro />}></Route>
-        ) : (
-          <>
-            <Route path="/" element={<PregnantPage />}></Route>,
-            <Route
-              path="/create-checklist"
-              element={<PregnantCreateChecklistPage />}
-            ></Route>
-            <Route
-              path="/edit-checklist/:id"
-              element={<PregnantEditChecklistPage />}
-            ></Route>
-            <Route
-              path="/weight-record"
-              element={<PregnantWeightRecord />}
-            ></Route>
-            <Route path="/intro" element={<PregnantIntro />}></Route>,
-            <Route
-              path="/checklist-template"
-              element={<ChecklistTemplatePageUi />}
-            ></Route>
-            <Route path="/setting" element={<SettingPage />}></Route>
-            <Route path="/baby" element={<BabyPageUi />}></Route>
-            <Route path="/story" element={<StoryPageUi />}></Route>
-            <Route path="/audio" element={<Audio />}></Route>
-          </>
-        )}
+        <Route path="/" element={<RecordPage />}></Route>,
+        <Route
+          path="/create-checklist"
+          element={<PregnantCreateChecklistPage />}
+        ></Route>
+        <Route
+          path="/edit-checklist/:id"
+          element={<PregnantEditChecklistPage />}
+        ></Route>
+        <Route path="/weight-record" element={<PregnantWeightRecord />}></Route>
+        <Route path="/intro" element={<PregnantIntro />}></Route>,
+        <Route
+          path="/checklist-template"
+          element={<ChecklistTemplatePageUi />}
+        ></Route>
+        <Route path="/setting" element={<SettingPage />}></Route>
+        <Route path="/story" element={<StoryPageUi />}></Route>
+        <Route path="/audio" element={<Audio />}></Route>
       </Routes>
     </BrowserRouter>
   );

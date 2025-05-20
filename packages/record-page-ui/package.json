@@ -1,0 +1,18 @@
+{
+  "name": "@dreamer/record-page-ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.tsx",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@nghiavuive/lunar_date_vi": "^2.0.1",
+    "@pregnant/music-audio-player": "^1.0.0",
+    "@tony801015/chinese-lunar": "^0.20.2",
+    "date-fns": "^4.1.0",
+    "lottie-react": "^2.4.1"
+  }
+}

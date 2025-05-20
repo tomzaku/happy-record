@@ -1,0 +1,23 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/color' as *;
+
+.container {
+  padding: $spacing-md;
+  border: 3px dashed var(--create-task-dashed-border);
+  border-radius: 6px;
+}
+
+.customeFieldInput {
+  height: 24px;
+}
+
+.title {
+  padding: 0 $spacing-md;
+
+}
+
+.addFieldButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 $spacing-md;
+}
