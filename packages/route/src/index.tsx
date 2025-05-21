@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from '@dreamer/header';
 import SettingPage from '@dreamer/setting-page-ui';
+import DetailTaskPage from '@dreamer/detail-task-page';
 import PregnantIntro from '@pregnant/pregnant-intro';
 import PregnantPage from '@pregnant/pregnant-page-ui';
 import PregnantCreateChecklistPage from '@pregnant/create-checklist-page-ui';
@@ -35,6 +36,7 @@ const AppRouter = () => {
         ></Route>
         <Route path="/setting" element={<SettingPage />}></Route>
         <Route path="/story" element={<StoryPageUi />}></Route>
+        <Route path="/task/:id" element={<DetailTaskPage />}></Route>
         <Route path="/audio" element={<Audio />}></Route>
       </Routes>
     </BrowserRouter>

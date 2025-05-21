@@ -16,13 +16,7 @@ type Props = {
 const AddFieldRecord = ({ className }: Props) => {
   const intl = useIntl();
   return (
-    <div className={cx(styles.container, className)}>
-      <Typography.Title noMargin level={2} className={styles.title}>
-        {intl.formatMessage({
-          defaultMessage: 'Add more field to record',
-          id: 'label-record-custom.title',
-        })}
-      </Typography.Title>
+    <div className={cx(className)}>
       <List.ItemMeta
         logo={<Icon width={24} icon="solar:text-field-linear" />}
         title={intl.formatMessage({

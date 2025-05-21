@@ -31,7 +31,6 @@ const AudioPlayer = ({ className }: { className?: string }) => {
   } = useAudioPlayer({
     autoPlayDefault: true,
   });
-  console.log('>>>>>>>>SONG LISTSSS from parent', songList);
   const [listSongVisible, setListSongVisible] = useState(false);
   const loadAllSongsLocal = async () => {
     await loadAllSongs({

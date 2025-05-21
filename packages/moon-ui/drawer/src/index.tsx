@@ -50,11 +50,11 @@ export default function Drawer({
     >
       <animated.div
         className={cx(styles.container, className)}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
         style={{
           transform: animationStyles.translateX.to(x => `translateY(${x}%)`),
           opacity: animationStyles.opacity,
         }}
-        onBlur={onBlur}
       >
         {children}
       </animated.div>

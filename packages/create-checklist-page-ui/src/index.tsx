@@ -125,6 +125,7 @@ const CreateChecklistPage = () => {
                   name: selectedIcon,
                   color: selectedColor,
                 },
+                records: selectedRecords
               });
               // If not repeat we need to create a checklist onetime.
               if (!repeat) {
