@@ -1,20 +1,27 @@
 @use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/function' as *;
 @use 'include-media/dist/include-media' as media;
 
-.durationInput {
-  border-radius: 6px;
-  font-size: toRem(20px);
-  margin-right: 6px;
-  text-align: center;
-  width: 60px;
-  @include media.media('<=tablet') {
-    width: 40px;
-    font-size: toRem(16px);
-  }
-
-  &::placeholder {
-    opacity: 0.3;
-  }
+.selectorCard {
+  background: transparent;
 }
 
+.selected {
+  border: 1px solid var(--card-border);
+  box-sizing: border-box;
+  border-radius: 20px;
+  margin-right: $spacing-md;
+  padding: $spacing-xs $spacing-md;
+}
+
+.closeIcon {
+  margin-left: 8px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: color 0.2s;
+
+  &:hover {
+    color: var(--color-text-primary);
+  }
+}

@@ -1,58 +1,95 @@
 import List from '@moon-ui/list';
-import Typography from '@moon-ui/typography';
-import Input from '@moon-ui/input';
 import { Icon } from '@iconify/react';
+import Select from '@moon-ui/select';
 
 import { useIntl } from '@dreamer/translation';
-import styles from './index.module.scss';
 import AddFieldRecord from './AddFieldRecord';
 
-const RecordTaskSetting = () => {
-  const intl = useIntl();
+import styles from './index.module.scss';
+import Checkbox from '@moon-ui/checkbox';
+
+const recordList = [
+  {
+    key: 'duration',
+    title: 'Duration',
+    icon: 'solar:clock-square-broken',
+    description: 'Record duration for tracking purpose',
+    type: 'number',
+  },
+  {
+    key: 'push-ups',
+    title: 'Push-ups',
+    icon: 'solar:text-field-linear',
+    description: 'For example: Push-ups, Squats',
+    type: 'number',
+  },
+];
+
+const RecordTaskSetting = ({
+  selectedRecords = [],
+  setSelectedRecords,
+}: {
+  selectedRecords: string[];
+  setSelectedRecords: (records: string[]) => void;
+}) => {
   return (
     <div>
-      <List.ItemMeta
-        logo={<Icon width={24} icon="solar:clock-square-broken" />}
-        title={intl.formatMessage({
-          defaultMessage: 'Duration',
-          id: 'label-record-duration.label',
-        })}
-        description={intl.formatMessage({
-          defaultMessage: 'Set the duration for your recording session',
-          id: 'label-record-duration.description',
-        })}
-        rightComponent={
-          <>
-            <Input
-              type="number"
-              className={styles.durationInput}
-              border="dash"
-              placeholder="0"
-              // value={duration === 0 ? '' : duration}
-              // onChange={e => {
-              //   const value = e.currentTarget.value;
-              //   if (Number(value) || value === '') {
-              //     setDuration(Number(e.currentTarget.value));
-              //   }
-              // }}
-              // onKeyPress={e => {
-              //   if (e.key === 'Enter') {
-              //     addTask();
-              //   }
-              // }}
-            />
-            <Typography.Text>
-              {intl.formatMessage({
-                id: 'label-record-duration.unit',
-                defaultMessage: 'minutes',
-              })}
-            </Typography.Text>
-          </>
-        }
+      <Select
+        options={recordList.map(r => ({ ...r, label: r.title, value: r.key }))}
+        renderInput={() => {
+          if (selectedRecords.length === 0) {
+            return <div>Selecting</div>;
+          } else {
+            return (
+              <span>
+                {selectedRecords.map(key => (
+                  <span className={styles.selected}>{key}</span>
+                ))}
+              </span>
+            );
+          }
+        }}
+        value={''}
+        onChange={(key, { close }) => {
+          close();
+          const uniqRecords = new Set([...selectedRecords, key]);
+          setSelectedRecords([...uniqRecords]);
+        }}
+        renderOption={r => (
+          <List.ItemMeta
+            className={styles.selectorCard}
+            logo={<Icon width={24} icon={r.icon} />}
+            title={r.title}
+            description={r.description}
+          />
+        )}
       />
-      <AddFieldRecord />
+      {selectedRecords.map(recordKey => {
+        const record = recordList.find(r => r.key === recordKey);
+        if (!record) return;
+        return (
+          <List.ItemMeta
+            className={styles.selectorCard}
+            logo={<Icon width={24} icon={record.icon} />}
+            title={record.title}
+            description={record.description}
+            rightComponent={
+              <Checkbox
+                checked={true}
+                size="lg"
+                onClick={() => {
+                  setSelectedRecords(
+                    selectedRecords.filter(r => r !== recordKey),
+                  );
+                }}
+              />
+            }
+          />
+        );
+      })}
+      {/* <AddFieldRecord />  */}
     </div>
   );
 };
 
-export default RecordTaskSetting
+export default RecordTaskSetting;

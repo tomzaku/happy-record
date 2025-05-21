@@ -22,6 +22,7 @@ const getDay = () => {
   return days[today.getDay()];
 };
 const CreateChecklistPage = () => {
+  const [selectedRecords, setSelectedRecords] = React.useState<string[]>([]);
   const [checklistText, setChecklistText] = React.useState('');
   const [weeklyHobbies, setWeeklyHobbies] = React.useState<Day[]>([getDay()]);
   const [startedAt, setStartedAt] = React.useState(
@@ -106,7 +107,7 @@ const CreateChecklistPage = () => {
         <Hr />
         <StartDaySelector date={startedAt} setDate={setStartedAt} />
         <Hr />
-        <RecordTaskSetting />
+        <RecordTaskSetting selectedRecords={selectedRecords} setSelectedRecords={setSelectedRecords} />
         
       </Card>
       <div className={styles.footer}>

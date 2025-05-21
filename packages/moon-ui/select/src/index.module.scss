@@ -1,0 +1,67 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/function' as *;
+@use 'include-media/dist/include-media' as media;
+
+.selectWrapper {
+  position: relative;
+}
+
+.selectLabel {
+  display: block;
+}
+
+.selectElement {
+  position: relative;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    border-color: #999;
+  }
+
+  &.open {
+    border-color: #666;
+  }
+}
+
+.selectedValue {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 8px 12px;
+  flex: 1
+}
+
+.optionsList {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.option {
+  padding: 8px 12px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+
+  &.selected {
+    background-color: #e6f3ff;
+  }
+}
