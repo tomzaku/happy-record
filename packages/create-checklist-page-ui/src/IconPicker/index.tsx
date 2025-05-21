@@ -57,10 +57,10 @@ const IconPicker = ({
           defaultMessage: 'Icons',
           id: 'icon-picker.title',
         })}
-        description={intl.formatMessage({
-          defaultMessage: 'Select an icon for your task',
-          id: 'icon-picker.subtitle',
-        })}
+        // description={intl.formatMessage({
+        //   defaultMessage: '',
+        //   id: 'icon-picker.subtitle',
+        // })}
         rightComponent={
           <div className={styles.rightContainer}>
             <Button

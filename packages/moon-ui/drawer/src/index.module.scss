@@ -16,6 +16,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: $drawer-z-index;
 }
 
 .visible {
@@ -33,7 +34,6 @@
   transform: translateY(0%);
   position: fixed;
   top: 100%;
-  z-index: $drawer-z-index;
 
   @include media.media('>=tablet') {
     left: unset;

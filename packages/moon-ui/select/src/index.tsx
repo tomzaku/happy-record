@@ -8,13 +8,13 @@ type SelectOption = {
 
 type SelectProps<T extends SelectOption> = {
   options: T[];
-  value?: string;
   onChange: (value: string, params: { close: () => void }) => void;
   disabled?: boolean;
   label?: string;
   renderOption?: (option: T, params: { close: () => void }) => React.ReactNode;
   renderLabel?: () => React.ReactNode;
   renderInput?: () => React.ReactNode;
+  renderOptionFooter?: (params: { close: () => void }) => React.ReactNode;
 };
 
 const Select = <T extends SelectOption>({
@@ -25,6 +25,7 @@ const Select = <T extends SelectOption>({
   renderOption,
   renderLabel,
   renderInput,
+  renderOptionFooter,
 }: SelectProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -56,7 +57,7 @@ const Select = <T extends SelectOption>({
       >
         <div
           className={styles.selectedValue}
-          onClick={() => !disabled && setIsOpen(!isOpen)}
+          onClick={() => !disabled && setIsOpen(true)}
         >
           {renderInput ? renderInput() : 'Select...'}
         </div>
@@ -73,6 +74,7 @@ const Select = <T extends SelectOption>({
                 {renderOption ? renderOption(option, { close }) : option.label}
               </div>
             ))}
+            {renderOptionFooter && renderOptionFooter({ close })}
           </div>
         )}
       </div>
