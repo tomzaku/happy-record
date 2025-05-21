@@ -20,6 +20,7 @@ const AppRouter = () => {
       <Header />
       <Routes>
         <Route path="/" element={<RecordPage />}></Route>,
+        <Route path="/task/:id" element={<DetailTaskPage />}></Route>
         <Route
           path="/create-checklist"
           element={<PregnantCreateChecklistPage />}
@@ -36,7 +37,6 @@ const AppRouter = () => {
         ></Route>
         <Route path="/setting" element={<SettingPage />}></Route>
         <Route path="/story" element={<StoryPageUi />}></Route>
-        <Route path="/task/:id" element={<DetailTaskPage />}></Route>
         <Route path="/audio" element={<Audio />}></Route>
       </Routes>
     </BrowserRouter>

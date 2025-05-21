@@ -22,7 +22,7 @@ export const useChecklist = () => {
   const { getChecklistTemplateIdsByGivingDate, checklistTemplate } =
     useChecklistTemplates();
 
-  const [checklistByGivingDateIds, setChecklistTodayIds] = React.useState<
+  const [checklistByGivingDateIds, setChecklistByGivingDateIds] = React.useState<
     string[]
   >([]);
   const [tempChecklist, setTempChecklist] = React.useState<
@@ -32,16 +32,16 @@ export const useChecklist = () => {
   const getRepeatChecklistByGivingDate = (
     { date }: { date: Date } = { date: new Date() }
   ) => {
-    const checklistsToday = Object.values(checklist).filter(
+    const checklistsByGivingDate = Object.values(checklist).filter(
       currentChecklist =>
         new Date(currentChecklist.startedAt).toLocaleDateString() ===
         date.toLocaleDateString()
     );
-    const checklistTemplatesTodayIds = getChecklistTemplateIdsByGivingDate({
+    const checklistTemplatesByGivingDateIds = getChecklistTemplateIdsByGivingDate({
       date,
     });
-    const checklists: Checklist[] = checklistTemplatesTodayIds.map(id => {
-      const foundChecklist = checklistsToday.find(
+    const checklists: Checklist[] = checklistTemplatesByGivingDateIds.map(id => {
+      const foundChecklist = checklistsByGivingDate.find(
         c => c.checklistTemplateId === id
       );
       if (foundChecklist) {
@@ -51,7 +51,7 @@ export const useChecklist = () => {
           id: v4(),
           title: checklistTemplate[id].title,
           checklistTemplateId: id,
-          startedAt: new Date().toISOString(),
+          startedAt: new Date(date).toISOString(),
           endedAt: new Date(new Date().setHours(23, 59, 59, 999)).toISOString(),
         };
       }
@@ -89,18 +89,27 @@ export const useChecklist = () => {
     const { checklistIds, checklist } = getRepeatChecklistByGivingDate({
       date,
     });
-    setChecklistTodayIds(checklistIds);
+    setChecklistByGivingDateIds(checklistIds);
     setTempChecklist(checklist);
   };
+
+  const getAllChecklistWithTemplate = (checklistTemplateId: string) => {
+    return Object.values(checklist).filter(checklist => checklist.checklistTemplateId === checklistTemplateId).sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
+
+  };
+  const getChecklistDetail = (id: string) => checklist[id]
 
   return {
     updateChecklist,
     getChecklistByGivingDate,
+    getAllChecklistWithTemplate,
     allChecklist: {
       ...tempChecklist,
       ...checklist,
     },
     addChecklist,
     checklistByGivingDateIds,
+    getChecklistDetail,
+
   };
 };

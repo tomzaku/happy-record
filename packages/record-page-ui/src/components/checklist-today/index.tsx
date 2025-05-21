@@ -33,7 +33,7 @@ const ChecklistToday = ({ date }: { date: Date }) => {
             className={cx(
               styles.checklistItem,
               index === checklistByGivingDateIds.length - 1 &&
-                styles.lastChecklistItem
+              styles.lastChecklistItem,
             )}
           >
             <Icon
@@ -42,7 +42,10 @@ const ChecklistToday = ({ date }: { date: Date }) => {
               height={32}
               icon={currentChecklistTemplate?.avatar.name}
             />
-            <Typography.Text className={styles.title}>
+            <Typography.Text
+              onClick={() => navigate(`/task/${currentChecklist.id}`)}
+              className={styles.title}
+            >
               {currentChecklist?.title}
             </Typography.Text>
             <Icon
@@ -50,12 +53,18 @@ const ChecklistToday = ({ date }: { date: Date }) => {
               width={24}
               height={24}
               icon="material-symbols:edit-outline"
-              onClick={() => navigate(`/edit-checklist/${currentChecklist.checklistTemplateId}`)}
+              onClick={e => {
+                e.stopPropagation();
+                navigate(
+                  `/edit-checklist/${currentChecklist.checklistTemplateId}`,
+                );
+              }}
             />
             <Checkbox
               checked={Boolean(currentChecklist?.completedAt)}
               className={styles.checkbox}
               onChange={event => {
+                event.stopPropagation();
                 updateChecklist({
                   ...currentChecklist,
                   completedAt: event.target.checked
