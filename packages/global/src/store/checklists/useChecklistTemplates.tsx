@@ -34,7 +34,7 @@ const common = {
     startedAt: new Date().toISOString(),
   },
   createdAt: new Date().toISOString(),
-  records: []
+  records: [],
 };
 
 const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
@@ -108,11 +108,11 @@ const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
   },
 ];
 const CHECKLIST_OBJECT = CHECKLIST_TEMPLATES.reduce(
-  (acc: any, checklist: any) => ({
+  (acc, checklist) => ({
     ...acc,
     [checklist.id]: checklist,
   }),
-  {}
+  {},
 );
 export const useChecklistTemplates = () => {
   const [checklistTemplate, setChecklistTemplate] = useLocalStorage<
@@ -125,7 +125,7 @@ export const useChecklistTemplates = () => {
   >(SELECTED_CHECKLISTS_TEMPLATE_KEY, []);
 
   const addChecklistTemplate = (
-    currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt'>
+    currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt'>,
   ) => {
     const id = v4();
     setChecklistTemplate({
@@ -143,13 +143,15 @@ export const useChecklistTemplates = () => {
   };
 
   const updateChecklistTemplate = (
-    currentChecklistTemplate: Omit<ChecklistTemplate, 'createdAt'>
+    currentChecklistTemplate: Omit<ChecklistTemplate, 'createdAt'>,
   ) => {
     setChecklistTemplate({
       ...checklistTemplate,
       [currentChecklistTemplate.id]: {
         ...currentChecklistTemplate,
-        createdAt: checklistTemplate[currentChecklistTemplate.id]?.createdAt || new Date().toISOString(),
+        createdAt:
+          checklistTemplate[currentChecklistTemplate.id]?.createdAt ||
+          new Date().toISOString(),
       },
     });
   };
@@ -161,7 +163,7 @@ export const useChecklistTemplates = () => {
     // Also remove from selected templates if it was selected
     if (selectedChecklistTemplates.includes(id)) {
       updateSelectedChecklistTemplate(
-        selectedChecklistTemplates.filter(templateId => templateId !== id)
+        selectedChecklistTemplates.filter(templateId => templateId !== id),
       );
     }
   };
@@ -175,7 +177,7 @@ export const useChecklistTemplates = () => {
   };
 
   const getChecklistTemplateIdsByGivingDate = (
-    { date }: { date: Date } = { date: new Date() }
+    { date }: { date: Date } = { date: new Date() },
   ) => {
     return selectedChecklistTemplates.filter(checklistTemplateId => {
       const currentChecklistTemplate = checklistTemplate[checklistTemplateId];
@@ -187,9 +189,12 @@ export const useChecklistTemplates = () => {
       );
     });
   };
-
+  const getChecklistTemplate = (id: string) => {
+    return checklistTemplate[id];
+  };
   return {
     checklistTemplate,
+    getChecklistTemplate,
     addChecklistTemplate,
     updateChecklistTemplate,
     deleteChecklistTemplate,

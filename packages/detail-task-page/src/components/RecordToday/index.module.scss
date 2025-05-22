@@ -1,0 +1,18 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  margin: $spacing-sm;
+}
+
+.input {
+  width: 100px;
+}
+
+.submitBtn {
+  margin-top: $spacing-sm;
+}
+
+.unit {
+  width: 50px;
+  margin-left: $spacing-sm;
+}

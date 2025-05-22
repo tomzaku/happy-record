@@ -4,6 +4,8 @@
   color: var(--text-color);
   background: var(--input-background);
   border: 0;
+  padding: 12px;
+  font-size: toRem(24px);
 
   &:focus {
     outline: none;
