@@ -1,8 +1,4 @@
 import React from 'react';
-import Input from '@moon-ui/input';
-import List from '@moon-ui/list';
-import Typography from '@moon-ui/typography';
-import { Icon } from '@iconify/react';
 
 import {
   ChecklistRecord,

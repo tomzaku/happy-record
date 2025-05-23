@@ -1,9 +1,12 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
 @use 'include-media/dist/include-media' as media;
 
 .container {
   display: flex;
   align-items: center;
   margin-top: 20px;
+  margin-bottom: $spacing-md;
   justify-content: space-between;
   @include media.media('<=tablet') {
     margin-left: 12px;
@@ -14,7 +17,6 @@
 .player {
   display: flex;
   align-items: center;
-
 }
 
 .currentContainer {
@@ -31,7 +33,6 @@
   padding: 6px 12px;
   cursor: pointer;
 }
-
 
 .icon {
   cursor: pointer;

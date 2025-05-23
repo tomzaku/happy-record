@@ -28,7 +28,6 @@
   "audio-song-list-drawer.title": "Song List",
   "build-weekly-hobby-subtitle": "Select days to achieve a good hobby",
   "checklist-create.label-create-checklist": "Create Task",
-  "detail-task-page.record-today.label": "Record Today",
   "icon-picker.close": "Close",
   "icon-picker.search": "Search",
   "icon-picker.title": "Icons",
@@ -62,5 +61,6 @@
   "music-controller-mobile.label-stop-progress": "STOP PROGRESS?",
   "pomodoro-mobile.label-pomodoro-pause": "PLAY",
   "pregnant-weight-record.label-pregnant-weight": "What's your weight {{day}}? And how's your belly growing, mama?",
-  "pregnant-weight-record.label-recorded": "You've already recorded your weight and belly's size."
+  "pregnant-weight-record.label-recorded": "You've already recorded your weight and belly's size.",
+  "record-header.add-record": "Add"
 }

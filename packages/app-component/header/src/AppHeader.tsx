@@ -11,7 +11,7 @@ const Header = () => {
   return (
     <div className={styles.container}>
       <div className={styles.left} onClick={() => navigate('/')}>
-        PREGNANCY
+        DREAMER
       </div>
       <div className={styles.menu}>
         <Icon

@@ -13,7 +13,7 @@ import RecordHeader from '../RecordHeader';
 import RecordDayHistory from '../RecordDayHistory';
 import Typography from '@moon-ui/typography';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
-import isToday from 'date-fns/isToday';
+import { isToday } from 'date-fns/isToday';
 
 export enum RecordTab {
   Home,

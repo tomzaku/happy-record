@@ -12,7 +12,7 @@ export type Checklist = {
   completedAt?: string;
   startedAt: string;
   endedAt: string;
-  clientOnly: boolean;
+  clientOnly?: boolean;
 };
 
 export const useChecklist = () => {
@@ -82,13 +82,15 @@ export const useChecklist = () => {
   };
   const addChecklist = (checklistToAdd: Omit<Checklist, 'id'>) => {
     const id = v4();
+    const newChecklist = {
+      ...checklistToAdd,
+      id,
+    };
     setChecklist({
       ...checklist,
-      [id]: {
-        ...checklistToAdd,
-        id,
-      },
+      [id]: newChecklist,
     });
+    return newChecklist;
   };
 
   const getChecklistByGivingDate = ({ date }: { date: Date }) => {

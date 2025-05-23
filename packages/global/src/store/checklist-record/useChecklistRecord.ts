@@ -60,7 +60,10 @@ export const useChecklistRecord = () => {
   };
   const getChecklistRecords = (
     checklistTemplateId: string,
-    { rangeDate }: { rangeDate: { from: string; to: string } },
+    {
+      rangeDate,
+      type = 'date',
+    }: { rangeDate: { from: string; to: string }; type?: 'date' | 'time' },
   ) => {
     const records = checklistRecordList[checklistTemplateId] || [];
     const dayFilteringRecords = records
@@ -79,7 +82,10 @@ export const useChecklistRecord = () => {
     >((acc, record) => {
       const date = new Date(record.date);
       // Extract only the date part (YYYY-MM-DD) from the ISO string
-      const dayKey = date.toISOString().split('T')[0];
+      const dayKey =
+        type === 'date'
+          ? date.toISOString().split('T')[0]
+          : date.toISOString().split('T');
       // Initialize array for this day if it doesn't exist
       if (!acc[dayKey]) {
         acc[dayKey] = [];
@@ -92,8 +98,42 @@ export const useChecklistRecord = () => {
     return groupsByDay;
   };
 
+  const updateChecklistRecord = (
+    recordId: string,
+    {
+      value,
+      checklistTemplateId,
+    }: {
+      value: number;
+      checklistTemplateId: string;
+    },
+  ) => {
+    setChecklistRecordList(prev => {
+      // Get the existing records for the given checklistTemplateId
+      const existingRecords = prev[checklistTemplateId] || [];
+
+      // Update the record with the matching id
+      const updatedRecords = existingRecords.map(record => {
+        if (record.id === recordId) {
+          // Find the corresponding new data for this record's fieldId if provided
+          return {
+            ...record,
+            value,
+          };
+        }
+        return record;
+      });
+
+      return {
+        ...prev,
+        [checklistTemplateId]: updatedRecords,
+      };
+    });
+  };
+
   return {
     addChecklistRecord,
     getChecklistRecords,
+    updateChecklistRecord,
   };
 };
