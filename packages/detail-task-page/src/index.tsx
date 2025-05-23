@@ -1,14 +1,17 @@
-import { useParams } from 'react-router-dom';
-import RecordToday from './components/RecordToday';
+import { useParams, useSearchParams } from 'react-router-dom';
+import RecordDay from './components/RecordDay';
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();
-  if (!id) {
+  const [search] = useSearchParams();
+  const checklistId = search.get('checklistId');
+  const currentDay = search.get('currentDay');
+  if (!id || !currentDay) {
     return;
   }
   return (
     <>
-      <RecordToday id={id} />
+      <RecordDay id={id} currentDay={currentDay} />
     </>
   );
 };

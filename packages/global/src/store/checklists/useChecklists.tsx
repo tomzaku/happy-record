@@ -12,6 +12,7 @@ export type Checklist = {
   completedAt?: string;
   startedAt: string;
   endedAt: string;
+  clientOnly: boolean;
 };
 
 export const useChecklist = () => {
@@ -19,7 +20,6 @@ export const useChecklist = () => {
     CHECKLIST_KEY,
     {},
   );
-  console.log('Checklist', checklist);
   const { getChecklistTemplateIdsByGivingDate, checklistTemplate } =
     useChecklistTemplates();
 
@@ -51,6 +51,7 @@ export const useChecklist = () => {
         } else {
           return {
             id: v4(),
+            clientOnly: true,
             title: checklistTemplate[id].title,
             checklistTemplateId: id,
             startedAt: new Date(date).toISOString(),

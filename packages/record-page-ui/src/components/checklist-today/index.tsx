@@ -33,7 +33,7 @@ const ChecklistToday = ({ date }: { date: Date }) => {
             className={cx(
               styles.checklistItem,
               index === checklistByGivingDateIds.length - 1 &&
-              styles.lastChecklistItem,
+                styles.lastChecklistItem,
             )}
           >
             <Icon
@@ -43,7 +43,11 @@ const ChecklistToday = ({ date }: { date: Date }) => {
               icon={currentChecklistTemplate?.avatar.name}
             />
             <Typography.Text
-              onClick={() => navigate(`/task/${currentChecklist.id}`)}
+              onClick={() =>
+                navigate(
+                  `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
+                )
+              }
               className={styles.title}
             >
               {currentChecklist?.title}

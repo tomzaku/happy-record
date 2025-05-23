@@ -2,7 +2,7 @@ import { useLocalStorage } from '../../hook';
 
 const CHECKLIST_RECORD_KEY = 'checklist_record';
 
-type ChecklistRecord = {
+export type ChecklistRecord = {
   checklistId: string;
   checklistTemplateId: string;
   date: string;
@@ -38,8 +38,8 @@ export const useChecklistRecord = () => {
   // 		],
   // 	}));
   // };
+
   const addChecklistRecord = (data: AddChecklistRecordData) => {
-    console.log('addChecklistRecord');
     if (data.records.length) {
       setChecklistRecordList(prev => ({
         ...prev,
@@ -55,10 +55,34 @@ export const useChecklistRecord = () => {
       }));
     }
   };
-  const getChecklistRecords = (checklistTemplateId: string) => {
-    return checklistRecordList[checklistTemplateId] || [];
+  const getChecklistRecords = (
+    checklistTemplateId: string,
+    { rangeDate }: { rangeDate: { from: string; to: string } },
+  ) => {
+    const records = checklistRecordList[checklistTemplateId] || [];
+    const dayFilteringRecords = records.filter(record => {
+      const recordDate = new Date(record.date);
+      return (
+        recordDate >= new Date(rangeDate.from) &&
+        recordDate <= new Date(rangeDate.to)
+      );
+    });
+
+    const groupsByDay = dayFilteringRecords.reduce<
+      Record<string, ChecklistRecord[]>
+    >((acc, record) => {
+      const date = new Date(record.date);
+      const dayKey = date.toISOString().split('T');
+      if (!acc[dayKey]) {
+        acc[dayKey] = [];
+      }
+      acc[dayKey].push(record);
+      return acc;
+    }, {});
+
+    return groupsByDay;
   };
-  console.log('>HOOK?');
+
   return {
     addChecklistRecord,
     getChecklistRecords,

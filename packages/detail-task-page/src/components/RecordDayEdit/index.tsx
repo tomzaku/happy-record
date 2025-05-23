@@ -19,13 +19,15 @@ import Input from '@moon-ui/input';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { useChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 
-const RecordToday = ({ id }: { id: string }) => {
+const RecordDayEdit = ({ id }: { id: string }) => {
   const intl = useIntl();
   const { getChecklistDetail } = useChecklist();
   const { getChecklistTemplate } = useChecklistTemplates();
-  const [currentChecklist, setCurrentChecklist] = React.useState<Checklist>();
+  // const [currentChecklist, setCurrentChecklist] = React.useState<Checklist>();
   const { getRecordFields } = useRecordField();
-  const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
+  const [currentChecklistTemplate, setCurrentChecklistTemplate] =
+    React.useState<ChecklistTemplate>();
+  const [currentRecordFields, setCurrentRecordFields] = React.useState<
     RecordField[]
   >([]);
   const { addChecklistRecord } = useChecklistRecord();
@@ -33,13 +35,10 @@ const RecordToday = ({ id }: { id: string }) => {
     React.useState<Record<string, number | undefined>>();
 
   React.useEffect(() => {
-    const currentChecklistTemp = getChecklistDetail(id);
-    setCurrentChecklist(currentChecklistTemp);
-    const checklistTemplate = getChecklistTemplate(
-      currentChecklistTemp.checklistTemplateId,
-    );
+    const checklistTemplate = getChecklistTemplate(id);
+    setCurrentChecklistTemplate(checklistTemplate);
     const currentChecklistRecords = getRecordFields(checklistTemplate.records);
-    setCurrentChecklistRecords(currentChecklistRecords);
+    setCurrentRecordFields(currentChecklistRecords);
     setFieldRecord(
       checklistTemplate.records.reduce(
         (acc, key) => ({ ...acc, [key]: undefined }),
@@ -56,7 +55,7 @@ const RecordToday = ({ id }: { id: string }) => {
           defaultMessage: 'Record Today',
         })}
       </Typography.Title>
-      {currentChecklistRecords.map((record, index) => {
+      {currentRecordFields.map((record, index) => {
         return (
           <List.ItemMeta
             logo={<Icon width={24} icon={record.icon} />}
@@ -86,10 +85,10 @@ const RecordToday = ({ id }: { id: string }) => {
         size="lg"
         className={styles.submitBtn}
         onClick={() => {
-          if (currentChecklist) {
+          if (currentChecklistTemplate) {
             addChecklistRecord({
               checklistId: id,
-              checklistTemplateId: currentChecklist.checklistTemplateId,
+              checklistTemplateId: currentChecklistTemplate.id,
               date: new Date().toISOString(),
               records: Object.entries(fieldRecord).map(([key, value]) => ({
                 fieldId: key,
@@ -105,4 +104,4 @@ const RecordToday = ({ id }: { id: string }) => {
   );
 };
 
-export default RecordToday;
+export default RecordDayEdit;
