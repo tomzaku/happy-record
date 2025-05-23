@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import RecordDay from './components/RecordDay';
 import MetricRecordField from './components/MetricRecordField';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
-import qs from 'qs';
+import Note from './components/note/Note';
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,18 +30,12 @@ const DetailTaskPage = () => {
         ...Object.fromEntries(search),
         checklistId: checklist.id,
       });
-      // adding params checklistId by qs
-      // This will blink the page, how can we show it. could we use react router dom for this
-
-      // window.location.search = qs.stringify({
-      //   ...Object.fromEntries(search),
-      //   checklistId: checklist.id,
-      // })
     }
   }, [checklistId]);
   return (
     <>
       <RecordDay id={id} currentDay={currentDay} />
+      <Note />
     </>
   );
 };

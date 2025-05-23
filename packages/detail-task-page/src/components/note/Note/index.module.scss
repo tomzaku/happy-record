@@ -1,0 +1,9 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use 'include-media/dist/include-media' as media;
+
+.container {
+  margin-top: $spacing-md;
+  @include media.media('<=tablet') {
+    margin: $spacing-sm;
+  }
+}
