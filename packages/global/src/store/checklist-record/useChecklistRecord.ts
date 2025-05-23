@@ -1,8 +1,10 @@
+import { v4 } from 'uuid';
 import { useLocalStorage } from '../../hook';
 
 const CHECKLIST_RECORD_KEY = 'checklist_record';
 
 export type ChecklistRecord = {
+  id: string;
   checklistId: string;
   checklistTemplateId: string;
   date: string;
@@ -46,6 +48,7 @@ export const useChecklistRecord = () => {
         [data.checklistTemplateId]: [
           ...(prev[data.checklistTemplateId] || []),
           ...data.records.map(record => ({
+            id: v4(),
             ...record,
             checklistId: data.checklistId,
             checklistTemplateId: data.checklistTemplateId,
@@ -60,22 +63,28 @@ export const useChecklistRecord = () => {
     { rangeDate }: { rangeDate: { from: string; to: string } },
   ) => {
     const records = checklistRecordList[checklistTemplateId] || [];
-    const dayFilteringRecords = records.filter(record => {
-      const recordDate = new Date(record.date);
-      return (
-        recordDate >= new Date(rangeDate.from) &&
-        recordDate <= new Date(rangeDate.to)
-      );
-    });
+    const dayFilteringRecords = records
+      .filter(record => {
+        const recordDate = new Date(record.date);
+        return (
+          recordDate >= new Date(rangeDate.from) &&
+          recordDate <= new Date(rangeDate.to)
+        );
+      })
+      .reverse();
 
+    // Group records by day (YYYY-MM-DD format)
     const groupsByDay = dayFilteringRecords.reduce<
       Record<string, ChecklistRecord[]>
     >((acc, record) => {
       const date = new Date(record.date);
-      const dayKey = date.toISOString().split('T');
+      // Extract only the date part (YYYY-MM-DD) from the ISO string
+      const dayKey = date.toISOString().split('T')[0];
+      // Initialize array for this day if it doesn't exist
       if (!acc[dayKey]) {
         acc[dayKey] = [];
       }
+      // Add the record to the corresponding day
       acc[dayKey].push(record);
       return acc;
     }, {});

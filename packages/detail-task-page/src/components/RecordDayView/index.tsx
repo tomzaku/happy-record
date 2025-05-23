@@ -10,6 +10,7 @@ import {
   useRecordField,
 } from '@dreamer/global/src/store/record-field';
 import { useChecklistTemplates } from '@dreamer/global';
+import styles from './index.module.scss';
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
@@ -31,15 +32,27 @@ const RecordDayView = ({
     setCurrentRecordFields(currentRecordFields);
   }, []);
   return (
-    <div>
-      {Object.values(currentRecordFields).map((record, index) => {
+    <div className={styles.container}>
+      <Icon
+        width={100}
+        color="rgba(16,154,0,0.16)"
+        icon="ion:checkmark-done-circle-outline"
+        className={styles.iconSuccess}
+      />
+      {Object.values(currentRecordFields).map((recordField, index) => {
+        const recordValues = Object.values(records)
+          .flat()
+          .filter(record => record.fieldId === recordField.id);
+        const sumValue = sum(recordValues.map(record => record.value));
         return (
           <List.ItemMeta
-            logo={<Icon width={24} icon={record.icon} />}
-            title={record.title}
+            logo={<Icon width={24} icon={recordField.icon} />}
+            title={recordField.title}
             rightComponent={
               <>
-                <Typography.Text>{record.unit}</Typography.Text>
+                <Typography.Text>
+                  {sumValue} {recordField.unit}
+                </Typography.Text>
               </>
             }
           />

@@ -1,0 +1,31 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/color' as *;
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.title {
+  flex: 1;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  padding: $spacing-xs $spacing-sm;
+  padding-right: $spacing-md;
+}
+
+.addIcon {
+  margin-right: $spacing-xs;
+}
+
+.icon {
+  margin-right: $spacing-sm;
+}
+
+.iconActive {
+  color: var(--icon-primary);
+}

@@ -19,11 +19,14 @@ import Input from '@moon-ui/input';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { useChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 
-const RecordDayEdit = ({ id }: { id: string }) => {
-  const intl = useIntl();
-  const { getChecklistDetail } = useChecklist();
+const RecordDayEdit = ({
+  id,
+  currentDay,
+}: {
+  id: string;
+  currentDay: string;
+}) => {
   const { getChecklistTemplate } = useChecklistTemplates();
-  // const [currentChecklist, setCurrentChecklist] = React.useState<Checklist>();
   const { getRecordFields } = useRecordField();
   const [currentChecklistTemplate, setCurrentChecklistTemplate] =
     React.useState<ChecklistTemplate>();
@@ -48,14 +51,8 @@ const RecordDayEdit = ({ id }: { id: string }) => {
   }, [id]);
 
   return (
-    <Card className={styles.container}>
-      <Typography.Title level={3}>
-        {intl.formatMessage({
-          id: 'detail-task-page.record-today.label',
-          defaultMessage: 'Record Today',
-        })}
-      </Typography.Title>
-      {currentRecordFields.map((record, index) => {
+    <>
+      {currentRecordFields.map(record => {
         return (
           <List.ItemMeta
             logo={<Icon width={24} icon={record.icon} />}
@@ -89,7 +86,7 @@ const RecordDayEdit = ({ id }: { id: string }) => {
             addChecklistRecord({
               checklistId: id,
               checklistTemplateId: currentChecklistTemplate.id,
-              date: new Date().toISOString(),
+              date: currentDay,
               records: Object.entries(fieldRecord).map(([key, value]) => ({
                 fieldId: key,
                 value: value,
@@ -100,7 +97,7 @@ const RecordDayEdit = ({ id }: { id: string }) => {
       >
         Submit
       </Button>
-    </Card>
+    </>
   );
 };
 

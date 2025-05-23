@@ -1,5 +1,6 @@
 import { useParams, useSearchParams } from 'react-router-dom';
 import RecordDay from './components/RecordDay';
+import MetricRecordField from './components/MetricRecordField';
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();

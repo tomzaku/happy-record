@@ -3,6 +3,7 @@ import { useLocalStorage } from '../../hook';
 const RECORD_KEY = 'record-field';
 
 export type RecordField = {
+  id: string;
   key: string;
   title: string;
   icon: string;
@@ -13,6 +14,7 @@ export type RecordField = {
 
 const defaultRecordField = {
   duration: {
+    id: 'duration',
     key: 'duration',
     title: 'Duration',
     icon: 'solar:clock-square-broken',
@@ -21,6 +23,7 @@ const defaultRecordField = {
     unit: 'minutes',
   },
   'push-ups': {
+    id: 'push-ups',
     key: 'push-ups',
     title: 'Push-ups',
     icon: 'solar:text-field-linear',
