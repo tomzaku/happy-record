@@ -7,29 +7,29 @@ import {
 } from '@dreamer/global/src/store/checklist-record';
 
 import { startOfMonth, endOfMonth } from 'date-fns';
-import {
-  RecordField,
-  useRecordField,
-} from '@dreamer/global/src/store/record-field';
-import { useChecklistTemplates } from '@dreamer/global';
+import { RecordField } from '@dreamer/global/src/store/record-field';
 import Typography from '@moon-ui/typography';
 import styles from './index.module.scss';
 import Input from '@moon-ui/input';
 
 const RecordDayHistory = ({
   checklistTemplateId,
+  fields,
 }: {
   checklistTemplateId: string;
+  fields: RecordField[];
 }) => {
   const { getChecklistRecords, updateChecklistRecord } = useChecklistRecord();
   const [records, setRecords] = React.useState<
     Record<string, ChecklistRecord[]>
   >({});
-  const { getRecordFields } = useRecordField();
-  const [currentRecordField, setCurrentRecordField] = React.useState<
-    Record<string, RecordField>
-  >({});
-  const { getChecklistTemplate } = useChecklistTemplates();
+  const currentRecordField = fields.reduce(
+    (acc: Record<string, RecordField>, r) => ({
+      ...acc,
+      [r.id]: r,
+    }),
+    {},
+  );
   React.useEffect(() => {
     const records = getChecklistRecords(checklistTemplateId, {
       rangeDate: {
@@ -37,20 +37,9 @@ const RecordDayHistory = ({
         to: endOfMonth(new Date()).toISOString(),
       },
       type: 'time',
+      fieldIds: Object.keys(currentRecordField),
     });
     setRecords(records);
-
-    const checklistTemplate = getChecklistTemplate(checklistTemplateId);
-    const currentRecordField = getRecordFields(
-      checklistTemplate?.records,
-    ).reduce(
-      (acc, r) => ({
-        ...acc,
-        [r.id]: r,
-      }),
-      {},
-    );
-    setCurrentRecordField(currentRecordField);
   }, [checklistTemplateId]);
   const [editActiveId, setEditActiveId] = React.useState('');
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -81,7 +70,6 @@ const RecordDayHistory = ({
                             value: Number(inputRef.current?.value),
                           });
                           setRecords(prev => {
-                            console.log('prev', checklistTemplateId);
                             return {
                               ...prev,
                               [key]: prev[key].map(record => {

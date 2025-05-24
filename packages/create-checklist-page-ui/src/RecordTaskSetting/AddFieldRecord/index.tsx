@@ -1,3 +1,4 @@
+import React from 'react';
 import List from '@moon-ui/list';
 import Input from '@moon-ui/input';
 import Typography from '@moon-ui/typography';
@@ -8,6 +9,9 @@ import { useIntl } from '@dreamer/translation';
 
 import styles from './index.module.scss';
 import cx from 'classnames';
+import IconPicker from '../../IconPicker';
+import Select from '@moon-ui/select';
+import Radio from '@moon-ui/radio';
 
 type Props = {
   className?: string;
@@ -15,6 +19,7 @@ type Props = {
 
 const AddFieldRecord = ({ className }: Props) => {
   const intl = useIntl();
+  const [form, setForm] = React.useState({});
   return (
     <div className={cx(className)}>
       <List.ItemMeta
@@ -44,6 +49,34 @@ const AddFieldRecord = ({ className }: Props) => {
         rightComponent={
           <Input border="solid" className={styles.customeFieldInput} />
         }
+      />
+      <List.ItemMeta
+        logo={<Icon width={24} icon="solar:text-field-linear" />}
+        title={intl.formatMessage({
+          defaultMessage: 'Type',
+          id: 'label-record-custom.type.label',
+        })}
+        // description={intl.formatMessage({
+        //   defaultMessage: '',
+        //   id: 'label-record-custom.type.description',
+        // })}
+        rightComponent={
+          <Radio
+            isButton
+            value={form.type}
+            onChangeValue={type => setForm({ ...form, type })}
+            options={[
+              { label: 'Metric', value: 'metric' },
+              { label: 'Note', value: 'note' },
+            ]}
+          />
+        }
+      />
+      <IconPicker
+        selectedIcon={form.icon}
+        setSelectedIcon={icon => setForm({ ...form, icon })}
+        selectedColor={form.iconColor}
+        setSelectedColor={color => setForm({ ...form, iconColor: color })}
       />
       <div className={styles.addFieldButtonContainer}>
         <Button type="primary">

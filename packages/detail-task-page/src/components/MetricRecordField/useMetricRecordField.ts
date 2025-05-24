@@ -15,21 +15,15 @@ const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
 export const useMetricRecordField = ({
   checklistTemplateId,
+  fields,
 }: {
   checklistTemplateId: string;
+  fields: RecordField[];
 }) => {
-  const { getRecordFields } = useRecordField();
   const { getChecklistRecords } = useChecklistRecord();
-  const [currentRecordFields, setCurrentRecordFields] = React.useState<
-    RecordField[]
-  >([]);
-  const { getChecklistTemplate } = useChecklistTemplates();
 
   const [data, setData] = React.useState({});
   React.useEffect(() => {
-    const checklistTemplate = getChecklistTemplate(checklistTemplateId);
-    const currentRecordFields = getRecordFields(checklistTemplate?.records);
-    setCurrentRecordFields(currentRecordFields);
     const records = getChecklistRecords(checklistTemplateId, {
       rangeDate: {
         from: startOfMonth(new Date()).toISOString(),
@@ -39,31 +33,28 @@ export const useMetricRecordField = ({
     console.log('RECORDS from metric', records);
     const categories = Object.keys(records);
     const values = Object.values(records);
-    const seriesValues = currentRecordFields.reduce(
-      (acc, recordField, index) => {
-        const seriesValue = values.map(value => {
-          const result = value
-            .filter(record => record.fieldId === recordField.id)
-            .map(record => record.value);
-          return sum(result);
-        });
-        return {
-          ...acc,
-          [recordField.id]: seriesValue,
-        };
-      },
-      {},
-    );
+    const seriesValues = fields.reduce((acc, recordField, index) => {
+      const seriesValue = values.map(value => {
+        const result = value
+          .filter(record => record.fieldId === recordField.id)
+          .map(record => record.value);
+        return sum(result);
+      });
+      return {
+        ...acc,
+        [recordField.id]: seriesValue,
+      };
+    }, {});
     setData({
       categories,
       seriesValues,
     });
   }, []);
 
-  const series = currentRecordFields.map(recordField => {
+  const series = fields.map(recordField => {
     return {
       name: recordField.title,
-      data: data.seriesValues[recordField.id],
+      data: data?.seriesValues?.[recordField.id],
     };
   });
   const options = {

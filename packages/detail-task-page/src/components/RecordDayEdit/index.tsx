@@ -22,37 +22,38 @@ import { useChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 const RecordDayEdit = ({
   id,
   currentDay,
+  onSubmit,
+  fields,
 }: {
   id: string;
   currentDay: string;
+  onSubmit?: () => void;
+  fields: RecordField[];
 }) => {
   const { getChecklistTemplate } = useChecklistTemplates();
-  const { getRecordFields } = useRecordField();
   const [currentChecklistTemplate, setCurrentChecklistTemplate] =
     React.useState<ChecklistTemplate>();
-  const [currentRecordFields, setCurrentRecordFields] = React.useState<
-    RecordField[]
-  >([]);
   const { addChecklistRecord } = useChecklistRecord();
-  const [fieldRecord, setFieldRecord] =
-    React.useState<Record<string, number | undefined>>();
+  const [fieldRecord, setFieldRecord] = React.useState<
+    Record<string, number | undefined>
+  >(
+    fields.reduce(
+      (acc, { id }) => ({
+        ...acc,
+        [id]: undefined,
+      }),
+      {},
+    ),
+  );
 
   React.useEffect(() => {
     const checklistTemplate = getChecklistTemplate(id);
     setCurrentChecklistTemplate(checklistTemplate);
-    const currentChecklistRecords = getRecordFields(checklistTemplate.records);
-    setCurrentRecordFields(currentChecklistRecords);
-    setFieldRecord(
-      checklistTemplate.records.reduce(
-        (acc, key) => ({ ...acc, [key]: undefined }),
-        {},
-      ),
-    );
   }, [id]);
 
   return (
     <>
-      {currentRecordFields.map(record => {
+      {fields.map(record => {
         return (
           <List.ItemMeta
             logo={<Icon width={24} icon={record.icon} />}
@@ -92,6 +93,7 @@ const RecordDayEdit = ({
                 value: value,
               })),
             });
+            onSubmit?.();
           }
         }}
       >

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import styles from './index.module.scss';
+import cx from 'classnames';
 
 type SelectOption = {
   label: string;
@@ -8,13 +9,16 @@ type SelectOption = {
 
 type SelectProps<T extends SelectOption> = {
   options: T[];
-  onChange: (value: string, params: { close: () => void }) => void;
+  onChange: (value: T, params: { close: () => void }) => void;
   disabled?: boolean;
   label?: string;
   renderOption?: (option: T, params: { close: () => void }) => React.ReactNode;
   renderLabel?: () => React.ReactNode;
   renderInput?: () => React.ReactNode;
   renderOptionFooter?: (params: { close: () => void }) => React.ReactNode;
+  classes?: {
+    container?: string;
+  };
 };
 
 const Select = <T extends SelectOption>({
@@ -26,6 +30,7 @@ const Select = <T extends SelectOption>({
   renderLabel,
   renderInput,
   renderOptionFooter,
+  classes = {},
 }: SelectProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -46,7 +51,10 @@ const Select = <T extends SelectOption>({
   }, []);
 
   return (
-    <div className={styles.selectWrapper} ref={wrapperRef}>
+    <div
+      className={cx(styles.selectWrapper, classes.container)}
+      ref={wrapperRef}
+    >
       {renderLabel
         ? renderLabel()
         : label && <label className={styles.selectLabel}>{label}</label>}
@@ -68,7 +76,7 @@ const Select = <T extends SelectOption>({
                 key={option.value}
                 className={styles.option}
                 onClick={() => {
-                  onChange(option.value, { close });
+                  onChange(option, { close });
                 }}
               >
                 {renderOption ? renderOption(option, { close }) : option.label}

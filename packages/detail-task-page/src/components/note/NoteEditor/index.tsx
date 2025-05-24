@@ -25,11 +25,24 @@ import {
 
 import '@mdxeditor/editor/style.css';
 
-const NoteEditor = () => {
+import styles from './index.module.scss';
+
+const NoteEditor = ({
+  value = '',
+  setValue,
+  readOnly,
+  hideToolBar,
+}: {
+  value: string;
+  setValue: (value: string) => void;
+  readOnly?: boolean;
+  hideToolBar?: boolean;
+}) => {
   return (
-    <div className="note">
+    <div className={styles.container}>
       <MDXEditor
-        markdown={'# Hello World'}
+        markdown={value}
+        onChange={setValue}
         plugins={[
           headingsPlugin(),
           listsPlugin(),
@@ -45,17 +58,21 @@ const NoteEditor = () => {
           }),
           frontmatterPlugin(),
           diffSourcePlugin(),
-          toolbarPlugin({
-            toolbarContents: () => (
-              <DiffSourceToggleWrapper>
-                <UndoRedo />
-                <BoldItalicUnderlineToggles />
-                <BlockTypeSelect />
-                <CreateLink />
-                <InsertImage />
-              </DiffSourceToggleWrapper>
-            ),
-          }),
+          ...(hideToolBar
+            ? []
+            : [
+                toolbarPlugin({
+                  toolbarContents: () => (
+                    <DiffSourceToggleWrapper>
+                      <UndoRedo />
+                      <BoldItalicUnderlineToggles />
+                      <BlockTypeSelect />
+                      <CreateLink />
+                      <InsertImage />
+                    </DiffSourceToggleWrapper>
+                  ),
+                }),
+              ]),
         ]}
       />
     </div>

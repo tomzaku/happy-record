@@ -63,21 +63,33 @@ export const useChecklistRecord = () => {
     {
       rangeDate,
       type = 'date',
-    }: { rangeDate: { from: string; to: string }; type?: 'date' | 'time' },
+      fieldIds,
+    }: {
+      rangeDate: { from: string; to: string };
+      type?: 'date' | 'time';
+      fieldIds?: string[];
+    },
   ) => {
     const records = checklistRecordList[checklistTemplateId] || [];
-    const dayFilteringRecords = records
-      .filter(record => {
+    let filteredRecords = records;
+    if (rangeDate) {
+      filteredRecords = records.filter(record => {
         const recordDate = new Date(record.date);
         return (
           recordDate >= new Date(rangeDate.from) &&
           recordDate <= new Date(rangeDate.to)
         );
-      })
-      .reverse();
+      });
+    }
+
+    if (fieldIds && fieldIds.length) {
+      filteredRecords = filteredRecords.filter(record =>
+        fieldIds.includes(record.fieldId),
+      );
+    }
 
     // Group records by day (YYYY-MM-DD format)
-    const groupsByDay = dayFilteringRecords.reduce<
+    const groupsByDay = filteredRecords.reduce<
       Record<string, ChecklistRecord[]>
     >((acc, record) => {
       const date = new Date(record.date);

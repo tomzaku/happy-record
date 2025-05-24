@@ -26,11 +26,11 @@ const CreateChecklistPage = () => {
   const [checklistText, setChecklistText] = React.useState('');
   const [weeklyHobbies, setWeeklyHobbies] = React.useState<Day[]>([getDay()]);
   const [startedAt, setStartedAt] = React.useState(
-    new Date().toISOString().split('T')[0]
+    new Date().toISOString().split('T')[0],
   );
   const intl = useIntl();
   const [selectedIcon, setSelectedIcon] = React.useState(
-    'material-symbols:checklist'
+    'material-symbols:checklist',
   );
   const [selectedColor, setSelectedColor] = React.useState('#607d8b');
   const { addChecklistTemplate } = useChecklistTemplates();
@@ -77,7 +77,6 @@ const CreateChecklistPage = () => {
         .join(','),
     };
   };
-
   return (
     <div className={styles.container}>
       <Card className={styles.container}>
@@ -107,8 +106,10 @@ const CreateChecklistPage = () => {
         <Hr />
         <StartDaySelector date={startedAt} setDate={setStartedAt} />
         <Hr />
-        <RecordTaskSetting selectedRecords={selectedRecords} setSelectedRecords={setSelectedRecords} />
-        
+        <RecordTaskSetting
+          selectedRecords={selectedRecords}
+          setSelectedRecords={setSelectedRecords}
+        />
       </Card>
       <div className={styles.footer}>
         <div className={styles.footerCenter}>
@@ -125,7 +126,7 @@ const CreateChecklistPage = () => {
                   name: selectedIcon,
                   color: selectedColor,
                 },
-                records: selectedRecords
+                records: selectedRecords,
               });
               // If not repeat we need to create a checklist onetime.
               if (!repeat) {
@@ -134,7 +135,7 @@ const CreateChecklistPage = () => {
                   checklistTemplateId: id,
                   startedAt,
                   endedAt: new Date(
-                    new Date().setHours(23, 59, 59, 999)
+                    new Date().setHours(23, 59, 59, 999),
                   ).toISOString(),
                 });
               }

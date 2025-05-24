@@ -7,11 +7,14 @@
 
 .title {
   padding: 0 $spacing-md;
-
 }
 
 .addFieldButtonContainer {
   display: flex;
   justify-content: flex-end;
   padding: 0 $spacing-md;
+}
+
+.customeFieldInput {
+  padding: $spacing-xs $spacing-md;
 }

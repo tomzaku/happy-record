@@ -8,23 +8,7 @@ import { useIntl } from '@dreamer/translation';
 import styles from './index.module.scss';
 import Checkbox from '@moon-ui/checkbox';
 import AddFieldRecordDialog from './AddFieldRecordDialog';
-
-const recordList = [
-  {
-    key: 'duration',
-    title: 'Duration',
-    icon: 'solar:clock-square-broken',
-    description: 'Record duration for tracking purpose',
-    type: 'number',
-  },
-  {
-    key: 'push-ups',
-    title: 'Push-ups',
-    icon: 'solar:text-field-linear',
-    description: 'For example: Push-ups, Squats',
-    type: 'number',
-  },
-];
+import { useRecordField } from '@dreamer/global/src/store/record-field';
 
 const RecordTaskSetting = ({
   selectedRecords = [],
@@ -33,13 +17,25 @@ const RecordTaskSetting = ({
   selectedRecords: string[];
   setSelectedRecords: (records: string[]) => void;
 }) => {
+  const { getAllRecordFields } = useRecordField();
   const intl = useIntl();
   const [showAddFieldRecord, setShowAddFieldRecord] = React.useState(false);
+  const [recordFields, setRecordFields] = React.useState(getAllRecordFields());
+  React.useEffect(() => {
+    setRecordFields(getAllRecordFields());
+  });
   return (
     <div>
-      <AddFieldRecordDialog visible={showAddFieldRecord} onClose={() => setShowAddFieldRecord(false)} />
+      <AddFieldRecordDialog
+        visible={showAddFieldRecord}
+        onClose={() => setShowAddFieldRecord(false)}
+      />
       <Select
-        options={recordList.map(r => ({ ...r, label: r.title, value: r.key }))}
+        options={recordFields.map(r => ({
+          ...r,
+          label: r.title,
+          value: r.key,
+        }))}
         renderInput={() => {
           if (selectedRecords.length === 0) {
             return <div>Record & Metric</div>;
@@ -67,11 +63,11 @@ const RecordTaskSetting = ({
             );
           }
         }}
-        renderOptionFooter={({close}) => (
+        renderOptionFooter={({ close }) => (
           <div
             onClick={() => {
               setShowAddFieldRecord(true);
-              close()
+              close();
             }}
             className={styles.addCustomField}
           >
@@ -81,9 +77,9 @@ const RecordTaskSetting = ({
             })}
           </div>
         )}
-        onChange={(key, { close }) => {
+        onChange={({ id }, { close }) => {
           close();
-          const uniqRecords = new Set([...selectedRecords, key]);
+          const uniqRecords = new Set([...selectedRecords, id]);
           setSelectedRecords([...uniqRecords]);
         }}
         renderOption={r => (
@@ -96,7 +92,7 @@ const RecordTaskSetting = ({
         )}
       />
       {selectedRecords.map(recordKey => {
-        const record = recordList.find(r => r.key === recordKey);
+        const record = recordFields.find(r => r.key === recordKey);
         if (!record) return;
         return (
           <List.ItemMeta

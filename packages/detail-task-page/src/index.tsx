@@ -4,18 +4,28 @@ import RecordDay from './components/RecordDay';
 import MetricRecordField from './components/MetricRecordField';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 import Note from './components/note/Note';
+import {
+  RecordField,
+  useRecordField,
+} from '@dreamer/global/src/store/record-field';
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
   const { getChecklistTemplate } = useChecklistTemplates();
+  const { getAllRecordFields, getRecordFields } = useRecordField();
   const { addChecklist } = useChecklist();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
+
+  const [metricFields, setMetricFields] = React.useState<RecordField[]>([]);
+  const [noteFields, setNoteFields] = React.useState<RecordField[]>([]);
+  const [fetching, setFetching] = React.useState(true);
   if (!id || !currentDay) {
     return;
   }
 
+  // Update checklistId Params
   React.useEffect(() => {
     const checklistTemplate = getChecklistTemplate(id);
     // Should create checklist id if non exist
@@ -32,10 +42,30 @@ const DetailTaskPage = () => {
       });
     }
   }, [checklistId]);
+
+  React.useEffect(() => {
+    const checklistTemplate = getChecklistTemplate(id);
+    const fields = getRecordFields(checklistTemplate?.records);
+    if (fields.length) {
+      const metricFields = fields.filter(field => field.type === 'metric');
+      const noteFields = fields.filter(field => field.type === 'note');
+      setMetricFields(metricFields);
+      setNoteFields(noteFields);
+    }
+  }, []);
   return (
     <>
-      <RecordDay id={id} currentDay={currentDay} />
-      <Note />
+      {metricFields.length ? (
+        <RecordDay id={id} currentDay={currentDay} fields={metricFields} />
+      ) : null}
+      {noteFields.length ? (
+        <Note
+          fields={noteFields}
+          checklistId={id}
+          checklistTemplateId={id}
+          currentDay={currentDay}
+        />
+      ) : null}
     </>
   );
 };

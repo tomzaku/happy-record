@@ -17,20 +17,22 @@ const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 const RecordDayView = ({
   id,
   records,
+  fields,
 }: {
   id: string;
   records: Record<string, ChecklistRecord[]>;
+  fields: RecordField[];
 }) => {
-  const { getRecordFields } = useRecordField();
-  const [currentRecordFields, setCurrentRecordFields] = React.useState<
-    RecordField[]
-  >([]);
-  const { getChecklistTemplate } = useChecklistTemplates();
-  React.useEffect(() => {
-    const checklistTemplate = getChecklistTemplate(id);
-    const currentRecordFields = getRecordFields(checklistTemplate?.records);
-    setCurrentRecordFields(currentRecordFields);
-  }, []);
+  // const { getRecordFields } = useRecordField();
+  // const [currentRecordFields, setCurrentRecordFields] = React.useState<
+  //   RecordField[]
+  // >([]);
+  // const { getChecklistTemplate } = useChecklistTemplates();
+  // React.useEffect(() => {
+  //   const checklistTemplate = getChecklistTemplate(id);
+  //   const currentRecordFields = getRecordFields(checklistTemplate?.records);
+  //   setCurrentRecordFields(currentRecordFields);
+  // }, []);
   return (
     <div className={styles.container}>
       <Icon
@@ -39,7 +41,7 @@ const RecordDayView = ({
         icon="ion:checkmark-done-circle-outline"
         className={styles.iconSuccess}
       />
-      {Object.values(currentRecordFields).map((recordField, index) => {
+      {fields.map(recordField => {
         const recordValues = Object.values(records)
           .flat()
           .filter(record => record.fieldId === recordField.id);
