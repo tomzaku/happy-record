@@ -12,11 +12,13 @@ const NoteAdd = ({
   checklistId,
   checklistTemplateId,
   currentDay,
+  onSubmit,
 }: {
   fields: RecordField[];
   checklistId: string;
   checklistTemplateId: string;
   currentDay: string;
+  onSubmit?: () => void;
 }) => {
   const [form, setForm] = React.useState({
     value: '',
@@ -61,6 +63,7 @@ const NoteAdd = ({
               },
             ],
           });
+          onSubmit?.();
         }}
       >
         Submit

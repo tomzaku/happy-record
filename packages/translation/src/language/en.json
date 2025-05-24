@@ -41,6 +41,7 @@
   "label-record-custom.name.label": "Field Name",
   "label-record-custom.save": "Save",
   "label-record-custom.title": "Add more field to record",
+  "label-record-custom.type.label": "Type",
   "label-record-custom.unit.description": "For example: minutes, hours, reps",
   "label-record-custom.unit.label": "Field Unit",
   "label-start-day.description": "Select the first day",

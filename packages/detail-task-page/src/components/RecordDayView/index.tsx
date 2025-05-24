@@ -1,38 +1,46 @@
 import React from 'react';
-import Input from '@moon-ui/input';
 import List from '@moon-ui/list';
 import Typography from '@moon-ui/typography';
 import { Icon } from '@iconify/react';
 
-import { ChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 import {
-  RecordField,
-  useRecordField,
-} from '@dreamer/global/src/store/record-field';
-import { useChecklistTemplates } from '@dreamer/global';
+  ChecklistRecord,
+  useChecklistRecord,
+} from '@dreamer/global/src/store/checklist-record';
+import { RecordField } from '@dreamer/global/src/store/record-field';
 import styles from './index.module.scss';
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
 const RecordDayView = ({
-  id,
-  records,
+  checklistTemplateId,
   fields,
+  currentDay,
 }: {
-  id: string;
-  records: Record<string, ChecklistRecord[]>;
+  checklistTemplateId: string;
   fields: RecordField[];
+  currentDay: string;
 }) => {
-  // const { getRecordFields } = useRecordField();
-  // const [currentRecordFields, setCurrentRecordFields] = React.useState<
-  //   RecordField[]
-  // >([]);
-  // const { getChecklistTemplate } = useChecklistTemplates();
-  // React.useEffect(() => {
-  //   const checklistTemplate = getChecklistTemplate(id);
-  //   const currentRecordFields = getRecordFields(checklistTemplate?.records);
-  //   setCurrentRecordFields(currentRecordFields);
-  // }, []);
+  const { getChecklistRecords } = useChecklistRecord();
+  const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
+    ChecklistRecord[]
+  >([]);
+  const reloadChecklistRecord = () => {
+    const records = getChecklistRecords(checklistTemplateId, {
+      rangeDate: {
+        from: new Date(new Date(currentDay).setHours(0, 0, 0, 0)).toISOString(),
+        to: new Date(
+          new Date(currentDay).setHours(23, 59, 59, 999),
+        ).toISOString(),
+      },
+      fieldIds: fields.map(field => field.id),
+    });
+    setCurrentChecklistRecords(Object.values(records));
+    return records;
+  };
+  React.useEffect(() => {
+    reloadChecklistRecord();
+  }, [checklistTemplateId]);
   return (
     <div className={styles.container}>
       <Icon
@@ -42,7 +50,7 @@ const RecordDayView = ({
         className={styles.iconSuccess}
       />
       {fields.map(recordField => {
-        const recordValues = Object.values(records)
+        const recordValues = Object.values(currentChecklistRecords)
           .flat()
           .filter(record => record.fieldId === recordField.id);
         const sumValue = sum(recordValues.map(record => record.value));

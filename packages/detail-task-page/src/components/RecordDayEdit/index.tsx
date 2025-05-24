@@ -20,12 +20,12 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import { useChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 
 const RecordDayEdit = ({
-  id,
+  checklistTemplateId,
   currentDay,
   onSubmit,
   fields,
 }: {
-  id: string;
+  checklistTemplateId: string;
   currentDay: string;
   onSubmit?: () => void;
   fields: RecordField[];
@@ -47,9 +47,9 @@ const RecordDayEdit = ({
   );
 
   React.useEffect(() => {
-    const checklistTemplate = getChecklistTemplate(id);
+    const checklistTemplate = getChecklistTemplate(checklistTemplateId);
     setCurrentChecklistTemplate(checklistTemplate);
-  }, [id]);
+  }, [checklistTemplateId]);
 
   return (
     <>
@@ -83,9 +83,10 @@ const RecordDayEdit = ({
         size="lg"
         className={styles.submitBtn}
         onClick={() => {
+          console.log('>SUBMIT ', currentChecklistTemplate);
           if (currentChecklistTemplate) {
             addChecklistRecord({
-              checklistId: id,
+              checklistId: checklistTemplateId,
               checklistTemplateId: currentChecklistTemplate.id,
               date: currentDay,
               records: Object.entries(fieldRecord).map(([key, value]) => ({

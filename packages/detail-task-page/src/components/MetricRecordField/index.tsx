@@ -1,6 +1,7 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
 import { useMetricRecordField } from './useMetricRecordField';
+import { RecordField } from '@dreamer/global/src/store/record-field';
 
 const MetricRecordField = ({
   checklistTemplateId,

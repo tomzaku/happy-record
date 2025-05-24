@@ -56,6 +56,7 @@ export const useChecklistRecord = () => {
           })),
         ],
       }));
+      console.log('>CHECKLIST RECORD LIST', checklistRecordList);
     }
   };
   const getChecklistRecords = (

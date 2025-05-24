@@ -42,7 +42,14 @@ const Note = ({
   const renderBody = () => {
     switch (activeTab) {
       case NoteTab.Home: {
-        return <NoteHome />;
+        return (
+          <NoteHome
+            currentDay={currentDay}
+            checklistId={checklistId}
+            checklistTemplateId={checklistTemplateId}
+            fields={fields}
+          />
+        );
       }
       case NoteTab.Add: {
         return (
@@ -51,6 +58,7 @@ const Note = ({
             checklistId={checklistId}
             checklistTemplateId={checklistTemplateId}
             currentDay={currentDay}
+            onSubmit={() => setActiveTab(NoteTab.History)}
           />
         );
       }

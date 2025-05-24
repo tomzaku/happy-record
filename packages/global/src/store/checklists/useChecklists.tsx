@@ -74,10 +74,15 @@ export const useChecklist = () => {
     };
   };
 
-  const updateChecklist = (checklistToUpdate: Checklist) => {
+  const updateChecklist = (
+    checklistToUpdate: Partial<Checklist> & { id: Checklist['id'] },
+  ) => {
     setChecklist({
       ...checklist,
-      [checklistToUpdate.id]: checklistToUpdate,
+      [checklistToUpdate.id]: {
+        ...checklist[checklistToUpdate.id],
+        ...checklistToUpdate,
+      },
     });
   };
   const addChecklist = (checklistToAdd: Omit<Checklist, 'id'>) => {

@@ -15,6 +15,7 @@ import Typography from '@moon-ui/typography';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import { isToday } from 'date-fns/isToday';
 import { RecordField } from '@dreamer/global/src/store/record-field';
+import { useChecklist } from '@dreamer/global';
 
 export enum RecordTab {
   Home,
@@ -24,11 +25,13 @@ export enum RecordTab {
 }
 
 const RecordDay = ({
-  id,
+  checklistId,
   currentDay,
   fields,
+  checklistTemplateId,
 }: {
-  id: string;
+  checklistId: string;
+  checklistTemplateId: string;
   currentDay: string;
   fields: RecordField[];
 }) => {
@@ -36,9 +39,10 @@ const RecordDay = ({
   const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
     Record<string, ChecklistRecord[]>
   >({});
+  const { updateChecklist } = useChecklist();
 
-  React.useEffect(() => {
-    const records = getChecklistRecords(id, {
+  const reloadChecklistRecord = () => {
+    const records = getChecklistRecords(checklistTemplateId, {
       rangeDate: {
         from: new Date(new Date(currentDay).setHours(0, 0, 0, 0)).toISOString(),
         to: new Date(
@@ -48,10 +52,15 @@ const RecordDay = ({
       fieldIds: fields.map(field => field.id),
     });
     setCurrentChecklistRecords(Object.values(records));
+    return records;
+  };
+
+  React.useEffect(() => {
+    const records = reloadChecklistRecord();
     setActiveTab(
       Object.values(records).length ? RecordTab.Home : RecordTab.Add,
     );
-  }, [id]);
+  }, [checklistTemplateId]);
   const hasRecords = Object.values(currentChecklistRecords).length;
   const [activeTab, setActiveTab] = React.useState(
     hasRecords ? RecordTab.Home : RecordTab.Add,
@@ -62,29 +71,43 @@ const RecordDay = ({
       case RecordTab.Home: {
         return (
           <RecordDayView
-            id={id}
-            records={currentChecklistRecords}
+            checklistTemplateId={checklistTemplateId}
             fields={fields}
+            currentDay={currentDay}
           />
         );
       }
       case RecordTab.Metric: {
-        return <MetricRecordField checklistTemplateId={id} fields={fields} />;
+        return (
+          <MetricRecordField
+            checklistTemplateId={checklistTemplateId}
+            fields={fields}
+          />
+        );
       }
       case RecordTab.Add: {
         return (
           <RecordDayEdit
-            id={id}
+            checklistTemplateId={checklistTemplateId}
             currentDay={currentDay}
             onSubmit={() => {
               setActiveTab(RecordTab.Home);
+              updateChecklist({
+                id: checklistId,
+                completedAt: new Date().toISOString(),
+              });
             }}
             fields={fields}
           />
         );
       }
       case RecordTab.History: {
-        return <RecordDayHistory checklistTemplateId={id} fields={fields} />;
+        return (
+          <RecordDayHistory
+            checklistTemplateId={checklistTemplateId}
+            fields={fields}
+          />
+        );
       }
       default: {
         return null;
