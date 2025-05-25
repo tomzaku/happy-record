@@ -29,6 +29,7 @@ export const useMetricRecordField = ({
         from: startOfMonth(new Date()).toISOString(),
         to: endOfMonth(new Date()).toISOString(),
       },
+      sortBy: 'createdAt',
     });
     console.log('RECORDS from metric', records);
     const categories = Object.keys(records);

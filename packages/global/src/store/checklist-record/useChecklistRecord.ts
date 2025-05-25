@@ -7,7 +7,7 @@ export type ChecklistRecord = {
   id: string;
   checklistId: string;
   checklistTemplateId: string;
-  date: string;
+  createdAt: string;
   fieldId: string;
   value: number;
 };
@@ -24,22 +24,12 @@ type AddChecklistRecordData = {
   }[];
   checklistId: string;
   checklistTemplateId: string;
-  date: string;
+  createdAt: string;
 };
 
 export const useChecklistRecord = () => {
   const [checklistRecordList, setChecklistRecordList] =
     useLocalStorage<ChecklistRecorStore>(CHECKLIST_RECORD_KEY, {});
-
-  // const addChecklistRecordCore = (checklistRecord: ChecklistRecord) => {
-  // 	setChecklistRecordList(prev => ({
-  // 		...prev,
-  // 		[checklistRecord.checklistTemplateId]: [
-  // 			...(prev[checklistRecord.checklistTemplateId] || []),
-  // 			checklistRecord,
-  // 		],
-  // 	}));
-  // };
 
   const addChecklistRecord = (data: AddChecklistRecordData) => {
     if (data.records.length) {
@@ -52,11 +42,10 @@ export const useChecklistRecord = () => {
             ...record,
             checklistId: data.checklistId,
             checklistTemplateId: data.checklistTemplateId,
-            date: data.date,
+            createdAt: data.createdAt,
           })),
         ],
       }));
-      console.log('>CHECKLIST RECORD LIST', checklistRecordList);
     }
   };
   const getChecklistRecords = (
@@ -65,17 +54,19 @@ export const useChecklistRecord = () => {
       rangeDate,
       type = 'date',
       fieldIds,
+      sortBy,
     }: {
       rangeDate: { from: string; to: string };
       type?: 'date' | 'time';
       fieldIds?: string[];
+      sortBy?: 'createdAt';
     },
   ) => {
     const records = checklistRecordList[checklistTemplateId] || [];
     let filteredRecords = records;
     if (rangeDate) {
       filteredRecords = records.filter(record => {
-        const recordDate = new Date(record.date);
+        const recordDate = new Date(record.createdAt);
         return (
           recordDate >= new Date(rangeDate.from) &&
           recordDate <= new Date(rangeDate.to)
@@ -89,11 +80,25 @@ export const useChecklistRecord = () => {
       );
     }
 
+    // Sorting
+    if (sortBy) {
+      switch (sortBy) {
+        case 'createdAt': {
+          filteredRecords = filteredRecords.sort((a, b) => {
+            const dateA = new Date(a.createdAt);
+            const dateB = new Date(b.createdAt);
+            return dateA.getTime() - dateB.getTime();
+          });
+          break;
+        }
+      }
+    }
+
     // Group records by day (YYYY-MM-DD format)
     const groupsByDay = filteredRecords.reduce<
       Record<string, ChecklistRecord[]>
     >((acc, record) => {
-      const date = new Date(record.date);
+      const date = new Date(record.createdAt);
       // Extract only the date part (YYYY-MM-DD) from the ISO string
       const dayKey =
         type === 'date'

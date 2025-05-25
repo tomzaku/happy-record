@@ -7,7 +7,6 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   plugins: [
     react(),
-    visualizer(),
     VitePWA({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3,woff2}'],
@@ -49,22 +48,22 @@ export default defineConfig({
       immediate: true,
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Happy Pregnancy',
-        short_name: 'Pregency',
+        name: 'Dreamer',
+        short_name: 'Dreamer',
         description: 'Make your dreams come true',
         icons: [
           {
-            src: './logo/happy-pregnancy-192x192.png',
+            src: './logo/dreamer-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: './logo/happy-pregnancy-512x512.png',
+            src: './logo/dreamer-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: './logo/happy-pregnancy-512x512.png',
+            src: './logo/dreamer-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
@@ -73,7 +72,18 @@ export default defineConfig({
         theme_color: '#0b7dc2',
       },
     }),
+    visualizer(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          apexcharts: ['react-apexcharts', 'apexcharts'],
+          mdxeditor: ['@mdxeditor/editor'],
+        }
+      }
+    }
+  },
   css: {
     preprocessorOptions: {
       scss: {

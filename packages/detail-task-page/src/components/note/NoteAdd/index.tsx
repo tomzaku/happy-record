@@ -60,7 +60,7 @@ const NoteAdd = ({
             value: form.value,
             checklistId,
             checklistTemplateId: checklistTemplateId,
-            date: currentDay,
+            createdAt: currentDay,
             records: [
               {
                 fieldId: selectedField.id,

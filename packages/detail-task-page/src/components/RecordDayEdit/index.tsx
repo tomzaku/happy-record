@@ -87,7 +87,7 @@ const RecordDayEdit = ({
             addChecklistRecord({
               checklistId: checklistTemplateId,
               checklistTemplateId: currentChecklistTemplate.id,
-              date: currentDay,
+              createdAt: currentDay,
               records: Object.entries(fieldRecord).map(([key, value]) => ({
                 fieldId: key,
                 value: value,
