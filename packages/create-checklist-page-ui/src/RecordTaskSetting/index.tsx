@@ -34,7 +34,7 @@ const RecordTaskSetting = ({
         options={recordFields.map(r => ({
           ...r,
           label: r.title,
-          value: r.key,
+          value: r.id,
         }))}
         classes={{
           container: styles.selector,
@@ -45,23 +45,26 @@ const RecordTaskSetting = ({
           } else {
             return (
               <div className={styles.resultInput}>
-                {selectedRecords.map(key => (
-                  <div className={styles.selected}>
-                    {key}
-                    <Icon
-                      icon={'material-symbols:close-rounded'}
-                      width={16}
-                      height={16}
-                      color="black"
-                      className={styles.closeIcon}
-                      onClick={() => {
-                        setSelectedRecords(
-                          selectedRecords.filter(r => r !== key),
-                        );
-                      }}
-                    />
-                  </div>
-                ))}
+                {selectedRecords.map(id => {
+                  const field = recordFields.find(r => r.id === id);
+                  return (
+                    <div className={styles.selected}>
+                      {field?.title}
+                      <Icon
+                        icon={'material-symbols:close-rounded'}
+                        width={16}
+                        height={16}
+                        color="black"
+                        className={styles.closeIcon}
+                        onClick={() => {
+                          setSelectedRecords(
+                            selectedRecords.filter(r => r !== key),
+                          );
+                        }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             );
           }

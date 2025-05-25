@@ -64,7 +64,7 @@ const RecordDayEdit = ({
                   onChange={e => {
                     setFieldRecord({
                       ...fieldRecord,
-                      [record.key]: Number(e.target.value),
+                      [record.id]: Number(e.target.value),
                     });
                   }}
                   border="dash"
@@ -83,7 +83,6 @@ const RecordDayEdit = ({
         size="lg"
         className={styles.submitBtn}
         onClick={() => {
-          console.log('>SUBMIT ', currentChecklistTemplate);
           if (currentChecklistTemplate) {
             addChecklistRecord({
               checklistId: checklistTemplateId,

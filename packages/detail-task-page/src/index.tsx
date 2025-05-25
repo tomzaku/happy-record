@@ -78,6 +78,7 @@ const DetailTaskPage = () => {
             icon="solar:pen-new-square-linear"
           />
         )}
+        onClickLeftButton={() => navigate('/')}
       />
       {metricFields.length ? (
         <RecordDay

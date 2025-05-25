@@ -95,13 +95,13 @@ const AudioPlayer = ({ className }: { className?: string }) => {
           onClick={() => next()}
         />
         <span className={styles.pomodoroPhase}>
-          <Typography.Title
+          <Typography.Text
             onClick={() => setListSongVisible(true)}
-            level={4}
+            // level={5}
             className={styles.pomodoroPhaseText}
           >
             {`${currentSongIndex + 1}. ${songs[currentSongIndex].name}`}
-          </Typography.Title>
+          </Typography.Text>
           <Icon
             color="white"
             onClick={() => setListSongVisible(true)}

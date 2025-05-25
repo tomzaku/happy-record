@@ -68,10 +68,10 @@ const CoreChecklistForm = ({
   };
 
   const intl = useIntl();
+  const navigate = useNavigate();
 
   return (
     <div className={styles.container}>
-      <BackHeader renderLeftComponent={() => <>Create Task</>} />
       <Card className={styles.container}>
         <div className={styles.menu} />
         <TextareaAutosize

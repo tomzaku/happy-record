@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import CoreChecklistForm, { FormState } from './CoreChecklistForm';
 import { calculateRepeat } from './calculateRepeat';
 import { getDay } from './getDay';
+import { BackHeader } from '@dreamer/header';
 
 const CreateCheclistForm = () => {
   const { addChecklistTemplate } = useChecklistTemplates();
@@ -39,19 +40,25 @@ const CreateCheclistForm = () => {
     navigate('/');
   };
   return (
-    <CoreChecklistForm
-      onSubmit={onSubmit}
-      initialValues={
-        {
-          selectedRecords: [],
-          checklistText: '',
-          weeklyHobbies: [getDay()],
-          startedAt: new Date().toISOString().split('T')[0],
-          selectedIcon: 'material-symbols:checklist',
-          selectedColor: '#607d8b',
-        } as FormState
-      }
-    />
+    <>
+      <BackHeader
+        renderLeftComponent={() => <>Create Task</>}
+        onClickLeftButton={() => navigate('/')}
+      />
+      <CoreChecklistForm
+        onSubmit={onSubmit}
+        initialValues={
+          {
+            selectedRecords: [],
+            checklistText: '',
+            weeklyHobbies: [getDay()],
+            startedAt: new Date().toISOString().split('T')[0],
+            selectedIcon: 'material-symbols:checklist',
+            selectedColor: '#607d8b',
+          } as FormState
+        }
+      />
+    </>
   );
 };
 export default CreateCheclistForm;

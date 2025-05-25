@@ -4,6 +4,7 @@ import CoreChecklistForm, { FormState } from './CoreChecklistForm';
 import { calculateRepeat } from './calculateRepeat';
 import { getDay } from './getDay';
 import { getDaysFromRepeat } from './getDayFromRepeat';
+import { BackHeader } from '@dreamer/header';
 
 const EditChecklistForm = () => {
   const { checklistTemplate } = useChecklistTemplates();
@@ -34,19 +35,25 @@ const EditChecklistForm = () => {
     navigate('/');
   };
   return (
-    <CoreChecklistForm
-      onSubmit={onSubmit}
-      initialValues={{
-        selectedRecords: template.records,
-        checklistText: template.title,
-        weeklyHobbies: getDaysFromRepeat(template.repeat),
-        startedAt: template?.repeat?.startedAt
-          ? new Date(template.repeat.startedAt).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0],
-        selectedIcon: template?.avatar?.name,
-        selectedColor: template?.avatar?.color || '#607d8b',
-      }}
-    />
+    <>
+      <BackHeader
+        renderLeftComponent={() => <>Edit Task</>}
+        onClickLeftButton={() => navigate('/')}
+      />
+      <CoreChecklistForm
+        onSubmit={onSubmit}
+        initialValues={{
+          selectedRecords: template.records,
+          checklistText: template.title,
+          weeklyHobbies: getDaysFromRepeat(template.repeat),
+          startedAt: template?.repeat?.startedAt
+            ? new Date(template.repeat.startedAt).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0],
+          selectedIcon: template?.avatar?.name,
+          selectedColor: template?.avatar?.color || '#607d8b',
+        }}
+      />
+    </>
   );
 };
 

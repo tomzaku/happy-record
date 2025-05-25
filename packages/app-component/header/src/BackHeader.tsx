@@ -8,14 +8,19 @@ import styles from './AppHeader.module.scss';
 export const BackHeader = ({
   renderLeftComponent,
   renderRightComponent,
+  onClickLeftButton,
 }: {
   renderLeftComponent?: () => React.ReactNode;
   renderRightComponent?: () => React.ReactNode;
+  onClickLeftButton?: () => void;
 }) => {
   const navigate = useNavigate();
   return (
     <div className={styles.container}>
-      <div className={styles.left} onClick={() => navigate(-1)}>
+      <div
+        className={styles.left}
+        onClick={onClickLeftButton ? onClickLeftButton : () => navigate(-1)}
+      >
         <Icon
           icon="solar:arrow-left-outline"
           width={24}

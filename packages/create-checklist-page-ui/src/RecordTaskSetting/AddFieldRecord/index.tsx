@@ -12,14 +12,34 @@ import cx from 'classnames';
 import IconPicker from '../../IconPicker';
 import Select from '@moon-ui/select';
 import Radio from '@moon-ui/radio';
+import { useRecordField } from '@dreamer/global/src/store/record-field';
+import { description } from '@moon-ui/typography/src/Paragraph.module.scss';
 
 type Props = {
   className?: string;
+  onSubmit?: () => void;
 };
 
-const AddFieldRecord = ({ className }: Props) => {
+type FormState = {
+  icon: string;
+  selectedIconColor: string;
+  type: 'metric' | 'note';
+  title: string;
+  unit: string;
+  description: string;
+};
+
+const AddFieldRecord = ({ className, onSubmit }: Props) => {
   const intl = useIntl();
-  const [form, setForm] = React.useState({});
+  const [form, setForm] = React.useState<FormState>({
+    icon: 'octicon:goal-24',
+    selectedIconColor: '#607d8b',
+    type: 'metric',
+    title: '',
+    unit: '',
+    description: '',
+  });
+  const { addRecordField } = useRecordField();
   return (
     <div className={cx(className)}>
       <List.ItemMeta
@@ -33,11 +53,18 @@ const AddFieldRecord = ({ className }: Props) => {
           id: 'label-record-custom.name.description',
         })}
         rightComponent={
-          <Input border="dash" className={styles.customeFieldInput} />
+          <Input
+            value={form.title}
+            onChange={e => setForm({ ...form, title: e.target.value })}
+            border="dash"
+            className={styles.customeFieldInput}
+          />
         }
       />
       <List.ItemMeta
-        logo={<Icon width={24} icon="solar:text-field-linear" />}
+        logo={
+          <Icon value={form.unit} width={24} icon="solar:text-field-linear" />
+        }
         title={intl.formatMessage({
           defaultMessage: 'Field Unit',
           id: 'label-record-custom.unit.label',
@@ -47,7 +74,11 @@ const AddFieldRecord = ({ className }: Props) => {
           id: 'label-record-custom.unit.description',
         })}
         rightComponent={
-          <Input border="dash" className={styles.customeFieldInput} />
+          <Input
+            border="dash"
+            onChange={e => setForm({ ...form, unit: e.target.value })}
+            className={styles.customeFieldInput}
+          />
         }
       />
       <List.ItemMeta
@@ -75,11 +106,21 @@ const AddFieldRecord = ({ className }: Props) => {
       <IconPicker
         selectedIcon={form.icon}
         setSelectedIcon={icon => setForm({ ...form, icon })}
-        selectedColor={form.iconColor}
-        setSelectedColor={color => setForm({ ...form, iconColor: color })}
+        selectedColor={form.selectedIconColor}
+        setSelectedColor={color =>
+          setForm({ ...form, selectedIconColor: color })
+        }
       />
       <div className={styles.addFieldButtonContainer}>
-        <Button block size="lg" type="primary">
+        <Button
+          block
+          size="lg"
+          type="primary"
+          onClick={() => {
+            addRecordField(form);
+            onSubmit?.();
+          }}
+        >
           {intl.formatMessage({
             defaultMessage: 'Save',
             id: 'label-record-custom.save',

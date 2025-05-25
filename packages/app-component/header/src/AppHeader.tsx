@@ -13,24 +13,24 @@ const Header = () => {
       <div className={styles.left} onClick={() => navigate('/')}>
         DREAMER
       </div>
-      <div className={styles.right}>
-        <Icon
-          className={styles.rightIcon}
-          width={24}
-          icon="bytesize:book"
-          onClick={() => {
-            navigate('/story');
-          }}
-        />
-        <Icon
-          className={styles.rightIcon}
-          width={24}
-          icon="solar:checklist-minimalistic-linear"
-          onClick={() => {
-            navigate('/checklist-template');
-          }}
-        />
-      </div>
+      {/* <div className={styles.right}> */}
+      {/*   <Icon */}
+      {/*     className={styles.rightIcon} */}
+      {/*     width={24} */}
+      {/*     icon="bytesize:book" */}
+      {/*     onClick={() => { */}
+      {/*       navigate('/story'); */}
+      {/*     }} */}
+      {/*   /> */}
+      {/*   <Icon */}
+      {/*     className={styles.rightIcon} */}
+      {/*     width={24} */}
+      {/*     icon="solar:checklist-minimalistic-linear" */}
+      {/*     onClick={() => { */}
+      {/*       navigate('/checklist-template'); */}
+      {/*     }} */}
+      {/*   /> */}
+      {/* </div> */}
     </div>
   );
 };

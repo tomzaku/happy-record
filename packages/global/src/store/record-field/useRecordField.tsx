@@ -1,10 +1,10 @@
 import { useLocalStorage } from '../../hook';
+import { v4 } from 'uuid';
 
-const RECORD_KEY = 'record-field';
+const RECORD_KEY = 'record_field';
 
 export type RecordField = {
   id: string;
-  key: string; // search
   title: string;
   icon: string;
   description: string;
@@ -15,7 +15,6 @@ export type RecordField = {
 const defaultRecordField = {
   duration: {
     id: 'duration',
-    key: 'duration',
     title: 'Duration',
     icon: 'solar:clock-square-broken',
     description: 'Record duration for tracking purpose',
@@ -24,7 +23,6 @@ const defaultRecordField = {
   },
   'push-ups': {
     id: 'push-ups',
-    key: 'push-ups',
     title: 'Push-ups',
     icon: 'iconoir:gym',
     description: 'For example: Push-ups, Squats',
@@ -33,7 +31,6 @@ const defaultRecordField = {
   },
   note: {
     id: 'note',
-    key: 'note',
     title: 'Note',
     icon: 'solar:notebook-minimalistic-linear',
     description: 'Note for tracking purpose',
@@ -51,17 +48,21 @@ export const useRecordField = () => {
     return Object.values(recordFieldList);
   };
 
-  const addRecordField = (checklistRecord: RecordField) => {
+  const addRecordField = (checklistRecord: Omit<RecordField, 'id'>) => {
+    const newId = v4();
     setRecordFieldList(prev => ({
       ...prev,
-      [checklistRecord.key]: checklistRecord,
+      [newId]: {
+        id: newId,
+        ...checklistRecord,
+      },
     }));
   };
 
-  const removeRecordField = (key: string) => {
+  const removeRecordField = (id: string) => {
     setRecordFieldList(prev => {
       const newChecklistRecord = { ...prev };
-      delete newChecklistRecord[key];
+      delete newChecklistRecord[id];
       return newChecklistRecord;
     });
   };

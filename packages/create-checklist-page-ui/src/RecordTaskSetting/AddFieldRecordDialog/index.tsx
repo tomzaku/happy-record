@@ -28,7 +28,7 @@ const AddFieldRecordDialog = ({
           onClick={onClose}
         />
       </div>
-      <AddFieldRecord className={styles.container} />
+      <AddFieldRecord className={styles.container} onSubmit={onClose} />
     </Drawer>
   );
 };
