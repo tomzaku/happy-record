@@ -7,10 +7,10 @@ import styles from './AppHeader.module.scss';
 
 export const BackHeader = ({
   renderLeftComponent,
-  renderRighComponent,
+  renderRightComponent,
 }: {
-  renderRighComponent?: () => React.ReactNode;
   renderLeftComponent?: () => React.ReactNode;
+  renderRightComponent?: () => React.ReactNode;
 }) => {
   const navigate = useNavigate();
   return (
@@ -23,7 +23,7 @@ export const BackHeader = ({
         />
         {renderLeftComponent?.()}
       </div>
-      <div className={styles.menu}>{renderRighComponent?.()}</div>
+      <div className={styles.right}>{renderRightComponent?.()}</div>
     </div>
   );
 };

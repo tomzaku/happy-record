@@ -12,6 +12,7 @@ import {
   useRecordField,
 } from '@dreamer/global/src/store/record-field';
 import { BackHeader } from '@dreamer/header';
+import { Icon } from '@iconify/react';
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -67,6 +68,9 @@ const DetailTaskPage = () => {
     <>
       <BackHeader
         renderLeftComponent={() => <div>{checklistTemplate?.title}</div>}
+        renderRightComponent={() => (
+          <Icon width={24} icon="solar:pen-new-square-linear" />
+        )}
       />
       {metricFields.length ? (
         <RecordDay

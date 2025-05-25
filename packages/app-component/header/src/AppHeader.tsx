@@ -13,9 +13,9 @@ const Header = () => {
       <div className={styles.left} onClick={() => navigate('/')}>
         DREAMER
       </div>
-      <div className={styles.menu}>
+      <div className={styles.right}>
         <Icon
-          className={styles.right}
+          className={styles.rightIcon}
           width={24}
           icon="bytesize:book"
           onClick={() => {
@@ -23,7 +23,7 @@ const Header = () => {
           }}
         />
         <Icon
-          className={styles.right}
+          className={styles.rightIcon}
           width={24}
           icon="solar:checklist-minimalistic-linear"
           onClick={() => {

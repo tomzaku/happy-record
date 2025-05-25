@@ -19,35 +19,27 @@
   color: var(--header-logo-text);
   cursor: pointer;
   display: flex;
-  margin-left: 25px;
+  margin-left: $spacing-md;
   z-index: 1;
-  @include media.media('<=tablet') {
-    margin-left: 10px;
-  }
 }
 
 .right {
-  cursor: pointer;
-  margin-right: 25px;
-  z-index: 1;
-  fill: var(--icon-color-inactive-invert);
-  @include media.media('<=tablet') {
-    margin-right: 10px;
-  }
+  display: flex;
+  align-items: center;
+  margin-right: $spacing-md;
 }
 
-.fixed {
-  // position: fixed;
-  // max-width: 600px;
-  // width: 100%;
-  // box-shadow: none;
-  // top: 0;
-  // margin-bottom: $spacing-sm;
+.rightIcon {
+  cursor: pointer;
+  z-index: 1;
+  margin-left: $spacing-sm;
+  fill: var(--icon-color-inactive-invert);
 }
 
 .backIcon {
   margin-right: $spacing-sm;
 }
+
 // .menu {
 //   align-items: center;
 //   color: var(--text-color);

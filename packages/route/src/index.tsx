@@ -22,10 +22,6 @@ const AnimationRoute = ({ children }) => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      // initial={{ x: '-100%' }} // Start from the left
-      // animate={{ x: 0 }} // Slide to center
-      // exit={{ x: '100%' }} // Exit to the right
-      // transition={{ duration: 0.5, ease: 'easeInOut' }}
     >
       {children}
     </motion.div>
