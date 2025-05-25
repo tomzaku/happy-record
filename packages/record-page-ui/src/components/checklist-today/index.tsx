@@ -52,18 +52,6 @@ const ChecklistToday = ({ date }: { date: Date }) => {
             >
               {currentChecklist?.title}
             </Typography.Text>
-            <Icon
-              className={styles.editIcon}
-              width={24}
-              height={24}
-              icon="material-symbols:edit-outline"
-              onClick={e => {
-                e.stopPropagation();
-                navigate(
-                  `/edit-checklist/${currentChecklist.checklistTemplateId}`,
-                );
-              }}
-            />
             <Checkbox
               checked={Boolean(currentChecklist?.completedAt)}
               className={styles.checkbox}

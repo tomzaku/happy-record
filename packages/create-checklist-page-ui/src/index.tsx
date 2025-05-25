@@ -15,6 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 
 import styles from './index.module.scss';
+import { BackHeader } from '@dreamer/header';
+import Typography from '@moon-ui/typography';
 
 const getDay = () => {
   const today = new Date();
@@ -79,6 +81,7 @@ const CreateChecklistPage = () => {
   };
   return (
     <div className={styles.container}>
+      <BackHeader renderLeftComponent={() => <>Create Task</>} />
       <Card className={styles.container}>
         <div className={styles.menu} />
         <TextareaAutosize

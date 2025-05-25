@@ -1,12 +1,17 @@
 import React from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import RecordDay from './components/RecordDay';
-import { useChecklist, useChecklistTemplates } from '@dreamer/global';
+import {
+  ChecklistTemplate,
+  useChecklist,
+  useChecklistTemplates,
+} from '@dreamer/global';
 import Note from './components/note/Note';
 import {
   RecordField,
   useRecordField,
 } from '@dreamer/global/src/store/record-field';
+import { BackHeader } from '@dreamer/header';
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +24,9 @@ const DetailTaskPage = () => {
 
   const [metricFields, setMetricFields] = React.useState<RecordField[]>([]);
   const [noteFields, setNoteFields] = React.useState<RecordField[]>([]);
+
+  const [checklistTemplate, setChecklistTemplate] =
+    React.useState<ChecklistTemplate>();
   if (!id || !currentDay) {
     return;
   }
@@ -26,6 +34,7 @@ const DetailTaskPage = () => {
   // Update checklistId Params
   React.useEffect(() => {
     const checklistTemplate = getChecklistTemplate(id);
+    setChecklistTemplate(checklistTemplate);
     // Should create checklist id if non exist
     if (!checklistId && checklistTemplate) {
       const checklist = addChecklist({
@@ -56,6 +65,9 @@ const DetailTaskPage = () => {
   }
   return (
     <>
+      <BackHeader
+        renderLeftComponent={() => <div>{checklistTemplate?.title}</div>}
+      />
       {metricFields.length ? (
         <RecordDay
           checklistTemplateId={id}

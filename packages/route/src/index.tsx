@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Header from '@dreamer/header';
 import SettingPage from '@dreamer/setting-page-ui';
 import DetailTaskPage from '@dreamer/detail-task-page';
@@ -10,37 +10,126 @@ import PregnantWeightRecord from '@pregnant/pregnant-weight-record';
 import ChecklistTemplatePageUi from '@pregnant/checklist-template-page-ui';
 import StoryPageUi from '@pregnant/story-page-ui';
 import Audio from '@pregnant/pregnant-audio-player';
+import { AnimatePresence, motion } from 'motion/react';
 
 // Hocs
 import RecordPage from '@dreamer/record-page-ui';
 
-const AppRouter = () => {
+const AnimationRoute = ({ children }) => {
   return (
-    <BrowserRouter>
-      <Header />
-      <Routes>
-        <Route path="/" element={<RecordPage />}></Route>,
-        <Route path="/task/:id" element={<DetailTaskPage />}></Route>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      // initial={{ x: '-100%' }} // Start from the left
+      // animate={{ x: 0 }} // Slide to center
+      // exit={{ x: '100%' }} // Exit to the right
+      // transition={{ duration: 0.5, ease: 'easeInOut' }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const AppRouter = () => {
+  const location = useLocation(); // Get the current location
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route
+          path="/"
+          element={
+            <AnimationRoute>
+              <RecordPage />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/task/:id"
+          element={
+            <AnimationRoute>
+              <DetailTaskPage />
+            </AnimationRoute>
+          }
+        />
         <Route
           path="/create-checklist"
-          element={<PregnantCreateChecklistPage />}
-        ></Route>
+          element={
+            <AnimationRoute>
+              <PregnantCreateChecklistPage />
+            </AnimationRoute>
+          }
+        />
         <Route
           path="/edit-checklist/:id"
-          element={<PregnantEditChecklistPage />}
-        ></Route>
-        <Route path="/weight-record" element={<PregnantWeightRecord />}></Route>
-        <Route path="/intro" element={<PregnantIntro />}></Route>,
+          element={
+            <AnimationRoute>
+              <PregnantEditChecklistPage />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/weight-record"
+          element={
+            <AnimationRoute>
+              <PregnantWeightRecord />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/intro"
+          element={
+            <AnimationRoute>
+              <PregnantIntro />
+            </AnimationRoute>
+          }
+        />
         <Route
           path="/checklist-template"
-          element={<ChecklistTemplatePageUi />}
-        ></Route>
-        <Route path="/setting" element={<SettingPage />}></Route>
-        <Route path="/story" element={<StoryPageUi />}></Route>
-        <Route path="/audio" element={<Audio />}></Route>
+          element={
+            <AnimationRoute>
+              <ChecklistTemplatePageUi />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/setting"
+          element={
+            <AnimationRoute>
+              <SettingPage />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/story"
+          element={
+            <AnimationRoute>
+              <StoryPageUi />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/audio"
+          element={
+            <AnimationRoute>
+              <Audio />
+            </AnimationRoute>
+          }
+        />
       </Routes>
+    </AnimatePresence>
+  );
+};
+
+// Wrap AppRouter with BrowserRouter in a parent component or directly if needed
+const App = () => {
+  return (
+    <BrowserRouter>
+      <AppRouter />
     </BrowserRouter>
   );
 };
 
-export default AppRouter;
+export default App;
