@@ -4,8 +4,10 @@ import SettingPage from '@dreamer/setting-page-ui';
 import DetailTaskPage from '@dreamer/detail-task-page';
 import PregnantIntro from '@pregnant/pregnant-intro';
 import PregnantPage from '@pregnant/pregnant-page-ui';
-import PregnantCreateChecklistPage from '@pregnant/create-checklist-page-ui';
-import PregnantEditChecklistPage from '@pregnant/create-checklist-page-ui/src/EditChecklistPage';
+import {
+  EditChecklistForm,
+  CreateChecklistForm,
+} from '@pregnant/create-checklist-page-ui';
 import PregnantWeightRecord from '@pregnant/pregnant-weight-record';
 import ChecklistTemplatePageUi from '@pregnant/checklist-template-page-ui';
 import StoryPageUi from '@pregnant/story-page-ui';
@@ -54,7 +56,7 @@ const AppRouter = () => {
           path="/create-checklist"
           element={
             <AnimationRoute>
-              <PregnantCreateChecklistPage />
+              <CreateChecklistForm />
             </AnimationRoute>
           }
         />
@@ -62,7 +64,7 @@ const AppRouter = () => {
           path="/edit-checklist/:id"
           element={
             <AnimationRoute>
-              <PregnantEditChecklistPage />
+              <EditChecklistForm />
             </AnimationRoute>
           }
         />

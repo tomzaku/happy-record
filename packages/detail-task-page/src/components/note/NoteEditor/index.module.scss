@@ -1,5 +1,8 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+
 .container {
-  border: 1px solid var(--card-border);
+  border: 3px dashed var(--card-border);
   border-radius: 6px;
-  padding: 12px;
+  padding: $spacing-sm;
 }

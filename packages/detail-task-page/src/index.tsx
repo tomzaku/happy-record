@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import RecordDay from './components/RecordDay';
 import {
   ChecklistTemplate,
@@ -61,6 +61,7 @@ const DetailTaskPage = () => {
       setNoteFields(noteFields);
     }
   }, []);
+  const navigate = useNavigate();
   if (!checklistId) {
     return null;
   }
@@ -69,7 +70,13 @@ const DetailTaskPage = () => {
       <BackHeader
         renderLeftComponent={() => <div>{checklistTemplate?.title}</div>}
         renderRightComponent={() => (
-          <Icon width={24} icon="solar:pen-new-square-linear" />
+          <Icon
+            onClick={() => {
+              navigate(`/edit-checklist/${id}`);
+            }}
+            width={24}
+            icon="solar:pen-new-square-linear"
+          />
         )}
       />
       {metricFields.length ? (

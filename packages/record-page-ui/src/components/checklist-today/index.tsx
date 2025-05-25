@@ -50,7 +50,7 @@ const ChecklistToday = ({ date }: { date: Date }) => {
               }
               className={styles.title}
             >
-              {currentChecklist?.title}
+              {currentChecklistTemplate?.title}
             </Typography.Text>
             <Checkbox
               checked={Boolean(currentChecklist?.completedAt)}

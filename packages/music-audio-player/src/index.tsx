@@ -106,10 +106,8 @@ const AudioPlayer = ({ className }: { className?: string }) => {
             color="white"
             onClick={() => setListSongVisible(true)}
             icon="material-symbols:library-music-rounded"
+            width={24}
           />
-          {/* <Typography.Text className={styles.time}>{`| ${Math.floor( */}
-          {/*   currentTime / 60, */}
-          {/* )}:${Math.floor(currentTime % 60)}`}</Typography.Text> */}
         </span>
       </div>
     </div>

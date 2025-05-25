@@ -29,25 +29,30 @@ const NoteAdd = ({
   const { addChecklistRecord } = useChecklistRecord();
   return (
     <div>
-      <Select
-        options={fields.map(field => ({
-          ...field,
-          value: field.id,
-          label: field.title,
-        }))}
-        renderOption={option => option.title}
-        renderInput={() => <div>{selectedField.title}</div>}
-        onChange={(option, { close }) => {
-          close();
-          setSelectedField(option);
-        }}
-        classes={{
-          container: styles.selectContainer,
-        }}
-      />
+      {fields.length > 1 ? (
+        <Select
+          options={fields.map(field => ({
+            ...field,
+            value: field.id,
+            label: field.title,
+          }))}
+          renderOption={option => option.title}
+          renderInput={() => <div>{selectedField.title}</div>}
+          onChange={(option, { close }) => {
+            close();
+            setSelectedField(option);
+          }}
+          classes={{
+            container: styles.selectContainer,
+          }}
+        />
+      ) : null}
       <NoteEditor
         value={form.value}
         setValue={value => setForm({ ...form, value })}
+        classes={{
+          contentEditableClassName: styles.contentEditor,
+        }}
       />
       <Button
         onClick={() => {
@@ -65,6 +70,7 @@ const NoteAdd = ({
           });
           onSubmit?.();
         }}
+        className={styles.submitButton}
       >
         Submit
       </Button>
