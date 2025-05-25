@@ -33,7 +33,7 @@
 }
 
 .closeIcon {
-  margin-left: $spacing-xs
+  margin-left: $spacing-xs;
 }
 
 .addCustomField {
@@ -41,4 +41,8 @@
   padding: $spacing-md;
   border: 3px dashed var(--create-task-dashed-border);
   border-radius: 6px;
+}
+
+.selector {
+  padding: $spacing-xs $spacing-md;
 }

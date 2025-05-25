@@ -1,5 +1,6 @@
+@use '@moon-ui/app-scss/metric' as *;
 @use 'include-media/dist/include-media' as media;
- 
+
 .container {
   padding-bottom: 80px;
 }
@@ -19,4 +20,16 @@
   position: fixed;
   width: 100%;
   max-width: 600px;
+}
+
+.hr {
+  margin-bottom: $spacing-sm;
+  height: 2px !important;
+}
+
+.card {
+  @include media.media('<=tablet') {
+    margin-left: $spacing-sm;
+    margin-right: $spacing-sm;
+  }
 }

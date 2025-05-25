@@ -79,7 +79,7 @@ const AddFieldRecord = ({ className }: Props) => {
         setSelectedColor={color => setForm({ ...form, iconColor: color })}
       />
       <div className={styles.addFieldButtonContainer}>
-        <Button type="primary">
+        <Button block size="lg" type="primary">
           {intl.formatMessage({
             defaultMessage: 'Save',
             id: 'label-record-custom.save',

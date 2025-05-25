@@ -1,16 +1,23 @@
+@use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/function' as *;
 
 .iconSearchInput {
   box-sizing: border-box;
   margin: 0 12px;
   flex: 1;
-  font-size: toRem(16px);
-  padding: 12px;
+  // font-size: toRem(16px);
+  padding: $spacing-sm $spacing-md;
+}
+
+.inputContainer {
+  display: flex;
+  align-items: center;
 }
 
 .container {
   display: flex;
   flex-direction: column;
+  margin-right: $spacing-md;
 }
 
 .footer {
@@ -21,6 +28,12 @@
 .rightContainer {
   display: flex;
   align-items: center;
+  margin-right: -$spacing-md;
+}
+
+.colorView {
+  width: 34px;
+  height: 34px;
 }
 
 .searchButton {
@@ -36,4 +49,8 @@
   margin: 0 4px;
   width: 1px;
   background-color: var(--button-ghost-border);
+}
+
+.colorPicker {
+  margin-top: $spacing-sm;
 }

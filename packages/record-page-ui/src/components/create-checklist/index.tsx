@@ -14,7 +14,7 @@ const CreateChecklist = () => {
           navigate('/create-checklist');
         }}
         type="dash"
-        size="lg"
+        size="md"
         block
       >
         {intl.formatMessage({

@@ -5,13 +5,11 @@
 .container {
   display: flex;
   align-items: center;
-  margin-top: 20px;
-  margin-bottom: $spacing-md;
-  justify-content: space-between;
-  @include media.media('<=tablet') {
-    margin-left: 12px;
-    margin-right: 12px;
-  }
+  justify-content: flex-end;
+}
+
+.title {
+  flex: 1;
 }
 
 .player {
@@ -20,7 +18,7 @@
 }
 
 .currentContainer {
-  width: 95px;
+  width: 70px;
   margin-left: 6px;
   margin-right: 6px;
   display: flex;
@@ -30,7 +28,7 @@
   // background: linear-gradient(to right, #ff7e5f, #feb47b); // Gradient from pinkish to orange
   border: 1px solid #0d7dc2;
   // color: white;
-  padding: 6px 12px;
+  padding: $spacing-xs $spacing-sm;
   cursor: pointer;
 }
 

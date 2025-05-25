@@ -1,5 +1,6 @@
 import cn from 'classnames';
 import styles from './index.module.scss';
+import cx from 'classnames';
 type Props = {
   value: string;
   setValue: (value: string) => void;
@@ -23,7 +24,7 @@ export const ColorView = ({
   );
 };
 
-const ColorPicker = ({ value, setValue }: Props) => {
+const ColorPicker = ({ value, setValue, className }: Props) => {
   const colors = [
     '#f44336',
     '#e91e63',
@@ -46,7 +47,7 @@ const ColorPicker = ({ value, setValue }: Props) => {
   ];
 
   return (
-    <div className={styles.container}>
+    <div className={cx(styles.container, className)}>
       {colors.map((color, index) => (
         <div
           key={index}

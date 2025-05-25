@@ -14,9 +14,9 @@ const AddFieldRecordDialog = ({
 }) => {
   const intl = useIntl();
   return (
-    <Drawer className={styles.drawer}  visible={visible} onBlur={onClose}>
+    <Drawer className={styles.drawer} visible={visible} onBlur={onClose}>
       <div className={styles.header}>
-        <Typography.Title noMargin level={2}>
+        <Typography.Title noMargin level={3}>
           {intl.formatMessage({
             defaultMessage: 'Add more field to record',
             id: 'label-record-custom.title',

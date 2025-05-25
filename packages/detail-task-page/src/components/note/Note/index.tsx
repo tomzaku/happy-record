@@ -33,11 +33,7 @@ const Note = ({
       [NoteTab.History]: 'Note History',
       [NoteTab.Add]: 'Add Note',
     };
-    return (
-      <Typography.Title noMargin level={3}>
-        {tabToTitle[activeTab]}
-      </Typography.Title>
-    );
+    return tabToTitle[activeTab];
   };
   const renderBody = () => {
     switch (activeTab) {

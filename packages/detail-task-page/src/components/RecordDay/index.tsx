@@ -121,11 +121,7 @@ const RecordDay = ({
       [RecordTab.Metric]: 'Metric',
       [RecordTab.Add]: `Record ${today ? 'Today' : `${new Date(currentDay).toLocaleDateString()}`}`,
     };
-    return (
-      <Typography.Title noMargin level={3}>
-        {tabToTitle[activeTab]}
-      </Typography.Title>
-    );
+    return tabToTitle[activeTab];
   };
   return (
     <Card className={styles.container}>

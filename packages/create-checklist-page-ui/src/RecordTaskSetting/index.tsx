@@ -36,6 +36,9 @@ const RecordTaskSetting = ({
           label: r.title,
           value: r.key,
         }))}
+        classes={{
+          container: styles.selector,
+        }}
         renderInput={() => {
           if (selectedRecords.length === 0) {
             return <div>Record & Metric</div>;

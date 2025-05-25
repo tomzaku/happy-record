@@ -2,6 +2,7 @@ import { Icon } from '@iconify/react';
 import Typography from '@moon-ui/typography';
 
 import styles from './index.module.scss';
+import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 
 type Props = {
   date: Date;
@@ -21,7 +22,7 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
   const dateText = isToday ? 'Today' : new Date(date).toLocaleDateString();
   return (
     <div className={styles.container}>
-      <Typography.Title level={3} noMargin>
+      <Typography.Title level={4} noMargin className={styles.title}>
         {title}
       </Typography.Title>
       <div className={styles.player}>
@@ -31,12 +32,12 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
           icon="basil:skip-prev-outline"
           className={styles.icon}
         />
-        <div
+        <Typography.Text
           className={styles.currentContainer}
           onClick={() => onDateChange(new Date())}
         >
           {dateText}
-        </div>
+        </Typography.Text>
         <Icon
           onClick={() => onDateChange(plus1Day(date))}
           width={30}

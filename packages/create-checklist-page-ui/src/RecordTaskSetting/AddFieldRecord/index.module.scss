@@ -10,9 +10,10 @@
 }
 
 .addFieldButtonContainer {
-  display: flex;
-  justify-content: flex-end;
+  // display: flex;
+  // justify-content: flex-end;
   padding: 0 $spacing-md;
+  margin-top: $spacing-md;
 }
 
 .customeFieldInput {

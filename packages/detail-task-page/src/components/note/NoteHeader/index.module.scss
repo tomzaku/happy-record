@@ -18,6 +18,10 @@
   padding-right: $spacing-md;
 }
 
+.buttonActive {
+  border: 1px dashed var(--button-default-background);
+}
+
 .addIcon {
   margin-right: $spacing-xs;
 }

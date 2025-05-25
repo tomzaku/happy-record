@@ -6,6 +6,7 @@ import {
 } from '@dreamer/global/src/store/checklist-record';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import NoteEditor from '../NoteEditor';
+import styles from './index.module.scss';
 
 const NoteHistory = ({
   fields,
@@ -40,16 +41,24 @@ const NoteHistory = ({
     });
     setRecords(records);
   }, [checklistTemplateId]);
-  console.log('RECORDS', records);
   return (
     <div>
       {Object.entries(records).map(([date, records]) => {
         return (
           <div key={date}>
-            <div>{new Date(date).toLocaleString()}</div>
+            <div className={styles.header}>
+              {new Date(date).toLocaleString()}
+            </div>
             {records.map(record => {
               return (
-                <NoteEditor hideToolBar value={String(record.value)} readOnly />
+                <NoteEditor
+                  classes={{
+                    editor: styles.editor,
+                  }}
+                  hideToolBar
+                  value={String(record.value)}
+                  readOnly
+                />
               );
             })}
           </div>

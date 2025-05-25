@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import List from '@moon-ui/list';
 import { Icon } from '@iconify/react';
-import Button from '@moon-ui/button';
 import ColorPicker, { ColorView } from '../ColorPicker';
 
 // Hooks
@@ -21,6 +20,11 @@ type Props = {
   setSelectedColor: (color: string) => void;
 };
 
+enum DropDownStatus {
+  Color,
+  Icon,
+  Hidden,
+}
 const IconPicker = ({
   selectedIcon,
   setSelectedIcon,
@@ -30,23 +34,24 @@ const IconPicker = ({
 }: Props) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [icons, setIcons] = useState<string[]>([]);
-  const [showColorView, setShowColorView] = useState<boolean>(false);
 
-  const [showSearchView, setShowSearchView] = useState<boolean>(false);
+  const [showDropDown, setShowDropDown] = useState(DropDownStatus.Hidden);
 
   const intl = useIntl();
 
   const searchIcons = async (term: string) => {
     const results = await fetch(
-      `https://api.iconify.design/search?query=${term}`
+      `https://api.iconify.design/search?query=${term}`,
     );
     const data = await results.json();
-    data?.icons?.length > 0 && setIcons(data.icons);
+    if (data?.icons?.length > 0) {
+      setIcons(data.icons);
+    }
   };
 
   const handleIconClick = (icon: string) => {
     setSelectedIcon(icon);
-    setShowSearchView(false);
+    setShowDropDown(DropDownStatus.Hidden);
   };
 
   return (
@@ -57,63 +62,14 @@ const IconPicker = ({
           defaultMessage: 'Icons',
           id: 'icon-picker.title',
         })}
-        // description={intl.formatMessage({
-        //   defaultMessage: '',
-        //   id: 'icon-picker.subtitle',
-        // })}
         rightComponent={
           <div className={styles.rightContainer}>
-            <Button
-              type="ghost"
-              onClick={() => {
-                if (showSearchView) {
-                  setShowSearchView(false);
-                } else {
-                  setShowSearchView(true);
-                  setShowColorView(false);
-                }
-              }}
-              className={styles.searchButton}
-            >
-              <>
-                {showSearchView
-                  ? intl.formatMessage({
-                      defaultMessage: 'Close',
-                      id: 'icon-picker.close',
-                    })
-                  : intl.formatMessage({
-                      defaultMessage: 'Search',
-                      id: 'icon-picker.search',
-                    })}
-                <div className={styles.divider} />
-                <Icon width={24} icon={selectedIcon} color={selectedColor} />
-              </>
-            </Button>
-            <ColorView
-              value={selectedColor}
-              onClick={() => {
-                if (showColorView) {
-                  setShowColorView(false);
-                } else {
-                  setShowColorView(true);
-                  setShowSearchView(false);
-                }
-              }}
-            />
+            <Icon width={24} icon={selectedIcon} color={selectedColor} />
           </div>
         }
       />
-      {showColorView && (
-        <ColorPicker
-          value={selectedColor}
-          setValue={value => {
-            setShowColorView(false);
-            setSelectedColor(value);
-          }}
-        />
-      )}
-      {showSearchView && (
-        <>
+      <>
+        <div className={styles.inputContainer}>
           <Input
             placeholder="Search icons..."
             border="dash"
@@ -121,9 +77,21 @@ const IconPicker = ({
             onChange={e => {
               setSearchTerm(e.target.value);
               searchIcons(e.target.value);
+              if (showDropDown !== DropDownStatus.Icon) {
+                setShowDropDown(DropDownStatus.Icon);
+              }
             }}
             className={styles.iconSearchInput}
           />
+          <ColorView
+            value={selectedColor}
+            className={styles.colorView}
+            onClick={() => {
+              setShowDropDown(DropDownStatus.Color);
+            }}
+          />
+        </div>
+        {showDropDown === DropDownStatus.Icon && (
           <div
             style={{
               display: 'flex',
@@ -152,8 +120,18 @@ const IconPicker = ({
               </div>
             ))}
           </div>
-        </>
-      )}
+        )}
+        {showDropDown === DropDownStatus.Color && (
+          <ColorPicker
+            value={selectedColor}
+            setValue={value => {
+              setSelectedColor(value);
+              setShowDropDown(DropDownStatus.Hidden);
+            }}
+            className={styles.colorPicker}
+          />
+        )}
+      </>
     </div>
   );
 };

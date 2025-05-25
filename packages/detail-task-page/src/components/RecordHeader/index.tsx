@@ -5,6 +5,7 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import styles from './index.module.scss';
 import cx from 'classnames';
 import { RecordTab } from '../RecordDay';
+import Typography from '@moon-ui/typography';
 
 const RecordHeader = ({
   onClickHome,
@@ -44,7 +45,9 @@ const RecordHeader = ({
   const intl = useIntl();
   return (
     <div className={styles.container}>
-      <div className={styles.title}>{renderTitle()}</div>
+      <Typography.Title level={4} noMargin className={styles.title}>
+        {renderTitle()}
+      </Typography.Title>
       {buttons.map(({ icon, iconActive, onClick, isActive }, index) => (
         <Icon
           key={index}
@@ -54,7 +57,14 @@ const RecordHeader = ({
           icon={activeTab === index ? iconActive : icon}
         />
       ))}
-      <Button className={styles.button} type="dash" onClick={onClickAdd}>
+      <Button
+        className={cx(
+          styles.button,
+          activeTab === RecordTab.Add && styles.buttonActive,
+        )}
+        type="dash"
+        onClick={onClickAdd}
+      >
         <Icon icon="material-symbols:add" className={styles.addIcon} />
         {intl.formatMessage({
           id: 'record-header.add-record',
