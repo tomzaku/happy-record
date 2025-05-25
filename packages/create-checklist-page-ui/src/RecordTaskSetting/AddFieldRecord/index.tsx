@@ -29,11 +29,11 @@ const AddFieldRecord = ({ className }: Props) => {
           id: 'label-record-custom.name.label',
         })}
         description={intl.formatMessage({
-          defaultMessage: 'For example: Push-ups, Squats',
+          defaultMessage: 'Ex: Push-ups, Squats',
           id: 'label-record-custom.name.description',
         })}
         rightComponent={
-          <Input border="solid" className={styles.customeFieldInput} />
+          <Input border="dash" className={styles.customeFieldInput} />
         }
       />
       <List.ItemMeta
@@ -43,11 +43,11 @@ const AddFieldRecord = ({ className }: Props) => {
           id: 'label-record-custom.unit.label',
         })}
         description={intl.formatMessage({
-          defaultMessage: 'For example: minutes, hours, reps',
+          defaultMessage: 'Ex: minutes, hours, reps, kg',
           id: 'label-record-custom.unit.description',
         })}
         rightComponent={
-          <Input border="solid" className={styles.customeFieldInput} />
+          <Input border="dash" className={styles.customeFieldInput} />
         }
       />
       <List.ItemMeta
