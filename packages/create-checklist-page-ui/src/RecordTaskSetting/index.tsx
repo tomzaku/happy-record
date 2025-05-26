@@ -9,6 +9,7 @@ import styles from './index.module.scss';
 import Checkbox from '@moon-ui/checkbox';
 import AddFieldRecordDialog from './AddFieldRecordDialog';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
+import Typography from '@moon-ui/typography';
 
 const RecordTaskSetting = ({
   selectedRecords = [],
@@ -41,7 +42,7 @@ const RecordTaskSetting = ({
         }}
         renderInput={() => {
           if (selectedRecords.length === 0) {
-            return <div>Record & Metric</div>;
+            return <Typography.Text>Record & Metric</Typography.Text>;
           } else {
             return (
               <div className={styles.resultInput}>
@@ -77,10 +78,12 @@ const RecordTaskSetting = ({
             }}
             className={styles.addCustomField}
           >
-            {intl.formatMessage({
-              id: 'label-add-custom-field',
-              defaultMessage: 'Add custom field',
-            })}
+            <Typography.Text>
+              {intl.formatMessage({
+                id: 'label-add-custom-field',
+                defaultMessage: 'Add custom field',
+              })}
+            </Typography.Text>
           </div>
         )}
         onChange={({ id }, { close }) => {

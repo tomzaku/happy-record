@@ -3,14 +3,14 @@
 @use '@moon-ui/app-scss/function' as *;
 
 .container {
-  margin-top: $spacing-md;
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 100vh;
 }
 
 .body {
-  flex: 1
+  flex: 1;
 }
 
 .footer {
@@ -28,13 +28,14 @@
   color: var(--text-link);
   margin-left: $spacing-sm;
 }
- 
+
 .durationInput {
   font-size: toRem(20px);
   margin-right: 6px;
   text-align: center;
   width: 60px;
   border-radius: 6px;
+
   &::placeholder {
     opacity: 0.3;
   }

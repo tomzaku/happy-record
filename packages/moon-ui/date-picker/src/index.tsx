@@ -1,4 +1,6 @@
 import React from 'react';
+import styles from './index.module.scss';
+import cx from 'classnames';
 
 type Props = {
   value?: string;
@@ -18,7 +20,7 @@ const dateToInputValue = (date: Date) => {
 const DatePicker = ({ value, onChange, className }: Props) => {
   return (
     <input
-      className={className}
+      className={cx(styles.input, className)}
       type="date"
       value={value ? dateToInputValue(new Date(value)) : ''}
       onChange={onChange}

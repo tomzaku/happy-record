@@ -5,10 +5,15 @@
   background: var(--input-background);
   border: 0;
   padding: 12px;
-  font-size: toRem(24px);
+  font-size: 14px;
 
   &:focus {
     outline: none;
+  }
+
+  &::placeholder {
+    color: var(--text-placeholder-color);
+    opacity: 1;
   }
 }
 

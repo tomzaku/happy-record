@@ -23,7 +23,7 @@ const AudioSongListDrawer = ({ visible, onClose }: Props) => {
   return (
     <Drawer className={styles.container} visible={visible} onBlur={onClose}>
       <div className={styles.header}>
-        <Typography.Title noMargin level={2}>
+        <Typography.Title noMargin level={4}>
           {intl.formatMessage({
             id: 'audio-song-list-drawer.title',
             defaultMessage: 'Song List',
@@ -47,6 +47,7 @@ const AudioSongListDrawer = ({ visible, onClose }: Props) => {
             )}
           >
             <Typography.Paragraph
+              noMargin
               className={cx(currentSongIndex === index && styles.titleActive)}
             >
               {name}

@@ -71,7 +71,7 @@ const IconPicker = ({
       <>
         <div className={styles.inputContainer}>
           <Input
-            placeholder="Search icons..."
+            placeholder="Search icons"
             border="dash"
             value={searchTerm}
             onChange={e => {

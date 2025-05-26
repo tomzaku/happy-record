@@ -17,7 +17,7 @@
   align-items: center;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: white;
+  // background-color: white;
   cursor: pointer;
   user-select: none;
 
@@ -35,7 +35,7 @@
   align-items: center;
   min-height: 24px;
   padding: 8px 12px;
-  flex: 1
+  flex: 1;
 }
 
 .optionsList {
@@ -46,7 +46,7 @@
   margin-top: 4px;
   max-height: 300px;
   overflow-y: auto;
-  background-color: white;
+  background-color: var(--card-background);
   border: 1px solid #ccc;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -58,7 +58,7 @@
   cursor: pointer;
 
   &:hover {
-    background-color: #f5f5f5;
+    background-color: var(--card-selected-background);
   }
 
   &.selected {
