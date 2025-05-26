@@ -38,19 +38,19 @@
 
 .submitButton {
   padding: 10px 20px;
-  border: none;
+  border: 0;
+  color: #fff;
   flex: 1;
   border-radius: 5px;
-  color: white;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
-  background: linear-gradient(to right, #ff7e5f, #feb47b);
+  background: linear-gradient(to right, #3b8fd6, #00b7d6);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: background 0.3s ease;
 
   &:hover {
-    background: linear-gradient(to right, #feb47b, #ff7e5f);
+    background: linear-gradient(to right, #00b7d6, #3b8fd6);
   }
 }
 
@@ -91,7 +91,7 @@
   font-size: 16px;
   color: var(--text-color);
   background: var(--card-background);
-  
+
   &:focus {
     outline: none;
     border-color: var(--primary-color);

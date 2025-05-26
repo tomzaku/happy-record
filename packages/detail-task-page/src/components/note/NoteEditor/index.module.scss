@@ -2,7 +2,22 @@
 @use '@moon-ui/app-scss/metric' as *;
 
 .container {
+  position: relative;
   border: 1px dashed var(--card-border);
   border-radius: 6px;
   padding: $spacing-sm;
+}
+
+.editIcon {
+  position: absolute;
+  right: $spacing-md;
+  left: $spacing-md;
+  z-index: 9999;
+}
+
+.saveButton {
+  position: absolute;
+  bottom: $spacing-md;
+  right: $spacing-md;
+  z-index: 9999;
 }

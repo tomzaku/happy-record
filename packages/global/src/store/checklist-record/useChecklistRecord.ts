@@ -122,7 +122,7 @@ export const useChecklistRecord = () => {
       value,
       checklistTemplateId,
     }: {
-      value: number;
+      value: unknown;
       checklistTemplateId: string;
     },
   ) => {

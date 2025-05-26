@@ -79,26 +79,28 @@ const RecordDayEdit = ({
           />
         );
       })}
-      <Button
-        size="lg"
-        className={styles.submitBtn}
-        onClick={() => {
-          if (currentChecklistTemplate) {
-            addChecklistRecord({
-              checklistId: checklistTemplateId,
-              checklistTemplateId: currentChecklistTemplate.id,
-              createdAt: currentDay,
-              records: Object.entries(fieldRecord).map(([key, value]) => ({
-                fieldId: key,
-                value: value,
-              })),
-            });
-            onSubmit?.();
-          }
-        }}
-      >
-        Submit
-      </Button>
+      <div className={styles.footerCenter}>
+        <Button
+          size="lg"
+          className={styles.submitBtn}
+          onClick={() => {
+            if (currentChecklistTemplate) {
+              addChecklistRecord({
+                checklistId: checklistTemplateId,
+                checklistTemplateId: currentChecklistTemplate.id,
+                createdAt: currentDay,
+                records: Object.entries(fieldRecord).map(([key, value]) => ({
+                  fieldId: key,
+                  value: value,
+                })),
+              });
+              onSubmit?.();
+            }
+          }}
+        >
+          Submit
+        </Button>
+      </div>
     </>
   );
 };

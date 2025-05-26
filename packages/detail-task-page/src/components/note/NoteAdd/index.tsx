@@ -50,30 +50,30 @@ const NoteAdd = ({
       <NoteEditor
         value={form.value}
         setValue={value => setForm({ ...form, value })}
-        classes={{
-          contentEditableClassName: styles.contentEditor,
-        }}
       />
-      <Button
-        onClick={() => {
-          addChecklistRecord({
-            value: form.value,
-            checklistId,
-            checklistTemplateId: checklistTemplateId,
-            createdAt: currentDay,
-            records: [
-              {
-                fieldId: selectedField.id,
-                value: form.value,
-              },
-            ],
-          });
-          onSubmit?.();
-        }}
-        className={styles.submitButton}
-      >
-        Submit
-      </Button>
+      <div className={styles.footerCenter}>
+        <Button
+          type="primary"
+          className={styles.submitButton}
+          onClick={() => {
+            addChecklistRecord({
+              value: form.value,
+              checklistId,
+              checklistTemplateId: checklistTemplateId,
+              createdAt: currentDay,
+              records: [
+                {
+                  fieldId: selectedField.id,
+                  value: form.value,
+                },
+              ],
+            });
+            onSubmit?.();
+          }}
+        >
+          Submit
+        </Button>
+      </div>
     </div>
   );
 };

@@ -7,6 +7,7 @@ import {
 import { startOfMonth, endOfMonth } from 'date-fns';
 import NoteEditor from '../NoteEditor';
 import styles from './index.module.scss';
+import Button from '@moon-ui/button/src/DefaultButton';
 
 const NoteHistory = ({
   fields,
@@ -23,6 +24,9 @@ const NoteHistory = ({
   const [records, setRecords] = React.useState<
     Record<string, ChecklistRecord[]>
   >({});
+  const [tempRecords, setTempRecords] = React.useState<
+    Record<string, ChecklistRecord[]>
+  >({});
   const currentRecordField = fields.reduce(
     (acc: Record<string, RecordField>, r) => ({
       ...acc,
@@ -30,6 +34,7 @@ const NoteHistory = ({
     }),
     {},
   );
+  const [activeRecord, setActiveRecord] = React.useState<ChecklistRecord>();
   React.useEffect(() => {
     const records = getChecklistRecords(checklistTemplateId, {
       rangeDate: {
@@ -50,15 +55,35 @@ const NoteHistory = ({
               {new Date(date).toLocaleString()}
             </div>
             {records.map(record => {
+              const isActive = activeRecord?.id === record.id;
+              console.log('IS ACTIVED', isActive);
               return (
-                <NoteEditor
-                  classes={{
-                    editor: styles.editor,
-                  }}
-                  hideToolBar
-                  value={String(record.value)}
-                  readOnly
-                />
+                <div>
+                  <NoteEditor
+                    onClickEdit={() => {
+                      setActiveRecord(record);
+                    }}
+                    classes={{
+                      container: styles.editor,
+                    }}
+                    value={record.value}
+                    setValue={value =>
+                      setActiveRecord(prev => ({
+                        ...prev,
+                        value,
+                      }))
+                    }
+                    shouldShowSaveButton
+                    readOnly={!isActive}
+                    onClickSave={() => {
+                      updateChecklistRecord(record.id, {
+                        value: activeRecord?.value || '',
+                        checklistTemplateId,
+                      });
+                      setActiveRecord(undefined);
+                    }}
+                  />
+                </div>
               );
             })}
           </div>
