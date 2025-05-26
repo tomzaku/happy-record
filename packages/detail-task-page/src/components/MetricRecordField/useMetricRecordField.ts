@@ -31,7 +31,6 @@ export const useMetricRecordField = ({
       },
       sortBy: 'createdAt',
     });
-    console.log('RECORDS from metric', records);
     const categories = Object.keys(records);
     const values = Object.values(records);
     const seriesValues = fields.reduce((acc, recordField, index) => {

@@ -7,7 +7,7 @@
   min-height: fill-available;
   min-height: -webkit-fill-available;
   min-width: 100vw;
-  background: #ffffffbd;
+  background: var(--drawer-blur-background);
   position: fixed;
   visibility: hidden;
   // overflow: hidden;

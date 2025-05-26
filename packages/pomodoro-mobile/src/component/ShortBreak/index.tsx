@@ -43,7 +43,7 @@ export default function ShortBreak() {
                 defaultMessage: 'PAUSE',
               })
             : intl.formatMessage({
-                id: 'pomodoro-mobile.label-pomodoro-pause',
+                id: 'pomodoro-mobile.label-pomodoro-play',
                 defaultMessage: 'PLAY',
               })}
         </Button3D>

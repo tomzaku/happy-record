@@ -83,7 +83,7 @@ export default function CurrentListTask({ className }: Props) {
           />
           <Typography.Text isDescription>
             {intl.formatMessage({
-              id: 'ListTask.label-show-done-task',
+              id: 'ListTask.label-show-all-tasks',
               defaultMessage: 'Show All Tasks',
             })}
           </Typography.Text>

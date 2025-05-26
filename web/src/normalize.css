@@ -2,3 +2,9 @@ body {
   margin: 0;
   font-family: 'Poppins';
 }
+
+[data-theme='dark'] {
+  svg.iconify {
+    color: #ccd6f6;
+  }
+}

@@ -4,33 +4,40 @@ import React from 'react';
 import { TranslationContext } from './context';
 
 // Enum
-import { Language } from '@dreamer/global';
+import { Language, useLocalStorage } from '@dreamer/global';
 
 // Type
 import { MessageDescriptor } from './type';
 
 export const withTranslation = (Component: React.FC) =>
-  function TranslationWrapper(props: any) {
-    const [language, setLanguage] = React.useState<Language>(Language.En);
-    const [messages, setMessages] = React.useState<Record<string,string>>({});
+  function TranslationWrapper<T>(props: T) {
+    const [language, setLanguage] = useLocalStorage<Language>(
+      'app_language',
+      Language.En,
+    );
+    const [messages, setMessages] = React.useState<Record<string, string>>({});
     const loadLanguage = async (nextLanguage: Language) => {
       const { default: messages } = await import(
         `./language/${nextLanguage}.json`
       );
       setMessages(messages);
-    }
+    };
     React.useEffect(() => {
-      loadLanguage(language)
-    }, [])
+      loadLanguage(language);
+    }, []);
     const formatMessage = (
       descriptor: MessageDescriptor,
-      values?: Record<string, string>
+      values?: Record<string, string>,
     ) => {
-      const { id, defaultMessage } = descriptor
-      const message = messages[id] || defaultMessage
-      if(!values) return message
-      return Object.entries(values).reduce((result, [key, value]) => result.replace(new RegExp(`{{${key}}}`, 'gm'), value) ,message)
-    }
+      const { id, defaultMessage } = descriptor;
+      const message = messages[id] || defaultMessage;
+      if (!values) return message;
+      return Object.entries(values).reduce(
+        (result, [key, value]) =>
+          result.replace(new RegExp(`{{${key}}}`, 'gm'), value),
+        message,
+      );
+    };
     return (
       <TranslationContext.Provider
         value={{
@@ -38,13 +45,12 @@ export const withTranslation = (Component: React.FC) =>
           language,
           changeLanguage: async (nextLanguage: Language) => {
             setLanguage(nextLanguage);
-            loadLanguage(nextLanguage)
+            loadLanguage(nextLanguage);
           },
           formatMessage,
         }}
       >
-          <Component {...props} />
+        <Component {...props} />
       </TranslationContext.Provider>
     );
   };
-

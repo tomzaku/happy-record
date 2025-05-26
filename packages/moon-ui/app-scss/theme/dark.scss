@@ -1,127 +1,130 @@
 @use './common-color' as *;
 
 [data-theme='dark'] {
-  // --background: #{$black};
-  --background: #0f0f0f;
+  // Background with a deep dark blue tone
+  --background: #0a1929;
 
   // Text
-  --text-color: #{$white80};
-  --text-color-invert: #{$white};
-  --text-placeholder-color: #{$white50};
-  --text-description-color: #{$black24};
-  --text-description-color-invert: #{$white50};
-  --text-link: #{$primary};
+  --text-color: #ccd6f6;
+  --text-color-invert: #fff;
+  --text-placeholder-color: #8892b0;
+  --text-description-color: rgba(136, 146, 176, 0.7);
+  --text-description-color-invert: #8892b0;
+  --text-link: #64ffda;
 
   // Text - Title
-  --text-title-primary-color: #{$primary};
+  --text-title-primary-color: #64ffda;
 
   // Tab
-  --tab-active-background: #{$white24};
+  --tab-active-background: rgba(100, 255, 218, 0.2);
 
   // Card
-  --card-background: #{$black};
-  --card-shadow: #{$white6};
-  --card-border: #{$white24};
+  --card-background: #112240;
+  --card-shadow: rgba(0, 0, 0, 0.3);
+  --card-border: rgba(136, 146, 176, 0.3);
 
   // Button
-  --button-default-background: #{$primary};
-  --button-ghost-border: #{$white50};
-  --button-ghost-color: #{$white50};
-  --button-dash: #{$white24};
-  --button-disabled: #{$black6};
+  --button-default-background: #64ffda;
+  --button-ghost-border: #8892b0;
+  --button-ghost-color: #8892b0;
+  --button-dash: rgba(136, 146, 176, 0.3);
+  --button-disabled: rgba(0, 0, 0, 0.2);
 
   // Button - Action
-  --button-action-background: #{$primary-extra-light};
-  --button-action-color: #{$primary-dark};
-  --button-action-success: #{$success-extra-light};
-  --button-action-pending: #{$primary-extra-light};
-  --button-action-processing: #{$secondary-extra-light};
-  --button-action-vertical-line: #{$black12};
+  --button-action-background: rgba(100, 255, 218, 0.15);
+  --button-action-color: #64ffda;
+  --button-action-success: rgba(33, 150, 83, 0.3);
+  --button-action-pending: rgba(100, 255, 218, 0.15);
+  --button-action-processing: rgba(242, 153, 74, 0.2);
+  --button-action-vertical-line: rgba(0, 0, 0, 0.3);
 
   // Button Multi Select
-  --button-multi-select-border-color: #{$primary};
-  --button-multi-select-text-color: #{$primary};
+  --button-multi-select-border-color: #64ffda;
+  --button-multi-select-text-color: #64ffda;
 
   // Button 3d
-  --button-3d-skip-background: #{$white};
-  --button-3d-background: #{$white24};
-  --button-3d-text-background: #{$white};
-  --button-3d-text-color: #{$primary};
-  --button-3d-active-button-text-color: #{$warning};
+  --button-3d-skip-background: #ccd6f6;
+  --button-3d-background: rgba(136, 146, 176, 0.3);
+  --button-3d-text-background: #ccd6f6;
+  --button-3d-text-color: #64ffda;
+  --button-3d-active-button-text-color: #feb000;
 
   // Button for Select Task Pomodoro
-  --button-pomodoro-select-task-border: #{$white50};
-  --button-pomodoro-select-task-color: #{$white50};
+  --button-pomodoro-select-task-border: #8892b0;
+  --button-pomodoro-select-task-color: #8892b0;
 
   // Card Task Selected
-  --card-task-selected-task-color: #{$white};
-  --card-task-selected-task-background: #{$white24};
+  --card-task-selected-task-color: #fff;
+  --card-task-selected-task-background: rgba(100, 255, 218, 0.2);
 
   // Icon
-  --icon-primary: #{$primary};
-  --icon-color: #{$white};
-  --icon-color-revert: #{$white}; // TODO: Rename revert to invert
-  --icon-color-inactive-invert: #{$white50};
+  --icon-primary: #64ffda;
+  --icon-color: #ccd6f6;
+  --icon-color-revert: #fff;
+  --icon-color-inactive-invert: #8892b0;
 
   // Pomodoro Player
-  --pomodoro-player-background: #{$primary};
+  --pomodoro-player-background: #008a69;
 
   // Checkbox
-  --checkbox-accent-color: #{$success};
+  --checkbox-accent-color: #219653;
 
   // Modal
-  --modal-overlay-background: #{$black80};
-  --modal-logo-warning: #{$warning};
-  --modal-button-primary: #{$warning};
-  --modal-button-secondary: #{$warning};
+  --modal-overlay-background: rgba(10, 25, 41, 0.85);
+  --modal-logo-warning: #feb000;
+  --modal-button-primary: #feb000;
+  --modal-button-secondary: #feb000;
 
   // Bottom Modal
-  --modal-from-bottom-border: #{$black24};
+  --modal-from-bottom-border: rgba(136, 146, 176, 0.3);
 
   // Header
-  --header-logo-text: #{$primary};
+  --header-logo-text: #64ffda;
 
   // Toggle
-  --toggle-background: #{$white50};
-  --toggle-checked-color: #{$primary};
-  --toggle-handle: #{$white};
+  --toggle-background: #8892b0;
+  --toggle-checked-color: #64ffda;
+  --toggle-handle: #fff;
 
   // Input
-  --input-border: #{$black24};
-  --input-background: #{$white6};
+  --input-border: rgba(136, 146, 176, 0.3);
+  --input-background: rgba(17, 34, 64, 0.5);
 
   // Radio
-  --radio-color: #{$primary};
+  --radio-color: #64ffda;
 
   // Slider
-  --slider-active: #{$primary};
-  --slider-left-handle: #{$black50};
-  --slider-right-handle: #{$black12};
+  --slider-active: #64ffda;
+  --slider-left-handle: rgba(0, 0, 0, 0.5);
+  --slider-right-handle: rgba(0, 0, 0, 0.3);
 
   // Drawer
-  --drawer-background: #{$black};
+  --drawer-background: #112240;
+  --drawer-blur-background: #112240de;
 
   // Division
-  --division-color: #{$black24};
+  --division-color: rgba(136, 146, 176, 0.3);
 
   // 2. Create Task
-  --create-task-dashed-border: #{$white6};
+  --create-task-dashed-border: rgba(136, 146, 176, 0.2);
 
   // 2. Current List Task
-  --current-list-task: #{$white12};
+  --current-list-task: rgba(136, 146, 176, 0.2);
 
   // 2. CurrentTaskItem
-  --current-task-item-action-text-color: #{$primary-dark};
-  --current-task-item-action-button-background: #{$black6};
-  --current-task-item-action-icon: #{$primary-dark};
-  --current-task-item-progress-color: #{$secondary};
-  --current-task-drag-icon: #{$black24};
+  --current-task-item-action-text-color: #64ffda;
+  --current-task-item-action-button-background: rgba(0, 0, 0, 0.2);
+  --current-task-item-action-icon: #64ffda;
+  --current-task-item-progress-color: #f2994a;
+  --current-task-drag-icon: rgba(136, 146, 176, 0.3);
 
   // 2. CommonTaskItem
-  --common-task-item-division: #{$white12};
-  --common-task-item-icon: #{$white80};
-  --common-task-item-drag-icon: #{$white};
-  --common-task-item-button-text: #{$white80};
-  --common-task-item-vertical-division: #{$white24};
-  --common-task-action-container-hover: #{$primary};
+  --common-task-item-division: rgba(136, 146, 176, 0.2);
+  --common-task-item-icon: #ccd6f6;
+  --common-task-item-drag-icon: #ccd6f6;
+  --common-task-item-button-text: #ccd6f6;
+  --common-task-item-vertical-division: rgba(136, 146, 176, 0.3);
+  --common-task-action-container-hover: #64ffda;
+
+  // library
 }

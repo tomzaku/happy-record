@@ -25,23 +25,37 @@ const AudioSongListDrawer = ({ visible, onClose }: Props) => {
       <div className={styles.header}>
         <Typography.Title noMargin level={2}>
           {intl.formatMessage({
-            id: "audio-song-list-drawer.title",
-            defaultMessage: "Song List",
+            id: 'audio-song-list-drawer.title',
+            defaultMessage: 'Song List',
           })}
         </Typography.Title>
-        
-        <Icon width={32} icon="material-symbols:close-rounded" onClick={onClose} />
+
+        <Icon
+          width={32}
+          icon="material-symbols:close-rounded"
+          onClick={onClose}
+        />
       </div>
       <div className={styles.body}>
         {songs.map(({ name }, index) => (
-          <div 
-            key={index} 
-            onClick={() => next(index)} 
-            className={cx(styles.card, currentSongIndex === index && styles.cardActive)}
+          <div
+            key={index}
+            onClick={() => next(index)}
+            className={cx(
+              styles.card,
+              currentSongIndex === index && styles.cardActive,
+            )}
           >
-            <span>{name}</span>
+            <Typography.Paragraph
+              className={cx(currentSongIndex === index && styles.titleActive)}
+            >
+              {name}
+            </Typography.Paragraph>
             {currentSongIndex === index && (
-              <Icon className={styles.successIcon} icon="material-symbols:check-circle-rounded" />
+              <Icon
+                className={styles.successIcon}
+                icon="material-symbols:check-circle-rounded"
+              />
             )}
           </div>
         ))}

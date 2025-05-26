@@ -34,7 +34,7 @@ const EisenhowerMatrixComponent = ({ value, setValue, className }: Props) => {
         })}
         description={intl.formatMessage({
           defaultMessage: 'To organize tasks by urgency and importance',
-          id: 'msg-eisenhower-matrix-explanation',
+          id: 'msg-eisenhower-matrix-explanation-description',
         })}
         rightComponent={
           <Toggle

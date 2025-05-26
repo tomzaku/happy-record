@@ -24,9 +24,6 @@ const NoteHistory = ({
   const [records, setRecords] = React.useState<
     Record<string, ChecklistRecord[]>
   >({});
-  const [tempRecords, setTempRecords] = React.useState<
-    Record<string, ChecklistRecord[]>
-  >({});
   const currentRecordField = fields.reduce(
     (acc: Record<string, RecordField>, r) => ({
       ...acc,
@@ -56,7 +53,6 @@ const NoteHistory = ({
             </div>
             {records.map(record => {
               const isActive = activeRecord?.id === record.id;
-              console.log('IS ACTIVED', isActive);
               return (
                 <div>
                   <NoteEditor

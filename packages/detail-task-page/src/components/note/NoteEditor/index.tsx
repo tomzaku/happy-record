@@ -7,6 +7,7 @@ import styles from './index.module.scss';
 import cx from 'classnames';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { Block } from '@blocknote/core';
+import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 
 type Props = {
   value: Block[];
@@ -32,6 +33,7 @@ function NoteEditor({
   const editor = useCreateBlockNote({
     initialContent: value,
   });
+  const { theme } = usePomodoroGlobalConfig();
   return (
     <div className={cx(styles.container, classes?.container)}>
       {readOnly && (
@@ -45,7 +47,7 @@ function NoteEditor({
       )}
       <BlockNoteView
         editable={!readOnly}
-        theme="light"
+        theme={theme === Theme.Dark ? 'dark' : 'light'}
         editor={editor}
         onChange={() => setValue(editor.document)}
       />

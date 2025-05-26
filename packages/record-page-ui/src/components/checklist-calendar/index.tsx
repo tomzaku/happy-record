@@ -3,6 +3,7 @@ import Typography from '@moon-ui/typography';
 
 import styles from './index.module.scss';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
+import { useIntl } from '@dreamer/translation';
 
 type Props = {
   date: Date;
@@ -16,14 +17,22 @@ const plus1Day = (date: Date) => {
   return new Date(date.getTime() + 24 * 60 * 60 * 1000);
 };
 const ChecklistCalendar = ({ date, onDateChange }: Props) => {
+  const intl = useIntl();
   const isToday =
     new Date(date).toLocaleDateString() === new Date().toLocaleDateString();
-  const title = isToday ? 'Tasks Today' : 'Tasks';
-  const dateText = isToday ? 'Today' : new Date(date).toLocaleDateString();
+  const dateText = isToday
+    ? intl.formatMessage({
+        id: 'checklist-calendar.today',
+        defaultMessage: 'Today',
+      })
+    : new Date(date).toLocaleDateString();
   return (
     <div className={styles.container}>
       <Typography.Title level={4} noMargin className={styles.title}>
-        {title}
+        {intl.formatMessage({
+          id: 'checklist-calendar.title',
+          defaultMessage: 'Tasks',
+        })}
       </Typography.Title>
       <div className={styles.player}>
         <Icon

@@ -22,6 +22,7 @@ function App() {
         <AppRouter />
         <PwaInstallation />
       </div>
+      <div id="drawer-global-root" />
     </div>
   );
 }

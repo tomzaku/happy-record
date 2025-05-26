@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import cx from 'classnames';
 import { useSpring, animated } from '@react-spring/web';
+import { createPortal } from 'react-dom';
 
 import styles from './index.module.scss';
 
@@ -39,9 +40,9 @@ export default function Drawer({
     return null;
   }
 
-  return (
-    <animated.div 
-      className={cx(styles.blurContainer, visible && styles.visible)} 
+  return createPortal(
+    <animated.div
+      className={cx(styles.blurContainer, visible && styles.visible)}
       onClick={onBlur}
       style={{
         visibility: isVisible ? 'visible' : 'hidden',
@@ -58,6 +59,7 @@ export default function Drawer({
       >
         {children}
       </animated.div>
-    </animated.div>
+    </animated.div>,
+    document.getElementById('drawer-global-root'),
   );
 }
