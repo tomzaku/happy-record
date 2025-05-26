@@ -1,10 +1,11 @@
+@use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/color' as *;
 
 .container {
   color: var(--text-color);
   background: var(--input-background);
   border: 0;
-  padding: 12px;
+  padding: $spacing-sm $spacing-md;
   font-size: 14px;
 
   &:focus {

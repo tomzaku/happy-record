@@ -31,6 +31,11 @@ function NoteEditor({
   shouldShowSaveButton,
 }: Props) {
   const editor = useCreateBlockNote({
+    domAttributes: {
+      editor: {
+        class: styles.editor,
+      },
+    },
     initialContent: value,
   });
   const { theme } = usePomodoroGlobalConfig();
@@ -46,6 +51,7 @@ function NoteEditor({
         />
       )}
       <BlockNoteView
+        className={styles.editor}
         editable={!readOnly}
         theme={theme === Theme.Dark ? 'dark' : 'light'}
         editor={editor}

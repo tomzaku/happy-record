@@ -4,6 +4,7 @@ import {
   ChecklistRecord,
   useChecklistRecord,
 } from '@dreamer/global/src/store/checklist-record';
+import Typography from '@moon-ui/typography';
 
 const NoteHome = ({
   currentDay,
@@ -36,6 +37,6 @@ const NoteHome = ({
   React.useEffect(() => {
     reloadChecklistRecord();
   }, [checklistTemplateId]);
-  return <div>Pinned notes will be shown here.</div>;
+  return <Typography.Text>Pinned notes will be shown here.</Typography.Text>;
 };
 export default NoteHome;

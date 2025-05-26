@@ -8,6 +8,7 @@ import { startOfMonth, endOfMonth } from 'date-fns';
 import NoteEditor from '../NoteEditor';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
+import Typography from '@moon-ui/typography';
 
 const NoteHistory = ({
   fields,
@@ -49,7 +50,9 @@ const NoteHistory = ({
         return (
           <div key={date}>
             <div className={styles.header}>
-              {new Date(date).toLocaleString()}
+              <Typography.Text>
+                {new Date(date).toLocaleString()}
+              </Typography.Text>
             </div>
             {records.map(record => {
               const isActive = activeRecord?.id === record.id;

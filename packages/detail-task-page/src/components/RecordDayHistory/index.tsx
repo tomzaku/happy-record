@@ -47,7 +47,7 @@ const RecordDayHistory = ({
     <div>
       {Object.entries(records).map(([key, checklistRecords]) => (
         <div className={styles.dateSection}>
-          {new Date(key).toLocaleString()}
+          <Typography.Text>{new Date(key).toLocaleString()}</Typography.Text>
           {checklistRecords.map(r => {
             const recordField = currentRecordField[r.fieldId];
             return (
