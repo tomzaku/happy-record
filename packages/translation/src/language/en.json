@@ -24,6 +24,8 @@
   "TimerButton.label-done": "Done",
   "audio-song-list-drawer.title": "Song List",
   "build-weekly-hobby-subtitle": "Select days to achieve a good hobby",
+  "checklist-calendar.title": "Tasks",
+  "checklist-calendar.today": "Today",
   "checklist-create.label-create-checklist": "Create Task",
   "icon-picker.title": "Icons",
   "label-Edit": "Edit",
@@ -64,5 +66,6 @@
   "setting-page.description-theme": "Config theme for whole page",
   "setting-page.label-dark": "Dark",
   "setting-page.label-light": "Light",
-  "setting-page.label-theme": "Theme"
+  "setting-page.label-theme": "Theme",
+  "setting-page.title": "Setting"
 }

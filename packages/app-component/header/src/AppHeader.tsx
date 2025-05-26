@@ -13,6 +13,16 @@ const Header = () => {
       <div className={styles.left} onClick={() => navigate('/')}>
         DREAMER
       </div>
+      <div className={styles.right}>
+        <Icon
+          className={styles.rightIcon}
+          width={24}
+          icon="solar:settings-linear"
+          onClick={() => {
+            navigate('/setting');
+          }}
+        />
+      </div>
       {/* <div className={styles.right}> */}
       {/*   <Icon */}
       {/*     className={styles.rightIcon} */}
