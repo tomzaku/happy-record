@@ -96,7 +96,7 @@
   // Input
   --input-border: #{$black24};
   --input-background: #{$white};
-  --input-border-focus: #{$primary};
+  --input-border-focus: #{$primary-light};
 
   // Radio
   --radio-color: #{$primary};
@@ -115,6 +115,7 @@
 
   // 2. Create Task
   --create-task-dashed-border: #{$black6};
+  --create-task-dashed-border-focus: #{$primary-light};
 
   // 2. Current List Task
   --current-list-task: #{$black50};

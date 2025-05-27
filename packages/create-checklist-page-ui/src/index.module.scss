@@ -1,4 +1,5 @@
 @use '@moon-ui/app-scss/function' as *;
+@use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/color' as *;
 
 .menu {
@@ -11,10 +12,13 @@
   box-sizing: border-box;
   background: transparent;
   font-size: toRem(20px);
-  min-height: 36px;
+  min-height: 38px;
   resize: none;
   width: 100%;
   color: var(--text-color);
+  border-bottom: 3px dashed var(--create-task-dashed-border);
+
+  margin-bottom: $spacing-md;
 
   &::placeholder {
     color: var(--text-placeholder-color);
@@ -22,14 +26,8 @@
 
   &:focus {
     outline: none;
+    border-bottom: 3px dashed var(--create-task-dashed-border-focus);
   }
-}
-
-.dashed {
-  border: 0;
-  border-top: 3px dashed var(--create-task-dashed-border);
-  height: 0;
-  width: 100%;
 }
 
 .container {

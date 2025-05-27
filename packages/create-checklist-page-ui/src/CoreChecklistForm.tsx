@@ -87,7 +87,6 @@ const CoreChecklistForm = ({
           }}
           value={checklistText}
         />
-        <hr className={styles.dashed} />
         <BuildWeeklyHobby values={weeklyHobbies} setValues={setWeeklyHobbies} />
         <Hr />
         <IconPicker

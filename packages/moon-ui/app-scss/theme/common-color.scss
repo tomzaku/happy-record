@@ -8,14 +8,14 @@ $black3: rgba($black, 0.03);
 
 $white: #fff;
 $white80: rgba($white, 0.8);
-$white50: rgba($white, 0.50);
+$white50: rgba($white, 0.5);
 $white24: rgba($white, 0.24);
 $white12: rgba($white, 0.12);
 $white6: rgba($white, 0.06);
 
-
 $primary: #0b7dc2;
 $primary-dark: #334d6e;
+$primary-light: #0b7dc247;
 $primary-extra-light: #ceedff;
 
 $card-shadow: $black6;
@@ -23,7 +23,7 @@ $card-shadow: $black6;
 $success: #219653;
 $success-extra-light: #cdfee2;
 
-$warning: #FEB000;
+$warning: #feb000;
 
 $secondary: #f2994a;
 $secondary-extra-light: rgba($secondary, 0.4);
