@@ -10,6 +10,7 @@ import {
 } from '@dreamer/global/src/store/record-field';
 import { useChecklistTemplates } from '@dreamer/global';
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
@@ -20,6 +21,7 @@ export const useMetricRecordField = ({
   checklistTemplateId: string;
   fields: RecordField[];
 }) => {
+  const { theme } = usePomodoroGlobalConfig();
   const { getChecklistRecords } = useChecklistRecord();
 
   const [data, setData] = React.useState({});
@@ -58,12 +60,16 @@ export const useMetricRecordField = ({
     };
   });
   const options = {
-    // stroke: {
-    // 	curve: 'smooth',
-    // },
-    // fill: {
-    // 	type: 'gradient',
-    // },
+    ...(theme === Theme.Dark
+      ? {
+          theme: {
+            mode: 'dark',
+          },
+          chart: {
+            background: '#162033',
+          },
+        }
+      : {}),
     xaxis: {
       categories: data.categories,
     },
