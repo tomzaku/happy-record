@@ -1,6 +1,6 @@
 import React from 'react';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
 import styles from './index.module.scss';
 import cx from 'classnames';

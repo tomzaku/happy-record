@@ -1,5 +1,5 @@
 import DatePicker from '@moon-ui/date-picker';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Button from '@moon-ui/button';
 import Checkbox from '@moon-ui/checkbox';
 import Card from '@moon-ui/card';
@@ -53,7 +53,7 @@ const PregnantIntro = () => {
                     ...baby,
                     dueDate: event.target.value,
                     startDate: calculateStartDateFromDueDate(
-                      event.target.value
+                      event.target.value,
                     ),
                   })
                 }
@@ -87,7 +87,7 @@ const PregnantIntro = () => {
                       updateSelectedChecklists([...selectedChecklists, id]);
                     } else {
                       updateSelectedChecklists(
-                        selectedChecklists.filter(i => i !== id)
+                        selectedChecklists.filter(i => i !== id),
                       );
                     }
                   }}

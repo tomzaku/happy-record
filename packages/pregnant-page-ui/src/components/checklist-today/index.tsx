@@ -1,6 +1,6 @@
 import React from 'react';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
 import styles from './index.module.scss';
 import cx from 'classnames';
@@ -33,7 +33,7 @@ const ChecklistToday = ({ date }: { date: Date }) => {
             className={cx(
               styles.checklistItem,
               index === checklistByGivingDateIds.length - 1 &&
-                styles.lastChecklistItem
+                styles.lastChecklistItem,
             )}
           >
             <Icon
@@ -50,7 +50,11 @@ const ChecklistToday = ({ date }: { date: Date }) => {
               width={24}
               height={24}
               icon="material-symbols:edit-outline"
-              onClick={() => navigate(`/edit-checklist/${currentChecklist.checklistTemplateId}`)}
+              onClick={() =>
+                navigate(
+                  `/edit-checklist/${currentChecklist.checklistTemplateId}`,
+                )
+              }
             />
             <Checkbox
               checked={Boolean(currentChecklist?.completedAt)}

@@ -12,7 +12,7 @@ import {
   RecordField,
   useRecordField,
 } from '@dreamer/global/src/store/record-field';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import List from '@moon-ui/list';
 import styles from './index.module.scss';
 import Input from '@moon-ui/input';

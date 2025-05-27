@@ -3,8 +3,6 @@ body {
   font-family: 'Poppins';
 }
 
-[data-theme='dark'] {
-  svg.iconify {
-    color: #ccd6f6;
-  }
-}
+/* :where([data-theme="dark"]) .iconify { */
+/*     color: #ccd6f6; */
+/* } */

@@ -19,21 +19,10 @@
 
 .closeIcon {
   margin-left: 8px;
-  cursor: pointer;
-  color: var(--color-text-secondary);
-  transition: color 0.2s;
-
-  &:hover {
-    color: var(--color-text-primary);
-  }
 }
 
 .resultInput {
   display: flex;
-}
-
-.closeIcon {
-  margin-left: $spacing-xs;
 }
 
 .addCustomField {

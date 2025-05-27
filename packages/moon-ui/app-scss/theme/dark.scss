@@ -23,6 +23,8 @@
   --card-shadow: rgba(0, 0, 0, 0.3);
   --card-border: rgba(136, 146, 176, 0.3);
   --card-selected-background: rgba(100, 255, 218, 0.2);
+  --card-border-hover: #46b299;
+  --card-border-open: #46b299;
 
   // Button
   --button-default-background: #46b299;
@@ -90,6 +92,7 @@
   // Input
   --input-border: rgba(136, 146, 176, 0.3);
   --input-background: rgba(17, 34, 64, 0.5);
+  --input-border-focus: #46b299;
 
   // Radio
   --radio-color: #64ffda;

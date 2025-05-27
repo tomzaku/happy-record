@@ -1,6 +1,6 @@
 import React from 'react';
 import List from '@moon-ui/list';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Select from '@moon-ui/select';
 
 import { useIntl } from '@dreamer/translation';
@@ -50,12 +50,11 @@ const RecordTaskSetting = ({
                   const field = recordFields.find(r => r.id === id);
                   return (
                     <div className={styles.selected}>
-                      {field?.title}
+                      <Typography.Text>{field?.title}</Typography.Text>
                       <Icon
                         icon={'material-symbols:close-rounded'}
                         width={16}
                         height={16}
-                        color="black"
                         className={styles.closeIcon}
                         onClick={() => {
                           setSelectedRecords(

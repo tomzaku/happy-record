@@ -1,5 +1,5 @@
 import Typography from '@moon-ui/typography';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Lottie from 'lottie-react';
 
 import { useIntl } from '@dreamer/translation';
@@ -15,7 +15,7 @@ const BabyCard = () => {
   const passedDayFromStartDate =
     Math.floor(
       (new Date().getTime() - new Date(baby?.startDate || '').getTime()) /
-        (1000 * 60 * 60 * 24)
+        (1000 * 60 * 60 * 24),
     ) - 1;
   const passedWeeks = Math.floor(passedDayFromStartDate / 7);
   const passedDays = passedDayFromStartDate % 7;
@@ -55,7 +55,7 @@ const BabyCard = () => {
             {
               weeks: passedWeeks.toString(),
               days: passedDays.toString(),
-            }
+            },
           )}
         </Typography.Title>
         <Typography.Text className={styles.subtitle}>

@@ -1,5 +1,5 @@
 import { useIntl } from '@dreamer/translation';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Button from '@moon-ui/button/src/DefaultButton';
 
 import styles from './index.module.scss';

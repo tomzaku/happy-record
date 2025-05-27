@@ -3,7 +3,7 @@ import {
   useAudioPlayer,
 } from '@dreamer/music-controller-common/src/hooks';
 import Drawer from '@moon-ui/drawer';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 
 import { useIntl } from '@dreamer/translation';

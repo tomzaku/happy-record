@@ -1,10 +1,10 @@
 // import IconSetting from '@moon-ui/icon/IconSetting';
-import { Icon } from '@iconify/react';
 
 // Hooks
 import { useNavigate } from 'react-router-dom';
 
 import styles from './AppHeader.module.scss';
+import Icon from '@moon-ui/icon/Icon';
 
 const Header = () => {
   const navigate = useNavigate();

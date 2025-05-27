@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import IconPauseCircle from '@moon-ui/icon/IconPauseCircle';
 import IconPlayCircle from '@moon-ui/icon/IconPlayCircle';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 
 // Utils
 import cx from 'classnames';

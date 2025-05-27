@@ -1,6 +1,6 @@
 import React from 'react';
 import Input from '@moon-ui/input';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 
 import { useIntl } from '@dreamer/translation';
@@ -15,9 +15,8 @@ const MetricInputCard = () => {
   const [weight, setWeight] = React.useState(40);
   const [bellySize, setBellySize] = React.useState(50);
   const { addBodyMetric, currentBodyMetric, currentDay } = useBodyMetric();
-  const [isMetricRecorded, setIsMetricRecorded] = React.useState(
-    !!currentBodyMetric
-  );
+  const [isMetricRecorded, setIsMetricRecorded] =
+    React.useState(!!currentBodyMetric);
   React.useEffect(() => {
     setIsMetricRecorded(!!currentBodyMetric);
   }, [currentBodyMetric]);
@@ -114,7 +113,7 @@ const MetricInputCard = () => {
                 new Date().toLocaleDateString()
                   ? 'today'
                   : new Date(currentDay).toLocaleDateString(),
-            }
+            },
           )}
         </Typography.Title>
       </div>

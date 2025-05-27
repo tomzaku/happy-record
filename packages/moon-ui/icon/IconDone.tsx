@@ -1,6 +1,6 @@
 import cx from 'classnames';
 
-import styles from './style.module.scss';
+import styles from './styles.module.scss';
 
 export default function IconDone({
   className,

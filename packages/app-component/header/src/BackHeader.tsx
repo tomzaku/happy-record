@@ -1,4 +1,4 @@
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 
 // Hooks
 import { useNavigate } from 'react-router-dom';

@@ -27,6 +27,8 @@
   --card-shadow: #{$black6};
   --card-border: #{$black24};
   --card-selected-background: #f5f5f5;
+  --card-border-hover: #{$primary};
+  --card-border-open: #{$primary};
 
   // Button
   --button-default-background: #{$primary};
@@ -94,6 +96,7 @@
   // Input
   --input-border: #{$black24};
   --input-background: #{$white};
+  --input-border-focus: #{$primary};
 
   // Radio
   --radio-color: #{$primary};

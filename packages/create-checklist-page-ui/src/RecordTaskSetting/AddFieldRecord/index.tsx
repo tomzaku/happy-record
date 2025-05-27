@@ -2,7 +2,7 @@ import React from 'react';
 import List from '@moon-ui/list';
 import Input from '@moon-ui/input';
 import Typography from '@moon-ui/typography';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Button from '@moon-ui/button/src/DefaultButton';
 
 import { useIntl } from '@dreamer/translation';

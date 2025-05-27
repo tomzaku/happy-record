@@ -1,5 +1,5 @@
 import Typography from '@moon-ui/typography';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 
 import { SolarDate } from '@nghiavuive/lunar_date_vi';
 import { getLocalDateComponents } from '@dreamer/global';
@@ -31,7 +31,7 @@ const LunarCalendar = () => {
             },
             {
               day: lunarDate.day.toString(),
-            }
+            },
           )}
         </Typography.Title>
         <Typography.Text className={styles.subtitle}>

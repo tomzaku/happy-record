@@ -12,7 +12,7 @@ import {
   useRecordField,
 } from '@dreamer/global/src/store/record-field';
 import { BackHeader } from '@dreamer/header';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();

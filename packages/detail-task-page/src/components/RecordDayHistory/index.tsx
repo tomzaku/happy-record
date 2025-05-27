@@ -1,6 +1,6 @@
 import React from 'react';
 import List from '@moon-ui/list';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import {
   ChecklistRecord,
   useChecklistRecord,

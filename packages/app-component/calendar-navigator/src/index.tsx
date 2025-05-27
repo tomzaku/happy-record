@@ -1,4 +1,4 @@
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 
 import styles from './index.module.scss';
 

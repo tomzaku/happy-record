@@ -1,5 +1,5 @@
 import Drawer from '@moon-ui/drawer';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import AddFieldRecord from '../AddFieldRecord';
 import styles from './index.module.scss';
 import Typography from '@moon-ui/typography';

@@ -1,6 +1,6 @@
 import React from 'react';
 import Card from '@moon-ui/card';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
 import Typography from '@moon-ui/typography';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
@@ -22,7 +22,9 @@ const ChecklistTemplatePageUi = () => {
   const intl = useIntl();
   const navigate = useNavigate();
   const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
-  const [templateToDelete, setTemplateToDelete] = React.useState<string | null>(null);
+  const [templateToDelete, setTemplateToDelete] = React.useState<string | null>(
+    null,
+  );
 
   const getRepeatText = (repeat?: { dayOfWeek: string }) => {
     const text = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -118,7 +120,7 @@ const ChecklistTemplatePageUi = () => {
                         ]);
                       } else {
                         updateSelectedChecklistTemplate(
-                          selectedChecklistTemplates.filter(i => i !== id)
+                          selectedChecklistTemplates.filter(i => i !== id),
                         );
                       }
                     }}
@@ -136,7 +138,7 @@ const ChecklistTemplatePageUi = () => {
                   ))}
                 </div>
               </div>
-            )
+            ),
           )}
         </>
       </Card>
@@ -160,7 +162,8 @@ const ChecklistTemplatePageUi = () => {
           <Typography.Text>
             {intl.formatMessage({
               id: 'ChecklistTemplate.delete-confirm-message',
-              defaultMessage: 'Are you sure you want to delete this checklist template? This action cannot be undone.',
+              defaultMessage:
+                'Are you sure you want to delete this checklist template? This action cannot be undone.',
             })}
           </Typography.Text>
         }

@@ -1,5 +1,5 @@
 import Card from '@moon-ui/card';
-import { Icon } from '@iconify/react';
+import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 import Lottie from 'lottie-react';
 
