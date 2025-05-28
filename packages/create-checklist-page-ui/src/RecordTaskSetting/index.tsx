@@ -58,7 +58,7 @@ const RecordTaskSetting = ({
                         className={styles.closeIcon}
                         onClick={() => {
                           setSelectedRecords(
-                            selectedRecords.filter(r => r !== key),
+                            selectedRecords.filter(r => r !== id),
                           );
                         }}
                       />
@@ -100,7 +100,7 @@ const RecordTaskSetting = ({
         )}
       />
       {selectedRecords.map(recordKey => {
-        const record = recordFields.find(r => r.key === recordKey);
+        const record = recordFields.find(r => r.id === recordKey);
         if (!record) return;
         return (
           <List.ItemMeta

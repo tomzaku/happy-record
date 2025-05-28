@@ -54,7 +54,6 @@ const NoteHeader = ({
           styles.button,
           activeTab === NoteTab.Add && styles.buttonActive,
         )}
-        size="sm"
         type="dash"
         onClick={onClickAdd}
       >
