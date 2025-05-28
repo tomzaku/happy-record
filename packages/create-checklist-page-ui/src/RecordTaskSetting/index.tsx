@@ -1,6 +1,7 @@
 import React from 'react';
 import List from '@moon-ui/list';
 import { Icon } from '@moon-ui/icon/Icon';
+import { v4 } from 'uuid';
 import Select from '@moon-ui/select';
 import {
   DndContext,
@@ -10,6 +11,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -28,19 +31,25 @@ import Checkbox from '@moon-ui/checkbox';
 import AddFieldRecordDialog from './AddFieldRecordDialog';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import Typography from '@moon-ui/typography';
+import DroppableGroup from './DroppableGroup';
+import cx from 'classnames';
 
-interface SortableItemProps {
+type SortableItemProps = {
   id: string;
   children: ReactNode;
-}
+  isDragging?: boolean; // Add isDragging prop for DragOverlay styling
+};
 
-const SortableItem = ({ id, children }: SortableItemProps) => {
+const SortableItem = ({ id, children, isDragging }: SortableItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0 : 1, // Hide the original item when dragging
+    // Add other styles for the item if it's being dragged (for visual feedback)
+    // e.g., boxShadow: isDragging ? '0px 2px 10px rgba(0, 0, 0, 0.2)' : 'none',
   };
 
   return (
@@ -52,7 +61,8 @@ const SortableItem = ({ id, children }: SortableItemProps) => {
 
 type Group = {
   title: string;
-  fields: string[];
+  id: string; // Unique ID for the group
+  fields: string[]; // Array of record IDs
 };
 
 const RecordTaskSetting = ({
@@ -67,9 +77,34 @@ const RecordTaskSetting = ({
   const [showAddFieldRecord, setShowAddFieldRecord] = React.useState(false);
   const [recordFields, setRecordFields] = React.useState(getAllRecordFields());
   const [groups, setGroups] = React.useState<Group[]>([]);
+  const [activeId, setActiveId] = React.useState<string | null>(null); // To track the dragged item
+
   React.useEffect(() => {
     setRecordFields(getAllRecordFields());
-  });
+    // Initialize groups with some dummy data if needed, or based on selectedRecords
+    // For example, if you want each selected record to start in its own group:
+    // const initialGroups: Group[] = selectedRecords.map((recordId, index) => ({
+    //   id: `group-${recordId}`,
+    //   title: intl.formatMessage({ id: 'label-group', defaultMessage: 'Group' }) + ` ${index + 1}`,
+    //   fields: [recordId],
+    // }));
+    // setGroups(initialGroups);
+
+    // Or, if you want initial groups as in the image:
+    // const initialGroups: Group[] = [
+    //   {
+    //     id: 'group-1',
+    //     title: intl.formatMessage({ id: 'label-group', defaultMessage: 'Group' }),
+    //     fields: ['duration-id', 'push-ups-id'], // Replace with actual IDs from recordFields
+    //   },
+    //   {
+    //     id: 'group-2',
+    //     title: intl.formatMessage({ id: 'label-group', defaultMessage: 'Group' }),
+    //     fields: ['note-id', 'ddsadsa-id'], // Replace with actual IDs from recordFields
+    //   },
+    // ];
+    // setGroups(initialGroups);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -78,18 +113,164 @@ const RecordTaskSetting = ({
     }),
   );
 
+  const findGroupContainer = (id: string) => {
+    if (id in groups) {
+      return id;
+    }
+
+    for (const group of groups) {
+      if (group.fields.includes(id)) {
+        return group.id;
+      }
+    }
+    return null;
+  };
+
+  const getRecordById = (id: string) => recordFields.find(r => r.id === id);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null); // Reset activeId after drag ends
 
-    if (active.id !== over?.id) {
-      setSelectedRecords((items: string[]) => {
-        const oldIndex = items.indexOf(active.id as string);
-        const newIndex = items.indexOf(over?.id as string);
+    if (!over) return;
 
-        return arrayMove(items, oldIndex, newIndex);
+    const activeGroup = findGroupContainer(active.id as string);
+    const overGroup = findGroupContainer(over.id as string);
+
+    // Case 1: Dragging within the same group
+    if (activeGroup && overGroup && activeGroup === overGroup) {
+      setGroups(prevGroups => {
+        const newGroups = [...prevGroups];
+        const groupIndex = newGroups.findIndex(
+          group => group.id === activeGroup,
+        );
+        if (groupIndex !== -1) {
+          const oldIndex = newGroups[groupIndex].fields.indexOf(
+            active.id as string,
+          );
+          const newIndex = newGroups[groupIndex].fields.indexOf(
+            over.id as string,
+          );
+          newGroups[groupIndex].fields = arrayMove(
+            newGroups[groupIndex].fields,
+            oldIndex,
+            newIndex,
+          );
+        }
+        return newGroups;
+      });
+    }
+    // Case 2: Dragging between different groups
+    else if (activeGroup && overGroup && activeGroup !== overGroup) {
+      setGroups(prevGroups => {
+        const newGroups = [...prevGroups];
+
+        const sourceGroupIndex = newGroups.findIndex(
+          group => group.id === activeGroup,
+        );
+        const destinationGroupIndex = newGroups.findIndex(
+          group => group.id === overGroup,
+        );
+
+        if (sourceGroupIndex !== -1 && destinationGroupIndex !== -1) {
+          const [movedItem] = newGroups[sourceGroupIndex].fields.splice(
+            newGroups[sourceGroupIndex].fields.indexOf(active.id as string),
+            1,
+          );
+
+          const overIndex = newGroups[destinationGroupIndex].fields.indexOf(
+            over.id as string,
+          );
+          if (overIndex !== -1) {
+            newGroups[destinationGroupIndex].fields.splice(
+              overIndex,
+              0,
+              movedItem,
+            );
+          } else {
+            // If dropped on the group itself (and not on an item within it)
+            newGroups[destinationGroupIndex].fields.push(movedItem);
+          }
+        }
+        return newGroups;
+      });
+    }
+    // Case 3: Dropped on a group that is empty or the group itself (not on an item within it)
+    else if (
+      activeGroup &&
+      over.data?.current?.type === 'Group' &&
+      activeGroup !== over.id
+    ) {
+      setGroups(prevGroups => {
+        const newGroups = [...prevGroups];
+        const sourceGroupIndex = newGroups.findIndex(
+          group => group.id === activeGroup,
+        );
+        const destinationGroupIndex = newGroups.findIndex(
+          group => group.id === over.id,
+        );
+
+        if (sourceGroupIndex !== -1 && destinationGroupIndex !== -1) {
+          const [movedItem] = newGroups[sourceGroupIndex].fields.splice(
+            newGroups[sourceGroupIndex].fields.indexOf(active.id as string),
+            1,
+          );
+          newGroups[destinationGroupIndex].fields.push(movedItem); // Add to the end of the destination group
+        }
+        return newGroups;
       });
     }
   };
+
+  const handleAddRecordToGroup = ({ id }: { id: string }) => {
+    // This function needs to decide which group to add to, or create a new one.
+    // The logic here is adapted from your existing `onChange` for the `Select` component.
+    const uniqRecords = new Set([...selectedRecords, id]);
+    setSelectedRecords([...uniqRecords]);
+
+    setGroups(prevGroups => {
+      const newGroups = [...prevGroups];
+      // Find if the record is already in any group (to avoid duplicates in display)
+      const isAlreadyInGroup = newGroups.some(group =>
+        group.fields.includes(id),
+      );
+      if (isAlreadyInGroup) {
+        return newGroups; // Don't add if already present in a group
+      }
+
+      return [
+        ...newGroups,
+        {
+          id: v4(), // Unique ID for new group
+          title:
+            intl.formatMessage({
+              id: 'label-group',
+              defaultMessage: 'Group',
+            }) + ` ${newGroups.length + 1}`, // Dynamic title
+          fields: [id],
+        },
+      ];
+    });
+  };
+
+  const handleRemoveRecord = (idToRemove: string) => {
+    setSelectedRecords(selectedRecords.filter(r => r !== idToRemove));
+    setGroups(prevGroups => {
+      const newGroups = prevGroups
+        .map(group => ({
+          ...group,
+          fields: group.fields.filter(fieldId => fieldId !== idToRemove),
+        }))
+        .filter(group => group.fields.length > 0); // Remove empty groups
+      return newGroups;
+    });
+  };
+
+  const activeRecord = activeId ? getRecordById(activeId) : null;
 
   return (
     <div>
@@ -115,18 +296,14 @@ const RecordTaskSetting = ({
                 {selectedRecords.map(id => {
                   const field = recordFields.find(r => r.id === id);
                   return (
-                    <div className={styles.selected}>
+                    <div className={styles.selected} key={id}>
                       <Typography.Text>{field?.title}</Typography.Text>
                       <Icon
                         icon={'material-symbols:close-rounded'}
                         width={16}
                         height={16}
                         className={styles.closeIcon}
-                        onClick={() => {
-                          setSelectedRecords(
-                            selectedRecords.filter(r => r !== id),
-                          );
-                        }}
+                        onClick={() => handleRemoveRecord(id)}
                       />
                     </div>
                   );
@@ -153,8 +330,7 @@ const RecordTaskSetting = ({
         )}
         onChange={({ id }, { close }) => {
           close();
-          const uniqRecords = new Set([...selectedRecords, id]);
-          setSelectedRecords([...uniqRecords]);
+          handleAddRecordToGroup({ id });
         }}
         renderOption={r => (
           <List.ItemMeta
@@ -168,38 +344,69 @@ const RecordTaskSetting = ({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext
-          items={selectedRecords}
-          strategy={verticalListSortingStrategy}
-        >
-          {selectedRecords.map(recordKey => {
-            const record = recordFields.find(r => r.id === recordKey);
-            if (!record) return null;
-            return (
-              <SortableItem key={recordKey} id={recordKey}>
-                <List.ItemMeta
-                  className={styles.selectorCard}
-                  logo={<Icon width={24} icon={record.icon} />}
-                  title={record.title}
-                  description={record.description}
-                  rightComponent={
-                    <Checkbox
-                      checked={true}
-                      size="lg"
-                      onClick={() => {
-                        setSelectedRecords(
-                          selectedRecords.filter(r => r !== recordKey),
-                        );
-                      }}
+        <div className={styles.groupsContainer}>
+          {' '}
+          {/* Add a container for groups */}
+          {groups.map(group => (
+            <DroppableGroup
+              key={group.id}
+              id={group.id}
+              title={group.title}
+              items={group.fields}
+            >
+              {group.fields.map(recordKey => {
+                const record = getRecordById(recordKey);
+
+                if (!record) return null;
+                return (
+                  <SortableItem key={recordKey} id={recordKey}>
+                    <List.ItemMeta
+                      logo={<Icon width={24} icon={'ci:drag-vertical'} />}
+                      className={styles.item}
+                      title={record.title}
+                      description={record.description}
+                      rightComponent={
+                        <Checkbox
+                          checked={selectedRecords.includes(recordKey)} // Check if it's in selectedRecords
+                          size="lg"
+                          onClick={() => handleRemoveRecord(recordKey)}
+                        />
+                      }
                     />
-                  }
+                  </SortableItem>
+                );
+              })}
+            </DroppableGroup>
+          ))}
+        </div>
+
+        <DragOverlay>
+          {activeId && activeRecord ? (
+            <List.ItemMeta
+              className={styles.listItemMeta}
+              logo={<Icon width={24} icon={'ci:drag-vertical'} />}
+              title={activeRecord.title}
+              description={activeRecord.description}
+              rightComponent={
+                <Checkbox
+                  checked={selectedRecords.includes(activeRecord.id)}
+                  size="lg"
+                  readOnly // Make it non-interactive in overlay
                 />
-              </SortableItem>
-            );
-          })}
-        </SortableContext>
+              }
+              style={{
+                backgroundColor: '#fff', // Ensure background for overlay
+                borderRadius: '8px',
+                boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+                padding: '15px',
+                width: '300px', // Adjust as needed
+              }}
+            />
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );
