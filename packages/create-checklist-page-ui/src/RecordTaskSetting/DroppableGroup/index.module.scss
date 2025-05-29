@@ -8,7 +8,7 @@
   padding: $spacing-md;
   // margin-top: $spacing-sm;
   min-height: 100px; // Ensure it's droppable even when empty
-  background-color: #f2f4ff;
+  background-color: var(--card-group-background);
   transition:
     background-color 0.2s ease-in-out,
     border-color 0.2s ease-in-out;

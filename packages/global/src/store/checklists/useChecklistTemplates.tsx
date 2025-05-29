@@ -21,7 +21,13 @@ export type ChecklistTemplate = {
     color?: string;
   };
   createdAt: string;
+  // @deprecated use groups instead
   records: string[];
+  fieldGroups: {
+    id: string;
+    title: string;
+    fields: string[];
+  }[];
 };
 
 const common = {
@@ -35,6 +41,7 @@ const common = {
   },
   createdAt: new Date().toISOString(),
   records: [],
+  fieldGroups: [],
 };
 
 const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [

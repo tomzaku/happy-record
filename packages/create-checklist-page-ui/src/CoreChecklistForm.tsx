@@ -7,7 +7,7 @@ import BuildWeeklyHobby from './BuildWeeklyHobby';
 import { Day } from '@dreamer/tasks-page-common';
 import IconPicker from './IconPicker';
 import Hr from './hr';
-import RecordTaskSetting from './RecordTaskSetting';
+import RecordTaskSetting, { FieldGroup } from './RecordTaskSetting';
 
 // Hooks
 import { useIntl } from '@dreamer/translation';
@@ -24,6 +24,7 @@ export type FormState = {
   startedAt: string;
   selectedIcon: string;
   selectedColor: string;
+  fieldGroups: FieldGroup[];
 };
 const CoreChecklistForm = ({
   initialValues,
@@ -40,6 +41,7 @@ const CoreChecklistForm = ({
     startedAt,
     selectedIcon,
     selectedColor,
+    fieldGroups,
   } = form;
 
   // Utility functions for updating form fields
@@ -67,8 +69,11 @@ const CoreChecklistForm = ({
     setForm(prevForm => ({ ...prevForm, selectedColor: color }));
   };
 
+  const setFieldGroups = (fieldGroups: FieldGroup[]) => {
+    setForm(prevForm => ({ ...prevForm, fieldGroups }));
+  };
+
   const intl = useIntl();
-  const navigate = useNavigate();
 
   return (
     <div className={styles.container}>
@@ -101,6 +106,8 @@ const CoreChecklistForm = ({
         <RecordTaskSetting
           selectedRecords={selectedRecords}
           setSelectedRecords={setSelectedRecords}
+          fieldGroups={fieldGroups}
+          setFieldGroups={setFieldGroups}
         />
       </Card>
       <div className={styles.footer}>
@@ -109,7 +116,13 @@ const CoreChecklistForm = ({
             type="primary"
             className={styles.submitButton}
             onClick={() => {
-              onSubmit(form);
+              const validGroups = fieldGroups.filter(
+                group => group.fields.length > 0,
+              );
+              onSubmit({
+                ...form,
+                fieldGroups: validGroups,
+              });
             }}
           >
             {intl.formatMessage({

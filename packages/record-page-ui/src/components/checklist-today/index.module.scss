@@ -3,10 +3,10 @@
 @use '@moon-ui/app-scss/metric' as *;
 
 .container {
-  @include media.media('<=tablet') {
-    margin-left: 12px;
-    margin-right: 12px;
-  }
+  // @include media.media('<=tablet') {
+  //   margin-left: 12px;
+  //   margin-right: 12px;
+  // }
 }
 
 .checklistItem {
@@ -25,7 +25,7 @@
 }
 
 .lastChecklistItem {
-  border-bottom: none;
+  border-bottom: 0;
 }
 
 .checkbox {
@@ -49,4 +49,3 @@
     opacity: 1;
   }
 }
-

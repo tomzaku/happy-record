@@ -16,6 +16,7 @@ const CreateCheclistForm = () => {
     selectedIcon,
     checklistText,
     weeklyHobbies,
+    fieldGroups,
   }: FormState) => {
     const repeat = calculateRepeat({ weeklyHobbies });
     const { id } = addChecklistTemplate({
@@ -27,6 +28,7 @@ const CreateCheclistForm = () => {
         color: selectedColor,
       },
       records: selectedRecords,
+      fieldGroups,
     });
     // If not repeat we need to create a checklist onetime.
     if (!repeat) {
@@ -34,7 +36,9 @@ const CreateCheclistForm = () => {
         title: checklistText,
         checklistTemplateId: id,
         startedAt,
-        endedAt: new Date(new Date().setHours(23, 59, 59, 999)).toISOString(),
+        endedAt: new Date(
+          new Date(startedAt).setHours(23, 59, 59, 999),
+        ).toISOString(),
       });
     }
     navigate('/');
@@ -55,6 +59,7 @@ const CreateCheclistForm = () => {
             startedAt: new Date().toISOString().split('T')[0],
             selectedIcon: 'material-symbols:checklist',
             selectedColor: '#607d8b',
+            fieldGroups: [],
           } as FormState
         }
       />

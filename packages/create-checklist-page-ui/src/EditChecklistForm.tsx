@@ -19,6 +19,7 @@ const EditChecklistForm = () => {
     selectedIcon,
     checklistText,
     weeklyHobbies,
+    fieldGroups,
   }: FormState) => {
     const repeat = calculateRepeat({ weeklyHobbies });
     updateChecklistTemplate({
@@ -31,6 +32,7 @@ const EditChecklistForm = () => {
         name: selectedIcon,
         color: selectedColor,
       },
+      fieldGroups,
     });
     navigate('/');
   };
@@ -51,6 +53,7 @@ const EditChecklistForm = () => {
             : new Date().toISOString().split('T')[0],
           selectedIcon: template?.avatar?.name,
           selectedColor: template?.avatar?.color || '#607d8b',
+          fieldGroups: template.fieldGroups,
         }}
       />
     </>

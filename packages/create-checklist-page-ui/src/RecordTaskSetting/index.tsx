@@ -32,7 +32,6 @@ import AddFieldRecordDialog from './AddFieldRecordDialog';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import Typography from '@moon-ui/typography';
 import DroppableGroup from './DroppableGroup';
-import cx from 'classnames';
 
 type SortableItemProps = {
   id: string;
@@ -59,7 +58,7 @@ const SortableItem = ({ id, children, isDragging }: SortableItemProps) => {
   );
 };
 
-type Group = {
+export type FieldGroup = {
   title: string;
   id: string; // Unique ID for the group
   fields: string[]; // Array of record IDs
@@ -68,15 +67,18 @@ type Group = {
 const RecordTaskSetting = ({
   selectedRecords = [],
   setSelectedRecords,
+  fieldGroups,
+  setFieldGroups,
 }: {
   selectedRecords: string[];
   setSelectedRecords: (records: string[]) => void;
+  fieldGroups: FieldGroup[];
+  setFieldGroups: (fieldGroups: FieldGroup[]) => void;
 }) => {
   const { getAllRecordFields } = useRecordField();
   const intl = useIntl();
   const [showAddFieldRecord, setShowAddFieldRecord] = React.useState(false);
   const [recordFields, setRecordFields] = React.useState(getAllRecordFields());
-  const [groups, setGroups] = React.useState<Group[]>([]);
   const [activeId, setActiveId] = React.useState<string | null>(null); // To track the dragged item
 
   React.useEffect(() => {
@@ -114,11 +116,11 @@ const RecordTaskSetting = ({
   );
 
   const findGroupContainer = (id: string) => {
-    if (id in groups) {
+    if (id in fieldGroups) {
       return id;
     }
 
-    for (const group of groups) {
+    for (const group of fieldGroups) {
       if (group.fields.includes(id)) {
         return group.id;
       }
@@ -143,61 +145,55 @@ const RecordTaskSetting = ({
 
     // Case 1: Dragging within the same group
     if (activeGroup && overGroup && activeGroup === overGroup) {
-      setGroups(prevGroups => {
-        const newGroups = [...prevGroups];
-        const groupIndex = newGroups.findIndex(
-          group => group.id === activeGroup,
+      const newGroups = [...fieldGroups];
+      const groupIndex = newGroups.findIndex(group => group.id === activeGroup);
+      if (groupIndex !== -1) {
+        const oldIndex = newGroups[groupIndex].fields.indexOf(
+          active.id as string,
         );
-        if (groupIndex !== -1) {
-          const oldIndex = newGroups[groupIndex].fields.indexOf(
-            active.id as string,
-          );
-          const newIndex = newGroups[groupIndex].fields.indexOf(
-            over.id as string,
-          );
-          newGroups[groupIndex].fields = arrayMove(
-            newGroups[groupIndex].fields,
-            oldIndex,
-            newIndex,
-          );
-        }
-        return newGroups;
-      });
+        const newIndex = newGroups[groupIndex].fields.indexOf(
+          over.id as string,
+        );
+        newGroups[groupIndex].fields = arrayMove(
+          newGroups[groupIndex].fields,
+          oldIndex,
+          newIndex,
+        );
+      }
+      setFieldGroups(newGroups);
     }
     // Case 2: Dragging between different groups
     else if (activeGroup && overGroup && activeGroup !== overGroup) {
-      setGroups(prevGroups => {
-        const newGroups = [...prevGroups];
+      const newGroups = [...fieldGroups];
 
-        const sourceGroupIndex = newGroups.findIndex(
-          group => group.id === activeGroup,
+      const sourceGroupIndex = newGroups.findIndex(
+        group => group.id === activeGroup,
+      );
+      const destinationGroupIndex = newGroups.findIndex(
+        group => group.id === overGroup,
+      );
+
+      if (sourceGroupIndex !== -1 && destinationGroupIndex !== -1) {
+        const [movedItem] = newGroups[sourceGroupIndex].fields.splice(
+          newGroups[sourceGroupIndex].fields.indexOf(active.id as string),
+          1,
         );
-        const destinationGroupIndex = newGroups.findIndex(
-          group => group.id === overGroup,
+
+        const overIndex = newGroups[destinationGroupIndex].fields.indexOf(
+          over.id as string,
         );
-
-        if (sourceGroupIndex !== -1 && destinationGroupIndex !== -1) {
-          const [movedItem] = newGroups[sourceGroupIndex].fields.splice(
-            newGroups[sourceGroupIndex].fields.indexOf(active.id as string),
-            1,
+        if (overIndex !== -1) {
+          newGroups[destinationGroupIndex].fields.splice(
+            overIndex,
+            0,
+            movedItem,
           );
-
-          const overIndex = newGroups[destinationGroupIndex].fields.indexOf(
-            over.id as string,
-          );
-          if (overIndex !== -1) {
-            newGroups[destinationGroupIndex].fields.splice(
-              overIndex,
-              0,
-              movedItem,
-            );
-          } else {
-            // If dropped on the group itself (and not on an item within it)
-            newGroups[destinationGroupIndex].fields.push(movedItem);
-          }
+        } else {
+          // If dropped on the group itself (and not on an item within it)
+          newGroups[destinationGroupIndex].fields.push(movedItem);
         }
-        return newGroups;
-      });
+      }
+      setFieldGroups(newGroups);
     }
     // Case 3: Dropped on a group that is empty or the group itself (not on an item within it)
     else if (
@@ -205,24 +201,22 @@ const RecordTaskSetting = ({
       over.data?.current?.type === 'Group' &&
       activeGroup !== over.id
     ) {
-      setGroups(prevGroups => {
-        const newGroups = [...prevGroups];
-        const sourceGroupIndex = newGroups.findIndex(
-          group => group.id === activeGroup,
-        );
-        const destinationGroupIndex = newGroups.findIndex(
-          group => group.id === over.id,
-        );
+      const newGroups = [...fieldGroups];
+      const sourceGroupIndex = newGroups.findIndex(
+        group => group.id === activeGroup,
+      );
+      const destinationGroupIndex = newGroups.findIndex(
+        group => group.id === over.id,
+      );
 
-        if (sourceGroupIndex !== -1 && destinationGroupIndex !== -1) {
-          const [movedItem] = newGroups[sourceGroupIndex].fields.splice(
-            newGroups[sourceGroupIndex].fields.indexOf(active.id as string),
-            1,
-          );
-          newGroups[destinationGroupIndex].fields.push(movedItem); // Add to the end of the destination group
-        }
-        return newGroups;
-      });
+      if (sourceGroupIndex !== -1 && destinationGroupIndex !== -1) {
+        const [movedItem] = newGroups[sourceGroupIndex].fields.splice(
+          newGroups[sourceGroupIndex].fields.indexOf(active.id as string),
+          1,
+        );
+        newGroups[destinationGroupIndex].fields.push(movedItem); // Add to the end of the destination group
+      }
+      setFieldGroups(newGroups);
     }
   };
 
@@ -232,17 +226,11 @@ const RecordTaskSetting = ({
     const uniqRecords = new Set([...selectedRecords, id]);
     setSelectedRecords([...uniqRecords]);
 
-    setGroups(prevGroups => {
-      const newGroups = [...prevGroups];
-      // Find if the record is already in any group (to avoid duplicates in display)
-      const isAlreadyInGroup = newGroups.some(group =>
-        group.fields.includes(id),
-      );
-      if (isAlreadyInGroup) {
-        return newGroups; // Don't add if already present in a group
-      }
-
-      return [
+    const newGroups = [...fieldGroups];
+    // Find if the record is already in any group (to avoid duplicates in display)
+    const isAlreadyInGroup = newGroups.some(group => group.fields.includes(id));
+    if (!isAlreadyInGroup) {
+      setFieldGroups([
         ...newGroups,
         {
           id: v4(), // Unique ID for new group
@@ -253,21 +241,19 @@ const RecordTaskSetting = ({
             }) + ` ${newGroups.length + 1}`, // Dynamic title
           fields: [id],
         },
-      ];
-    });
+      ]);
+    }
   };
 
   const handleRemoveRecord = (idToRemove: string) => {
     setSelectedRecords(selectedRecords.filter(r => r !== idToRemove));
-    setGroups(prevGroups => {
-      const newGroups = prevGroups
-        .map(group => ({
-          ...group,
-          fields: group.fields.filter(fieldId => fieldId !== idToRemove),
-        }))
-        .filter(group => group.fields.length > 0); // Remove empty groups
-      return newGroups;
-    });
+    const newGroups = fieldGroups
+      .map(group => ({
+        ...group,
+        fields: group.fields.filter(fieldId => fieldId !== idToRemove),
+      }))
+      .filter(group => group.fields.length > 0); // Remove empty groups
+    setFieldGroups(newGroups);
   };
 
   const activeRecord = activeId ? getRecordById(activeId) : null;
@@ -348,9 +334,8 @@ const RecordTaskSetting = ({
         onDragEnd={handleDragEnd}
       >
         <div className={styles.groupsContainer}>
-          {' '}
           {/* Add a container for groups */}
-          {groups.map(group => (
+          {fieldGroups.map(group => (
             <DroppableGroup
               key={group.id}
               id={group.id}
@@ -368,13 +353,13 @@ const RecordTaskSetting = ({
                       className={styles.item}
                       title={record.title}
                       description={record.description}
-                      rightComponent={
-                        <Checkbox
-                          checked={selectedRecords.includes(recordKey)} // Check if it's in selectedRecords
-                          size="lg"
-                          onClick={() => handleRemoveRecord(recordKey)}
-                        />
-                      }
+                      // rightComponent={
+                      //   <Checkbox
+                      //     checked={selectedRecords.includes(recordKey)} // Check if it's in selectedRecords
+                      //     size="lg"
+                      //     onClick={() => handleRemoveRecord(recordKey)}
+                      //   />
+                      // }
                     />
                   </SortableItem>
                 );
@@ -390,13 +375,13 @@ const RecordTaskSetting = ({
               logo={<Icon width={24} icon={'ci:drag-vertical'} />}
               title={activeRecord.title}
               description={activeRecord.description}
-              rightComponent={
-                <Checkbox
-                  checked={selectedRecords.includes(activeRecord.id)}
-                  size="lg"
-                  readOnly // Make it non-interactive in overlay
-                />
-              }
+              // rightComponent={
+              //   <Checkbox
+              //     checked={selectedRecords.includes(activeRecord.id)}
+              //     size="lg"
+              //     readOnly // Make it non-interactive in overlay
+              //   />
+              // }
               style={{
                 backgroundColor: '#fff', // Ensure background for overlay
                 borderRadius: '8px',
