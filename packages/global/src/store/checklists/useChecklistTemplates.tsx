@@ -3,6 +3,11 @@ import { useLocalStorage } from '../../hook/useLocalStorage';
 const CHECKLIST_TEMPLATE_KEY = 'checklist_template';
 const SELECTED_CHECKLISTS_TEMPLATE_KEY = 'selected_checklist_templates';
 
+export type FieldGroup = {
+  id: string;
+  title: string;
+  fields: string[];
+};
 export type ChecklistTemplate = {
   id: string;
   title: string;
@@ -23,11 +28,7 @@ export type ChecklistTemplate = {
   createdAt: string;
   // @deprecated use groups instead
   records: string[];
-  fieldGroups: {
-    id: string;
-    title: string;
-    fields: string[];
-  }[];
+  fieldGroups: FieldGroup[];
 };
 
 const common = {

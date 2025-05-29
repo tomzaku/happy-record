@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import RecordDay from './components/RecordDay';
 import {
-  Checklist,
   ChecklistTemplate,
   FieldGroup,
   useChecklist,
@@ -15,40 +14,32 @@ import {
 } from '@dreamer/global/src/store/record-field';
 import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
-import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
   const { getChecklistTemplate } = useChecklistTemplates();
-  const { addChecklist, getChecklistDetail } = useChecklist();
   const { getRecordFields } = useRecordField();
+  const { addChecklist } = useChecklist();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
 
+  const [metricFields, setMetricFields] = React.useState<RecordField[]>([]);
+  const [noteFields, setNoteFields] = React.useState<RecordField[]>([]);
+
   const [checklistTemplate, setChecklistTemplate] =
     React.useState<ChecklistTemplate>();
-  const [checklist, setChecklist] = React.useState<Checklist>();
-  const [fields, setFields] = React.useState<RecordField[]>([]);
   if (!id || !currentDay) {
     return;
   }
+  const [fieldGroups, setFieldGroups] = React.useState<FieldGroup[]>([]);
+
   // Update checklistId Params
   React.useEffect(() => {
     const checklistTemplate = getChecklistTemplate(id);
     setChecklistTemplate(checklistTemplate);
-    if (!checklistTemplate) return;
-
-    const fieldResult = getRecordFields(
-      checklistTemplate.fieldGroups.map(fieldGroup => fieldGroup.fields).flat(),
-    );
-
-    setFields(fieldResult);
-    if (checklistId) {
-      const checklist = getChecklistDetail(checklistId);
-      setChecklist(checklist);
-    } else {
-      // Should create checklist id if non exist
+    // Should create checklist id if non exist
+    if (!checklistId && checklistTemplate) {
       const checklist = addChecklist({
         title: checklistTemplate.title,
         checklistTemplateId: id,
@@ -59,12 +50,21 @@ const DetailTaskPage = () => {
         ...Object.fromEntries(search),
         checklistId: checklist.id,
       });
-      setChecklist(checklist);
     }
   }, [checklistId]);
 
+  React.useEffect(() => {
+    const checklistTemplate = getChecklistTemplate(id);
+    const fields = getRecordFields(checklistTemplate?.records);
+    if (fields.length) {
+      const metricFields = fields.filter(field => field.type === 'metric');
+      const noteFields = fields.filter(field => field.type === 'note');
+      setMetricFields(metricFields);
+      setNoteFields(noteFields);
+    }
+  }, []);
   const navigate = useNavigate();
-  if (!checklistId || !checklist || !checklistTemplate) {
+  if (!checklistId) {
     return null;
   }
   return (
@@ -82,11 +82,22 @@ const DetailTaskPage = () => {
         )}
         onClickLeftButton={() => navigate('/')}
       />
-      <ChecklistFieldGroup
-        checklist={checklist}
-        checklistTemplate={checklistTemplate}
-        fields={fields}
-      />
+      {metricFields.length ? (
+        <RecordDay
+          checklistTemplateId={id}
+          checklistId={checklistId}
+          currentDay={currentDay}
+          fields={metricFields}
+        />
+      ) : null}
+      {noteFields.length ? (
+        <Note
+          fields={noteFields}
+          checklistId={checklistId}
+          checklistTemplateId={id}
+          currentDay={currentDay}
+        />
+      ) : null}
     </>
   );
 };

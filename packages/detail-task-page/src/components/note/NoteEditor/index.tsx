@@ -19,6 +19,7 @@ type Props = {
   onClickEdit?: () => void;
   onClickSave?: () => void;
   shouldShowSaveButton?: boolean;
+  withoutBorder?: boolean;
 };
 
 function NoteEditor({
@@ -29,6 +30,7 @@ function NoteEditor({
   onClickEdit,
   onClickSave,
   shouldShowSaveButton,
+  withoutBorder,
 }: Props) {
   const editor = useCreateBlockNote({
     domAttributes: {
@@ -40,7 +42,13 @@ function NoteEditor({
   });
   const { theme } = usePomodoroGlobalConfig();
   return (
-    <div className={cx(styles.container, classes?.container)}>
+    <div
+      className={cx(
+        styles.container,
+        classes?.container,
+        withoutBorder && styles.withoutBorder,
+      )}
+    >
       {readOnly && (
         <Icon
           onClick={onClickEdit}

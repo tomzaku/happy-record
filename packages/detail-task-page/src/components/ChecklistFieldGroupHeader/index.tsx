@@ -1,0 +1,79 @@
+import { useIntl } from '@dreamer/translation';
+import { Icon } from '@moon-ui/icon/Icon';
+import Button from '@moon-ui/button/src/DefaultButton';
+
+import styles from './index.module.scss';
+import cx from 'classnames';
+import Typography from '@moon-ui/typography';
+import Hr from '@pregnant/create-checklist-page-ui/src/hr';
+
+export enum ChecklistFieldGroupTab {
+  Home,
+  History,
+  Add,
+}
+
+const ChecklistFieldGroupHeader = ({
+  onClickHome,
+  onClickHistory,
+  onClickAdd,
+  activeTab,
+  renderTitle = () => null,
+}: {
+  onClickHome: () => void;
+  onClickHistory: () => void;
+  onClickAdd: () => void;
+  activeTab: ChecklistFieldGroupTab;
+  renderTitle?: () => React.ReactNode;
+}) => {
+  const buttons = [
+    {
+      icon: 'solar:home-2-line-duotone',
+      iconActive: 'solar:home-2-bold',
+      onClick: onClickHome,
+      isActive: activeTab === ChecklistFieldGroupTab.Home,
+    },
+    {
+      icon: 'solar:clock-square-broken',
+      iconActive: 'solar:clock-square-bold',
+      onClick: onClickHistory,
+      isActive: activeTab === ChecklistFieldGroupTab.History,
+    },
+  ];
+  const intl = useIntl();
+  return (
+    <>
+      <div className={styles.container}>
+        <Typography.Title level={4} noMargin className={styles.title}>
+          {renderTitle()}
+        </Typography.Title>
+        {buttons.map(({ icon, iconActive, onClick, isActive }, index) => (
+          <Icon
+            key={index}
+            onClick={onClick}
+            className={cx(styles.icon, isActive && styles.iconActive)}
+            width={24}
+            icon={isActive ? iconActive : icon}
+          />
+        ))}
+        <Button
+          className={cx(
+            styles.button,
+            activeTab === ChecklistFieldGroupTab.Add && styles.buttonActive,
+          )}
+          type="dash"
+          onClick={onClickAdd}
+        >
+          <Icon icon="material-symbols:add" className={styles.addIcon} />
+          {intl.formatMessage({
+            id: 'record-header.add-record',
+            defaultMessage: 'Add',
+          })}
+        </Button>
+      </div>
+      <Hr classes={{ hr: styles.hr }} />
+    </>
+  );
+};
+
+export default ChecklistFieldGroupHeader;
