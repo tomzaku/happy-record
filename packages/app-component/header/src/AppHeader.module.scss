@@ -4,7 +4,7 @@
 
 .container {
   align-items: center;
-  position: relative;
+  position: sticky;
   background: var(--card-background);
   box-shadow: 0 7px 18px var(--card-shadow);
   display: flex;
@@ -12,6 +12,7 @@
   justify-content: space-between;
   margin-bottom: 10px;
   z-index: 99;
+  top: 0;
 }
 
 .left {

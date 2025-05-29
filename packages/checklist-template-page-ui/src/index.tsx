@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 
 import cn from 'classnames';
 import styles from './index.module.scss';
+import { BackHeader } from '@dreamer/header';
 
 const ChecklistTemplatePageUi = () => {
   const {
@@ -72,6 +73,14 @@ const ChecklistTemplatePageUi = () => {
 
   return (
     <>
+      <BackHeader
+        renderLeftComponent={() =>
+          intl.formatMessage({
+            id: 'ChecklistTemplatePageInfo.back',
+            defaultMessage: 'Back',
+          })
+        }
+      />
       <Card className={styles.card}>
         <>
           <p className={styles.label}>

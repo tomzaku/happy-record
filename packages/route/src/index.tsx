@@ -16,6 +16,7 @@ import { AnimatePresence, motion } from 'motion/react';
 
 // Hocs
 import RecordPage from '@dreamer/record-page-ui';
+import LocalStorageEditor from './local-storage-editor';
 
 const AnimationRoute = ({ children }) => {
   return (
@@ -113,6 +114,14 @@ const AppRouter = () => {
           element={
             <AnimationRoute>
               <Audio />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/setting/local-storage-editor"
+          element={
+            <AnimationRoute>
+              <LocalStorageEditor />
             </AnimationRoute>
           }
         />

@@ -40,7 +40,9 @@ const DetailTaskPage = () => {
     if (!checklistTemplate) return;
 
     const fieldResult = getRecordFields(
-      checklistTemplate.fieldGroups.map(fieldGroup => fieldGroup.fields).flat(),
+      checklistTemplate.fieldGroups
+        ?.map(fieldGroup => fieldGroup.fields)
+        .flat(),
     );
 
     setFields(fieldResult);

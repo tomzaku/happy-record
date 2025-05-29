@@ -1,3 +1,4 @@
+import React from 'react';
 import '@blocknote/core/fonts/inter.css';
 import { Icon } from '@moon-ui/icon/Icon';
 import { BlockNoteView } from '@blocknote/mantine';
@@ -42,6 +43,12 @@ function NoteEditor({
     },
     initialContent: value,
   });
+  //   React.useEffect(() => {
+  //   if (editor && value) {
+  //     // Replace the root blocks with the new content
+  //     editor.replaceBlocks(editor.document, value);
+  //   }
+  // }, [editor, value]);
   const { theme } = usePomodoroGlobalConfig();
   return (
     <div

@@ -18,9 +18,10 @@ export default function ItemMeta({
   logo,
   description,
   rightComponent,
+  onClick,
 }: Props) {
   return (
-    <div className={cx(styles.container, className)}>
+    <div className={cx(styles.container, className)} onClick={onClick}>
       {logo}
       <div className={styles.body}>
         <Typography.Paragraph bold noMargin>

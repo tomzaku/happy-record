@@ -1,5 +1,10 @@
 import React from 'react';
-import { Checklist, ChecklistTemplate, FieldGroup } from '@dreamer/global';
+import {
+  Checklist,
+  ChecklistTemplate,
+  FieldGroup,
+  useChecklist,
+} from '@dreamer/global';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
 import ChecklistFieldGroupHeader, {
@@ -16,6 +21,7 @@ import { isToday } from 'date-fns/isToday';
 import ChecklistFieldGroupAdd from '../ChecklistFieldGroupAdd';
 import ChecklistFieldGroupHistory from '../ChecklistFieldGroupHistory';
 import ChecklistFieldGroupView from '../ChecklistFieldGroupView';
+import ChecklistFieldMetric from '../ChecklistFieldMetric';
 
 type Props = {
   checklist: Checklist;
@@ -31,6 +37,7 @@ const ChecklistFieldGroup = ({
   currentDay,
 }: Props) => {
   const today = isToday(currentDay);
+  const { updateChecklist } = useChecklist();
   const [activeTab, setActiveTab] = React.useState<
     Record<string, ChecklistFieldGroupTab>
   >(
@@ -46,6 +53,7 @@ const ChecklistFieldGroup = ({
       [ChecklistFieldGroupTab.Home]: `${today ? 'Today' : new Date(currentDay).toLocaleDateString()}`,
       [ChecklistFieldGroupTab.History]: 'Record History',
       [ChecklistFieldGroupTab.Add]: 'Add Record',
+      [ChecklistFieldGroupTab.Metric]: 'Metric',
     };
     return tabToTitle[activeTab[fieldGroup.id]];
   };
@@ -75,6 +83,14 @@ const ChecklistFieldGroup = ({
           />
         );
       }
+      case ChecklistFieldGroupTab.Metric: {
+        return (
+          <ChecklistFieldMetric
+            fields={fields}
+            checklistTemplateId={checklistTemplate.id}
+          />
+        );
+      }
       case ChecklistFieldGroupTab.Add: {
         return (
           <ChecklistFieldGroupAdd
@@ -86,6 +102,10 @@ const ChecklistFieldGroup = ({
               setActiveTab({
                 ...activeTab,
                 [fieldGroup.id]: ChecklistFieldGroupTab.Home,
+              });
+              updateChecklist({
+                id: checklist.id,
+                completedAt: new Date().toISOString(),
               });
             }}
           />
@@ -117,6 +137,12 @@ const ChecklistFieldGroup = ({
             setActiveTab({
               ...activeTab,
               [fieldGroup.id]: ChecklistFieldGroupTab.Add,
+            })
+          }
+          onClickMetric={() =>
+            setActiveTab({
+              ...activeTab,
+              [fieldGroup.id]: ChecklistFieldGroupTab.Metric,
             })
           }
           renderTitle={() => renderTitle(fieldGroup)}

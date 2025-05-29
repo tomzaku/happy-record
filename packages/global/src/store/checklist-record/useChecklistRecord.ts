@@ -158,5 +158,20 @@ export const useChecklistRecord = () => {
     addChecklistRecord,
     getChecklistRecords,
     updateChecklistRecord,
+    deleteChecklistRecord: (
+      recordId: string,
+      { checklistTemplateId }: { checklistTemplateId: string },
+    ) => {
+      setChecklistRecordList(prev => {
+        const existingRecords = prev[checklistTemplateId] || [];
+        const updatedRecords = existingRecords.filter(
+          record => record.id !== recordId,
+        );
+        return {
+          ...prev,
+          [checklistTemplateId]: updatedRecords,
+        };
+      });
+    },
   };
 };

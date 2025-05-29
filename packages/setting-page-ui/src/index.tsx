@@ -14,9 +14,11 @@ import { Theme } from '@dreamer/pomodoro-common';
 // Hooks
 import { useIntl } from '@dreamer/translation';
 import { usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
+import { useNavigate } from 'react-router-dom';
 
 import styles from './index.module.scss';
 import { BackHeader } from '@dreamer/header';
+import Icon from '@moon-ui/icon/Icon';
 
 const version = '1.0.1';
 
@@ -33,6 +35,7 @@ export default function SettingPage() {
     theme,
     setTheme,
   } = usePomodoroGlobalConfig();
+  const navigate = useNavigate();
   const { language, changeLanguage, formatMessage } = useIntl();
   return (
     <div className={styles.container}>
@@ -96,6 +99,12 @@ export default function SettingPage() {
               ]}
             />
           }
+        />
+        <List.ItemMeta
+          onClick={() => navigate('/checklist-template')}
+          logo={<Icon width={24} icon="proicons:task-list" />}
+          title={'Task Management'}
+          description={'Select/ Deselect Tasks'}
         />
       </div>
       <a

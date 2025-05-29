@@ -11,18 +11,21 @@ export enum ChecklistFieldGroupTab {
   Home,
   History,
   Add,
+  Metric,
 }
 
 const ChecklistFieldGroupHeader = ({
   onClickHome,
   onClickHistory,
   onClickAdd,
+  onClickMetric,
   activeTab,
   renderTitle = () => null,
 }: {
   onClickHome: () => void;
   onClickHistory: () => void;
   onClickAdd: () => void;
+  onClickMetric: () => void;
   activeTab: ChecklistFieldGroupTab;
   renderTitle?: () => React.ReactNode;
 }) => {
@@ -38,6 +41,12 @@ const ChecklistFieldGroupHeader = ({
       iconActive: 'solar:clock-square-bold',
       onClick: onClickHistory,
       isActive: activeTab === ChecklistFieldGroupTab.History,
+    },
+    {
+      icon: 'solar:chart-square-linear',
+      iconActive: 'solar:chart-square-bold',
+      onClick: onClickMetric,
+      isActive: activeTab === ChecklistFieldGroupTab.Metric,
     },
   ];
   const intl = useIntl();

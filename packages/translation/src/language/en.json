@@ -1,6 +1,8 @@
 {
   "BabyCard.label-ask-for-baby-information": "When's the little one's due date?",
   "BabyCard.label-passed-day": "{{weeks}} Weeks {{days}} Days",
+  "ChecklistFieldGroupView.noRecord": "No record found",
+  "ChecklistFieldGroupView.noRecordDescription": "Submit your record to keep track of your progress",
   "ChecklistTemplate.delete-confirm-cancel": "Cancel",
   "ChecklistTemplate.delete-confirm-message": "Are you sure you want to delete this checklist template? This action cannot be undone.",
   "ChecklistTemplate.delete-confirm-ok": "Delete",
