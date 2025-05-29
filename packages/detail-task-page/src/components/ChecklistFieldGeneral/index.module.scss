@@ -1,0 +1,15 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.dateSection {
+  margin-bottom: $spacing-lg;
+}
+
+.iconEdit {
+  margin-left: $spacing-sm;
+}
+
+.input {
+  text-align: end;
+  padding: $spacing-xs;
+  width: 60px;
+}

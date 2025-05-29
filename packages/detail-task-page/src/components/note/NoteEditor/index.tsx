@@ -20,6 +20,7 @@ type Props = {
   onClickSave?: () => void;
   shouldShowSaveButton?: boolean;
   withoutBorder?: boolean;
+  showEditIcon?: boolean;
 };
 
 function NoteEditor({
@@ -27,6 +28,7 @@ function NoteEditor({
   setValue,
   readOnly,
   classes,
+  showEditIcon,
   onClickEdit,
   onClickSave,
   shouldShowSaveButton,
@@ -49,7 +51,7 @@ function NoteEditor({
         withoutBorder && styles.withoutBorder,
       )}
     >
-      {readOnly && (
+      {readOnly && showEditIcon && (
         <Icon
           onClick={onClickEdit}
           className={styles.editIcon}

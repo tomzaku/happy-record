@@ -55,11 +55,13 @@ export const useChecklistRecord = () => {
       type = 'date',
       fieldIds,
       sortBy,
+      sortDirection = 'asc',
     }: {
       rangeDate: { from: string; to: string };
       type?: 'date' | 'time';
       fieldIds?: string[];
       sortBy?: 'createdAt';
+      sortDirection?: 'asc' | 'desc';
     },
   ) => {
     const records = checklistRecordList[checklistTemplateId] || [];
@@ -92,6 +94,9 @@ export const useChecklistRecord = () => {
           break;
         }
       }
+    }
+    if (sortDirection === 'desc') {
+      filteredRecords = filteredRecords.reverse();
     }
 
     // Group records by day (YYYY-MM-DD format)

@@ -1,0 +1,25 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  position: relative;
+  overflow: hidden;
+}
+
+.iconSuccess {
+  position: absolute;
+  right: -20px;
+  bottom: -30px;
+}
+
+.emptyContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg;
+  flex-direction: column;
+  text-align: center;
+}
+
+.iconEmpty {
+  color: var(--icon-color-inactive-invert);
+}

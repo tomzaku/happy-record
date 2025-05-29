@@ -86,6 +86,7 @@ const DetailTaskPage = () => {
         checklist={checklist}
         checklistTemplate={checklistTemplate}
         fields={fields}
+        currentDay={currentDay}
       />
     </>
   );
