@@ -11,11 +11,8 @@ import RecordTaskSetting, { FieldGroup } from './RecordTaskSetting';
 
 // Hooks
 import { useIntl } from '@dreamer/translation';
-import { useNavigate } from 'react-router-dom';
-import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 
 import styles from './index.module.scss';
-import { BackHeader } from '@dreamer/header';
 
 export type FormState = {
   selectedRecords: string[];
@@ -29,9 +26,11 @@ export type FormState = {
 const CoreChecklistForm = ({
   initialValues,
   onSubmit,
+  onClickDeleteButton,
 }: {
   initialValues: FormState;
   onSubmit: (form: FormState) => void;
+  onClickDeleteButton?: () => void;
 }) => {
   const [form, setForm] = React.useState<FormState>(initialValues);
   const {
@@ -112,6 +111,17 @@ const CoreChecklistForm = ({
       </Card>
       <div className={styles.footer}>
         <div className={styles.footerCenter}>
+          {onClickDeleteButton && (
+            <Button
+              onClick={onClickDeleteButton}
+              className={styles.deleteButton}
+            >
+              {intl.formatMessage({
+                id: 'CreateChecklist.label-delete',
+                defaultMessage: 'DELETE',
+              })}
+            </Button>
+          )}
           <Button
             type="primary"
             className={styles.submitButton}

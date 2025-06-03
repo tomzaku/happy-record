@@ -52,6 +52,21 @@
   }
 }
 
+.deleteButton {
+  padding: 10px 20px;
+  border: 0;
+  color: #fff;
+  flex: 1;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  background: linear-gradient(to right, #ff5858, #d60000);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: background 0.3s ease;
+  margin-right: $spacing-md;
+}
+
 .footer {
   position: fixed;
   display: flex;
@@ -67,6 +82,7 @@
 .footerCenter {
   max-width: 600px;
   display: flex;
+  // flex-direction: column;
   width: 100%;
 }
 

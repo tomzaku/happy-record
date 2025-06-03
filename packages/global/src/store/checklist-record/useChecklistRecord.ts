@@ -1,4 +1,5 @@
 import { v4 } from 'uuid';
+import { format } from 'date-fns';
 import { useLocalStorage } from '../../hook';
 
 const CHECKLIST_RECORD_KEY = 'checklist_record';
@@ -106,9 +107,7 @@ export const useChecklistRecord = () => {
       const date = new Date(record.createdAt);
       // Extract only the date part (YYYY-MM-DD) from the ISO string
       const dayKey =
-        type === 'date'
-          ? date.toISOString().split('T')[0]
-          : date.toISOString().split('T');
+        type === 'date' ? format(date, 'yyyy-MM-dd') : date.toISOString();
       // Initialize array for this day if it doesn't exist
       if (!acc[dayKey]) {
         acc[dayKey] = [];
