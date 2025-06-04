@@ -4,13 +4,16 @@ import AddFieldRecord from '../AddFieldRecord';
 import styles from './index.module.scss';
 import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
+import { RecordField } from '@dreamer/global/src/store/record-field';
 
 const AddFieldRecordDialog = ({
   visible,
   onClose,
+  onSubmit,
 }: {
   visible: boolean;
   onClose: () => void;
+  onSubmit?: (recordField: RecordField) => void;
 }) => {
   const intl = useIntl();
   return (
@@ -28,7 +31,7 @@ const AddFieldRecordDialog = ({
           onClick={onClose}
         />
       </div>
-      <AddFieldRecord className={styles.container} onSubmit={onClose} />
+      <AddFieldRecord className={styles.container} onSubmit={onSubmit} />
     </Drawer>
   );
 };

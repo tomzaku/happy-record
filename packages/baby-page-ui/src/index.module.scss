@@ -41,7 +41,6 @@
   border: 1px dashed var(--button-default-background);
 }
 
-
 .footer {
   position: fixed;
   display: flex;
@@ -54,17 +53,19 @@
 }
 
 .footerCenter {
-  max-width: 600px;
   display: flex;
   width: 100%;
+  @include media.media('<=tablet') {
+    max-width: 600px;
+  }
 }
 
 .submitButton {
   padding: 10px 20px;
-  border: none;
+  border: 0;
   flex: 1;
   border-radius: 5px;
-  color: white;
+  color: #fff;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
@@ -80,4 +81,3 @@
 @include media.media('<=tablet') {
   // ... existing code ...
 }
-

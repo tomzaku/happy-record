@@ -27,7 +27,6 @@ type Props = {
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
 const ChecklistFieldGroupView = ({
-  checklist,
   checklistTemplate,
   fields,
   currentDay,
@@ -57,25 +56,39 @@ const ChecklistFieldGroupView = ({
 
   if (currentChecklistRecords.length === 0) {
     return (
-      <div className={styles.emptyContainer}>
-        <Icon
-          width={80}
-          // color="#00000024"
-          icon="clarity:sad-face-line"
-          className={styles.iconEmpty}
-        />
-        <Typography.Title level={3} noMargin>
-          {intl.formatMessage({
-            id: 'ChecklistFieldGroupView.noRecord',
-            defaultMessage: 'No record found',
-          })}
-        </Typography.Title>
-        <Typography.Paragraph noMargin>
-          {intl.formatMessage({
-            id: 'ChecklistFieldGroupView.noRecordDescription',
-            defaultMessage: 'Submit your record to keep track of your progress',
-          })}
-        </Typography.Paragraph>
+      <div>
+        {fields.map(recordField => {
+          return (
+            <div className={styles.itemEmptyContainer}>
+              <List.ItemMeta
+                logo={<Icon width={24} icon={recordField.icon} />}
+                title={recordField.title}
+              />
+            </div>
+          );
+        })}
+
+        <div className={styles.emptyContainer}>
+          <Icon
+            width={80}
+            // color="#00000024"
+            icon="clarity:sad-face-line"
+            className={styles.iconEmpty}
+          />
+          <Typography.Title level={3} noMargin>
+            {intl.formatMessage({
+              id: 'ChecklistFieldGroupView.noRecord',
+              defaultMessage: 'No record found',
+            })}
+          </Typography.Title>
+          <Typography.Paragraph noMargin>
+            {intl.formatMessage({
+              id: 'ChecklistFieldGroupView.noRecordDescription',
+              defaultMessage:
+                'Submit your record to keep track of your progress',
+            })}
+          </Typography.Paragraph>
+        </div>
       </div>
     );
   }

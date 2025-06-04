@@ -1,7 +1,6 @@
 import React from 'react';
 import List from '@moon-ui/list';
 import Input from '@moon-ui/input';
-import Typography from '@moon-ui/typography';
 import { Icon } from '@moon-ui/icon/Icon';
 import Button from '@moon-ui/button/src/DefaultButton';
 
@@ -10,14 +9,15 @@ import { useIntl } from '@dreamer/translation';
 import styles from './index.module.scss';
 import cx from 'classnames';
 import IconPicker from '../../IconPicker';
-import Select from '@moon-ui/select';
 import Radio from '@moon-ui/radio';
-import { useRecordField } from '@dreamer/global/src/store/record-field';
-import { description } from '@moon-ui/typography/src/Paragraph.module.scss';
+import {
+  RecordField,
+  useRecordField,
+} from '@dreamer/global/src/store/record-field';
 
 type Props = {
   className?: string;
-  onSubmit?: () => void;
+  onSubmit?: (recordField: RecordField) => void;
 };
 
 type FormState = {
@@ -43,6 +43,7 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
   return (
     <div className={cx(className)}>
       <List.ItemMeta
+        className={styles.marginBottom}
         logo={<Icon width={24} icon="solar:text-field-linear" />}
         title={intl.formatMessage({
           defaultMessage: 'Field Name',
@@ -61,10 +62,37 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
           />
         }
       />
+      <div className={styles.descriptionContainer}>
+        <List.ItemMeta
+          logo={
+            <Icon value={form.unit} width={24} icon="solar:info-circle-bold" />
+          }
+          title={intl.formatMessage({
+            defaultMessage: 'Description',
+            id: 'label-record-custom.description.label',
+          })}
+          // description={intl.formatMessage({
+          //   defaultMessage: 'Ex: minutes, hours, reps, kg',
+          //   id: 'label-record-custom.description.description',
+          // })}
+          // rightComponent={
+          //   <Input
+          //     border="dash"
+          //     onChange={e => setForm({ ...form, unit: e.target.value })}
+          //     className={styles.customeFieldInput}
+          //   />
+          // }
+        />
+        <Input
+          border="dash"
+          placeholder="More information of the field"
+          className={styles.descriptionInput}
+          onChange={e => setForm({ ...form, description: e.target.value })}
+        />
+      </div>
       <List.ItemMeta
-        logo={
-          <Icon value={form.unit} width={24} icon="solar:text-field-linear" />
-        }
+        className={styles.marginBottom}
+        logo={<Icon value={form.unit} width={24} icon="lsicon:number-filled" />}
         title={intl.formatMessage({
           defaultMessage: 'Field Unit',
           id: 'label-record-custom.unit.label',
@@ -82,7 +110,8 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
         }
       />
       <List.ItemMeta
-        logo={<Icon width={24} icon="solar:text-field-linear" />}
+        className={styles.marginBottom}
+        logo={<Icon width={24} icon="solar:box-minimalistic-outline" />}
         title={intl.formatMessage({
           defaultMessage: 'Type',
           id: 'label-record-custom.type.label',
@@ -117,8 +146,8 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
           size="lg"
           type="primary"
           onClick={() => {
-            addRecordField(form);
-            onSubmit?.();
+            const newRecordField = addRecordField(form);
+            onSubmit?.(newRecordField);
           }}
         >
           {intl.formatMessage({

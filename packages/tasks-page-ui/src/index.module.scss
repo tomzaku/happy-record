@@ -1,4 +1,5 @@
 @use '@moon-ui/app-scss/metric' as *;
+@use 'include-media/dist/include-media' as media;
 
 .section {
   box-sizing: border-box;
@@ -8,12 +9,14 @@
 .container {
   padding-bottom: 60px;
   user-select: none;
-  -webkit-user-select: none;
+  user-select: none;
 }
 
 .player {
   bottom: 0;
   position: fixed;
   width: 100%;
-  max-width: 600px;
+  @include media.media('<=tablet') {
+    max-width: 600px;
+  }
 }

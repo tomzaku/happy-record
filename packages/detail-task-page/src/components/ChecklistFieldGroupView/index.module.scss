@@ -23,3 +23,8 @@
 .iconEmpty {
   color: var(--icon-color-inactive-invert);
 }
+
+.itemEmptyContainer {
+  position: absolute;
+  opacity: 0.4;
+}

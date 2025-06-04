@@ -83,29 +83,6 @@ const RecordTaskSetting = ({
 
   React.useEffect(() => {
     setRecordFields(getAllRecordFields());
-    // Initialize groups with some dummy data if needed, or based on selectedRecords
-    // For example, if you want each selected record to start in its own group:
-    // const initialGroups: Group[] = selectedRecords.map((recordId, index) => ({
-    //   id: `group-${recordId}`,
-    //   title: intl.formatMessage({ id: 'label-group', defaultMessage: 'Group' }) + ` ${index + 1}`,
-    //   fields: [recordId],
-    // }));
-    // setGroups(initialGroups);
-
-    // Or, if you want initial groups as in the image:
-    // const initialGroups: Group[] = [
-    //   {
-    //     id: 'group-1',
-    //     title: intl.formatMessage({ id: 'label-group', defaultMessage: 'Group' }),
-    //     fields: ['duration-id', 'push-ups-id'], // Replace with actual IDs from recordFields
-    //   },
-    //   {
-    //     id: 'group-2',
-    //     title: intl.formatMessage({ id: 'label-group', defaultMessage: 'Group' }),
-    //     fields: ['note-id', 'ddsadsa-id'], // Replace with actual IDs from recordFields
-    //   },
-    // ];
-    // setGroups(initialGroups);
   }, []);
 
   const sensors = useSensors(
@@ -257,11 +234,18 @@ const RecordTaskSetting = ({
   };
 
   const activeRecord = activeId ? getRecordById(activeId) : null;
+  console.log({ recordFields });
 
   return (
     <div>
       <AddFieldRecordDialog
         visible={showAddFieldRecord}
+        onSubmit={newRcordField => {
+          setShowAddFieldRecord(false);
+          //reload field add field;
+          setRecordFields([...recordFields, newRcordField]);
+          handleAddRecordToGroup({ id: newRcordField.id });
+        }}
         onClose={() => setShowAddFieldRecord(false)}
       />
       <Select

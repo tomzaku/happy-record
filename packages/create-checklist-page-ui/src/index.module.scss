@@ -1,6 +1,7 @@
 @use '@moon-ui/app-scss/function' as *;
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/color' as *;
+@use 'include-media/dist/include-media' as media;
 
 .menu {
   height: 25px;
@@ -80,10 +81,12 @@
 }
 
 .footerCenter {
-  max-width: 600px;
   display: flex;
   // flex-direction: column;
   width: 100%;
+  @include media.media('<=tablet') {
+    max-width: 600px;
+  }
 }
 
 .timeSelector {

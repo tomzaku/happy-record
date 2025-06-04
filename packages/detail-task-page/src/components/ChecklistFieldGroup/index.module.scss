@@ -3,7 +3,5 @@
 
 .cardContainer {
   margin-bottom: $spacing-md;
-  @include media.media('<=tablet') {
-    margin: $spacing-sm;
-  }
+  margin: $spacing-sm;
 }

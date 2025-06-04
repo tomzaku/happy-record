@@ -27,6 +27,7 @@
     "@pregnant/pregnant-weight-record": "^1.0.0",
     "@pregnant/story-page-ui": "^1.0.0",
     "@dreamer/record-page-ui": "^1.0.0",
+    "@happy-record/note-manager-page-ui": "^1.0.0",
     "motion": "12.12.2",
     "react-router-dom": "^7.6.0"
   },

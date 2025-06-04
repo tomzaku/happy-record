@@ -21,3 +21,17 @@
 .customeFieldInput {
   padding: $spacing-xs $spacing-md;
 }
+
+.descriptionInput {
+  margin: 0 $spacing-md;
+}
+
+.descriptionContainer {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: $spacing-md;
+}
+
+.marginBottom {
+  margin-bottom: $spacing-md;
+}

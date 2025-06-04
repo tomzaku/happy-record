@@ -1,17 +1,20 @@
 @use '@moon-ui/app-scss/color' as *;
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/function' as *;
+@use 'include-media/dist/include-media' as media;
 
 .container {
   padding: $spacing-md;
   display: flex;
   flex-direction: column;
-  max-width: 600px;
   min-width: 350px;
   min-height: 180px;
   background: var(--card-background);
-  box-shadow: 0px 8px 25px var(--card-shadow);
+  box-shadow: 0 8px 25px var(--card-shadow);
   border-radius: 10px;
+  @include media.media('<=tablet') {
+    max-width: 600px;
+  }
 }
 
 .title {

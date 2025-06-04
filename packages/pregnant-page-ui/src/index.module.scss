@@ -1,5 +1,5 @@
 @use 'include-media/dist/include-media' as media;
- 
+
 .container {
   padding-bottom: 80px;
 }
@@ -18,5 +18,7 @@
   bottom: 0;
   position: fixed;
   width: 100%;
-  max-width: 600px;
+  @include media.media('<=tablet') {
+    max-width: 600px;
+  }
 }

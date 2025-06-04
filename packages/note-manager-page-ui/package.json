@@ -1,0 +1,6 @@
+{
+  "name": "@happy-record/note-manager-page-ui",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.tsx"
+}

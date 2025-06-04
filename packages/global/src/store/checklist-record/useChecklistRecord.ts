@@ -10,7 +10,8 @@ export type ChecklistRecord = {
   checklistTemplateId: string;
   createdAt: string;
   fieldId: string;
-  value: number;
+  value: number | string;
+  folderId?: string;
 };
 
 // Since we store in FE we might need nest the data to queries faster
@@ -21,7 +22,8 @@ type ChecklistRecorStore = {
 type AddChecklistRecordData = {
   records: {
     fieldId: string;
-    value: number;
+    value: number | string;
+    folderId?: string;
   }[];
   checklistId: string;
   checklistTemplateId: string;
@@ -125,9 +127,11 @@ export const useChecklistRecord = () => {
     {
       value,
       checklistTemplateId,
+      folderId,
     }: {
-      value: unknown;
+      value: number | string;
       checklistTemplateId: string;
+      folderId?: string;
     },
   ) => {
     setChecklistRecordList(prev => {
@@ -137,10 +141,10 @@ export const useChecklistRecord = () => {
       // Update the record with the matching id
       const updatedRecords = existingRecords.map(record => {
         if (record.id === recordId) {
-          // Find the corresponding new data for this record's fieldId if provided
           return {
             ...record,
             value,
+            ...(folderId !== undefined && { folderId }),
           };
         }
         return record;
