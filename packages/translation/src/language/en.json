@@ -42,6 +42,7 @@
   "label-eisenhower-matrix": "Eisenhower Matrix",
   "label-group": "Group",
   "label-no": "NO",
+  "label-record-custom.description.label": "Description",
   "label-record-custom.name.description": "Ex: Push-ups, Squats",
   "label-record-custom.name.label": "Field Name",
   "label-record-custom.save": "Save",

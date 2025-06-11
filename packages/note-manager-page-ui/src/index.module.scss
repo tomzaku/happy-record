@@ -1,0 +1,7 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  display: flex;
+  flex-direction: row;
+  padding: $spacing-md;
+}

@@ -60,14 +60,16 @@ export const useChecklistRecord = () => {
       sortBy,
       sortDirection = 'asc',
     }: {
-      rangeDate: { from: string; to: string };
+      rangeDate?: { from: string; to: string };
       type?: 'date' | 'time';
       fieldIds?: string[];
       sortBy?: 'createdAt';
       sortDirection?: 'asc' | 'desc';
     },
   ) => {
-    const records = checklistRecordList[checklistTemplateId] || [];
+    const records = checklistTemplateId
+      ? checklistRecordList[checklistTemplateId] || []
+      : Object.values(checklistRecordList).flat();
     let filteredRecords = records;
     if (rangeDate) {
       filteredRecords = records.filter(record => {

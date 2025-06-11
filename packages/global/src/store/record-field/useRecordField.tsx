@@ -45,7 +45,6 @@ export const useRecordField = () => {
   >(RECORD_KEY, defaultRecordField);
 
   const getAllRecordFields = () => {
-    console.log('RECORD FIELD LIST', { recordFieldList });
     return Object.values(recordFieldList);
   };
 

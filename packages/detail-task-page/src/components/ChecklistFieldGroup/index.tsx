@@ -10,11 +10,6 @@ import Card from '@moon-ui/card';
 import ChecklistFieldGroupHeader, {
   ChecklistFieldGroupTab,
 } from '../ChecklistFieldGroupHeader';
-import List from '@moon-ui/list';
-import Icon from '@moon-ui/icon/Icon';
-import Input from '@moon-ui/input';
-import Typography from '@moon-ui/typography';
-import NoteEditor from '../note/NoteEditor';
 
 import styles from './index.module.scss';
 import { isToday } from 'date-fns/isToday';

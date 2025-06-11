@@ -1,0 +1,29 @@
+@use '@moon-ui/app-scss/color' as *;
+@use 'include-media/dist/include-media' as media;
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-left: $spacing-sm;
+}
+
+.noteItem {
+  margin-bottom: 30px;
+}
+
+.itemHeader {
+  display: flex;
+  margin-bottom: $spacing-sm;
+  align-items: center;
+}
+
+.itemHeaderDate {
+  padding: 0 $spacing-sm;
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: 34px;
+  box-shadow: 0 7px 18px var(--card-shadow);
+  margin-right: $spacing-xs;
+}
