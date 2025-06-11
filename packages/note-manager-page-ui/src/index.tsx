@@ -12,13 +12,23 @@ import NoteEditor from '@dreamer/detail-task-page/src/components/note/NoteEditor
 import NoteGroup from './components/note-group';
 import styles from './index.module.scss';
 import NoteDetail from './components/note-detail';
+import Button from '@moon-ui/button/src/DefaultButton';
+import Icon from '@moon-ui/icon/Icon';
 
 export const NoteManagerPage: React.FC = () => {
   const { allNotes, getNotes, allNoteFields } = useNoteRecords();
 
   return (
     <>
-      <BackHeader renderLeftComponent={() => <>Notes</>} />
+      <BackHeader
+        renderLeftComponent={() => <>Notes</>}
+        renderRightComponent={() => (
+          <Button className={styles.addNoteButton}>
+            <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add
+            Note
+          </Button>
+        )}
+      />
       <div className={styles.container}>
         <NoteGroup
           onChangeField={fieldIds => {
