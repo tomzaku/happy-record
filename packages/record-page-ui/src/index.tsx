@@ -15,12 +15,14 @@ const PregnantPage = () => {
   return (
     <div className={styles.container}>
       <AppHeader />
-      <Card className={styles.card}>
-        <ChecklistCalendar date={startDate} onDateChange={setStartDate} />
-        <Hr classes={{ hr: styles.hr }} />
-        <ChecklistToday date={startDate} />
-        <CreateChecklist />
-      </Card>
+      <div className={styles.body}>
+        <Card className={styles.card}>
+          <ChecklistCalendar date={startDate} onDateChange={setStartDate} />
+          <Hr classes={{ hr: styles.hr }} />
+          <ChecklistToday date={startDate} />
+          <CreateChecklist />
+        </Card>
+      </div>
       <MusicAudioPlayer className={styles.player} />
     </div>
   );

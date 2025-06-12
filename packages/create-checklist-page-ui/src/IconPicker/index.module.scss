@@ -3,10 +3,10 @@
 
 .iconSearchInput {
   box-sizing: border-box;
-  margin: 0 12px;
   flex: 1;
   // font-size: toRem(16px);
   padding: $spacing-sm $spacing-md;
+  margin-right: $spacing-sm;
 }
 
 .inputContainer {
@@ -17,7 +17,6 @@
 .container {
   display: flex;
   flex-direction: column;
-  margin-right: $spacing-md;
 }
 
 .footer {
@@ -28,7 +27,6 @@
 .rightContainer {
   display: flex;
   align-items: center;
-  margin-right: -$spacing-md;
 }
 
 .colorView {

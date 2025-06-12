@@ -27,13 +27,13 @@
 
 .addCustomField {
   margin: $spacing-md;
-  padding: $spacing-md;
+  padding: $spacing-md 0;
   border: 3px dashed var(--create-task-dashed-border);
   border-radius: 6px;
 }
 
 .selector {
-  padding: $spacing-xs $spacing-md;
+  padding: $spacing-xs 0;
 }
 
 .listItemMeta {

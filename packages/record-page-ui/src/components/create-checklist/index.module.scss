@@ -1,11 +1,10 @@
 @use 'include-media/dist/include-media' as media;
+@use '@moon-ui/app-scss/metric' as *;
 
 .addChecklist {
-  color: #D2D2D2;
-  margin-top: 6px;
+  margin-top: 30px;
+}
 
-  @include media.media('<=tablet') {
-    margin-left: 12px;
-    margin-right: 12px;
-  }
+.createBtn {
+  padding: $spacing-md;
 }

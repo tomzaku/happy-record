@@ -15,6 +15,7 @@ const CreateChecklist = () => {
         }}
         type="dash"
         size="md"
+        className={styles.createBtn}
         block
       >
         {intl.formatMessage({

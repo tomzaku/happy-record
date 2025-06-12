@@ -29,6 +29,13 @@
 }
 
 .card {
-  margin-left: $spacing-sm;
-  margin-right: $spacing-sm;
+  max-width: 650px;
+  width: 100%;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-sm;
 }

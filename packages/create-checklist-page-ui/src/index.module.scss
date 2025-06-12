@@ -32,7 +32,7 @@
 }
 
 .container {
-  margin-bottom: 24px;
+  margin-bottom: 60px;
 }
 
 .submitButton {
@@ -70,23 +70,18 @@
 
 .footer {
   position: fixed;
-  display: flex;
-  bottom: 0;
   left: 0;
-  padding: 5px;
   width: 100%;
+  padding: $spacing-md;
   box-sizing: border-box;
   justify-content: center;
-  bottom: 20px;
+  bottom: 0;
+  background: var(--card-background);
 }
 
 .footerCenter {
   display: flex;
-  // flex-direction: column;
   width: 100%;
-  @include media.media('<=tablet') {
-    max-width: 600px;
-  }
 }
 
 .timeSelector {

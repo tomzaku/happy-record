@@ -4,7 +4,7 @@
 .groupContainer {
   border: 2px dashed var(--card-border);
   border-radius: 6px;
-  margin: $spacing-md;
+  margin: $spacing-md 0;
   padding: $spacing-md;
   // margin-top: $spacing-sm;
   min-height: 100px; // Ensure it's droppable even when empty

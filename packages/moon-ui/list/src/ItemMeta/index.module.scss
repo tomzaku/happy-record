@@ -8,7 +8,8 @@
   display: flex;
   padding: $spacing-md;
   @include media.media('<=tablet') {
-    padding: $spacing-sm $spacing-md;
+    // padding: $spacing-sm $spacing-md;
+    padding: $spacing-sm 0;
   }
 }
 

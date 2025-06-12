@@ -3,7 +3,6 @@
 
 .container {
   display: flex;
-  padding: 0 $spacing-md;
   display: inline-flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -15,7 +14,7 @@
   border-radius: 999px;
   align-items: center;
   display: flex;
-  flex: 1
+  flex: 1;
 }
 
 .icon {
@@ -25,12 +24,12 @@
 }
 
 .activeIcon {
- fill: var(--icon-primary);
+  fill: var(--icon-primary);
 }
 
 .activeButton {
- fill: var(--icon-primary);
- color: var(--button-multi-select-text-color);
- border-color: var(--button-multi-select-border-color);
- font-weight: 700;
+  fill: var(--icon-primary);
+  color: var(--button-multi-select-text-color);
+  border-color: var(--button-multi-select-border-color);
+  font-weight: 700;
 }
