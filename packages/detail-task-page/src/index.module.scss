@@ -1,0 +1,17 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.calendarContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-right: $spacing-md;
+  align-items: center;
+  margin-top: $spacing-lg;
+}
+
+.dateText {
+  margin: 0 $spacing-sm;
+}
+
+.icon {
+  cursor: pointer;
+}

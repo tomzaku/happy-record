@@ -11,7 +11,13 @@ import {
   ChecklistRecord,
   useChecklistRecord,
 } from '@dreamer/global/src/store/checklist-record';
-import { setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
+import {
+  setHours,
+  setMinutes,
+  setSeconds,
+  setMilliseconds,
+  isToday,
+} from 'date-fns';
 
 import styles from './index.module.scss';
 import NoteEditor from '../note/NoteEditor';
@@ -50,23 +56,24 @@ const ChecklistFieldGroupView = ({
     setCurrentChecklistRecords(Object.values(records));
     return records;
   };
+  const today = isToday(currentDay);
   React.useEffect(() => {
     reloadChecklistRecord();
-  }, []);
+  }, [currentDay]);
 
   if (currentChecklistRecords.length === 0) {
     return (
       <div>
-        {fields.map(recordField => {
-          return (
-            <div className={styles.itemEmptyContainer}>
-              <List.ItemMeta
-                logo={<Icon width={24} icon={recordField.icon} />}
-                title={recordField.title}
-              />
-            </div>
-          );
-        })}
+        {/* {fields.map(recordField => { */}
+        {/*   return ( */}
+        {/*     <div className={styles.itemEmptyContainer}> */}
+        {/*       <List.ItemMeta */}
+        {/*         logo={<Icon width={24} icon={recordField.icon} />} */}
+        {/*         title={recordField.title} */}
+        {/*       /> */}
+        {/*     </div> */}
+        {/*   ); */}
+        {/* })} */}
 
         <div className={styles.emptyContainer}>
           <Icon
@@ -76,10 +83,20 @@ const ChecklistFieldGroupView = ({
             className={styles.iconEmpty}
           />
           <Typography.Title level={3} noMargin>
-            {intl.formatMessage({
-              id: 'ChecklistFieldGroupView.noRecord',
-              defaultMessage: 'No record found',
-            })}
+            {intl.formatMessage(
+              {
+                id: 'ChecklistFieldGroupView.noRecord',
+                defaultMessage: 'No record found on {{day}}',
+              },
+              {
+                day: today
+                  ? intl.formatMessage({
+                      id: 'ChecklistFieldGroupView.today',
+                      defaultMessage: 'today',
+                    })
+                  : new Date(currentDay).toLocaleDateString(),
+              },
+            )}
           </Typography.Title>
           <Typography.Paragraph noMargin>
             {intl.formatMessage({
@@ -101,6 +118,16 @@ const ChecklistFieldGroupView = ({
         icon="ion:checkmark-done-circle-outline"
         className={styles.iconSuccess}
       />
+      {/* <Typography.Text > */}
+      {/*   {intl.formatMessage({ */}
+      {/*     id: "ChecklistFieldGroupView.record-day", */}
+      {/*     defaultMessage: "Record on {{day}}" */}
+      {/*       }, { day: today ? intl.formatMessage({ */}
+      {/*         id: 'ChecklistFieldGroupView.current-day', */}
+      {/*         defaultMessage: 'today', */}
+      {/*         }) : new Date(currentDay).toLocaleDateString() */}
+      {/*     })} */}
+      {/* </Typography.Text> */}
       {fields.map(recordField => {
         if (recordField.type === 'metric') {
           const recordValues = Object.values(currentChecklistRecords)

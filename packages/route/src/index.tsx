@@ -18,8 +18,10 @@ import { NoteManagerPage } from '@happy-record/note-manager-page-ui';
 // Hocs
 import RecordPage from '@dreamer/record-page-ui';
 import LocalStorageEditor from './local-storage-editor';
+import TasksSharedPage from '@happy-record/tasks-shared-page-ui';
+import ChecklistTemplateSharedPageUi from '@happy-record/checklist-template-shared-page-ui';
 
-const AnimationRoute = ({ children }) => {
+const AnimationRoute = ({ children }: { children: React.ReactNode }) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -51,6 +53,22 @@ const AppRouter = () => {
           element={
             <AnimationRoute>
               <DetailTaskPage />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/task/:id/share"
+          element={
+            <AnimationRoute>
+              <TasksSharedPage />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/checklist-template/shared"
+          element={
+            <AnimationRoute>
+              <ChecklistTemplateSharedPageUi />
             </AnimationRoute>
           }
         />

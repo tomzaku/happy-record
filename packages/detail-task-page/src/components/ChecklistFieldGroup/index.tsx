@@ -50,7 +50,8 @@ const ChecklistFieldGroup = ({
       [ChecklistFieldGroupTab.Add]: 'Add Record',
       [ChecklistFieldGroupTab.Metric]: 'Metric',
     };
-    return tabToTitle[activeTab[fieldGroup.id]];
+    // return tabToTitle[activeTab[fieldGroup.id]];
+    return fieldGroup.title;
   };
   const renderTab = ({
     fieldGroup,
@@ -81,7 +82,7 @@ const ChecklistFieldGroup = ({
       case ChecklistFieldGroupTab.Metric: {
         return (
           <ChecklistFieldMetric
-            fields={fields}
+            fields={fieldDetails}
             checklistTemplateId={checklistTemplate.id}
           />
         );

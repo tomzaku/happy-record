@@ -234,7 +234,6 @@ const RecordTaskSetting = ({
   };
 
   const activeRecord = activeId ? getRecordById(activeId) : null;
-  console.log({ recordFields });
 
   return (
     <div>
@@ -319,12 +318,22 @@ const RecordTaskSetting = ({
       >
         <div className={styles.groupsContainer}>
           {/* Add a container for groups */}
-          {fieldGroups.map(group => (
+          {fieldGroups.map((group, index) => (
             <DroppableGroup
               key={group.id}
               id={group.id}
               title={group.title}
               items={group.fields}
+              onSubmitRename={text => {
+                setFieldGroups([
+                  ...fieldGroups.slice(0, index),
+                  {
+                    ...fieldGroups[index],
+                    title: text,
+                  },
+                  ...fieldGroups.slice(index + 1),
+                ]);
+              }}
             >
               {group.fields.map(recordKey => {
                 const record = getRecordById(recordKey);

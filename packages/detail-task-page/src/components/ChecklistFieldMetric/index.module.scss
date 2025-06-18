@@ -1,0 +1,26 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.selectContainer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.selectInput {
+  padding: 2px $spacing-md !important;
+}
+
+.cardHeader {
+  display: flex;
+  column-gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.selectElement {
+  border: 0 !important;
+}
+
+.selectIcon {
+  margin-left: $spacing-xs;
+}

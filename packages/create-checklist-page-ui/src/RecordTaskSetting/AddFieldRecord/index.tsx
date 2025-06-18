@@ -42,28 +42,38 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
   const { addRecordField } = useRecordField();
   return (
     <div className={cx(className)}>
-      <List.ItemMeta
-        className={styles.marginBottom}
-        logo={<Icon width={24} icon="solar:text-field-linear" />}
-        title={intl.formatMessage({
-          defaultMessage: 'Field Name',
-          id: 'label-record-custom.name.label',
-        })}
-        description={intl.formatMessage({
-          defaultMessage: 'Ex: Push-ups, Squats',
-          id: 'label-record-custom.name.description',
-        })}
-        rightComponent={
-          <Input
-            value={form.title}
-            onChange={e => setForm({ ...form, title: e.target.value })}
-            border="dash"
-            className={styles.customeFieldInput}
-          />
-        }
-      />
       <div className={styles.descriptionContainer}>
         <List.ItemMeta
+          className={styles.itemMeta}
+          logo={<Icon width={24} icon="solar:text-field-linear" />}
+          title={intl.formatMessage({
+            defaultMessage: 'Field Name',
+            id: 'label-record-custom.name.label',
+          })}
+          description={intl.formatMessage({
+            defaultMessage: 'Ex: Push-ups, Squats',
+            id: 'label-record-custom.name.description',
+          })}
+          // rightComponent={
+          //   <Input
+          //     value={form.title}
+          //     onChange={e => setForm({ ...form, title: e.target.value })}
+          //     border="dash"
+          //     className={styles.customeFieldInput}
+          //   />
+          // }
+        />
+        <Input
+          value={form.title}
+          onChange={e => setForm({ ...form, title: e.target.value })}
+          border="dash"
+          //className={styles.customeFieldInput}
+          className={styles.descriptionInput}
+        />
+      </div>
+      <div className={styles.descriptionContainer}>
+        <List.ItemMeta
+          className={styles.itemMeta}
           logo={
             <Icon value={form.unit} width={24} icon="solar:info-circle-bold" />
           }
@@ -90,25 +100,34 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
           onChange={e => setForm({ ...form, description: e.target.value })}
         />
       </div>
-      <List.ItemMeta
-        className={styles.marginBottom}
-        logo={<Icon value={form.unit} width={24} icon="lsicon:number-filled" />}
-        title={intl.formatMessage({
-          defaultMessage: 'Field Unit',
-          id: 'label-record-custom.unit.label',
-        })}
-        description={intl.formatMessage({
-          defaultMessage: 'Ex: minutes, hours, reps, kg',
-          id: 'label-record-custom.unit.description',
-        })}
-        rightComponent={
-          <Input
-            border="dash"
-            onChange={e => setForm({ ...form, unit: e.target.value })}
-            className={styles.customeFieldInput}
-          />
-        }
-      />
+      <div className={styles.descriptionContainer}>
+        <List.ItemMeta
+          className={styles.itemMeta}
+          logo={
+            <Icon value={form.unit} width={24} icon="lsicon:number-filled" />
+          }
+          title={intl.formatMessage({
+            defaultMessage: 'Field Unit',
+            id: 'label-record-custom.unit.label',
+          })}
+          description={intl.formatMessage({
+            defaultMessage: 'Ex: minutes, hours, reps, kg',
+            id: 'label-record-custom.unit.description',
+          })}
+          //  rightComponent={
+          //    <Input
+          //      border="dash"
+          //      onChange={e => setForm({ ...form, unit: e.target.value })}
+          //      className={styles.customeFieldInput}
+          //    />
+          //  }
+        />
+        <Input
+          border="dash"
+          onChange={e => setForm({ ...form, unit: e.target.value })}
+          className={styles.descriptionInput}
+        />
+      </div>
       <List.ItemMeta
         className={styles.marginBottom}
         logo={<Icon width={24} icon="solar:box-minimalistic-outline" />}

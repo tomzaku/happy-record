@@ -18,6 +18,8 @@ type SelectProps<T extends SelectOption> = {
   renderOptionFooter?: (params: { close: () => void }) => React.ReactNode;
   classes?: {
     container?: string;
+    input?: string;
+    selectElement?: string;
   };
 };
 
@@ -51,20 +53,22 @@ const Select = <T extends SelectOption>({
   }, []);
 
   return (
-    <div
-      className={cx(styles.selectWrapper, classes.container)}
-      ref={wrapperRef}
-    >
+    <div className={cx(styles.selectWrapper, classes.container)}>
       {renderLabel
         ? renderLabel()
         : label && <label className={styles.selectLabel}>{label}</label>}
       <div
-        className={`${styles.selectElement} ${isOpen ? styles.open : ''}`}
+        className={cx(
+          styles.selectElement,
+          classes.selectElement,
+          isOpen && styles.open,
+        )}
         role="button"
         tabIndex={0}
+        ref={wrapperRef}
       >
         <div
-          className={styles.selectedValue}
+          className={cx(styles.selectedValue, classes.input)}
           onClick={() => !disabled && setIsOpen(true)}
         >
           {renderInput ? renderInput() : 'Select...'}

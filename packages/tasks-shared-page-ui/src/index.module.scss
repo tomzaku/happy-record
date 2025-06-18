@@ -1,0 +1,22 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+
+.card {
+  align-items: center;
+  padding: $spacing-sm;
+}
+
+.inputContainer {
+  display: flex;
+  background: var(--card-group-background);
+  padding: $spacing-sm $spacing-md;
+  box-sizing: border-box;
+  border-radius: 10px;
+  margin: $spacing-sm $spacing-md;
+  width: 100%;
+}
+
+.input {
+  flex: 1;
+  margin-right: $spacing-sm;
+}

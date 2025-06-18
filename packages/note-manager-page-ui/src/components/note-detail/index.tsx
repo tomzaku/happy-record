@@ -1,18 +1,25 @@
 import NoteEditor from '@dreamer/detail-task-page/src/components/note/NoteEditor';
-import { ChecklistRecord } from '@dreamer/global/src/store/checklist-record';
+import {
+  ChecklistRecord,
+  useChecklistRecord,
+} from '@dreamer/global/src/store/checklist-record';
 import Division from '@moon-ui/division';
 import Card from '@moon-ui/card';
 
 import styles from './index.module.scss';
 import Typography from '@moon-ui/typography';
 import { RecordField } from '@dreamer/global/src/store/record-field';
+import Button from '@moon-ui/button/src/DefaultButton';
+import Icon from '@moon-ui/icon/Icon';
 
 type Props = {
   allNotes: ChecklistRecord[];
   allNoteFields: RecordField[];
+  deleteNote: (note: ChecklistRecord) => void;
 };
 
-const NoteDetail = ({ allNotes, allNoteFields = [] }: Props) => {
+const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
+  const { updateChecklistRecord, deleteChecklistRecord } = useChecklistRecord();
   const noteFieldMap = allNoteFields.reduce<Record<string, RecordField>>(
     (acc, field) => ({
       ...acc,
@@ -30,9 +37,28 @@ const NoteDetail = ({ allNotes, allNoteFields = [] }: Props) => {
                 {new Date(note.createdAt).toLocaleString()}
               </Typography.Text>
               <Typography.Text>{`${noteFieldMap[note.fieldId]?.title}`}</Typography.Text>
+              <Button
+                type="dash"
+                size="sm"
+                // className={styles.deleteButton}
+                onClick={() => {
+                  deleteNote(note);
+                  // const newRecords = { ...records };
+                  // delete newRecords[key];
+                  // setRecords(newRecords);
+                }}
+              >
+                <Icon
+                  icon="solar:trash-bin-trash-outline"
+                  // className={styles.deleteIcon}
+                />
+                Delete
+              </Button>
             </div>
             <Card className={styles.noteItem}>
-              <NoteEditor value={note.value} withoutBorder />
+              {typeof note.value == 'string' ? null : (
+                <NoteEditor value={note.value} withoutBorder />
+              )}
             </Card>
           </>
         );

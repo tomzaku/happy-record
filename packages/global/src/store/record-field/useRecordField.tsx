@@ -12,7 +12,7 @@ export type RecordField = {
   unit: string;
 };
 
-const defaultRecordField = {
+const defaultRecordField: Record<string, RecordField> = {
   duration: {
     id: 'duration',
     title: 'Duration',

@@ -14,14 +14,17 @@ import styles from './index.module.scss';
 import NoteDetail from './components/note-detail';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';
+import { useNavigate } from 'react-router-dom';
 
 export const NoteManagerPage: React.FC = () => {
-  const { allNotes, getNotes, allNoteFields } = useNoteRecords();
+  const { allNotes, getNotes, allNoteFields, deleteNote } = useNoteRecords();
+  const navigate = useNavigate();
 
   return (
     <>
       <BackHeader
         renderLeftComponent={() => <>Notes</>}
+        onClickLeftButton={() => navigate('/')}
         renderRightComponent={() => (
           <Button className={styles.addNoteButton}>
             <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add
@@ -35,7 +38,11 @@ export const NoteManagerPage: React.FC = () => {
             getNotes(fieldIds);
           }}
         />
-        <NoteDetail allNotes={allNotes} allNoteFields={allNoteFields} />
+        <NoteDetail
+          allNotes={allNotes}
+          allNoteFields={allNoteFields}
+          deleteNote={deleteNote}
+        />
       </div>
     </>
   );

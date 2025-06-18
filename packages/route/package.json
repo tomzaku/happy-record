@@ -28,6 +28,8 @@
     "@pregnant/story-page-ui": "^1.0.0",
     "@dreamer/record-page-ui": "^1.0.0",
     "@happy-record/note-manager-page-ui": "^1.0.0",
+    "@happy-record/tasks-shared-page-ui": "^1.0.0",
+    "@happy-record/checklist-template-shared-page-ui": "^1.0.0",
     "motion": "12.12.2",
     "react-router-dom": "^7.6.0"
   },

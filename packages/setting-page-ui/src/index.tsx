@@ -20,7 +20,7 @@ import styles from './index.module.scss';
 import { BackHeader } from '@dreamer/header';
 import Icon from '@moon-ui/icon/Icon';
 
-const version = '1.0.1';
+const version = '1.0.2';
 
 const ONE_MINUTE = 60 * 1000;
 
@@ -107,17 +107,19 @@ export default function SettingPage() {
           description={'Select/ Deselect Tasks'}
         />
       </div>
-      <a
-        href="https://github.com/tomzaku/dreamer-web-public/issues"
-        className={styles.footer}
-      >
-        <Typography.Text className={styles.version}>
+      <div className={styles.footer}>
+        <Typography.Text
+          className={styles.version}
+          onClick={() => navigate('/setting/local-storage-editor')}
+        >
           Version: {version}
         </Typography.Text>
-        <Typography.Text className={styles.link}>
-          | Feature Request | Bug Report
-        </Typography.Text>
-      </a>
+        <a href="https://github.com/tomzaku/dreamer-web-public/issues">
+          <Typography.Text className={styles.link}>
+            | Feature Request | Bug Report
+          </Typography.Text>
+        </a>
+      </div>
     </div>
   );
 }

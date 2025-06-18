@@ -11,7 +11,7 @@
   border: 1px solid var(--card-border);
   box-sizing: border-box;
   border-radius: 20px;
-  margin-right: $spacing-md;
+  margin-right: $spacing-xs;
   padding: $spacing-xs $spacing-md;
   align-items: center;
   display: flex;
@@ -27,8 +27,8 @@
 
 .addCustomField {
   margin: $spacing-md;
-  padding: $spacing-md 0;
-  border: 3px dashed var(--create-task-dashed-border);
+  padding: $spacing-md;
+  border: 3px solid var(--card-border-hover);
   border-radius: 6px;
 }
 

@@ -1,19 +1,24 @@
 import React from 'react';
-import useLocalStorage from './useLocalStorage';
+import { useLocalStorageAll } from './useLocalStorage';
+import { useStorageSync } from '@dreamer/global/src/hook/useStorageSync';
+import { useUser } from '@dreamer/global/src/hook/useUser';
+import Typography from '@moon-ui/typography';
 
 function LocalStorageEditor() {
-  const { storedValue, setStoredValue, save } = useLocalStorage(
-    'checklist_template',
-    '',
-  );
+  const { syncToCloud, syncFromCloud } = useStorageSync();
 
+  const [storedValue, setStoredValue] = React.useState<string>('{}');
+  const { storage, setAll } = useLocalStorageAll({
+    onStorageChange: data => setStoredValue(JSON.stringify(data)),
+  });
   const handleChange = e => {
     setStoredValue(e.target.value);
   };
+  const { user } = useUser();
 
   return (
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <h2>LocalStorage Editor</h2>
+      <Typography.Text>{user.id}</Typography.Text>
       <textarea
         value={storedValue}
         onChange={handleChange}
@@ -28,7 +33,11 @@ function LocalStorageEditor() {
           resize: 'vertical',
         }}
       />
-      <button onClick={save}>Save</button>
+      <button onClick={() => setAll(JSON.parse(storedValue))}>
+        UPDATE LOCAL STORAGE LOCAL
+      </button>
+      <button onClick={syncToCloud}>Sync(Upload to server)</button>
+      <button onClick={syncFromCloud}>FETCH(Download)</button>
     </div>
   );
 }

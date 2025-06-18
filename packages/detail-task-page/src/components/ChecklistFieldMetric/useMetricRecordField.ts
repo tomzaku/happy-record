@@ -8,11 +8,31 @@ import {
   RecordField,
   useRecordField,
 } from '@dreamer/global/src/store/record-field';
-import { useChecklistTemplates } from '@dreamer/global';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import {
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  differenceInDays,
+} from 'date-fns';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+
+const getCurrentStreak = (dates: string[]) => {
+  let currentStreak = 0;
+  for (let i = dates.length - 1; i >= 0; i--) {
+    if (
+      dates[i + 1] === undefined ||
+      differenceInDays(dates[i + 1], dates[i]) === 1
+    ) {
+      currentStreak++;
+    } else {
+      return currentStreak;
+    }
+  }
+  return currentStreak;
+};
 
 export const useMetricRecordField = ({
   checklistTemplateId,
@@ -25,19 +45,29 @@ export const useMetricRecordField = ({
   const { getChecklistRecords } = useChecklistRecord();
 
   const [data, setData] = React.useState({});
-  React.useEffect(() => {
+  const [total, setTotal] = React.useState(0);
+  const [currentStreak, setCurrentStreak] = React.useState(0);
+  const fetchChecklistRecords = (rangeDateType: 'month' | 'year') => {
     const records = getChecklistRecords(checklistTemplateId, {
-      rangeDate: {
-        from: startOfMonth(new Date()).toISOString(),
-        to: endOfMonth(new Date()).toISOString(),
-      },
+      rangeDate:
+        rangeDateType === 'month'
+          ? {
+              from: startOfMonth(new Date()).toISOString(),
+              to: endOfMonth(new Date()).toISOString(),
+            }
+          : {
+              from: startOfYear(new Date()).toISOString(),
+              to: endOfYear(new Date()).toISOString(),
+            },
       sortBy: 'createdAt',
       fieldIds: fields
         .filter(field => field.type === 'metric')
         .map(field => field.id),
     });
     const categories = Object.keys(records);
+    setCurrentStreak(getCurrentStreak(categories));
     const values = Object.values(records);
+    setTotal(values.flat().reduce((acc, i) => acc + i.value, 0));
     const seriesValues = fields.reduce((acc, recordField, index) => {
       const seriesValue = values.map(value => {
         const result = value
@@ -54,6 +84,9 @@ export const useMetricRecordField = ({
       categories,
       seriesValues,
     });
+  };
+  React.useEffect(() => {
+    fetchChecklistRecords('month');
   }, []);
 
   const series = fields.map(recordField => {
@@ -81,5 +114,8 @@ export const useMetricRecordField = ({
   return {
     series,
     options,
+    currentStreak,
+    total,
+    fetchChecklistRecords,
   };
 };

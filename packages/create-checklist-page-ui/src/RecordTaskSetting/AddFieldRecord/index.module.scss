@@ -14,8 +14,8 @@
 .addFieldButtonContainer {
   // display: flex;
   // justify-content: flex-end;
-  padding: 0 $spacing-md;
-  margin-top: $spacing-md;
+  // padding: 0 $spacing-md;
+  margin-top: $spacing-lg;
 }
 
 .customeFieldInput {
@@ -23,13 +23,17 @@
 }
 
 .descriptionInput {
-  margin: 0 $spacing-md;
+  margin: 0 0 0 30px;
 }
 
 .descriptionContainer {
   display: flex;
   flex-direction: column;
   margin-bottom: $spacing-md;
+}
+
+.itemMeta {
+  align-items: flex-start;
 }
 
 .marginBottom {

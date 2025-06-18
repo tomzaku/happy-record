@@ -13,6 +13,8 @@
     "@types/uuid": "^10.0.0"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.50.0",
+    "firebase": "^11.9.1",
     "use-long-press": "^2.0.0",
     "zustand": "^5.0.4"
   }

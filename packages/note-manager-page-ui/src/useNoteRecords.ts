@@ -11,7 +11,7 @@ import {
 export const useNoteRecords = () => {
   const [allNotes, setAllNotes] = React.useState<ChecklistRecord[]>([]);
   const [allNoteFields, setAllNoteFields] = React.useState<RecordField[]>([]);
-  const { getChecklistRecords } = useChecklistRecord();
+  const { getChecklistRecords, deleteChecklistRecord } = useChecklistRecord();
   const { getAllRecordFields } = useRecordField();
   React.useEffect(() => {
     const fields = getAllRecordFields();
@@ -29,9 +29,16 @@ export const useNoteRecords = () => {
     });
     setAllNotes(Object.values(notes).flat());
   };
+  const deleteNote = (note: ChecklistRecord) => {
+    deleteChecklistRecord(note.id, {
+      checklistTemplateId: note.checklistTemplateId,
+    });
+    setAllNotes(allNotes.filter(n => n.id !== note.id));
+  };
   return {
     allNotes,
     allNoteFields,
     getNotes,
+    deleteNote,
   };
 };
