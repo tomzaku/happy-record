@@ -43,7 +43,7 @@ import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 
 type Props = {
   value: YooptaContentValue;
-  setValue: (value: Block[]) => void;
+  setValue: (value: YooptaContentValue) => void;
   readOnly?: boolean;
   classes?: {
     container?: string;
@@ -53,6 +53,7 @@ type Props = {
   shouldShowSaveButton?: boolean;
   withoutBorder?: boolean;
   showEditIcon?: boolean;
+  key?: string | number;
 };
 
 const plugins = [
@@ -98,8 +99,8 @@ const TOOLS = {
 const MARKS = [Bold, Italic, CodeMark, Underline, Strike, Highlight];
 
 function NoteEditor({
-  // value,
-  // setValue,
+  value,
+  setValue,
   readOnly,
   classes,
   showEditIcon,
@@ -107,8 +108,11 @@ function NoteEditor({
   onClickSave,
   shouldShowSaveButton,
   withoutBorder,
+  key,
 }: Props) {
-  const [value, setValue] = React.useState<YooptaContentValue>();
+  // const [value, setValue] = React.useState<YooptaContentValue>();
+  const [isFocused, setIsFocused] = React.useState(false);
+  const { theme } = usePomodoroGlobalConfig();
 
   const editor = React.useMemo(() => createYooptaEditor(), []);
   const selectionRef = React.useRef(null);
@@ -135,6 +139,25 @@ function NoteEditor({
     setValue(value);
   };
 
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+  };
+
+  const isEmpty =
+    !value ||
+    (Array.isArray(value) && value.length === 0) ||
+    (Array.isArray(value) &&
+      value.length === 1 &&
+      value[0]?.type === 'paragraph' &&
+      (!value[0]?.children ||
+        value[0]?.children?.length === 0 ||
+        (value[0]?.children?.length === 1 &&
+          value[0]?.children[0]?.text === '')));
+
   return (
     <div
       ref={selectionRef}
@@ -142,9 +165,15 @@ function NoteEditor({
         styles.container,
         classes?.container,
         withoutBorder && styles.withoutBorder,
+        styles[`theme${theme === Theme.Dark ? 'Dark' : 'Light'}`],
       )}
+      data-theme={theme}
     >
+      {isEmpty && !isFocused && (
+        <div className={styles.placeholder}>Type text..</div>
+      )}
       <YooptaEditor
+        key={key}
         selectionBoxRoot={selectionRef}
         editor={editor}
         marks={MARKS}
@@ -154,7 +183,9 @@ function NoteEditor({
         tools={TOOLS}
         style={{ width: '100%' }}
         onChange={onChange}
-        autoFocus
+        autoFocus={false}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
       />
     </div>
   );

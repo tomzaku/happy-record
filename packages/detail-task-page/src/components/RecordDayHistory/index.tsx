@@ -64,7 +64,6 @@ const RecordDayHistory = ({
                         border="dash"
                         className={styles.input}
                         onBlur={() => {
-                          console.log('>>>ON BLUR???');
                           updateChecklistRecord(r.id, {
                             checklistTemplateId: r.checklistTemplateId,
                             value: Number(inputRef.current?.value),

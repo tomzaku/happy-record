@@ -4,7 +4,7 @@ import {
   useChecklistRecord,
 } from '@dreamer/global/src/store/checklist-record';
 import { RecordField } from '@dreamer/global/src/store/record-field';
-import NoteEditor from '../note/NoteEditor/';
+import NoteEditor from '../note/NoteEditor';
 import Typography from '@moon-ui/typography';
 import List from '@moon-ui/list';
 import Icon from '@moon-ui/icon/Icon';
@@ -19,12 +19,15 @@ type Props = {
   fields: RecordField[];
   setRecord: (record: ChecklistRecord) => void;
 };
+
 const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
   const { updateChecklistRecord, deleteChecklistRecord } = useChecklistRecord();
   const field = fields.find(f => f.id === record.fieldId);
   if (!field) return;
   const [activeRecord, setActiveRecord] = React.useState<ChecklistRecord>();
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const [resetKey, setResetKey] = React.useState('original');
+
   switch (field.type) {
     case 'metric': {
       return (
@@ -102,22 +105,7 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
             title={field.title}
             rightComponent={
               activeRecord?.id !== record.id ? (
-                <>
-                  <Button
-                    type="dash"
-                    size="sm"
-                    className={styles.editButton}
-                    onClick={() => {
-                      setActiveRecord(record);
-                    }}
-                  >
-                    <Icon
-                      icon="solar:pen-new-square-linear"
-                      className={styles.editIcon}
-                    />
-                    Edit
-                  </Button>
-                </>
+                <></>
               ) : (
                 <>
                   <Button
@@ -126,6 +114,7 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
                     className={styles.editButton}
                     onClick={() => {
                       setActiveRecord(undefined);
+                      setResetKey('reset-key');
                     }}
                   >
                     <Icon
@@ -162,25 +151,19 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
               )
             }
           />
-          {activeRecord?.id === record.id && (
-            <NoteEditor
-              withoutBorder
-              value={
-                activeRecord?.id !== record.id
-                  ? record.value
-                  : activeRecord.value
-              }
-              setValue={value => {
-                setActiveRecord({
-                  ...record,
-                  value,
-                });
-              }}
-            />
-          )}
-          {activeRecord?.id !== record.id && (
-            <NoteEditor value={record.value} withoutBorder readOnly />
-          )}
+          <NoteEditor
+            key={resetKey}
+            withoutBorder
+            value={
+              activeRecord?.id !== record.id ? record.value : activeRecord.value
+            }
+            setValue={value => {
+              setActiveRecord({
+                ...record,
+                value,
+              });
+            }}
+          />
         </div>
       );
     }

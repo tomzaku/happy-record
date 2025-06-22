@@ -1,3 +1,4 @@
+/* stylelint-disable max-nesting-depth */
 @use '@moon-ui/app-scss/color' as *;
 @use '@moon-ui/app-scss/metric' as *;
 
@@ -9,6 +10,7 @@
   display: flex;
   justify-content: center;
   margin-left: 32px;
+  position: relative;
 }
 
 .editIcon {
@@ -34,4 +36,98 @@
 
 .withoutBorder {
   border: 0;
+}
+
+.placeholder {
+  position: absolute;
+  top: $spacing-sm;
+  left: $spacing-sm;
+  color: var(--text-placeholder-color);
+  pointer-events: none;
+  z-index: 1;
+  font-size: 14px;
+}
+
+// Theme-specific styles
+.themeLight {
+  background-color: var(--card-background);
+  color: var(--text-color);
+
+  :global(.yoopta-editor) {
+    color: var(--text-color);
+    background-color: transparent;
+
+    [data-slate-editor] {
+      color: var(--text-color);
+      background-color: transparent;
+
+      &[data-slate-placeholder] {
+        color: var(--text-placeholder-color);
+        opacity: 1;
+      }
+    }
+
+    // Toolbar and action menu styling for light theme
+    [data-yoopta-toolbar] {
+      background-color: var(--card-background);
+      border-color: var(--card-border);
+    }
+
+    [data-yoopta-action-menu] {
+      background-color: var(--card-background);
+      border-color: var(--card-border);
+      color: var(--text-color);
+    }
+  }
+}
+
+.themeDark {
+  background-color: var(--card-background);
+  color: var(--text-color);
+
+  :global(.yoopta-editor) {
+    color: var(--text-color);
+    background-color: transparent;
+
+    [data-slate-editor] {
+      color: var(--text-color);
+      background-color: transparent;
+
+      &[data-slate-placeholder] {
+        color: var(--text-placeholder-color);
+        opacity: 1;
+      }
+    }
+
+    // Toolbar and action menu styling for dark theme
+    [data-yoopta-toolbar] {
+      background-color: var(--card-background);
+      border-color: var(--card-border);
+    }
+
+    [data-yoopta-action-menu] {
+      background-color: var(--card-background);
+      border-color: var(--card-border);
+      color: var(--text-color);
+    }
+  }
+}
+
+// Ensure placeholder is visible even when editor is not focused
+:global(.yoopta-editor) {
+  [data-slate-editor] {
+    &[data-slate-placeholder] {
+      color: var(--text-placeholder-color);
+      opacity: 1;
+    }
+  }
+
+  // Show placeholder when editor is empty and not focused
+  [data-slate-editor]:empty::before {
+    content: attr(data-slate-placeholder);
+    color: var(--text-placeholder-color);
+    opacity: 1;
+    position: absolute;
+    pointer-events: none;
+  }
 }
