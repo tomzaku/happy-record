@@ -15,9 +15,9 @@ export const useTimer = ({
   startAtBegin?: boolean;
 }): UseTimerOutput => {
   const [time, setTimer] = React.useState(duration);
-  const [isPlaying, setIsPlaying] = React.useState(Boolean(startAtBegin));
+  const [isPlaying, setIsPlaying] = React.useState(false);
   // let timerInterval = React.useRef<NodeJS.Timer>();
-  const timerInterval = React.useRef<any>();
+  const timerInterval = React.useRef<unknown>();
   const startTimer = () => {
     if (isPlaying) return;
     setIsPlaying(true);

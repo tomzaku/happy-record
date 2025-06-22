@@ -25,7 +25,8 @@ const allDays = [
   { label: 'S', value: Day.Sun },
 ];
 const TaskSharedCard = ({ checklistTemplate, fields = [] }: Props) => {
-  const days = getDaysFromRepeat(checklistTemplate.repeat);
+  const days = getDaysFromRepeat(checklistTemplate?.repeat);
+  if (!checklistTemplate) return null;
   return (
     <div className={styles.container}>
       <Icon width={24} icon={checklistTemplate.avatar?.name} />

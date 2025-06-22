@@ -25,7 +25,7 @@ const defaultRecordField: Record<string, RecordField> = {
     id: 'push-ups',
     title: 'Push-ups',
     icon: 'iconoir:gym',
-    description: 'For example: Push-ups, Squats',
+    description: 'Push-ups for tracking purpose',
     type: 'metric',
     unit: 'reps',
   },

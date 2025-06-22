@@ -17,11 +17,13 @@ import Typography from '@moon-ui/typography';
 import styles from './index.module.scss';
 import Drawer from '@moon-ui/drawer';
 import Icon from '@moon-ui/icon/Icon';
+import Timer from './components/timer';
 
 const ChecklistTemplateSharedPageUi = () => {
   const { getAllRecordFields, addRecordField } = useRecordField();
   const [dialogRejectOpen, setDialogRejectOpen] = React.useState(false);
-  const { addChecklistTemplate } = useChecklistTemplates();
+  const { addChecklistTemplate, getChecklistTemplate } =
+    useChecklistTemplates();
   const { getChecklistDetail } = useChecklist();
   const navigate = useNavigate();
 
@@ -34,7 +36,7 @@ const ChecklistTemplateSharedPageUi = () => {
     newFields.forEach(f => {
       addRecordField(f, true);
     });
-    if (!getChecklistDetail(queryParams.checklistTemplate.id)) {
+    if (getChecklistTemplate(queryParams.checklistTemplate.id)) {
       alert("You've have this task!!!");
     } else {
       addChecklistTemplate(queryParams.checklistTemplate);
@@ -72,24 +74,27 @@ const ChecklistTemplateSharedPageUi = () => {
         className={styles.drawerContainer}
         onBlur={() => setDialogRejectOpen(false)}
       >
-        <div className={styles.header}>
-          <Typography.Title noMargin level={2}>
-            Are you sure? Or just a misclick
-          </Typography.Title>
+        <div>
+          <div className={styles.header}>
+            <Typography.Title noMargin level={2}>
+              Are you sure? Or just a misclick
+            </Typography.Title>
 
-          <Icon
-            width={32}
-            icon="material-symbols:close-rounded"
-            onClick={() => setOpenRename(false)}
-          />
+            <Icon
+              width={32}
+              icon="material-symbols:close-rounded"
+              onClick={() => setDialogRejectOpen(false)}
+            />
+          </div>
+          <Typography.Title level={3}>
+            {`Don't worry, ${queryParams.targetName}`}
+          </Typography.Title>
+          <Typography.Text>
+            I know you not scared of this challenge. So I will take it for you
+            in 10s
+          </Typography.Text>
+          <Timer duration={10000} onFinish={handleSubmit} autoStart />
         </div>
-        <Typography.Title level={3}>
-          {`Don't worry, ${queryParams.targetName}`}
-        </Typography.Title>
-        <Typography.Text>
-          I know you not scared of this challenge. So I will take it for you in
-          5s
-        </Typography.Text>
       </Drawer>
     </div>
   );
