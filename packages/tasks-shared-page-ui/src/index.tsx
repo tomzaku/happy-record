@@ -44,7 +44,7 @@ const TasksSharedPage = () => {
 
       setUrl(`${domain}/checklist-template/shared?${qs.stringify(params)}`);
     }
-  }, [id]);
+  }, [id, userName, targetName]);
   const handleCopy = () => {
     navigator.clipboard
       .writeText(url)

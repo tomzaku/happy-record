@@ -2,30 +2,6 @@ import React from 'react';
 
 import YooptaEditor, { createYooptaEditor } from '@yoopta/editor';
 import type { YooptaContentValue, YooptaOnChangeOptions } from '@yoopta/editor';
-import Paragraph from '@yoopta/paragraph';
-import Blockquote from '@yoopta/blockquote';
-import Embed from '@yoopta/embed';
-import Link from '@yoopta/link';
-import Callout from '@yoopta/callout';
-import Accordion from '@yoopta/accordion';
-import { NumberedList, BulletedList, TodoList } from '@yoopta/lists';
-import {
-  Bold,
-  Italic,
-  CodeMark,
-  Underline,
-  Strike,
-  Highlight,
-} from '@yoopta/marks';
-import { HeadingOne, HeadingThree, HeadingTwo } from '@yoopta/headings';
-import Code from '@yoopta/code';
-import Table from '@yoopta/table';
-import Divider from '@yoopta/divider';
-import ActionMenuList, {
-  DefaultActionMenuRender,
-} from '@yoopta/action-menu-list';
-import Toolbar, { DefaultToolbarRender } from '@yoopta/toolbar';
-import LinkTool, { DefaultLinkToolRender } from '@yoopta/link-tool';
 
 import styles from './index.module.scss';
 import cx from 'classnames';
@@ -43,50 +19,8 @@ type Props = {
   shouldShowSaveButton?: boolean;
   withoutBorder?: boolean;
   showEditIcon?: boolean;
-  key?: string | number;
+  key?: string | number; // Add key prop to force re-mount
 };
-
-const plugins = [
-  Paragraph,
-  Table,
-  Divider.extend({
-    elementProps: {
-      divider: props => ({
-        ...props,
-        color: '#007aff',
-      }),
-    },
-  }),
-  Accordion,
-  HeadingOne,
-  HeadingTwo,
-  HeadingThree,
-  Blockquote,
-  Callout,
-  NumberedList,
-  BulletedList,
-  TodoList,
-  Code,
-  Link,
-  Embed,
-];
-
-const TOOLS = {
-  ActionMenu: {
-    render: DefaultActionMenuRender,
-    tool: ActionMenuList,
-  },
-  Toolbar: {
-    render: DefaultToolbarRender,
-    tool: Toolbar,
-  },
-  LinkTool: {
-    render: DefaultLinkToolRender,
-    tool: LinkTool,
-  },
-};
-
-const MARKS = [Bold, Italic, CodeMark, Underline, Strike, Highlight];
 
 function NoteEditor({
   value,
@@ -100,28 +34,115 @@ function NoteEditor({
   withoutBorder,
   key,
 }: Props) {
-  // const [value, setValue] = React.useState<YooptaContentValue>();
   const [isFocused, setIsFocused] = React.useState(false);
   const { theme } = usePomodoroGlobalConfig();
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const [plugins, setPlugins] = React.useState<unknown[]>([]);
+  const [tools, setTools] = React.useState<Record<string, unknown>>({});
+  const [marks, setMarks] = React.useState<unknown[]>([]);
 
   const editor = React.useMemo(() => createYooptaEditor(), []);
   const selectionRef = React.useRef(null);
 
-  // const editor = useCreateBlockNote({
-  //   domAttributes: {
-  //     editor: {
-  //       class: styles.editor,
-  //     },
-  //   },
-  //   initialContent: value,
-  // });
-  //   React.useEffect(() => {
-  //   if (editor && value) {
-  //     // Replace the root blocks with the new content
-  //     editor.replaceBlocks(editor.document, value);
-  //   }
-  // }, [editor, value]);
-  // const { theme } = usePomodoroGlobalConfig();
+  // Dynamically load all Yoopta components
+  React.useEffect(() => {
+    const loadComponents = async () => {
+      try {
+        const [
+          { default: Paragraph },
+          { default: Blockquote },
+          { default: Embed },
+          { default: Link },
+          { default: Callout },
+          { default: Accordion },
+          { NumberedList, BulletedList, TodoList },
+          { Bold, Italic, CodeMark, Underline, Strike, Highlight },
+          { HeadingOne, HeadingThree, HeadingTwo },
+          { default: Code },
+          { default: Table },
+          { default: Divider },
+          { default: ActionMenuList, DefaultActionMenuRender },
+          { default: Toolbar, DefaultToolbarRender },
+          { default: LinkTool, DefaultLinkToolRender },
+        ] = await Promise.all([
+          import('@yoopta/paragraph'),
+          import('@yoopta/blockquote'),
+          import('@yoopta/embed'),
+          import('@yoopta/link'),
+          import('@yoopta/callout'),
+          import('@yoopta/accordion'),
+          import('@yoopta/lists'),
+          import('@yoopta/marks'),
+          import('@yoopta/headings'),
+          import('@yoopta/code'),
+          import('@yoopta/table'),
+          import('@yoopta/divider'),
+          import('@yoopta/action-menu-list'),
+          import('@yoopta/toolbar'),
+          import('@yoopta/link-tool'),
+        ]);
+
+        const loadedPlugins = [
+          Paragraph,
+          Table,
+          Divider.extend({
+            elementProps: {
+              divider: props => ({
+                ...props,
+                color: '#007aff',
+              }),
+            },
+          }),
+          Accordion,
+          HeadingOne,
+          HeadingTwo,
+          HeadingThree,
+          Blockquote,
+          Callout,
+          NumberedList,
+          BulletedList,
+          TodoList,
+          Code,
+          Link,
+          Embed,
+        ];
+
+        const loadedTools = {
+          ActionMenu: {
+            render: DefaultActionMenuRender,
+            tool: ActionMenuList,
+          },
+          Toolbar: {
+            render: DefaultToolbarRender,
+            tool: Toolbar,
+          },
+          LinkTool: {
+            render: DefaultLinkToolRender,
+            tool: LinkTool,
+          },
+        };
+
+        const loadedMarks = [
+          Bold,
+          Italic,
+          CodeMark,
+          Underline,
+          Strike,
+          Highlight,
+        ];
+
+        setPlugins(loadedPlugins);
+        setTools(loadedTools);
+        setMarks(loadedMarks);
+        setIsLoaded(true);
+      } catch (error) {
+        console.error('Failed to load Yoopta components:', error);
+        setIsLoaded(true); // Still set to true to show editor
+      }
+    };
+    loadComponents();
+  }, []);
+
   const onChange = (
     value: YooptaContentValue,
     options: YooptaOnChangeOptions,
@@ -148,6 +169,20 @@ function NoteEditor({
         (value[0]?.children?.length === 1 &&
           value[0]?.children[0]?.text === '')));
 
+  if (!isLoaded || plugins.length === 0) {
+    return (
+      <div
+        className={cx(
+          styles.container,
+          classes?.container,
+          withoutBorder && styles.withoutBorder,
+        )}
+      >
+        <div>Loading editor...</div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={selectionRef}
@@ -158,24 +193,24 @@ function NoteEditor({
         styles[`theme${theme === Theme.Dark ? 'Dark' : 'Light'}`],
       )}
       data-theme={theme}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
     >
       {isEmpty && !isFocused && (
         <div className={styles.placeholder}>Type text..</div>
       )}
       <YooptaEditor
-        key={key}
+        key={key} // Use key to force re-mount when needed
         selectionBoxRoot={selectionRef}
         editor={editor}
-        marks={MARKS}
+        marks={marks}
         plugins={plugins}
         value={value}
         placeholder="Type text.."
-        tools={TOOLS}
+        tools={tools}
         style={{ width: '100%' }}
         onChange={onChange}
         autoFocus={false}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
       />
     </div>
   );

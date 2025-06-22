@@ -4,20 +4,12 @@ import Icon from '@moon-ui/icon/Icon';
 import List from '@moon-ui/list';
 import Typography from '@moon-ui/typography';
 
-import Button from '@moon-ui/button/src/DefaultButton';
 import { Checklist, ChecklistTemplate } from '@dreamer/global';
-import { Block } from '@blocknote/core';
 import {
   ChecklistRecord,
   useChecklistRecord,
 } from '@dreamer/global/src/store/checklist-record';
-import {
-  setHours,
-  setMinutes,
-  setSeconds,
-  setMilliseconds,
-  isToday,
-} from 'date-fns';
+import { isToday } from 'date-fns';
 
 import styles from './index.module.scss';
 import NoteEditor from '../note/NoteEditor/';

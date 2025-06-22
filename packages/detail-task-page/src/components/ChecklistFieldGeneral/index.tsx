@@ -138,6 +138,7 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
                         value: activeRecord.value,
                       });
                       setActiveRecord(undefined);
+                      setResetKey('save-key');
                     }}
                   >
                     <Icon
@@ -157,10 +158,10 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
             value={
               activeRecord?.id !== record.id ? record.value : activeRecord.value
             }
-            setValue={value => {
+            setValue={(value: unknown) => {
               setActiveRecord({
                 ...record,
-                value,
+                value: value as string | number,
               });
             }}
           />

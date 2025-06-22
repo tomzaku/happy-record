@@ -9,7 +9,6 @@ import NoteEditor from '../note/NoteEditor/';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { Checklist, ChecklistTemplate } from '@dreamer/global';
-import { Block } from '@blocknote/core';
 import { useChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 import { setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
 
@@ -28,7 +27,7 @@ const ChecklistFieldGroupAdd = ({
   onSubmit,
 }: Props) => {
   const [fieldRecord, setFieldRecord] = React.useState<
-    Record<string, number | undefined | Block[]>
+    Record<string, number | undefined | unknown[]>
   >(
     fields.reduce(
       (acc, { id }) => ({
