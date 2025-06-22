@@ -4,7 +4,9 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   query,
+  doc,
   where,
 } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
@@ -66,7 +68,30 @@ export const useFirebase = () => {
     const q = query(localStorageCol, where('userId', '==', user.id));
     const localStorageSnapshot = await getDocs(q);
     const localStorageList = localStorageSnapshot.docs.map(doc => doc.data());
-    console.log('>LOCALSTORAGE', localStorageList);
   };
-  return { syncToCloud, syncFromCloud };
+  const upload = async (data: unknown, key: string) => {
+    const colRef = collection(db, key);
+    const newDocRef = await addDoc(colRef, {
+      content: data,
+      userId: user.id,
+      createdAt: new Date().toISOString(),
+    });
+    return newDocRef;
+  };
+  const get = async (key: string, id: string) => {
+    // const colRef = collection(db, key, id);
+    const docRef = doc(db, key, id);
+    console.log('LKEY id', { key, id });
+    // const q = query(colRef);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      console.log('Document data:', docSnap.data());
+      return docSnap.data().content;
+    } else {
+      console.log('No such document!');
+      return null;
+    }
+    // return querySnapshot.docs
+  };
+  return { upload, get };
 };

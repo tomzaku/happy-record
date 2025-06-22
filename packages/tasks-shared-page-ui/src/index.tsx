@@ -12,6 +12,8 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import styles from './index.module.scss';
 import Input from '@moon-ui/input';
 import List from '@moon-ui/list';
+import { useFirebase } from '@dreamer/global/src/hook/useFirebase';
+import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
 
 const TasksSharedPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +24,7 @@ const TasksSharedPage = () => {
   const [targetName, setTargetName] = React.useState('dude');
   const [message, setMessage] = React.useState('');
   const [userName, setUserName] = React.useState('');
+  const { updateChecklistTemplate } = useCreateChecklistTemplate();
   const [checklistTemplate, setChecklistTemplate] =
     React.useState<ChecklistTemplate>();
   React.useEffect(() => {
@@ -59,6 +62,27 @@ const TasksSharedPage = () => {
   if (!checklistTemplate) {
     return;
   }
+  const generateUrl = async () => {
+    if (!id) {
+      return;
+    }
+    const allFields = getAllRecordFields();
+    const checklistTemplate = getChecklistTemplate(id);
+    setChecklistTemplate(checklistTemplate);
+    const checklistTemplateFieldIds = checklistTemplate.fieldGroups.flatMap(
+      group => group.fields,
+    );
+    const data = {
+      checklistTemplate,
+      fields: checklistTemplateFieldIds.map(id =>
+        allFields.find(f => f.id === id),
+      ),
+      userName,
+      targetName,
+    };
+    const result = await updateChecklistTemplate(data);
+    console.log('ID', result);
+  };
   return (
     <div>
       <BackHeader
@@ -106,6 +130,7 @@ const TasksSharedPage = () => {
       <Card className={styles.card}>
         <div className={styles.inputContainer}>
           <Input value={url} readOnly className={styles.inputLink} />
+          <Button onClick={generateUrl}>Generate Url</Button>
           <Button onClick={handleCopy}>
             {copied ? 'Copied ' : 'Copy Link'}
           </Button>

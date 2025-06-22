@@ -18,28 +18,32 @@ import styles from './index.module.scss';
 import Drawer from '@moon-ui/drawer';
 import Icon from '@moon-ui/icon/Icon';
 import Timer from './components/timer';
+import { useGetChecklistTemplateApi } from '@dreamer/global/src/hook/checklist-template/useGetChecklistTemplateApi';
 
 const ChecklistTemplateSharedPageUi = () => {
+  const { id } = useParams<{ id: string }>();
   const { getAllRecordFields, addRecordField } = useRecordField();
   const [dialogRejectOpen, setDialogRejectOpen] = React.useState(false);
   const { addChecklistTemplate, getChecklistTemplate } =
     useChecklistTemplates();
   const { getChecklistDetail } = useChecklist();
   const navigate = useNavigate();
+  const { getChecklistTemplateApi } = useGetChecklistTemplateApi();
 
-  const queryParams = qs.parse(location.search, { ignoreQueryPrefix: true });
+  // const queryParams = qs.parse(location.search, { ignoreQueryPrefix: true });
+  const [data, setData] = React.useState();
   const handleSubmit = () => {
     const allFields = getAllRecordFields();
-    const newFields = queryParams.fields.filter(f => {
+    const newFields = data.fields.filter(f => {
       return !allFields.find(existingField => existingField.id == f.id);
     });
     newFields.forEach(f => {
       addRecordField(f, true);
     });
-    if (getChecklistTemplate(queryParams.checklistTemplate.id)) {
+    if (getChecklistTemplate(data.checklistTemplate.id)) {
       alert("You've have this task!!!");
     } else {
-      addChecklistTemplate(queryParams.checklistTemplate);
+      addChecklistTemplate(data.checklistTemplate);
       navigate('/');
     }
   };
@@ -47,6 +51,19 @@ const ChecklistTemplateSharedPageUi = () => {
   const onClickLeaveIt = () => {
     setDialogRejectOpen(true);
   };
+  const fetchApi = async () => {
+    if (id) {
+      const result = await getChecklistTemplateApi(id);
+      setData(result);
+    }
+  };
+  React.useEffect(() => {
+    console.log('ID', id);
+    fetchApi();
+  }, [id]);
+  if (!data) {
+    return null;
+  }
 
   return (
     <div>
@@ -54,10 +71,10 @@ const ChecklistTemplateSharedPageUi = () => {
       <Card className={styles.card}>
         <Typography.Title
           level={3}
-        >{`Hey, ${queryParams.targetName} - ${queryParams.userName} just challenged you!`}</Typography.Title>
+        >{`Hey, ${data.targetName} - ${data.userName} just challenged you!`}</Typography.Title>
         <TaskSharedCard
-          checklistTemplate={queryParams.checklistTemplate}
-          fields={queryParams.fields}
+          checklistTemplate={data.checklistTemplate}
+          fields={data.fields}
         />
         <div className={styles.footerContainer}>
           <Button onClick={handleSubmit} className={styles.button}>
@@ -87,7 +104,7 @@ const ChecklistTemplateSharedPageUi = () => {
             />
           </div>
           <Typography.Title level={3}>
-            {`Don't worry, ${queryParams.targetName}`}
+            {`Don't worry, ${data.targetName}`}
           </Typography.Title>
           <Typography.Text>
             I know you not scared of this challenge. So I will take it for you
