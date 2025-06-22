@@ -5,11 +5,8 @@ import type { YooptaContentValue, YooptaOnChangeOptions } from '@yoopta/editor';
 import Paragraph from '@yoopta/paragraph';
 import Blockquote from '@yoopta/blockquote';
 import Embed from '@yoopta/embed';
-import Image from '@yoopta/image';
 import Link from '@yoopta/link';
 import Callout from '@yoopta/callout';
-import Video from '@yoopta/video';
-import File from '@yoopta/file';
 import Accordion from '@yoopta/accordion';
 import { NumberedList, BulletedList, TodoList } from '@yoopta/lists';
 import {
@@ -30,15 +27,8 @@ import ActionMenuList, {
 import Toolbar, { DefaultToolbarRender } from '@yoopta/toolbar';
 import LinkTool, { DefaultLinkToolRender } from '@yoopta/link-tool';
 
-// import '@blocknote/core/fonts/inter.css';
-// import { Icon } from '@moon-ui/icon/Icon';
-// import { BlockNoteView } from '@blocknote/mantine';
-// import '@blocknote/mantine/style.css';
-// import { useCreateBlockNote } from '@blocknote/react';
 import styles from './index.module.scss';
 import cx from 'classnames';
-import Button from '@moon-ui/button/src/DefaultButton';
-import { Block } from '@blocknote/core';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 
 type Props = {
@@ -189,38 +179,6 @@ function NoteEditor({
       />
     </div>
   );
-
-  // return (
-  //   <div
-  //     className={cx(
-  //       styles.container,
-  //       classes?.container,
-  //       withoutBorder && styles.withoutBorder,
-  //     )}
-  //   >
-  //     {readOnly && showEditIcon && (
-  //       <Icon
-  //         onClick={onClickEdit}
-  //         className={styles.editIcon}
-  //         icon="solar:pen-new-square-outline"
-  //         width={24}
-  //         height={24}
-  //       />
-  //     )}
-  //     <BlockNoteView
-  //       className={styles.editor}
-  //       editable={!readOnly}
-  //       theme={theme === Theme.Dark ? 'dark' : 'light'}
-  //       editor={editor}
-  //       onChange={() => setValue(editor.document)}
-  //     />
-  //     {shouldShowSaveButton && !readOnly && (
-  //       <Button onClick={onClickSave} className={styles.saveButton}>
-  //         Save
-  //       </Button>
-  //     )}
-  //   </div>
-  // );
 }
 
 export default NoteEditor;

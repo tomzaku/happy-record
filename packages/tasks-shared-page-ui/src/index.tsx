@@ -37,6 +37,8 @@ const TasksSharedPage = () => {
         fields: checklistTemplateFieldIds.map(id =>
           allFields.find(f => f.id === id),
         ),
+        userName,
+        targetName,
       };
       const domain = window.location.origin;
 
@@ -103,7 +105,7 @@ const TasksSharedPage = () => {
       </Card>
       <Card className={styles.card}>
         <div className={styles.inputContainer}>
-          <Input value={url} readOnly className={styles.input} />
+          <Input value={url} readOnly className={styles.inputLink} />
           <Button onClick={handleCopy}>
             {copied ? 'Copied ' : 'Copy Link'}
           </Button>
