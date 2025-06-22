@@ -8,7 +8,7 @@ import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { format } from 'date-fns';
 import { BackHeader } from '@dreamer/header';
 import { useNoteRecords } from './useNoteRecords';
-import NoteEditor from '@dreamer/detail-task-page/src/components/note/NoteEditor';
+import NoteEditor from '@dreamer/detail-task-page/src/components/note/NoteEditor/';
 import NoteGroup from './components/note-group';
 import styles from './index.module.scss';
 import NoteDetail from './components/note-detail';

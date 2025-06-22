@@ -5,7 +5,7 @@ import {
   useChecklistRecord,
 } from '@dreamer/global/src/store/checklist-record';
 import { startOfMonth, endOfMonth } from 'date-fns';
-import NoteEditor from '../NoteEditor';
+import NoteEditor from '../NoteEditor/';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Typography from '@moon-ui/typography';

@@ -1,5 +1,10 @@
 import styles from './index.module.scss';
+import cx from 'classnames';
 
-export default function Division() {
-  return <hr className={styles.container} />;
+type Props = {
+  className?: string;
+};
+
+export default function Division({ className }: Props) {
+  return <hr className={cx(styles.container, className)} />;
 }

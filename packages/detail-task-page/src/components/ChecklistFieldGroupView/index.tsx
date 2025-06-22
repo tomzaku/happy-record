@@ -20,7 +20,7 @@ import {
 } from 'date-fns';
 
 import styles from './index.module.scss';
-import NoteEditor from '../note/NoteEditor';
+import NoteEditor from '../note/NoteEditor/';
 import { useIntl } from '@dreamer/translation';
 
 type Props = {

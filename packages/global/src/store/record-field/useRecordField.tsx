@@ -39,6 +39,8 @@ const defaultRecordField: Record<string, RecordField> = {
   },
 };
 
+type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
 export const useRecordField = () => {
   const [recordFieldList, setRecordFieldList] = useLocalStorage<
     Record<string, RecordField>
@@ -48,8 +50,11 @@ export const useRecordField = () => {
     return Object.values(recordFieldList);
   };
 
-  const addRecordField = (checklistRecord: Omit<RecordField, 'id'>) => {
-    const newId = v4();
+  const addRecordField = (
+    checklistRecord: PartialBy<RecordField, 'id'>,
+    keepId = false,
+  ) => {
+    const newId = keepId && checklistRecord.id ? checklistRecord.id : v4();
     setRecordFieldList(prev => ({
       ...prev,
       [newId]: {

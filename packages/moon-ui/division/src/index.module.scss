@@ -1,6 +1,6 @@
 @use '@moon-ui/app-scss/color' as *;
 
 .container {
-  color: var(--division-color);
+  border-top-color: var(--division-color);
   width: 100%;
 }

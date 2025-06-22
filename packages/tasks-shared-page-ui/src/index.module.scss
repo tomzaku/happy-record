@@ -2,8 +2,12 @@
 @use '@moon-ui/app-scss/metric' as *;
 
 .card {
-  align-items: center;
   padding: $spacing-sm;
+  margin: $spacing-md;
+}
+
+.input {
+  margin-bottom: $spacing-md;
 }
 
 .inputContainer {

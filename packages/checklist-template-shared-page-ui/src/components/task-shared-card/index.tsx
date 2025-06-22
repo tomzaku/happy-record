@@ -6,9 +6,14 @@ import { getDaysFromRepeat } from '@pregnant/create-checklist-page-ui/src/getDay
 import { Day } from '@dreamer/tasks-page-common';
 import cx from 'classnames';
 import styles from './index.module.scss';
+import { RecordField } from '@dreamer/global/src/store/record-field';
+import List from '@moon-ui/list';
+import Hr from '@pregnant/create-checklist-page-ui/src/hr';
+import Division from '@moon-ui/division';
 
 type Props = {
   checklistTemplate: ChecklistTemplate;
+  fields: RecordField[];
 };
 const allDays = [
   { label: 'M', value: Day.Mon },
@@ -19,7 +24,7 @@ const allDays = [
   { label: 'S', value: Day.Sat },
   { label: 'S', value: Day.Sun },
 ];
-const TaskSharedCard = ({ checklistTemplate }: Props) => {
+const TaskSharedCard = ({ checklistTemplate, fields = [] }: Props) => {
   const days = getDaysFromRepeat(checklistTemplate.repeat);
   return (
     <div className={styles.container}>
@@ -40,6 +45,16 @@ const TaskSharedCard = ({ checklistTemplate }: Props) => {
             </div>
           ))}
         </Typography.Text>
+        <Division className={styles.hr} />
+        {fields.map(f => {
+          return (
+            <List.ItemMeta
+              logo={<Icon width={24} icon={f.icon} />}
+              title={f.title}
+              description={f.description}
+            />
+          );
+        })}
       </div>
     </div>
   );

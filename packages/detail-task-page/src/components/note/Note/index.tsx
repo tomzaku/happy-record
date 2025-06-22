@@ -3,7 +3,7 @@ import Card from '@moon-ui/card';
 import styles from './index.module.scss';
 import NoteHeader from '../NoteHeader';
 import Typography from '@moon-ui/typography';
-import NoteEditor from '../NoteEditor';
+import NoteEditor from '../NoteEditor/';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import NoteAdd from '../NoteAdd';
 import NoteHistory from '../NoteHistory/NoteHistory';

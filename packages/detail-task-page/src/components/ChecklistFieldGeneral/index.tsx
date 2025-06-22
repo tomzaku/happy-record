@@ -4,7 +4,7 @@ import {
   useChecklistRecord,
 } from '@dreamer/global/src/store/checklist-record';
 import { RecordField } from '@dreamer/global/src/store/record-field';
-import NoteEditor from '../note/NoteEditor';
+import NoteEditor from '../note/NoteEditor/';
 import Typography from '@moon-ui/typography';
 import List from '@moon-ui/list';
 import Icon from '@moon-ui/icon/Icon';

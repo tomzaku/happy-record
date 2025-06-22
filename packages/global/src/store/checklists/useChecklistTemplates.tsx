@@ -134,8 +134,12 @@ export const useChecklistTemplates = () => {
 
   const addChecklistTemplate = (
     currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt'>,
+    keepId = false,
   ) => {
-    const id = v4();
+    const id =
+      keepId && currentChecklistTemplate.id
+        ? currentChecklistTemplate.id
+        : v4();
     setChecklistTemplate({
       ...checklistTemplate,
       [id]: {

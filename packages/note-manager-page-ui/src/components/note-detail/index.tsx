@@ -1,4 +1,4 @@
-import NoteEditor from '@dreamer/detail-task-page/src/components/note/NoteEditor';
+import NoteEditor from '@dreamer/detail-task-page/src/components/note/NoteEditor/';
 import {
   ChecklistRecord,
   useChecklistRecord,
