@@ -200,6 +200,7 @@ function NoteEditor({
         <div className={styles.placeholder}>Type text..</div>
       )}
       <YooptaEditor
+        readOnly={readOnly}
         key={key} // Use key to force re-mount when needed
         selectionBoxRoot={selectionRef}
         editor={editor}

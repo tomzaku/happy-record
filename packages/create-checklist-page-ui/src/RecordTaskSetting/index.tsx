@@ -32,6 +32,7 @@ import AddFieldRecordDialog from './AddFieldRecordDialog';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import Typography from '@moon-ui/typography';
 import DroppableGroup from './DroppableGroup';
+import Button from '@moon-ui/button/src/DefaultButton';
 
 type SortableItemProps = {
   id: string;
@@ -62,6 +63,7 @@ export type FieldGroup = {
   title: string;
   id: string; // Unique ID for the group
   fields: string[]; // Array of record IDs
+  note: unknown;
 };
 
 const RecordTaskSetting = ({
@@ -234,6 +236,7 @@ const RecordTaskSetting = ({
   };
 
   const activeRecord = activeId ? getRecordById(activeId) : null;
+  console.log('FieldGroup', fieldGroups);
 
   return (
     <div>
@@ -324,12 +327,23 @@ const RecordTaskSetting = ({
               id={group.id}
               title={group.title}
               items={group.fields}
+              note={group.note}
               onSubmitRename={text => {
                 setFieldGroups([
                   ...fieldGroups.slice(0, index),
                   {
                     ...fieldGroups[index],
                     title: text,
+                  },
+                  ...fieldGroups.slice(index + 1),
+                ]);
+              }}
+              onSubmitNote={value => {
+                setFieldGroups([
+                  ...fieldGroups.slice(0, index),
+                  {
+                    ...fieldGroups[index],
+                    note: value,
                   },
                   ...fieldGroups.slice(index + 1),
                 ]);

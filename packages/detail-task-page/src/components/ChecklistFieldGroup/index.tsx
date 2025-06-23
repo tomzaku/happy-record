@@ -68,6 +68,7 @@ const ChecklistFieldGroup = ({
             checklistTemplate={checklistTemplate}
             checklist={checklist}
             currentDay={currentDay}
+            fieldGroup={fieldGroup}
           />
         );
       }
@@ -94,11 +95,12 @@ const ChecklistFieldGroup = ({
             checklistTemplate={checklistTemplate}
             checklist={checklist}
             currentDay={currentDay}
+            fieldGroup={fieldGroup}
             onSubmit={() => {
-              setActiveTab({
-                ...activeTab,
-                [fieldGroup.id]: ChecklistFieldGroupTab.Home,
-              });
+              // setActiveTab({
+              //   ...activeTab,
+              //   [fieldGroup.id]: ChecklistFieldGroupTab.Home,
+              // });
               updateChecklist({
                 id: checklist.id,
                 completedAt: new Date().toISOString(),

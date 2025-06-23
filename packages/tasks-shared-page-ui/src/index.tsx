@@ -29,28 +29,13 @@ const TasksSharedPage = () => {
     React.useState<ChecklistTemplate>();
   React.useEffect(() => {
     if (id) {
-      const allFields = getAllRecordFields();
       const checklistTemplate = getChecklistTemplate(id);
       setChecklistTemplate(checklistTemplate);
-      const checklistTemplateFieldIds = checklistTemplate.fieldGroups.flatMap(
-        group => group.fields,
-      );
-      const params = {
-        checklistTemplate,
-        fields: checklistTemplateFieldIds.map(id =>
-          allFields.find(f => f.id === id),
-        ),
-        userName,
-        targetName,
-      };
-      const domain = window.location.origin;
-
-      setUrl(`${domain}/checklist-template/shared?${qs.stringify(params)}`);
     }
   }, [id, userName, targetName]);
-  const handleCopy = () => {
+  const handleCopy = (fullUrl: string) => {
     navigator.clipboard
-      .writeText(url)
+      .writeText(fullUrl)
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
@@ -81,7 +66,10 @@ const TasksSharedPage = () => {
       targetName,
     };
     const result = await updateChecklistTemplate(data);
-    console.log('ID', result);
+    const domain = window.location.origin;
+    const fullUrl = `${domain}/#/checklist-template/shared/${result.id}`;
+    setUrl(fullUrl);
+    handleCopy(fullUrl);
   };
   return (
     <div>
@@ -130,9 +118,8 @@ const TasksSharedPage = () => {
       <Card className={styles.card}>
         <div className={styles.inputContainer}>
           <Input value={url} readOnly className={styles.inputLink} />
-          <Button onClick={generateUrl}>Generate Url</Button>
-          <Button onClick={handleCopy}>
-            {copied ? 'Copied ' : 'Copy Link'}
+          <Button onClick={generateUrl}>
+            {copied ? 'Copied ' : 'Generate & Copy Url'}
           </Button>
         </div>
         <TaskSharedCard checklistTemplate={checklistTemplate} />

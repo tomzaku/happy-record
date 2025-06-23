@@ -9,8 +9,19 @@ import NoteEditor from '../note/NoteEditor/';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { Checklist, ChecklistTemplate } from '@dreamer/global';
-import { useChecklistRecord } from '@dreamer/global/src/store/checklist-record';
-import { setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
+import {
+  ChecklistRecord,
+  useChecklistRecord,
+} from '@dreamer/global/src/store/checklist-record';
+import {
+  setHours,
+  setMinutes,
+  setSeconds,
+  setMilliseconds,
+  isToday,
+} from 'date-fns';
+import Hr from '@pregnant/create-checklist-page-ui/src/hr';
+import { useIntl } from '@dreamer/translation';
 
 type Props = {
   fields: RecordField[];
@@ -19,6 +30,8 @@ type Props = {
   currentDay: string;
   onSubmit?: () => void;
 };
+
+const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 const ChecklistFieldGroupAdd = ({
   fields,
   checklistTemplate,
@@ -38,6 +51,137 @@ const ChecklistFieldGroupAdd = ({
     ),
   );
   const { addChecklistRecord } = useChecklistRecord();
+  const { getChecklistRecords } = useChecklistRecord();
+  const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
+    ChecklistRecord[]
+  >([]);
+  const reloadChecklistRecord = () => {
+    const records = getChecklistRecords(checklistTemplate.id, {
+      rangeDate: {
+        from: new Date(new Date(currentDay).setHours(0, 0, 0, 0)).toISOString(),
+        to: new Date(
+          new Date(currentDay).setHours(23, 59, 59, 999),
+        ).toISOString(),
+      },
+      fieldIds: fields.map(field => field.id),
+      sortDirection: 'desc',
+    });
+    setCurrentChecklistRecords(Object.values(records));
+    return records;
+  };
+  const today = isToday(currentDay);
+  const intl = useIntl();
+  React.useEffect(() => {
+    reloadChecklistRecord();
+  }, [currentDay]);
+  const renderEmpty = () => {
+    return (
+      <div>
+        <div className={styles.emptyContainer}>
+          <Icon
+            width={80}
+            // color="#00000024"
+            icon="clarity:sad-face-line"
+            className={styles.iconEmpty}
+          />
+          <Typography.Title level={3} noMargin>
+            {intl.formatMessage(
+              {
+                id: 'ChecklistFieldGroupView.noRecord',
+                defaultMessage: 'No record found on {{day}}',
+              },
+              {
+                day: today
+                  ? intl.formatMessage({
+                      id: 'ChecklistFieldGroupView.today',
+                      defaultMessage: 'today',
+                    })
+                  : new Date(currentDay).toLocaleDateString(),
+              },
+            )}
+          </Typography.Title>
+          <Typography.Paragraph noMargin>
+            {intl.formatMessage({
+              id: 'ChecklistFieldGroupView.noRecordDescription',
+              defaultMessage:
+                'Submit your record to keep track of your progress',
+            })}
+          </Typography.Paragraph>
+        </div>
+      </div>
+    );
+  };
+  const renderCurrentDay = () => {
+    return (
+      <div className={styles.historyContainer}>
+        <div className={styles.historyBody}>
+          <Icon
+            width={100}
+            color="rgba(16,154,0,0.16)"
+            icon="ion:checkmark-done-circle-outline"
+            className={styles.iconSuccess}
+          />
+          <Typography.Title level={4}>
+            {intl.formatMessage(
+              {
+                id: 'ChecklistFieldGroupView.record-day',
+                defaultMessage: 'Record on {{day}}',
+              },
+              {
+                day: today
+                  ? intl.formatMessage({
+                      id: 'ChecklistFieldGroupView.current-day',
+                      defaultMessage: 'today',
+                    })
+                  : new Date(currentDay).toLocaleDateString(),
+              },
+            )}
+          </Typography.Title>
+          {fields.map(recordField => {
+            if (recordField.type === 'metric') {
+              const recordValues = Object.values(currentChecklistRecords)
+                .flat()
+                .filter(record => record.fieldId === recordField.id);
+              const sumValue = sum(recordValues.map(record => record.value));
+              return (
+                <List.ItemMeta
+                  logo={<Icon width={24} icon={recordField.icon} />}
+                  title={recordField.title}
+                  rightComponent={
+                    <>
+                      <Typography.Text>
+                        {sumValue} {recordField.unit}
+                      </Typography.Text>
+                    </>
+                  }
+                />
+              );
+            } else {
+              const latestRecord = Object.values(currentChecklistRecords)
+                .flat()
+                .find(record => record.fieldId === recordField.id);
+              if (!latestRecord) {
+                return null;
+              }
+              return (
+                <>
+                  <List.ItemMeta
+                    logo={<Icon width={24} icon={recordField.icon} />}
+                    title={recordField.title}
+                  />
+                  <NoteEditor
+                    value={latestRecord.value}
+                    readOnly
+                    withoutBorder
+                  />
+                </>
+              );
+            }
+          })}
+        </div>
+      </div>
+    );
+  };
   return (
     <>
       {fields.map(field => {
@@ -114,7 +258,7 @@ const ChecklistFieldGroupAdd = ({
                 now.getHours(),
               );
 
-              addChecklistRecord({
+              const result = addChecklistRecord({
                 checklistId: checklist.id,
                 checklistTemplateId: checklistTemplate.id,
                 createdAt: newDate.toISOString(),
@@ -123,6 +267,11 @@ const ChecklistFieldGroupAdd = ({
                   value: value,
                 })),
               });
+              setCurrentChecklistRecords([
+                ...currentChecklistRecords,
+                ...result,
+              ]);
+              // setTimeout(() => reloadChecklistRecord(), 400)
               onSubmit?.();
             }
           }}
@@ -130,6 +279,10 @@ const ChecklistFieldGroupAdd = ({
           Submit
         </Button>
       </div>
+      <Hr />
+      {currentChecklistRecords.length === 0
+        ? renderEmpty()
+        : renderCurrentDay()}
     </>
   );
 };

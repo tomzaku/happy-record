@@ -2,6 +2,6 @@
 @use 'include-media/dist/include-media' as media;
 
 .cardContainer {
-  margin-bottom: $spacing-md;
   margin: $spacing-sm;
+  margin-bottom: 30px;
 }

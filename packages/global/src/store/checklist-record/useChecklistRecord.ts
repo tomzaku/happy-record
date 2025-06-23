@@ -36,19 +36,22 @@ export const useChecklistRecord = () => {
 
   const addChecklistRecord = (data: AddChecklistRecordData) => {
     if (data.records.length) {
+      const result = data.records.map(record => ({
+        id: v4(),
+        ...record,
+        checklistId: data.checklistId,
+        checklistTemplateId: data.checklistTemplateId,
+        createdAt: data.createdAt,
+      }));
+
       setChecklistRecordList(prev => ({
         ...prev,
         [data.checklistTemplateId]: [
           ...(prev[data.checklistTemplateId] || []),
-          ...data.records.map(record => ({
-            id: v4(),
-            ...record,
-            checklistId: data.checklistId,
-            checklistTemplateId: data.checklistTemplateId,
-            createdAt: data.createdAt,
-          })),
+          ...result,
         ],
       }));
+      return result;
     }
   };
   const getChecklistRecords = (

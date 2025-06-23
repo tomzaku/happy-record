@@ -107,8 +107,8 @@ const ChecklistTemplateSharedPageUi = () => {
             {`Don't worry, ${data.targetName}`}
           </Typography.Title>
           <Typography.Text>
-            I know you not scared of this challenge. So I will take it for you
-            in 10s
+            I know you’re not scared of this challenge, so I’ll take it for you
+            in 10 seconds.
           </Typography.Text>
           <Timer duration={10000} onFinish={handleSubmit} autoStart />
         </div>

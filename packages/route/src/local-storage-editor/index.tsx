@@ -14,7 +14,8 @@ function LocalStorageEditor() {
   const handleChange = e => {
     setStoredValue(e.target.value);
   };
-  const { user } = useUser();
+  const { user, setUser } = useUser();
+  const [userId, setUserId] = React.useState(user.id);
 
   return (
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
@@ -33,11 +34,29 @@ function LocalStorageEditor() {
           resize: 'vertical',
         }}
       />
+      <input value={userId} onChange={e => setUserId(e.target.value)} />
+      <button
+        onClick={() => {
+          setUser({
+            ...user,
+            id: userId,
+          });
+        }}
+      >
+        update user id
+      </button>
       <button onClick={() => setAll(JSON.parse(storedValue))}>
         UPDATE LOCAL STORAGE LOCAL
       </button>
       <button onClick={syncToCloud}>Sync(Upload to server)</button>
-      <button onClick={syncFromCloud}>FETCH(Download)</button>
+      <button
+        onClick={async () => {
+          const value = await syncFromCloud();
+          setStoredValue(value);
+        }}
+      >
+        FETCH(Download)
+      </button>
     </div>
   );
 }

@@ -33,3 +33,36 @@
     background: linear-gradient(to right, #00b7d6, #3b8fd6);
   }
 }
+
+.historyContainer {
+  position: relative;
+}
+
+.historyBody {
+  position: relative;
+  overflow: hidden;
+}
+
+.iconSuccess {
+  position: absolute;
+  right: -20px;
+  bottom: -30px;
+}
+
+.emptyContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg;
+  flex-direction: column;
+  text-align: center;
+}
+
+.iconEmpty {
+  color: var(--icon-color-inactive-invert);
+}
+
+.itemEmptyContainer {
+  position: absolute;
+  opacity: 0.4;
+}

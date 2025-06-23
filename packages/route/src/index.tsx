@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Header from '@dreamer/header';
 import SettingPage from '@dreamer/setting-page-ui';
 import DetailTaskPage from '@dreamer/detail-task-page';
@@ -66,6 +66,14 @@ const AppRouter = () => {
         />
         <Route
           path="/checklist-template/shared"
+          element={
+            <AnimationRoute>
+              <ChecklistTemplateSharedPageUi />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/checklist-template/shared/:id"
           element={
             <AnimationRoute>
               <ChecklistTemplateSharedPageUi />
@@ -157,12 +165,12 @@ const AppRouter = () => {
   );
 };
 
-// Wrap AppRouter with BrowserRouter in a parent component or directly if needed
+// Wrap AppRouter with HashRouter in a parent component or directly if needed
 const App = () => {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AppRouter />
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 

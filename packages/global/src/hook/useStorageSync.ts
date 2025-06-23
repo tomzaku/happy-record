@@ -67,6 +67,7 @@ export const useStorageSync = () => {
     const localStorageSnapshot = await getDocs(q);
     const localStorageList = localStorageSnapshot.docs.map(doc => doc.data());
     console.log('>LOCALSTORAGE', localStorageList);
+    return localStorageList[0].content;
   };
   return { syncToCloud, syncFromCloud };
 };
