@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "node copy-404.mjs",
     "serve": "vite preview"
   },
   "devDependencies": {

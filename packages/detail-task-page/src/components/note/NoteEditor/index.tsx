@@ -158,6 +158,21 @@ function NoteEditor({
     setIsFocused(false);
   };
 
+  // Debug selection changes
+  React.useEffect(() => {
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        console.log('Text selected:', selection.toString());
+        console.log('Selection range count:', selection.rangeCount);
+      }
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () =>
+      document.removeEventListener('selectionchange', handleSelectionChange);
+  }, []);
+
   const isEmpty =
     !value ||
     (Array.isArray(value) && value.length === 0) ||
@@ -168,20 +183,6 @@ function NoteEditor({
         value[0]?.children?.length === 0 ||
         (value[0]?.children?.length === 1 &&
           value[0]?.children[0]?.text === '')));
-
-  if (!isLoaded || plugins.length === 0) {
-    return (
-      <div
-        className={cx(
-          styles.container,
-          classes?.container,
-          withoutBorder && styles.withoutBorder,
-        )}
-      >
-        <div>Loading editor...</div>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -199,7 +200,7 @@ function NoteEditor({
       {isEmpty && !isFocused && (
         <div className={styles.placeholder}>Type text..</div>
       )}
-      {plugins.length === 0 ? null : (
+      {plugins.length === 0 || !isLoaded ? null : (
         <YooptaEditor
           readOnly={readOnly}
           key={key} // Use key to force re-mount when needed
