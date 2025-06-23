@@ -37,7 +37,7 @@
 
   @include media.media('>=tablet') {
     left: unset;
-    max-width: 600px;
+    // max-width: 600px;
     min-width: 0;
     width: 100%;
   }

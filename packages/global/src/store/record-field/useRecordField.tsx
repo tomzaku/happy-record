@@ -33,7 +33,7 @@ const defaultRecordField: Record<string, RecordField> = {
     id: 'note',
     title: 'Note',
     icon: 'solar:notebook-minimalistic-linear',
-    description: 'Note for tracking purpose',
+    description: 'Write anything',
     type: 'note',
     unit: 'words',
   },

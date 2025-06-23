@@ -199,20 +199,22 @@ function NoteEditor({
       {isEmpty && !isFocused && (
         <div className={styles.placeholder}>Type text..</div>
       )}
-      <YooptaEditor
-        readOnly={readOnly}
-        key={key} // Use key to force re-mount when needed
-        selectionBoxRoot={selectionRef}
-        editor={editor}
-        marks={marks}
-        plugins={plugins}
-        value={value}
-        placeholder="Type text.."
-        tools={tools}
-        style={{ width: '100%' }}
-        onChange={onChange}
-        autoFocus={false}
-      />
+      {plugins.length === 0 ? null : (
+        <YooptaEditor
+          readOnly={readOnly}
+          key={key} // Use key to force re-mount when needed
+          selectionBoxRoot={selectionRef}
+          editor={editor}
+          marks={marks}
+          plugins={plugins}
+          value={value}
+          placeholder="Type text.."
+          tools={tools}
+          style={{ width: '100%' }}
+          onChange={onChange}
+          autoFocus={false}
+        />
+      )}
     </div>
   );
 }

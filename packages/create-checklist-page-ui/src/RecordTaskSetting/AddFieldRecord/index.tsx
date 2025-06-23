@@ -54,14 +54,6 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
             defaultMessage: 'Ex: Push-ups, Squats',
             id: 'label-record-custom.name.description',
           })}
-          // rightComponent={
-          //   <Input
-          //     value={form.title}
-          //     onChange={e => setForm({ ...form, title: e.target.value })}
-          //     border="dash"
-          //     className={styles.customeFieldInput}
-          //   />
-          // }
         />
         <Input
           value={form.title}
@@ -81,51 +73,12 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
             defaultMessage: 'Description',
             id: 'label-record-custom.description.label',
           })}
-          // description={intl.formatMessage({
-          //   defaultMessage: 'Ex: minutes, hours, reps, kg',
-          //   id: 'label-record-custom.description.description',
-          // })}
-          // rightComponent={
-          //   <Input
-          //     border="dash"
-          //     onChange={e => setForm({ ...form, unit: e.target.value })}
-          //     className={styles.customeFieldInput}
-          //   />
-          // }
         />
         <Input
           border="dash"
           placeholder="More information of the field"
           className={styles.descriptionInput}
           onChange={e => setForm({ ...form, description: e.target.value })}
-        />
-      </div>
-      <div className={styles.descriptionContainer}>
-        <List.ItemMeta
-          className={styles.itemMeta}
-          logo={
-            <Icon value={form.unit} width={24} icon="lsicon:number-filled" />
-          }
-          title={intl.formatMessage({
-            defaultMessage: 'Field Unit',
-            id: 'label-record-custom.unit.label',
-          })}
-          description={intl.formatMessage({
-            defaultMessage: 'Ex: minutes, hours, reps, kg',
-            id: 'label-record-custom.unit.description',
-          })}
-          //  rightComponent={
-          //    <Input
-          //      border="dash"
-          //      onChange={e => setForm({ ...form, unit: e.target.value })}
-          //      className={styles.customeFieldInput}
-          //    />
-          //  }
-        />
-        <Input
-          border="dash"
-          onChange={e => setForm({ ...form, unit: e.target.value })}
-          className={styles.descriptionInput}
         />
       </div>
       <List.ItemMeta
@@ -135,10 +88,6 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
           defaultMessage: 'Type',
           id: 'label-record-custom.type.label',
         })}
-        // description={intl.formatMessage({
-        //   defaultMessage: '',
-        //   id: 'label-record-custom.type.description',
-        // })}
         rightComponent={
           <Radio
             isButton
@@ -151,6 +100,29 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
           />
         }
       />
+      {form.type !== 'metric' ? null : (
+        <div className={styles.descriptionContainer}>
+          <List.ItemMeta
+            className={styles.itemMeta}
+            logo={
+              <Icon value={form.unit} width={24} icon="lsicon:number-filled" />
+            }
+            title={intl.formatMessage({
+              defaultMessage: 'Field Unit',
+              id: 'label-record-custom.unit.label',
+            })}
+            description={intl.formatMessage({
+              defaultMessage: 'Ex: minutes, hours, reps, kg',
+              id: 'label-record-custom.unit.description',
+            })}
+          />
+          <Input
+            border="dash"
+            onChange={e => setForm({ ...form, unit: e.target.value })}
+            className={styles.descriptionInput}
+          />
+        </div>
+      )}
       <IconPicker
         selectedIcon={form.icon}
         setSelectedIcon={icon => setForm({ ...form, icon })}
