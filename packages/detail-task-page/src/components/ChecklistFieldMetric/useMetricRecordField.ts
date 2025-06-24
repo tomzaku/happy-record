@@ -14,6 +14,7 @@ import {
   startOfYear,
   endOfYear,
   differenceInDays,
+  format,
 } from 'date-fns';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 
@@ -47,6 +48,7 @@ export const useMetricRecordField = ({
   const [data, setData] = React.useState({});
   const [total, setTotal] = React.useState(0);
   const [currentStreak, setCurrentStreak] = React.useState(0);
+  const [todayCount, setTodayCount] = React.useState(0);
   const fetchChecklistRecords = (rangeDateType: 'month' | 'year') => {
     const metricFieldIds = fields
       .filter(field => field.type === 'metric')
@@ -72,6 +74,11 @@ export const useMetricRecordField = ({
     setCurrentStreak(getCurrentStreak(categories));
     const values = Object.values(records);
     setTotal(values.flat().reduce((acc, i) => acc + i.value, 0));
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const recordToday = records[today];
+    if (recordToday?.length > 0) {
+      setTodayCount(recordToday.reduce((acc, i) => acc + i.value, 0));
+    }
     const seriesValues = fields.reduce((acc, recordField, index) => {
       const seriesValue = values.map(value => {
         const result = value
@@ -121,5 +128,6 @@ export const useMetricRecordField = ({
     currentStreak,
     total,
     fetchChecklistRecords,
+    todayCount,
   };
 };

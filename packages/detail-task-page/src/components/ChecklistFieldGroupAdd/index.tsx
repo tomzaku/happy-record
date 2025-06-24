@@ -39,17 +39,18 @@ const ChecklistFieldGroupAdd = ({
   currentDay,
   onSubmit,
 }: Props) => {
-  const [fieldRecord, setFieldRecord] = React.useState<
-    Record<string, number | undefined | unknown[]>
-  >(
-    fields.reduce(
+  const getEmptyFieldRecord = () => {
+    return fields.reduce(
       (acc, { id }) => ({
         ...acc,
         [id]: undefined,
       }),
       {},
-    ),
-  );
+    );
+  };
+  const [fieldRecord, setFieldRecord] = React.useState<
+    Record<string, number | undefined | unknown[]>
+  >(getEmptyFieldRecord());
   const { addChecklistRecord } = useChecklistRecord();
   const { getChecklistRecords } = useChecklistRecord();
   const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
@@ -195,6 +196,7 @@ const ChecklistFieldGroupAdd = ({
                 rightComponent={
                   <>
                     <Input
+                      value={`${fieldRecord[field.id]}`}
                       onChange={e => {
                         setFieldRecord({
                           ...fieldRecord,
@@ -271,7 +273,7 @@ const ChecklistFieldGroupAdd = ({
                 ...currentChecklistRecords,
                 ...result,
               ]);
-              // setTimeout(() => reloadChecklistRecord(), 400)
+              setFieldRecord(getEmptyFieldRecord());
               onSubmit?.();
             }
           }}

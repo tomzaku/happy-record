@@ -17,11 +17,17 @@ const ChecklistFieldMetric = ({
   fields: RecordField[];
 }) => {
   const intl = useIntl();
-  const { options, series, currentStreak, total, fetchChecklistRecords } =
-    useMetricRecordField({
-      checklistTemplateId,
-      fields,
-    });
+  const {
+    options,
+    series,
+    currentStreak,
+    total,
+    fetchChecklistRecords,
+    todayCount,
+  } = useMetricRecordField({
+    checklistTemplateId,
+    fields,
+  });
   const [rangeDateType, setRangeDateType] = React.useState('month');
   const dateTypeMessage = {
     month: intl.formatMessage({
@@ -69,6 +75,13 @@ const ChecklistFieldMetric = ({
         renderOption={option => (
           <Typography.Text>{option.label}</Typography.Text>
         )}
+      />
+      <CardSummary
+        title={'Today'}
+        total={todayCount}
+        icon="solar:calendar-outline"
+        background="#FFA500"
+        iconColor="#FFA500"
       />
       <div className={styles.cardHeader}>
         <CardSummary

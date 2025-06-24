@@ -3,6 +3,7 @@ import { useLocalStorageAll } from './useLocalStorage';
 import { useStorageSync } from '@dreamer/global/src/hook/useStorageSync';
 import { useUser } from '@dreamer/global/src/hook/useUser';
 import Typography from '@moon-ui/typography';
+import NoteEditor from '@dreamer/detail-task-page/src/components/note/NoteEditor';
 
 function LocalStorageEditor() {
   const { syncToCloud, syncFromCloud } = useStorageSync();
@@ -18,7 +19,7 @@ function LocalStorageEditor() {
   const [userId, setUserId] = React.useState(user.id);
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ padding: '20px', margin: '0 auto' }}>
       <Typography.Text>{user.id}</Typography.Text>
       <textarea
         value={storedValue}
@@ -57,6 +58,7 @@ function LocalStorageEditor() {
       >
         FETCH(Download)
       </button>
+      <NoteEditor />
     </div>
   );
 }

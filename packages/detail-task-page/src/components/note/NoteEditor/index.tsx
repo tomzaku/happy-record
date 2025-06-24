@@ -89,7 +89,7 @@ function NoteEditor({
             elementProps: {
               divider: props => ({
                 ...props,
-                color: '#007aff',
+                color: '#e5e7eb',
               }),
             },
           }),
@@ -104,7 +104,14 @@ function NoteEditor({
           TodoList,
           Code,
           Link,
-          Embed,
+          Embed.extend({
+            elementProps: {
+              embed: props => ({
+                ...props,
+                sizes: { width: 400, height: 300 },
+              }),
+            },
+          }),
         ];
 
         const loadedTools = {
@@ -158,21 +165,6 @@ function NoteEditor({
     setIsFocused(false);
   };
 
-  // Debug selection changes
-  React.useEffect(() => {
-    const handleSelectionChange = () => {
-      const selection = window.getSelection();
-      if (selection && selection.toString().length > 0) {
-        console.log('Text selected:', selection.toString());
-        console.log('Selection range count:', selection.rangeCount);
-      }
-    };
-
-    document.addEventListener('selectionchange', handleSelectionChange);
-    return () =>
-      document.removeEventListener('selectionchange', handleSelectionChange);
-  }, []);
-
   const isEmpty =
     !value ||
     (Array.isArray(value) && value.length === 0) ||
@@ -204,7 +196,7 @@ function NoteEditor({
         <YooptaEditor
           readOnly={readOnly}
           key={key} // Use key to force re-mount when needed
-          selectionBoxRoot={selectionRef}
+          // selectionBoxRoot={selectionRef}
           editor={editor}
           marks={marks}
           plugins={plugins}
