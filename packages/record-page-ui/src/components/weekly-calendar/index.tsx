@@ -26,8 +26,6 @@ type Props = {
 };
 
 const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
-  const intl = useIntl();
-  const navigate = useNavigate();
   const { getChecklistByGivingDate, allChecklist } = useChecklist();
   const { getChecklistTemplate } = useChecklistTemplates();
 
@@ -84,18 +82,6 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
       onDateChange(date);
     },
     [onDateChange],
-  );
-
-  const handleTaskClick = React.useCallback(
-    (checklist: Checklist, date: Date) => {
-      const template = getChecklistTemplate(checklist.checklistTemplateId);
-      if (template) {
-        navigate(
-          `/task/${checklist.checklistTemplateId}?currentDay=${date.toISOString()}${checklist.clientOnly ? '' : `&checklistId=${checklist.id}`}`,
-        );
-      }
-    },
-    [getChecklistTemplate, navigate],
   );
 
   const formatWeekRange = React.useMemo(() => {
@@ -162,14 +148,7 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
                     task.checklistTemplateId,
                   );
                   return (
-                    <div
-                      key={task.id}
-                      className={styles.taskItem}
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleTaskClick(task, date);
-                      }}
-                    >
+                    <div key={task.id} className={styles.taskItem}>
                       <Icon
                         color={template?.avatar.color || '#8A8A8A'}
                         width={16}
