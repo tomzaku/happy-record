@@ -1,0 +1,213 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use 'include-media/dist/include-media' as media;
+
+.container {
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.title {
+  margin: 0;
+  color: var(--text-color);
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.navIcon {
+  cursor: pointer;
+  color: var(--text-description-color);
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--icon-primary);
+  }
+}
+
+.weekRange {
+  font-size: 14px;
+  color: var(--text-description-color);
+  font-weight: 500;
+  min-width: 120px;
+  text-align: center;
+}
+
+.weekGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: $spacing-xs;
+}
+
+.dayColumn {
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  border-radius: 8px;
+  padding: $spacing-xs;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+
+  &:hover {
+    background-color: rgba(11, 125, 194, 0.05);
+    border-color: rgba(11, 125, 194, 0.2);
+  }
+
+  &.today {
+    background-color: rgba(11, 125, 194, 0.1);
+    border-color: #0b7dc2;
+  }
+
+  &.selected {
+    background-color: rgba(11, 125, 194, 0.15);
+    border-color: #0b7dc2;
+  }
+}
+
+.dayHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.dayName {
+  font-size: 12px;
+  color: var(--text-description-color);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.dayNumber {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-top: 2px;
+}
+
+.tasksContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+.taskTitle {
+  font-size: 11px;
+  color: var(--text-color);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.completedIndicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #219653;
+  flex-shrink: 0;
+}
+
+.moreTasks {
+  font-size: 10px;
+  color: var(--text-description-color);
+  text-align: center;
+  padding: 2px;
+  font-style: italic;
+}
+
+// Responsive design
+@include media.media('<=tablet') {
+  .weekGrid {
+    gap: 2px;
+  }
+
+  .dayColumn {
+    min-height: 100px;
+    padding: 4px;
+  }
+
+  .dayNumber {
+    font-size: 14px;
+  }
+
+  .taskTitle {
+    font-size: 10px;
+  }
+
+  .navigation {
+    gap: $spacing-xs;
+  }
+
+  .weekRange {
+    font-size: 12px;
+    min-width: 100px;
+  }
+}
+
+// Mobile responsive adjustments using standard media queries
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-sm;
+  }
+
+  .weekGrid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    overflow-x: auto;
+  }
+
+  .dayColumn {
+    // min-width: 48px;
+    min-height: 80px;
+    padding: 2px;
+  }
+
+  .dayName {
+    font-size: 10px;
+  }
+
+  .dayNumber {
+    font-size: 12px;
+  }
+
+  .taskItem {
+    padding: 2px 4px;
+    gap: 4px;
+  }
+
+  .taskTitle {
+    font-size: 9px;
+  }
+}

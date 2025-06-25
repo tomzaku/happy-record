@@ -24,6 +24,7 @@ const ChecklistFieldMetric = ({
     total,
     fetchChecklistRecords,
     todayCount,
+    peak,
   } = useMetricRecordField({
     checklistTemplateId,
     fields,
@@ -76,13 +77,22 @@ const ChecklistFieldMetric = ({
           <Typography.Text>{option.label}</Typography.Text>
         )}
       />
-      <CardSummary
-        title={'Today'}
-        total={todayCount}
-        icon="solar:calendar-outline"
-        background="#FFA500"
-        iconColor="#FFA500"
-      />
+      <div className={styles.cardHeader}>
+        <CardSummary
+          title={'Today'}
+          total={todayCount}
+          icon="solar:calendar-outline"
+          background="#FFA500"
+          iconColor="#FFA500"
+        />
+        <CardSummary
+          title={'Peak'}
+          total={peak}
+          icon="streamline-freehand-color:strategy-business-success-peak"
+          iconColor="blue"
+          background="red"
+        />
+      </div>
       <div className={styles.cardHeader}>
         <CardSummary
           title={'Total'}

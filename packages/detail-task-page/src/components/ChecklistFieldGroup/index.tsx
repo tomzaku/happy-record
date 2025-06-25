@@ -10,6 +10,7 @@ import Card from '@moon-ui/card';
 import ChecklistFieldGroupHeader, {
   ChecklistFieldGroupTab,
 } from '../ChecklistFieldGroupHeader';
+import { AnimatePresence, motion } from 'motion/react';
 
 import styles from './index.module.scss';
 import { isToday } from 'date-fns/isToday';
@@ -60,9 +61,11 @@ const ChecklistFieldGroup = ({
     fieldGroup: FieldGroup;
     fieldDetails: RecordField[];
   }) => {
+    let tabContent;
+
     switch (activeTab[fieldGroup.id]) {
       case ChecklistFieldGroupTab.Home: {
-        return (
+        tabContent = (
           <ChecklistFieldGroupView
             fields={fieldDetails}
             checklistTemplate={checklistTemplate}
@@ -71,31 +74,33 @@ const ChecklistFieldGroup = ({
             fieldGroup={fieldGroup}
           />
         );
+        break;
       }
       case ChecklistFieldGroupTab.History: {
-        return (
+        tabContent = (
           <ChecklistFieldGroupHistory
             fields={fieldDetails}
             checklistTemplate={checklistTemplate}
           />
         );
+        break;
       }
       case ChecklistFieldGroupTab.Metric: {
-        return (
+        tabContent = (
           <ChecklistFieldMetric
             fields={fieldDetails}
             checklistTemplateId={checklistTemplate.id}
           />
         );
+        break;
       }
       case ChecklistFieldGroupTab.Add: {
-        return (
+        tabContent = (
           <ChecklistFieldGroupAdd
             fields={fieldDetails}
             checklistTemplate={checklistTemplate}
             checklist={checklist}
             currentDay={currentDay}
-            fieldGroup={fieldGroup}
             onSubmit={() => {
               // setActiveTab({
               //   ...activeTab,
@@ -108,13 +113,44 @@ const ChecklistFieldGroup = ({
             }}
           />
         );
+        break;
+      }
+      default: {
+        tabContent = (
+          <ChecklistFieldGroupView
+            fields={fieldDetails}
+            checklistTemplate={checklistTemplate}
+            checklist={checklist}
+            currentDay={currentDay}
+            fieldGroup={fieldGroup}
+          />
+        );
+        break;
       }
     }
+
+    return (
+      <AnimatePresence mode="wait">
+        {/* @ts-expect-error - React type compatibility issue with motion library */}
+        <motion.div
+          key={activeTab[fieldGroup.id]}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{
+            duration: 0.3,
+            ease: 'easeInOut',
+          }}
+        >
+          {tabContent}
+        </motion.div>
+      </AnimatePresence>
+    );
   };
   return checklistTemplate.fieldGroups.map(fieldGroup => {
-    const fieldDetails = fieldGroup.fields.map(fieldId =>
-      fields.find(field => field.id === fieldId),
-    );
+    const fieldDetails = fieldGroup.fields
+      .map(fieldId => fields.find(field => field.id === fieldId))
+      .filter((field): field is RecordField => field !== undefined);
     return (
       <Card className={styles.cardContainer}>
         <ChecklistFieldGroupHeader

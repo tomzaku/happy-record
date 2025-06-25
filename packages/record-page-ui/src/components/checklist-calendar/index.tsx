@@ -1,9 +1,11 @@
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
+import { useState } from 'react';
 
 import styles from './index.module.scss';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import { useIntl } from '@dreamer/translation';
+import CalendarDialog from './CalendarDialog';
 
 type Props = {
   date: Date;
@@ -18,6 +20,7 @@ const plus1Day = (date: Date) => {
 };
 const ChecklistCalendar = ({ date, onDateChange }: Props) => {
   const intl = useIntl();
+  const [showCalendar, setShowCalendar] = useState(false);
   const isToday =
     new Date(date).toLocaleDateString() === new Date().toLocaleDateString();
   const dateText = isToday
@@ -26,6 +29,20 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
         defaultMessage: 'Today',
       })
     : new Date(date).toLocaleDateString();
+
+  const handleDateClick = () => {
+    setShowCalendar(true);
+  };
+
+  const handleDateSelect = (selectedDate: Date) => {
+    onDateChange(selectedDate);
+    setShowCalendar(false);
+  };
+
+  const handleCloseCalendar = () => {
+    setShowCalendar(false);
+  };
+
   return (
     <div className={styles.container}>
       <Typography.Title level={4} noMargin className={styles.title}>
@@ -43,7 +60,8 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
         />
         <Typography.Text
           className={styles.currentContainer}
-          onClick={() => onDateChange(new Date())}
+          onClick={handleDateClick}
+          style={{ cursor: 'pointer' }}
         >
           {dateText}
         </Typography.Text>
@@ -54,6 +72,13 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
           className={styles.icon}
         />
       </div>
+
+      <CalendarDialog
+        selectedDate={date}
+        onDateSelect={handleDateSelect}
+        onClose={handleCloseCalendar}
+        isOpen={showCalendar}
+      />
     </div>
   );
 };

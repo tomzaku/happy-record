@@ -1,5 +1,24 @@
 @use '@moon-ui/app-scss/metric' as *;
 
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-10px);
+  }
+
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
 .input {
   width: 100px;
   padding: 6px;
@@ -65,4 +84,8 @@
 .itemEmptyContainer {
   position: absolute;
   opacity: 0.4;
+}
+
+.sumValueText {
+  margin-right: $spacing-xs;
 }

@@ -30,6 +30,11 @@
   // color: white;
   padding: $spacing-xs $spacing-sm;
   cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(13, 125, 194, 0.1);
+  }
 }
 
 .icon {

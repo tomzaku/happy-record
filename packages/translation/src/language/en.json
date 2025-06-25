@@ -39,6 +39,8 @@
   "TimerButton.label-done": "Done",
   "audio-song-list-drawer.title": "Song List",
   "build-weekly-hobby-subtitle": "Select days to achieve a good hobby",
+  "calendar-dialog.title": "Select Date",
+  "calendar-dialog.today": "Today",
   "checklist-calendar.title": "Tasks",
   "checklist-calendar.today": "Today",
   "checklist-create.label-create-checklist": "Create Task",
@@ -85,5 +87,6 @@
   "setting-page.label-dark": "Dark",
   "setting-page.label-light": "Light",
   "setting-page.label-theme": "Theme",
-  "setting-page.title": "Setting"
+  "setting-page.title": "Setting",
+  "weekly-calendar.title": "This Week"
 }

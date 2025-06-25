@@ -49,6 +49,7 @@ export const useMetricRecordField = ({
   const [total, setTotal] = React.useState(0);
   const [currentStreak, setCurrentStreak] = React.useState(0);
   const [todayCount, setTodayCount] = React.useState(0);
+  const [peak, setPeak] = React.useState(0);
   const fetchChecklistRecords = (rangeDateType: 'month' | 'year') => {
     const metricFieldIds = fields
       .filter(field => field.type === 'metric')
@@ -91,6 +92,7 @@ export const useMetricRecordField = ({
         [recordField.id]: seriesValue,
       };
     }, {});
+    setPeak(Math.max(...Object.values(seriesValues).flat()));
     setData({
       categories,
       seriesValues,
@@ -129,5 +131,6 @@ export const useMetricRecordField = ({
     total,
     fetchChecklistRecords,
     todayCount,
+    peak,
   };
 };

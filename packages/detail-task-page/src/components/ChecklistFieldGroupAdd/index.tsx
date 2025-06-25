@@ -56,6 +56,25 @@ const ChecklistFieldGroupAdd = ({
   const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
     ChecklistRecord[]
   >([]);
+
+  // Add ref to track previous records for shake animation
+  const prevRecordsRef = React.useRef<ChecklistRecord[]>([]);
+
+  // State for shake animation
+  const [isShaking, setIsShaking] = React.useState(false);
+
+  // Trigger shake animation when records change
+  React.useEffect(() => {
+    if (currentChecklistRecords.length > prevRecordsRef.current.length) {
+      // Shake animation when new records are added
+      setIsShaking(true);
+      setTimeout(() => {
+        setIsShaking(false);
+      }, 500);
+    }
+    prevRecordsRef.current = currentChecklistRecords;
+  }, [currentChecklistRecords]);
+
   const reloadChecklistRecord = () => {
     const records = getChecklistRecords(checklistTemplate.id, {
       rangeDate: {
@@ -118,9 +137,9 @@ const ChecklistFieldGroupAdd = ({
         <div className={styles.historyBody}>
           <Icon
             width={100}
-            color="rgba(16,154,0,0.16)"
+            color="rgba(16,154,0,0.1)"
             icon="ion:checkmark-done-circle-outline"
-            className={styles.iconSuccess}
+            className={`${styles.iconSuccess} ${isShaking ? styles.shake : ''}`}
           />
           <Typography.Title level={4}>
             {intl.formatMessage(
@@ -150,9 +169,14 @@ const ChecklistFieldGroupAdd = ({
                   title={recordField.title}
                   rightComponent={
                     <>
-                      <Typography.Text>
-                        {sumValue} {recordField.unit}
-                      </Typography.Text>
+                      <Typography.Title
+                        level={1}
+                        noMargin
+                        className={styles.sumValueText}
+                      >
+                        {sumValue}
+                      </Typography.Title>
+                      <Typography.Text>{recordField.unit}</Typography.Text>
                     </>
                   }
                 />
