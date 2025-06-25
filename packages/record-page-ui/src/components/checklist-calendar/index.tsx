@@ -28,7 +28,11 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
         id: 'checklist-calendar.today',
         defaultMessage: 'Today',
       })
-    : new Date(date).toLocaleDateString();
+    : new Date(date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
 
   const handleDateClick = () => {
     setShowCalendar(true);
@@ -54,7 +58,7 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
       <div className={styles.player}>
         <Icon
           onClick={() => onDateChange(minus1Day(date))}
-          width={30}
+          width={24}
           icon="basil:skip-prev-outline"
           className={styles.icon}
         />
@@ -67,7 +71,7 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
         </Typography.Text>
         <Icon
           onClick={() => onDateChange(plus1Day(date))}
-          width={30}
+          width={24}
           icon="basil:skip-next-outline"
           className={styles.icon}
         />

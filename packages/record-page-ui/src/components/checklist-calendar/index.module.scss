@@ -10,33 +10,44 @@
 
 .title {
   flex: 1;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .player {
   display: flex;
   align-items: center;
+  gap: $spacing-xs;
 }
 
 .currentContainer {
-  width: 70px;
-  margin-left: 6px;
-  margin-right: 6px;
+  margin-left: 0;
+  margin-right: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  // background: linear-gradient(to right, #ff7e5f, #feb47b); // Gradient from pinkish to orange
-  border: 1px solid #0d7dc2;
-  // color: white;
-  padding: $spacing-xs $spacing-sm;
+  color: var(--text-description-color);
+  background: none;
+  padding: 0 8px;
+  font-size: 15px;
+  font-weight: 500;
+  // min-width: 120px;
+  height: 32px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: rgba(13, 125, 194, 0.1);
+    background-color: rgba(13, 125, 194, 0.05);
   }
 }
 
 .icon {
   cursor: pointer;
+  color: var(--text-description-color);
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--icon-primary);
+  }
 }
