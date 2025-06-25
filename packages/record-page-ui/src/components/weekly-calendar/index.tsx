@@ -32,16 +32,25 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
   const { getChecklistTemplate } = useChecklistTemplates();
 
   // Get the week range for the current date
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const weekStart = React.useMemo(
+    () => startOfWeek(currentDate, { weekStartsOn: 1 }), // Monday start
+    [currentDate],
+  );
+  const weekEnd = React.useMemo(
+    () => endOfWeek(currentDate, { weekStartsOn: 1 }),
+    [currentDate],
+  );
+  const weekDays = React.useMemo(
+    () => eachDayOfInterval({ start: weekStart, end: weekEnd }),
+    [weekStart, weekEnd],
+  );
 
   // Pre-fetch data for all days in the week
   React.useEffect(() => {
     weekDays.forEach(date => {
       getChecklistByGivingDate({ date });
     });
-  }, [currentDate, getChecklistByGivingDate]);
+  }, [currentDate, getChecklistByGivingDate, weekDays]);
 
   // Memoize tasks for each day to prevent unnecessary re-renders
   const tasksByDay = React.useMemo(() => {
@@ -58,32 +67,38 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
     return tasksMap;
   }, [allChecklist, weekDays]);
 
-  const handlePrevWeek = () => {
+  const handlePrevWeek = React.useCallback(() => {
     const prevWeek = new Date(currentDate);
     prevWeek.setDate(currentDate.getDate() - 7);
     onDateChange(prevWeek);
-  };
+  }, [currentDate, onDateChange]);
 
-  const handleNextWeek = () => {
+  const handleNextWeek = React.useCallback(() => {
     const nextWeek = new Date(currentDate);
     nextWeek.setDate(currentDate.getDate() + 7);
     onDateChange(nextWeek);
-  };
+  }, [currentDate, onDateChange]);
 
-  const handleDayClick = (date: Date) => {
-    onDateChange(date);
-  };
+  const handleDayClick = React.useCallback(
+    (date: Date) => {
+      onDateChange(date);
+    },
+    [onDateChange],
+  );
 
-  const handleTaskClick = (checklist: Checklist, date: Date) => {
-    const template = getChecklistTemplate(checklist.checklistTemplateId);
-    if (template) {
-      navigate(
-        `/task/${checklist.checklistTemplateId}?currentDay=${date.toISOString()}${checklist.clientOnly ? '' : `&checklistId=${checklist.id}`}`,
-      );
-    }
-  };
+  const handleTaskClick = React.useCallback(
+    (checklist: Checklist, date: Date) => {
+      const template = getChecklistTemplate(checklist.checklistTemplateId);
+      if (template) {
+        navigate(
+          `/task/${checklist.checklistTemplateId}?currentDay=${date.toISOString()}${checklist.clientOnly ? '' : `&checklistId=${checklist.id}`}`,
+        );
+      }
+    },
+    [getChecklistTemplate, navigate],
+  );
 
-  const formatWeekRange = () => {
+  const formatWeekRange = React.useMemo(() => {
     const startMonth = format(weekStart, 'MMM');
     const endMonth = format(weekEnd, 'MMM');
     const startDay = format(weekStart, 'd');
@@ -95,17 +110,11 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
     } else {
       return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
     }
-  };
+  }, [weekStart, weekEnd]);
 
   return (
     <Card className={styles.container}>
       <div className={styles.header}>
-        <Typography.Title level={4} noMargin className={styles.title}>
-          {intl.formatMessage({
-            id: 'weekly-calendar.title',
-            defaultMessage: 'This Week',
-          })}
-        </Typography.Title>
         <div className={styles.navigation}>
           <Icon
             onClick={handlePrevWeek}
@@ -114,7 +123,7 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
             className={styles.navIcon}
           />
           <Typography.Text className={styles.weekRange}>
-            {formatWeekRange()}
+            {formatWeekRange}
           </Typography.Text>
           <Icon
             onClick={handleNextWeek}

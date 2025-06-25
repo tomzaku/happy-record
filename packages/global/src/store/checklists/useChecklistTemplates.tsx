@@ -1,4 +1,5 @@
 import { v4 } from 'uuid';
+import React from 'react';
 import { useLocalStorage } from '../../hook/useLocalStorage';
 const CHECKLIST_TEMPLATE_KEY = 'checklist_template';
 const SELECTED_CHECKLISTS_TEMPLATE_KEY = 'selected_checklist_templates';
@@ -133,7 +134,9 @@ export const useChecklistTemplates = () => {
   >(SELECTED_CHECKLISTS_TEMPLATE_KEY, []);
 
   const addChecklistTemplate = (
-    currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt'>,
+    currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt'> & {
+      id?: string;
+    },
     keepId = false,
   ) => {
     const id =
@@ -188,22 +191,28 @@ export const useChecklistTemplates = () => {
     return Object.values(checklistTemplate);
   };
 
-  const getChecklistTemplateIdsByGivingDate = (
-    { date }: { date: Date } = { date: new Date() },
-  ) => {
-    return selectedChecklistTemplates.filter(checklistTemplateId => {
-      const currentChecklistTemplate = checklistTemplate[checklistTemplateId];
-      return (
-        currentChecklistTemplate?.repeat?.dayOfWeek
-          .split(',')
-          .includes(date.getDay().toString()) ||
-        currentChecklistTemplate?.repeat?.dayOfWeek === '*'
-      );
-    });
-  };
-  const getChecklistTemplate = (id: string) => {
-    return checklistTemplate[id];
-  };
+  const getChecklistTemplateIdsByGivingDate = React.useCallback(
+    ({ date }: { date: Date } = { date: new Date() }) => {
+      return selectedChecklistTemplates.filter(checklistTemplateId => {
+        const currentChecklistTemplate = checklistTemplate[checklistTemplateId];
+        return (
+          currentChecklistTemplate?.repeat?.dayOfWeek
+            .split(',')
+            .includes(date.getDay().toString()) ||
+          currentChecklistTemplate?.repeat?.dayOfWeek === '*'
+        );
+      });
+    },
+    [selectedChecklistTemplates, checklistTemplate],
+  );
+
+  const getChecklistTemplate = React.useCallback(
+    (id: string) => {
+      return checklistTemplate[id];
+    },
+    [checklistTemplate],
+  );
+
   return {
     checklistTemplate,
     getChecklistTemplate,
