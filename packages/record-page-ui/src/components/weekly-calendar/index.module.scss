@@ -10,7 +10,7 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: $spacing-md;
 }
 
@@ -62,7 +62,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;
-  width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 
   &:hover {
@@ -208,7 +208,7 @@
   .dayColumn {
     min-height: 80px;
     padding: 2px;
-    width: 100%;
+    min-width: 0;
   }
 
   .dayName {
