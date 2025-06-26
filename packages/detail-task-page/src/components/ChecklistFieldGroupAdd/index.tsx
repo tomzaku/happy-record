@@ -22,6 +22,7 @@ import {
 } from 'date-fns';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import { useIntl } from '@dreamer/translation';
+import WeeklyRow from '../WeeklyRow';
 
 type Props = {
   fields: RecordField[];
@@ -86,7 +87,9 @@ const ChecklistFieldGroupAdd = ({
       fieldIds: fields.map(field => field.id),
       sortDirection: 'desc',
     });
-    setCurrentChecklistRecords(Object.values(records));
+    // Flatten the records object into an array
+    const flattenedRecords = Object.values(records).flat();
+    setCurrentChecklistRecords(flattenedRecords);
     return records;
   };
   const today = isToday(currentDay);
@@ -120,7 +123,7 @@ const ChecklistFieldGroupAdd = ({
               },
             )}
           </Typography.Title>
-          <Typography.Paragraph noMargin>
+          <Typography.Paragraph noMargin onClick={() => {}} style={{}}>
             {intl.formatMessage({
               id: 'ChecklistFieldGroupView.noRecordDescription',
               defaultMessage:
@@ -209,6 +212,7 @@ const ChecklistFieldGroupAdd = ({
   };
   return (
     <>
+      <WeeklyRow currentDay={currentDay} />
       {fields.map(field => {
         // const field = fields.find(f => f.id === fieldId)
         switch (field?.type) {

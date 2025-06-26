@@ -16,6 +16,7 @@ import {
 import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
+import WeeklyRow from './components/WeeklyRow';
 import Select from '@moon-ui/select';
 import Typography from '@moon-ui/typography';
 import styles from './index.module.scss';
@@ -105,33 +106,6 @@ const DetailTaskPage = () => {
         )}
         onClickLeftButton={() => navigate('/')}
       />
-      {/* <div className={styles.calendarContainer}> */}
-      {/*   <Icon */}
-      {/*     width={20} */}
-      {/*     onClick={() => { */}
-      {/*       setSearchParams({ */}
-      {/*         ...Object.fromEntries(search), */}
-      {/*         currentDay: minus1Day(new Date(currentDay)).toISOString(), */}
-      {/*       }); */}
-      {/*     }} */}
-      {/*     icon="basil:skip-prev-outline" */}
-      {/*     className={styles.icon} */}
-      {/*   /> */}
-      {/*   <Typography.Text className={styles.dateText}> */}
-      {/*     {dateText} */}
-      {/*   </Typography.Text> */}
-      {/*   <Icon */}
-      {/*     width={20} */}
-      {/*     icon="basil:skip-next-outline" */}
-      {/*     className={styles.icon} */}
-      {/*     onClick={() => { */}
-      {/*       setSearchParams({ */}
-      {/*         ...Object.fromEntries(search), */}
-      {/*         currentDay: plus1Day(new Date(currentDay)).toISOString(), */}
-      {/*       }); */}
-      {/*     }} */}
-      {/*   /> */}
-      {/* </div> */}
       <ChecklistFieldGroup
         checklist={checklist}
         checklistTemplate={checklistTemplate}

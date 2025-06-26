@@ -1,0 +1,146 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use 'include-media/dist/include-media' as media;
+
+.container {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+  border-bottom: 1px solid #89898929;
+  margin-left: -12px;
+  margin-right: -12px;
+}
+
+.weekTitle {
+  color: var(--text-color);
+  font-weight: 500;
+  font-size: toRem(14px);
+}
+
+.navIcon {
+  cursor: pointer;
+  color: var(--icon-color);
+  transition: color 0.2s ease;
+  margin: $spacing-sm;
+
+  &:hover {
+    color: var(--icon-primary);
+  }
+}
+
+.weekGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+  flex: 1;
+}
+
+.dayColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-sm;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+
+  &:hover {
+    background: var(--card-selected-background);
+    border-color: var(--card-border-hover);
+  }
+}
+
+.dayHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.dayName {
+  color: var(--text-description-color);
+  font-size: toRem(11px);
+  font-weight: 400;
+  margin-bottom: 2px;
+}
+
+.dayNumber {
+  color: var(--text-color);
+  font-size: toRem(16px);
+  font-weight: 500;
+}
+
+.today {
+  .dayNumber {
+    color: var(--text-title-primary-color);
+    font-weight: 600;
+  }
+}
+
+.selected {
+  background: var(--card-selected-background);
+  border-color: var(--card-border-open);
+
+  .dayNumber {
+    color: var(--text-title-primary-color);
+    font-weight: 600;
+  }
+}
+
+.todayIndicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  background: var(--text-title-primary-color);
+  border-radius: 50%;
+}
+
+.todayButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-md;
+  background: var(--button-default-background);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.todayButtonText {
+  color: var(--text-color-invert);
+  font-weight: 500;
+  font-size: toRem(14px);
+}
+
+// Responsive design
+@include media.media('<=tablet') {
+  .weekGrid {
+    gap: 2px;
+  }
+
+  .dayColumn {
+    padding: $spacing-xs;
+  }
+
+  .dayName {
+    font-size: toRem(10px);
+  }
+
+  .dayNumber {
+    font-size: toRem(14px);
+  }
+
+  .todayIndicator {
+    width: 4px;
+    height: 4px;
+  }
+}
