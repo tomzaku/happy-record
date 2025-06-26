@@ -32,7 +32,6 @@ const DetailTaskPage = () => {
   if (!id || !currentDay) {
     return;
   }
-  const [fieldGroups, setFieldGroups] = React.useState<FieldGroup[]>([]);
 
   // Update checklistId Params
   React.useEffect(() => {

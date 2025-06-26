@@ -105,33 +105,33 @@ const DetailTaskPage = () => {
         )}
         onClickLeftButton={() => navigate('/')}
       />
-      <div className={styles.calendarContainer}>
-        <Icon
-          width={20}
-          onClick={() => {
-            setSearchParams({
-              ...Object.fromEntries(search),
-              currentDay: minus1Day(new Date(currentDay)).toISOString(),
-            });
-          }}
-          icon="basil:skip-prev-outline"
-          className={styles.icon}
-        />
-        <Typography.Text className={styles.dateText}>
-          {dateText}
-        </Typography.Text>
-        <Icon
-          width={20}
-          icon="basil:skip-next-outline"
-          className={styles.icon}
-          onClick={() => {
-            setSearchParams({
-              ...Object.fromEntries(search),
-              currentDay: plus1Day(new Date(currentDay)).toISOString(),
-            });
-          }}
-        />
-      </div>
+      {/* <div className={styles.calendarContainer}> */}
+      {/*   <Icon */}
+      {/*     width={20} */}
+      {/*     onClick={() => { */}
+      {/*       setSearchParams({ */}
+      {/*         ...Object.fromEntries(search), */}
+      {/*         currentDay: minus1Day(new Date(currentDay)).toISOString(), */}
+      {/*       }); */}
+      {/*     }} */}
+      {/*     icon="basil:skip-prev-outline" */}
+      {/*     className={styles.icon} */}
+      {/*   /> */}
+      {/*   <Typography.Text className={styles.dateText}> */}
+      {/*     {dateText} */}
+      {/*   </Typography.Text> */}
+      {/*   <Icon */}
+      {/*     width={20} */}
+      {/*     icon="basil:skip-next-outline" */}
+      {/*     className={styles.icon} */}
+      {/*     onClick={() => { */}
+      {/*       setSearchParams({ */}
+      {/*         ...Object.fromEntries(search), */}
+      {/*         currentDay: plus1Day(new Date(currentDay)).toISOString(), */}
+      {/*       }); */}
+      {/*     }} */}
+      {/*   /> */}
+      {/* </div> */}
       <ChecklistFieldGroup
         checklist={checklist}
         checklistTemplate={checklistTemplate}
