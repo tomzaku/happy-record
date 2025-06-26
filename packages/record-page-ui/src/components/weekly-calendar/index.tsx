@@ -26,7 +26,7 @@ type Props = {
 };
 
 const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
-  const { getChecklistByGivingDate, allChecklist } = useChecklist();
+  const { getChecklistByGivingDate } = useChecklist();
   const { getChecklistTemplate, getChecklistTemplateIdsByGivingDate } =
     useChecklistTemplates();
 
@@ -44,73 +44,17 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
     [weekStart, weekEnd],
   );
 
-  // Pre-fetch data for all days in the week
-  React.useEffect(() => {
-    weekDays.forEach(date => {
-      getChecklistByGivingDate({ date });
-    });
-  }, [currentDate, getChecklistByGivingDate, weekDays]);
-
   // Memoize tasks for each day to prevent unnecessary re-renders
   const tasksByDay = React.useMemo(() => {
     const tasksMap = new Map();
 
     weekDays.forEach(date => {
-      // Get existing checklists for this date
-      const existingDayTasks = Object.values(allChecklist).filter(checklist => {
-        const checklistDate = new Date(checklist.startedAt);
-        return isSameDay(checklistDate, date);
-      });
-
-      // Get template IDs that should be active for this date
-      const templateIdsForDate = getChecklistTemplateIdsByGivingDate({ date });
-
-      // Create a map of template ID to existing checklist for quick lookup
-      const existingTasksByTemplateId = existingDayTasks.reduce(
-        (acc, checklist) => {
-          acc[checklist.checklistTemplateId] = checklist;
-          return acc;
-        },
-        {} as Record<string, Checklist>,
-      );
-
-      // Combine existing checklists with template-based checklists
-      const combinedDayTasks = templateIdsForDate
-        .map(templateId => {
-          // If we have an existing checklist for this template, use it
-          if (existingTasksByTemplateId[templateId]) {
-            return existingTasksByTemplateId[templateId];
-          }
-
-          // Otherwise, create a virtual checklist from the template
-          const template = getChecklistTemplate(templateId);
-          if (!template) return null;
-
-          return {
-            id: `template-${templateId}-${date.toISOString().split('T')[0]}`,
-            clientOnly: true,
-            title: template.title,
-            checklistTemplateId: templateId,
-            startedAt: date.toISOString(),
-            endedAt: (() => {
-              const endDate = new Date(date);
-              endDate.setHours(23, 59, 59, 999);
-              return endDate.toISOString();
-            })(),
-          } as Checklist;
-        })
-        .filter(Boolean) as Checklist[];
-
-      tasksMap.set(date.toISOString().split('T')[0], combinedDayTasks);
+      const { checklist } = getChecklistByGivingDate({ date });
+      tasksMap.set(date.toISOString().split('T')[0], Object.values(checklist));
     });
 
     return tasksMap;
-  }, [
-    allChecklist,
-    weekDays,
-    getChecklistTemplateIdsByGivingDate,
-    getChecklistTemplate,
-  ]);
+  }, [weekDays, getChecklistTemplateIdsByGivingDate, getChecklistTemplate]);
 
   const handlePrevWeek = React.useCallback(() => {
     const prevWeek = new Date(currentDate);

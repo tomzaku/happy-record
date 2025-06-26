@@ -1,5 +1,9 @@
 import React from 'react';
-import { useChecklist, useChecklistTemplates } from '@dreamer/global';
+import {
+  Checklist,
+  useChecklist,
+  useChecklistTemplates,
+} from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
 import styles from './index.module.scss';
@@ -8,23 +12,25 @@ import Typography from '@moon-ui/typography';
 import { useNavigate } from 'react-router-dom';
 
 const ChecklistToday = ({ date }: { date: Date }) => {
-  const {
-    checklistByGivingDateIds,
-    allChecklist,
-    getChecklistByGivingDate,
-    updateChecklist,
-  } = useChecklist();
+  const { getChecklistByGivingDate, updateChecklist } = useChecklist();
+  const [checklistByGivingDateIds, setChecklistByGivingDateIds] =
+    React.useState<string[]>([]);
   const { checklistTemplate } = useChecklistTemplates();
   const navigate = useNavigate();
+  const [checklist, setChecklist] = React.useState<Record<string, Checklist>>(
+    {},
+  );
 
   React.useEffect(() => {
-    getChecklistByGivingDate({ date });
+    const { checklist, checklistIds } = getChecklistByGivingDate({ date });
+    setChecklist(checklist);
+    setChecklistByGivingDateIds(checklistIds);
   }, [date]);
 
   return (
     <div className={styles.container}>
       {checklistByGivingDateIds.map((id, index) => {
-        const currentChecklist = allChecklist[id];
+        const currentChecklist = checklist[id];
         const currentChecklistTemplate =
           checklistTemplate[currentChecklist.checklistTemplateId];
         return (

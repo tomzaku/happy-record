@@ -23,12 +23,6 @@ export const useChecklist = () => {
   const { getChecklistTemplateIdsByGivingDate, checklistTemplate } =
     useChecklistTemplates();
 
-  const [checklistByGivingDateIds, setChecklistByGivingDateIds] =
-    React.useState<string[]>([]);
-  const [tempChecklist, setTempChecklist] = React.useState<
-    Record<string, Checklist>
-  >({});
-
   const getRepeatChecklistByGivingDate = React.useCallback(
     ({ date }: { date: Date } = { date: new Date() }) => {
       const checklistsByGivingDate = Object.values(checklist).filter(
@@ -111,8 +105,10 @@ export const useChecklist = () => {
       const { checklistIds, checklist } = getRepeatChecklistByGivingDate({
         date,
       });
-      setChecklistByGivingDateIds(checklistIds);
-      setTempChecklist(checklist);
+      return {
+        checklist,
+        checklistIds,
+      };
     },
     [getRepeatChecklistByGivingDate],
   );
@@ -140,12 +136,7 @@ export const useChecklist = () => {
     updateChecklist,
     getChecklistByGivingDate,
     getAllChecklistWithTemplate,
-    allChecklist: {
-      ...tempChecklist,
-      ...checklist,
-    },
     addChecklist,
-    checklistByGivingDateIds,
     getChecklistDetail,
   };
 };

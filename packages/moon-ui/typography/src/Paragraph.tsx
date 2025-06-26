@@ -9,6 +9,8 @@ type Props = {
   underline?: boolean;
   className?: string;
   bold?: boolean;
+  onClick: () => void;
+  style: React.CSSProperties;
 };
 
 export default function Paragraph({
@@ -18,6 +20,8 @@ export default function Paragraph({
   underline,
   bold,
   className,
+  onClick,
+  style,
 }: Props) {
   return (
     <p
@@ -27,8 +31,10 @@ export default function Paragraph({
         noMargin && styles.noMargin,
         underline && styles.underline,
         bold && styles.bold,
-        className
+        className,
       )}
+      onClick={onClick}
+      style={style}
     >
       {children}
     </p>

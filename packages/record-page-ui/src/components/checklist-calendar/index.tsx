@@ -62,13 +62,14 @@ const ChecklistCalendar = ({ date, onDateChange }: Props) => {
           icon="basil:skip-prev-outline"
           className={styles.icon}
         />
-        <Typography.Text
+        <Typography.Paragraph
           className={styles.currentContainer}
           onClick={handleDateClick}
           style={{ cursor: 'pointer' }}
+          noMargin
         >
           {dateText}
-        </Typography.Text>
+        </Typography.Paragraph>
         <Icon
           onClick={() => onDateChange(plus1Day(date))}
           width={24}
