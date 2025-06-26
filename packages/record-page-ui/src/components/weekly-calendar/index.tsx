@@ -90,7 +90,7 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
   }, [weekStart, weekEnd]);
 
   return (
-    <Card className={styles.container}>
+    <>
       <div className={styles.header}>
         <div className={styles.navigation}>
           <Icon
@@ -165,7 +165,7 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
           );
         })}
       </div>
-    </Card>
+    </>
   );
 };
 

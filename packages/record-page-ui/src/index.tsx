@@ -11,42 +11,39 @@ import AppHeader from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 
-const PregnantPage = () => {
+const TaskListPage = () => {
   const [startDate, setStartDate] = React.useState(new Date());
   const [key, setKey] = React.useState(0);
+  const [flipping, setFlipping] = React.useState(false);
 
-  // Update key when date changes to trigger animation
+  // Update key and trigger flip when date changes
   React.useEffect(() => {
-    setKey(prev => prev + 1);
+    setFlipping(true);
+    const timeout = setTimeout(() => {
+      setKey(prev => prev + 1);
+      setFlipping(false);
+    }, 600); // match flip animation duration
+    return () => clearTimeout(timeout);
   }, [startDate]);
 
   return (
     <div className={styles.container}>
       <AppHeader />
       <div className={styles.body}>
-        <WeeklyCalendar currentDate={startDate} onDateChange={setStartDate} />
         <Card className={styles.card}>
-          <ChecklistCalendar date={startDate} onDateChange={setStartDate} />
+          <WeeklyCalendar currentDate={startDate} onDateChange={setStartDate} />
           <Hr classes={{ hr: styles.hr }} />
-          <Motion
-            key={key}
-            defaultStyle={{ opacity: 0, y: 20 }}
-            style={{
-              opacity: spring(1, { stiffness: 300, damping: 30 }),
-              y: spring(0, { stiffness: 300, damping: 30 }),
-            }}
-          >
-            {interpolatedStyle => (
-              <div
-                style={{
-                  opacity: interpolatedStyle.opacity,
-                  transform: `translateY(${interpolatedStyle.y}px)`,
-                }}
-              >
+          <div className={styles.flipContainer}>
+            <div
+              className={
+                styles.flipper + (flipping ? ' ' + styles.flipped : '')
+              }
+            >
+              <div className={styles.front} key={key}>
                 <ChecklistToday date={startDate} />
               </div>
-            )}
-          </Motion>
+            </div>
+          </div>
           <CreateChecklist />
         </Card>
       </div>
@@ -55,4 +52,4 @@ const PregnantPage = () => {
   );
 };
 
-export default PregnantPage;
+export default TaskListPage;
