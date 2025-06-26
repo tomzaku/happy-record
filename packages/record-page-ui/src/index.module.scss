@@ -61,22 +61,24 @@
 
 .flipContainer {
   background: var(--card-background);
-  perspective: 800px;
+  overflow: hidden;
   min-height: 120px;
   width: 100%;
 }
 
 .flipper {
-  transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
-  transform-style: preserve-3d;
+  transition: all 0.3s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transform-origin: top;
+  transform: scaleY(1);
+  opacity: 1;
 }
 
 .flipped {
-  transform: rotateX(180deg);
+  transform: scaleY(0);
+  opacity: 0;
 }
 
 .front {
-  backface-visibility: hidden;
   width: 100%;
   // min-height: 120px;
 }

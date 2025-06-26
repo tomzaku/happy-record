@@ -10,6 +10,7 @@ import styles from './index.module.scss';
 import AppHeader from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
+import cx from 'classnames';
 
 const TaskListPage = () => {
   const [startDate, setStartDate] = React.useState(new Date());
@@ -22,7 +23,7 @@ const TaskListPage = () => {
     const timeout = setTimeout(() => {
       setKey(prev => prev + 1);
       setFlipping(false);
-    }, 200); // match flip animation duration
+    }, 300); // match collapse animation duration
     return () => clearTimeout(timeout);
   }, [startDate]);
 
@@ -34,19 +35,17 @@ const TaskListPage = () => {
           <WeeklyCalendar currentDate={startDate} onDateChange={setStartDate} />
           <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
         </Card>
-        <Card className={styles.cardFooter}>
-          <div className={styles.flipContainer}>
-            <div
-              className={
-                styles.flipper + (flipping ? ' ' + styles.flipped : '')
-              }
-            >
-              <div className={styles.front} key={key}>
-                <ChecklistToday date={startDate} />
-              </div>
-              <CreateChecklist />
-            </div>
+        <Card
+          className={cx(
+            styles.cardFooter,
+            styles.flipper,
+            flipping && styles.flipped,
+          )}
+        >
+          <div className={styles.front} key={key}>
+            <ChecklistToday date={startDate} />
           </div>
+          <CreateChecklist />
         </Card>
       </div>
       <MusicAudioPlayer className={styles.player} />
