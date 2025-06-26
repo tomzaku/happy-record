@@ -49,3 +49,48 @@
     opacity: 1;
   }
 }
+
+.emptyContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg;
+  flex-direction: column;
+  text-align: center;
+}
+
+.addTaskButton {
+  margin-top: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: 18px;
+}
+
+.addTaskButtonBottom {
+  padding: $spacing-xs $spacing-sm;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin-top: $spacing-md;
+  padding: $spacing-sm $spacing-sm;
+  justify-content: center;
+  color: var(--text-description-color);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--icon-primary);
+    border-color: var(--icon-primary);
+  }
+
+  &:hover .addIcon {
+    color: var(--icon-primary);
+  }
+}
+
+.addIcon {
+  margin-right: $spacing-sm;
+  color: var(--text-description-color);
+
+  &:hover {
+    color: var(--icon-primary);
+  }
+}

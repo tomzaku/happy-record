@@ -10,6 +10,8 @@ import styles from './index.module.scss';
 import cx from 'classnames';
 import Typography from '@moon-ui/typography';
 import { useNavigate } from 'react-router-dom';
+import { useIntl } from '@dreamer/translation';
+import Button from '@moon-ui/button/src/DefaultButton';
 
 const ChecklistToday = ({ date }: { date: Date }) => {
   const { getChecklistByGivingDate, updateChecklist } = useChecklist();
@@ -20,12 +22,50 @@ const ChecklistToday = ({ date }: { date: Date }) => {
   const [checklist, setChecklist] = React.useState<Record<string, Checklist>>(
     {},
   );
+  const intl = useIntl();
 
   React.useEffect(() => {
     const { checklist, checklistIds } = getChecklistByGivingDate({ date });
     setChecklist(checklist);
     setChecklistByGivingDateIds(checklistIds);
   }, [date]);
+
+  if (checklistByGivingDateIds.length === 0) {
+    return (
+      <div>
+        <div className={styles.emptyContainer}>
+          <Icon
+            width={80}
+            // color="#00000024"
+            icon="clarity:sad-face-line"
+            className={styles.iconEmpty}
+          />
+          <Typography.Title level={3} noMargin>
+            {intl.formatMessage({
+              id: 'ChecklistToday.no-record',
+              defaultMessage: 'No tasks found!',
+            })}
+          </Typography.Title>
+          {/* <Typography.Paragraph noMargin onClick={() => {}} style={{}}> */}
+          {/*   {intl.formatMessage({ */}
+          {/*     id: 'ChecklistToday.no-record-description', */}
+          {/*     defaultMessage: */}
+          {/*       'Add your task', */}
+          {/*   })} */}
+          {/* </Typography.Paragraph> */}
+          <Button
+            type="ghost"
+            onClick={() => {
+              navigate('/create-checklist');
+            }}
+            className={styles.addTaskButton}
+          >
+            Create Task
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -74,6 +114,17 @@ const ChecklistToday = ({ date }: { date: Date }) => {
           </div>
         );
       })}
+      <Button
+        type="dash"
+        size="lg"
+        onClick={() => {
+          navigate('/create-checklist');
+        }}
+        className={styles.addTaskButtonBottom}
+      >
+        <Icon icon="material-symbols:add" className={styles.addIcon} />
+        Add Task
+      </Button>
     </div>
   );
 };

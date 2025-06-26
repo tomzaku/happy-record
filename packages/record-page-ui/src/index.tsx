@@ -65,7 +65,7 @@ const TaskListPage = () => {
                     <div className={styles.front} key={key}>
                       <ChecklistToday date={startDate} />
                     </div>
-                    <CreateChecklist />
+                    {/* <CreateChecklist /> */}
                   </Card>
                 </div>
               );
