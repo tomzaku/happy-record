@@ -24,12 +24,25 @@
 }
 
 .hr {
-  margin-bottom: $spacing-sm;
   height: 2px !important;
+}
+
+.hrContainer {
+  margin-bottom: 0 !important;
 }
 
 .card {
   width: 100%;
+  padding-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.cardFooter {
+  width: 100%;
+  padding-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 
 .body {
@@ -47,8 +60,10 @@
 }
 
 .flipContainer {
+  background: var(--card-background);
   perspective: 800px;
   min-height: 120px;
+  width: 100%;
 }
 
 .flipper {
@@ -63,5 +78,5 @@
 .front {
   backface-visibility: hidden;
   width: 100%;
-  min-height: 120px;
+  // min-height: 120px;
 }

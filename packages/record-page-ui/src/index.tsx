@@ -22,7 +22,7 @@ const TaskListPage = () => {
     const timeout = setTimeout(() => {
       setKey(prev => prev + 1);
       setFlipping(false);
-    }, 600); // match flip animation duration
+    }, 200); // match flip animation duration
     return () => clearTimeout(timeout);
   }, [startDate]);
 
@@ -32,7 +32,9 @@ const TaskListPage = () => {
       <div className={styles.body}>
         <Card className={styles.card}>
           <WeeklyCalendar currentDate={startDate} onDateChange={setStartDate} />
-          <Hr classes={{ hr: styles.hr }} />
+          <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
+        </Card>
+        <Card className={styles.cardFooter}>
           <div className={styles.flipContainer}>
             <div
               className={
@@ -42,9 +44,9 @@ const TaskListPage = () => {
               <div className={styles.front} key={key}>
                 <ChecklistToday date={startDate} />
               </div>
+              <CreateChecklist />
             </div>
           </div>
-          <CreateChecklist />
         </Card>
       </div>
       <MusicAudioPlayer className={styles.player} />
