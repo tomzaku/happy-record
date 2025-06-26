@@ -23,7 +23,7 @@ const TaskListPage = () => {
     const timeout = setTimeout(() => {
       setKey(prev => prev + 1);
       setFlipping(false);
-    }, 300); // match collapse animation duration
+    }, 300);
     return () => clearTimeout(timeout);
   }, [startDate]);
 
@@ -35,18 +35,43 @@ const TaskListPage = () => {
           <WeeklyCalendar currentDate={startDate} onDateChange={setStartDate} />
           <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
         </Card>
-        <Card
-          className={cx(
-            styles.cardFooter,
-            styles.flipper,
-            flipping && styles.flipped,
-          )}
-        >
-          <div className={styles.front} key={key}>
-            <ChecklistToday date={startDate} />
-          </div>
-          <CreateChecklist />
-        </Card>
+        <div className={styles.taskListContainer}>
+          <Motion
+            style={{
+              rotateX: spring(flipping ? -180 : 0, {
+                stiffness: 200,
+                damping: 25,
+              }),
+              opacity: spring(flipping ? 0.3 : 1, {
+                stiffness: 200,
+                damping: 25,
+              }),
+            }}
+          >
+            {({ rotateX, opacity }) => {
+              // Hide component when it's flipped at the top (around 180 degrees)
+              const isFlippedAtTop = flipping && rotateX > 150 && rotateX < 210;
+              const displayOpacity = isFlippedAtTop ? 0 : opacity;
+
+              return (
+                <div
+                  style={{
+                    transform: `perspective(1000px) rotateX(${rotateX}deg)`,
+                    opacity: displayOpacity,
+                    transformOrigin: 'top',
+                  }}
+                >
+                  <Card className={cx(styles.cardFooter, styles.flipper)}>
+                    <div className={styles.front} key={key}>
+                      <ChecklistToday date={startDate} />
+                    </div>
+                    <CreateChecklist />
+                  </Card>
+                </div>
+              );
+            }}
+          </Motion>
+        </div>
       </div>
       <MusicAudioPlayer className={styles.player} />
     </div>

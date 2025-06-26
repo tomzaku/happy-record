@@ -67,18 +67,19 @@
 }
 
 .flipper {
-  transition: all 0.3s cubic-bezier(0.4, 0.2, 0.2, 1);
-  transform-origin: top;
-  transform: scaleY(1);
-  opacity: 1;
-}
-
-.flipped {
-  transform: scaleY(0);
-  opacity: 0;
+  // Spring animation is now handled by react-motion
+  width: 100%;
 }
 
 .front {
   width: 100%;
   // min-height: 120px;
+}
+
+.taskListContainer {
+  overflow: hidden;
+  width: 100%;
+  padding-bottom: 20px;
+  padding-left: 12px;
+  padding-right: 12px;
 }
