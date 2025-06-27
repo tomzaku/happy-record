@@ -2,6 +2,7 @@
 @use '@moon-ui/app-scss/color' as *;
 
 .container {
+  border-radius: 8px;
   color: var(--text-color);
   background: var(--input-background);
   border: 0;

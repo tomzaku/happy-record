@@ -67,6 +67,7 @@ const IconPicker = ({
             <Icon width={24} icon={selectedIcon} color={selectedColor} />
           </div>
         }
+        noPaddingHorizontal
       />
       <>
         <div className={styles.inputContainer}>

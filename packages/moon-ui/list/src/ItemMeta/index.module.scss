@@ -6,11 +6,15 @@
   align-items: center;
   // background: var(--card-background);
   display: flex;
-  padding: $spacing-md;
-  @include media.media('<=tablet') {
-    // padding: $spacing-sm $spacing-md;
-    padding: $spacing-sm 0;
-  }
+  padding: $spacing-sm;
+  // @include media.media('<=tablet') {
+  //   // padding: $spacing-sm $spacing-md;
+  //   padding: $spacing-sm 0;
+  // }
+}
+.noPaddingHorizontal {
+  padding-left: 0px;
+  padding-right: 0px
 }
 
 .body {

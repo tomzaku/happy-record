@@ -44,6 +44,7 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
     <div className={cx(className)}>
       <div className={styles.descriptionContainer}>
         <List.ItemMeta
+          noPaddingHorizontal
           className={styles.itemMeta}
           logo={<Icon width={24} icon="solar:text-field-linear" />}
           title={intl.formatMessage({
@@ -58,6 +59,7 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
         <Input
           value={form.title}
           onChange={e => setForm({ ...form, title: e.target.value })}
+          placeholder='Enter your field name'
           border="dash"
           //className={styles.customeFieldInput}
           className={styles.descriptionInput}
@@ -65,6 +67,7 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
       </div>
       <div className={styles.descriptionContainer}>
         <List.ItemMeta
+          noPaddingHorizontal
           className={styles.itemMeta}
           logo={
             <Icon value={form.unit} width={24} icon="solar:info-circle-bold" />
@@ -82,6 +85,7 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
         />
       </div>
       <List.ItemMeta
+        noPaddingHorizontal
         className={styles.marginBottom}
         logo={<Icon width={24} icon="solar:box-minimalistic-outline" />}
         title={intl.formatMessage({
@@ -103,6 +107,7 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
       {form.type !== 'metric' ? null : (
         <div className={styles.descriptionContainer}>
           <List.ItemMeta
+            noPaddingHorizontal
             className={styles.itemMeta}
             logo={
               <Icon value={form.unit} width={24} icon="lsicon:number-filled" />
@@ -120,6 +125,7 @@ const AddFieldRecord = ({ className, onSubmit }: Props) => {
             border="dash"
             onChange={e => setForm({ ...form, unit: e.target.value })}
             className={styles.descriptionInput}
+            placeholder=""
           />
         </div>
       )}

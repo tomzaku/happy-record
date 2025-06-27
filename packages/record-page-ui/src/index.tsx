@@ -23,7 +23,7 @@ const TaskListPage = () => {
     const timeout = setTimeout(() => {
       setKey(prev => prev + 1);
       setFlipping(false);
-    }, 300);
+    }, 200);
     return () => clearTimeout(timeout);
   }, [startDate]);
 
@@ -33,7 +33,6 @@ const TaskListPage = () => {
       <div className={styles.body}>
         <Card className={styles.card}>
           <WeeklyCalendar currentDate={startDate} onDateChange={setStartDate} />
-          <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
         </Card>
         <div className={styles.taskListContainer}>
           <Motion

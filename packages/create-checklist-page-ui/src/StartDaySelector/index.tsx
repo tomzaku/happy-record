@@ -18,6 +18,7 @@ const StartDaySelector = ({
     <div>
       <List.ItemMeta
         logo={<Icon width={24} icon="solar:calendar-date-line-duotone" />}
+        noPaddingHorizontal
         title={intl.formatMessage({
           defaultMessage: 'Start Day',
           id: 'label-start-day.label',

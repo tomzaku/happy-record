@@ -28,6 +28,7 @@ const BuildWeeklyHobby = ({ className, values, setValues }: Props) => {
       <List.ItemMeta
         className={className}
         logo={<IconCalendar />}
+        noPaddingHorizontal
         title={intl.formatMessage({
           defaultMessage: 'Build Hobby',
           id: 'label-build-Hobby',
