@@ -1,25 +1,10 @@
 @use '@moon-ui/app-scss/color' as *;
 @use '@moon-ui/app-scss/metric' as *;
 
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: $spacing-md;
-}
-
 .dialog {
   background: var(--card-background);
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  max-width: 360px;
   width: 100%;
   max-height: 90vh;
   overflow: hidden;

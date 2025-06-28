@@ -8,6 +8,7 @@ export type FieldGroup = {
   id: string;
   title: string;
   fields: string[];
+  note: unknown;
 };
 export type ChecklistTemplate = {
   id: string;
@@ -163,6 +164,7 @@ export const useChecklistTemplates = () => {
     setChecklistTemplate({
       ...checklistTemplate,
       [currentChecklistTemplate.id]: {
+        ...checklistTemplate[currentChecklistTemplate.id],
         ...currentChecklistTemplate,
         createdAt:
           checklistTemplate[currentChecklistTemplate.id]?.createdAt ||

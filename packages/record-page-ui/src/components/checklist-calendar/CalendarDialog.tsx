@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useIntl } from '@dreamer/translation';
 
 import styles from './CalendarDialog.module.scss';
+import Drawer from '@moon-ui/drawer';
 
 interface CalendarDialogProps {
   selectedDate: Date;
@@ -100,10 +101,8 @@ const CalendarDialog = ({
     );
   }
 
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.overlay} onClick={handleOverlayClick}>
+    <Drawer visible={isOpen} onBlur={handleOverlayClick}>
       <div className={styles.dialog}>
         <div className={styles.header}>
           <Typography.Title level={5} noMargin className={styles.title}>
@@ -166,7 +165,7 @@ const CalendarDialog = ({
           </Typography.Text>
         </div>
       </div>
-    </div>
+    </Drawer>
   );
 };
 

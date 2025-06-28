@@ -4,6 +4,7 @@ import {
   ChecklistTemplate,
   FieldGroup,
   useChecklist,
+  useChecklistTemplates,
 } from '@dreamer/global';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
@@ -34,6 +35,7 @@ const ChecklistFieldGroup = ({
 }: Props) => {
   const today = isToday(currentDay);
   const { updateChecklist } = useChecklist();
+  const { updateChecklistTemplate } = useChecklistTemplates();
   const [activeTab, setActiveTab] = React.useState<
     Record<string, ChecklistFieldGroupTab>
   >(
@@ -57,6 +59,7 @@ const ChecklistFieldGroup = ({
   const renderTab = ({
     fieldGroup,
     fieldDetails,
+    index,
   }: {
     fieldGroup: FieldGroup;
     fieldDetails: RecordField[];
@@ -72,6 +75,19 @@ const ChecklistFieldGroup = ({
             checklist={checklist}
             currentDay={currentDay}
             fieldGroup={fieldGroup}
+            onUpdateNote={value => {
+              updateChecklistTemplate({
+                id: checklistTemplate.id,
+                fieldGroups: [
+                  ...checklistTemplate.fieldGroups.slice(0, index),
+                  {
+                    ...checklistTemplate.fieldGroups[index],
+                    note: value,
+                  },
+                  ...checklistTemplate.fieldGroups.slice(index + 1),
+                ],
+              });
+            }}
           />
         );
         break;
@@ -123,6 +139,19 @@ const ChecklistFieldGroup = ({
             checklist={checklist}
             currentDay={currentDay}
             fieldGroup={fieldGroup}
+            onUpdateNote={value => {
+              updateChecklistTemplate({
+                id: checklistTemplate.id,
+                fieldGroups: [
+                  ...checklistTemplate.fieldGroups.slice(0, index),
+                  {
+                    ...checklistTemplate.fieldGroups[index],
+                    note: value,
+                  },
+                  ...checklistTemplate.fieldGroups.slice(index + 1),
+                ],
+              });
+            }}
           />
         );
         break;
@@ -147,7 +176,7 @@ const ChecklistFieldGroup = ({
       </AnimatePresence>
     );
   };
-  return checklistTemplate.fieldGroups.map(fieldGroup => {
+  return checklistTemplate.fieldGroups.map((fieldGroup, index) => {
     const fieldDetails = fieldGroup.fields
       .map(fieldId => fields.find(field => field.id === fieldId))
       .filter((field): field is RecordField => field !== undefined);
@@ -181,7 +210,7 @@ const ChecklistFieldGroup = ({
           }
           renderTitle={() => renderTitle(fieldGroup)}
         />
-        {renderTab({ fieldGroup, fieldDetails })}
+        {renderTab({ fieldGroup, fieldDetails, index })}
       </Card>
     );
   });

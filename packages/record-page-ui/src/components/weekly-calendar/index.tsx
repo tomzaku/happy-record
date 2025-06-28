@@ -17,6 +17,7 @@ import {
   isToday,
   isSameDay,
 } from 'date-fns';
+import CalendarDialog from '../checklist-calendar/CalendarDialog';
 
 import styles from './index.module.scss';
 
@@ -29,6 +30,7 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
   const { getChecklistByGivingDate } = useChecklist();
   const { getChecklistTemplate, getChecklistTemplateIdsByGivingDate } =
     useChecklistTemplates();
+  const [showCalendarDialog, setShowCalendarDialog] = React.useState(false);
 
   // Get the week range for the current date
   const weekStart = React.useMemo(
@@ -75,6 +77,22 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
     [onDateChange],
   );
 
+  const handleWeekRangeClick = React.useCallback(() => {
+    setShowCalendarDialog(true);
+  }, []);
+
+  const handleDateSelect = React.useCallback(
+    (date: Date) => {
+      onDateChange(date);
+      setShowCalendarDialog(false);
+    },
+    [onDateChange],
+  );
+
+  const handleCloseCalendarDialog = React.useCallback(() => {
+    setShowCalendarDialog(false);
+  }, []);
+
   const formatWeekRange = React.useMemo(() => {
     const startMonth = format(weekStart, 'MMM');
     const endMonth = format(weekEnd, 'MMM');
@@ -91,6 +109,12 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
 
   return (
     <>
+      <CalendarDialog
+        selectedDate={currentDate}
+        onDateSelect={handleDateSelect}
+        onClose={handleCloseCalendarDialog}
+        isOpen={showCalendarDialog}
+      />
       <div className={styles.header}>
         <div className={styles.navigation}>
           <Icon
@@ -99,7 +123,10 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
             icon="basil:skip-prev-outline"
             className={styles.navIcon}
           />
-          <Typography.Text className={styles.weekRange}>
+          <Typography.Text
+            className={styles.weekRange}
+            onClick={handleWeekRangeClick}
+          >
             {formatWeekRange}
           </Typography.Text>
           <Icon

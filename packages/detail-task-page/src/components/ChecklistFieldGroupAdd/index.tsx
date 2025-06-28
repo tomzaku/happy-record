@@ -5,6 +5,7 @@ import Input from '@moon-ui/input';
 import List from '@moon-ui/list';
 import Typography from '@moon-ui/typography';
 import NoteEditor from '../note/NoteEditor/';
+import { v4 } from 'uuid';
 
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
@@ -57,6 +58,8 @@ const ChecklistFieldGroupAdd = ({
   const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
     ChecklistRecord[]
   >([]);
+  // For force rerender of note editor after submit
+  const [newNoteKey, setNewNoteKey] = React.useState(v4());
 
   // Add ref to track previous records for shake animation
   const prevRecordsRef = React.useRef<ChecklistRecord[]>([]);
@@ -185,12 +188,13 @@ const ChecklistFieldGroupAdd = ({
                 />
               );
             } else {
-              const latestRecord = Object.values(currentChecklistRecords)
-                .flat()
-                .find(record => record.fieldId === recordField.id);
+              const latestRecord = currentChecklistRecords.find(
+                record => record.fieldId === recordField.id,
+              );
               if (!latestRecord) {
                 return null;
               }
+              console.log('>>>>>>>latestRecord', latestRecord);
               return (
                 <>
                   <List.ItemMeta
@@ -198,6 +202,7 @@ const ChecklistFieldGroupAdd = ({
                     title={recordField.title}
                   />
                   <NoteEditor
+                    key={latestRecord.id}
                     value={latestRecord.value}
                     readOnly
                     withoutBorder
@@ -251,6 +256,7 @@ const ChecklistFieldGroupAdd = ({
                   title={field.title}
                 />
                 <NoteEditor
+                  key={newNoteKey}
                   withoutBorder
                   value={fieldRecord?.[field.id]}
                   setValue={value => {
@@ -297,11 +303,13 @@ const ChecklistFieldGroupAdd = ({
                   value: value,
                 })),
               });
+              console.log('>RESULT', result);
               setCurrentChecklistRecords([
-                ...currentChecklistRecords,
                 ...result,
+                ...currentChecklistRecords,
               ]);
               setFieldRecord(getEmptyFieldRecord());
+              setNewNoteKey(v4());
               onSubmit?.();
             }
           }}

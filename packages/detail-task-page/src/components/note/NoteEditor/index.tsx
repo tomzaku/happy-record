@@ -203,7 +203,7 @@ function NoteEditor({
           value={value}
           placeholder="Type text.."
           tools={tools}
-          style={{ width: '100%' }}
+          style={{ width: '100%', paddingBottom: 30 }}
           onChange={onChange}
           autoFocus={false}
         />

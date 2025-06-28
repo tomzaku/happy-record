@@ -44,6 +44,15 @@
   flex: 1;
   display: flex;
   justify-content: center;
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: var(--icon-primary);
+    background-color: rgba(11, 125, 194, 0.05);
+  }
 }
 
 .weekGrid {

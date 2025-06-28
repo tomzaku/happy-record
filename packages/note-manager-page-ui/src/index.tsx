@@ -26,7 +26,7 @@ export const NoteManagerPage: React.FC = () => {
         renderLeftComponent={() => <>Notes</>}
         onClickLeftButton={() => navigate('/')}
         renderRightComponent={() => (
-          <Button className={styles.addNoteButton}>
+          <Button className={styles.addNoteButton} type="dash">
             <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add
             Note
           </Button>
