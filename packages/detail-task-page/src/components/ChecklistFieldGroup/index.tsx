@@ -46,6 +46,17 @@ const ChecklistFieldGroup = ({
       };
     }, {}),
   );
+  const [collapsedGroups, setCollapsedGroups] = React.useState<
+    Record<string, boolean>
+  >({});
+
+  const toggleCollapse = (fieldGroupId: string) => {
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [fieldGroupId]: !prev[fieldGroupId],
+    }));
+  };
+
   const renderTitle = (fieldGroup: FieldGroup) => {
     const tabToTitle = {
       [ChecklistFieldGroupTab.Home]: `${today ? 'Today' : new Date(currentDay).toLocaleDateString()}`,
@@ -63,6 +74,7 @@ const ChecklistFieldGroup = ({
   }: {
     fieldGroup: FieldGroup;
     fieldDetails: RecordField[];
+    index: number;
   }) => {
     let tabContent;
 
@@ -77,7 +89,7 @@ const ChecklistFieldGroup = ({
             fieldGroup={fieldGroup}
             onUpdateNote={value => {
               updateChecklistTemplate({
-                id: checklistTemplate.id,
+                ...checklistTemplate,
                 fieldGroups: [
                   ...checklistTemplate.fieldGroups.slice(0, index),
                   {
@@ -141,7 +153,7 @@ const ChecklistFieldGroup = ({
             fieldGroup={fieldGroup}
             onUpdateNote={value => {
               updateChecklistTemplate({
-                id: checklistTemplate.id,
+                ...checklistTemplate,
                 fieldGroups: [
                   ...checklistTemplate.fieldGroups.slice(0, index),
                   {
@@ -180,6 +192,8 @@ const ChecklistFieldGroup = ({
     const fieldDetails = fieldGroup.fields
       .map(fieldId => fields.find(field => field.id === fieldId))
       .filter((field): field is RecordField => field !== undefined);
+    const isCollapsed = collapsedGroups[fieldGroup.id] || false;
+
     return (
       <Card className={styles.cardContainer}>
         <ChecklistFieldGroupHeader
@@ -209,8 +223,31 @@ const ChecklistFieldGroup = ({
             })
           }
           renderTitle={() => renderTitle(fieldGroup)}
+          isCollapsed={isCollapsed}
+          onToggleCollapse={() => toggleCollapse(fieldGroup.id)}
         />
-        {renderTab({ fieldGroup, fieldDetails, index })}
+        <motion.div
+          initial={false}
+          animate={{
+            height: isCollapsed ? 0 : 'auto',
+            opacity: isCollapsed ? 0 : 1,
+          }}
+          transition={{
+            height: {
+              type: 'spring',
+              stiffness: 300,
+              damping: 30,
+            },
+            opacity: {
+              duration: 0.2,
+            },
+          }}
+          style={{
+            overflow: 'hidden',
+          }}
+        >
+          {renderTab({ fieldGroup, fieldDetails, index })}
+        </motion.div>
       </Card>
     );
   });

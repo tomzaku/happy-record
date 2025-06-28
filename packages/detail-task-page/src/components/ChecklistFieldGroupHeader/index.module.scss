@@ -7,6 +7,27 @@
   justify-content: flex-end;
 }
 
+.titleContainer {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: $spacing-xs;
+}
+
+.collapseIcon {
+  cursor: pointer;
+  color: var(--icon-secondary);
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--icon-primary);
+  }
+}
+
+.iconGroup {
+  display: flex;
+}
+
 .title {
   flex: 1;
 }

@@ -1,6 +1,7 @@
 import { useIntl } from '@dreamer/translation';
 import { Icon } from '@moon-ui/icon/Icon';
 import Button from '@moon-ui/button/src/DefaultButton';
+import { motion } from 'motion/react';
 
 import styles from './index.module.scss';
 import cx from 'classnames';
@@ -21,6 +22,8 @@ const ChecklistFieldGroupHeader = ({
   onClickMetric,
   activeTab,
   renderTitle = () => null,
+  isCollapsed = false,
+  onToggleCollapse,
 }: {
   onClickHome: () => void;
   onClickHistory: () => void;
@@ -28,6 +31,8 @@ const ChecklistFieldGroupHeader = ({
   onClickMetric: () => void;
   activeTab: ChecklistFieldGroupTab;
   renderTitle?: () => React.ReactNode;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }) => {
   const buttons = [
     {
@@ -53,9 +58,30 @@ const ChecklistFieldGroupHeader = ({
   return (
     <>
       <div className={styles.container}>
-        <Typography.Title level={4} noMargin className={styles.title}>
-          {renderTitle()}
-        </Typography.Title>
+        <div className={styles.titleContainer}>
+          {onToggleCollapse && (
+            <motion.div
+              initial={{ rotate: 0 }}
+              animate={{ rotate: isCollapsed ? -180 : 0 }}
+              transition={{
+                type: 'spring',
+                stiffness: 300,
+                damping: 30,
+              }}
+              className={styles.iconGroup}
+            >
+              <Icon
+                onClick={onToggleCollapse}
+                className={styles.collapseIcon}
+                width={20}
+                icon="solar:alt-arrow-down-line-duotone"
+              />
+            </motion.div>
+          )}
+          <Typography.Title level={4} noMargin className={styles.title}>
+            {renderTitle()}
+          </Typography.Title>
+        </div>
         {buttons.map(({ icon, iconActive, onClick, isActive }, index) => (
           <Icon
             key={index}
