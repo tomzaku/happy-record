@@ -33,23 +33,29 @@ const ChecklistFieldGroupHeader = ({
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }) => {
+  const onClickTab = (callback: () => void) => () => {
+    if (isCollapsed) {
+      onToggleCollapse?.();
+    }
+    callback();
+  };
   const buttons = [
     {
       icon: 'solar:home-2-line-duotone',
       iconActive: 'solar:home-2-bold',
-      onClick: onClickHome,
+      onClick: onClickTab(onClickHome),
       isActive: activeTab === ChecklistFieldGroupTab.Home,
     },
     {
       icon: 'solar:clock-square-broken',
       iconActive: 'solar:clock-square-bold',
-      onClick: onClickHistory,
+      onClick: onClickTab(onClickHistory),
       isActive: activeTab === ChecklistFieldGroupTab.History,
     },
     {
       icon: 'solar:chart-square-linear',
       iconActive: 'solar:chart-square-bold',
-      onClick: onClickMetric,
+      onClick: onClickTab(onClickMetric),
       isActive: activeTab === ChecklistFieldGroupTab.Metric,
     },
   ];
@@ -95,7 +101,7 @@ const ChecklistFieldGroupHeader = ({
             activeTab === ChecklistFieldGroupTab.Add && styles.buttonActive,
           )}
           type="dash"
-          onClick={onClickAdd}
+          onClick={onClickTab(onClickAdd)}
         >
           <Icon icon="material-symbols:add" className={styles.addIcon} />
           {intl.formatMessage({
