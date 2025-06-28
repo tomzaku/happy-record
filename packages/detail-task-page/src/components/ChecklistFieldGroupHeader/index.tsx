@@ -6,7 +6,6 @@ import { motion } from 'motion/react';
 import styles from './index.module.scss';
 import cx from 'classnames';
 import Typography from '@moon-ui/typography';
-import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 
 export enum ChecklistFieldGroupTab {
   Home,
@@ -58,7 +57,7 @@ const ChecklistFieldGroupHeader = ({
   return (
     <>
       <div className={styles.container}>
-        <div className={styles.titleContainer}>
+        <div onClick={onToggleCollapse} className={styles.titleContainer}>
           {onToggleCollapse && (
             <motion.div
               initial={{ rotate: 0 }}
@@ -71,7 +70,6 @@ const ChecklistFieldGroupHeader = ({
               className={styles.iconGroup}
             >
               <Icon
-                onClick={onToggleCollapse}
                 className={styles.collapseIcon}
                 width={20}
                 icon="solar:alt-arrow-down-line-duotone"
@@ -106,7 +104,6 @@ const ChecklistFieldGroupHeader = ({
           })}
         </Button>
       </div>
-      <Hr classes={{ hr: styles.hr }} />
     </>
   );
 };

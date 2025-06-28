@@ -19,6 +19,7 @@ import ChecklistFieldGroupAdd from '../ChecklistFieldGroupAdd';
 import ChecklistFieldGroupHistory from '../ChecklistFieldGroupHistory';
 import ChecklistFieldGroupView from '../ChecklistFieldGroupView';
 import ChecklistFieldMetric from '../ChecklistFieldMetric';
+import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 
 type Props = {
   checklist: Checklist;
@@ -242,10 +243,8 @@ const ChecklistFieldGroup = ({
               duration: 0.2,
             },
           }}
-          style={{
-            overflow: 'hidden',
-          }}
         >
+          <Hr classes={{ hr: styles.hr }} />
           {renderTab({ fieldGroup, fieldDetails, index })}
         </motion.div>
       </Card>
