@@ -12,10 +12,12 @@ type Props = React.DetailedHTMLProps<
   placeholder?: React.ReactNode;
   classes?: { input: string };
   showClear?: boolean;
+  /** Content to display on the right side of the input (e.g., units like "km", "minutes") */
+  suffix?: React.ReactNode;
 };
 
 const Input = React.forwardRef<HTMLInputElement, Props>(
-  ({ className, border = 'solid', placeholder, value, onFocus, onBlur, onChange, classes, showClear, ...restProps }, ref) => {
+  ({ className, border = 'solid', placeholder, value, onFocus, onBlur, onChange, classes, showClear, suffix, ...restProps }, ref) => {
     const [isFocused, setIsFocused] = useState(false);
     const [inputValue, setInputValue] = useState(value ?? '');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -53,6 +55,7 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
 
     const showPlaceholder = !isFocused && !inputValue;
     const showCloseIcon = showClear && !!inputValue;
+    const hasSuffix = !!suffix;
 
     return (
       <div className={cx(styles.inputWrapper, className)}>
@@ -61,6 +64,7 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
           className={cx(styles.input, {
             [styles.dashBorder]: border === 'dash',
             [styles.solidBorder]: border === 'solid',
+            [styles.hasSuffix]: hasSuffix,
           },
             classes?.input,
           )}
@@ -73,6 +77,11 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
         {placeholder && showPlaceholder && (
           <div className={styles.placeholder} onClick={() => inputRef.current?.focus()}>
             {placeholder}
+          </div>
+        )}
+        {suffix && (
+          <div className={styles.suffix}>
+            {suffix}
           </div>
         )}
         {showCloseIcon && (

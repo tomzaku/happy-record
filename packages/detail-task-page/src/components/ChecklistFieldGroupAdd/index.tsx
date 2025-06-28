@@ -229,6 +229,7 @@ const ChecklistFieldGroupAdd = ({
                 rightComponent={
                   <>
                     <Input
+                      suffix={field.unit}
                       value={`${fieldRecord[field.id]}`}
                       onChange={e => {
                         setFieldRecord({
@@ -240,9 +241,8 @@ const ChecklistFieldGroupAdd = ({
                       className={styles.input}
                       type="number"
                     />
-                    <Typography.Text className={styles.unit}>
-                      {field.unit}
-                    </Typography.Text>
+                    {/* <Typography.Text className={styles.unit}> {field.unit} */}
+                    {/* </Typography.Text> */}
                   </>
                 }
               />

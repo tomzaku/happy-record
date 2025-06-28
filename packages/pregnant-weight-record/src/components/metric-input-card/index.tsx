@@ -62,8 +62,8 @@ const MetricInputCard = () => {
             step="0.01"
             min={20}
             max={120}
+            suffix="Kg"
           />
-          <Typography.Text className={styles.kgText}>Kg</Typography.Text>
         </div>
         <div className={styles.inputContainer}>
           <div className={styles.iconAnswerContainer}>
@@ -81,8 +81,8 @@ const MetricInputCard = () => {
             step="0.01"
             min={20}
             max={120}
+            suffix="Cm"
           />
-          <Typography.Text className={styles.kgText}>Cm</Typography.Text>
         </div>
         <div className={styles.editFooter}>
           <Button
@@ -134,8 +134,8 @@ const MetricInputCard = () => {
           step="0.01"
           min={20}
           max={120}
+          suffix="Kg"
         />
-        <Typography.Text className={styles.kgText}>Kg</Typography.Text>
       </div>
       <div className={styles.inputContainer}>
         <div className={styles.iconAnswerContainer}>
@@ -154,8 +154,8 @@ const MetricInputCard = () => {
           step="0.01"
           min={20}
           max={120}
+          suffix="Cm"
         />
-        <Typography.Text className={styles.kgText}>Cm</Typography.Text>
       </div>
       <Button
         onClick={() => {
