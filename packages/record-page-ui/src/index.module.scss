@@ -37,10 +37,10 @@
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   box-shadow: none;
-  border-bottom: 4px dashed var(--hr-color);
+  border-bottom: 3px dashed var(--hr-color);
 
   // scooped
-  --scoop-radius: 10px; /* Adjust scoop size here */
+  --scoop-radius: 5px; /* Adjust scoop size here */
   -webkit-mask:
     radial-gradient(
       var(--scoop-radius) at left bottom,
@@ -74,41 +74,42 @@
 }
 
 .cardFooter {
+  border-top: 3px dashed var(--hr-color);
   width: 100%;
   padding-top: 0;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   box-shadow: none;
-  --scoop-radius: 10px; /* Adjust scoop size here */
-      /* Mask: two radial gradients for top-left and top-right */
-      -webkit-mask:
-        radial-gradient(
-          var(--scoop-radius) at left top,
-          transparent 98%,
-          black 99%
-        ),
-        radial-gradient(
-          var(--scoop-radius) at right top,
-          transparent 98%,
-          black 99%
-        );
-      -webkit-mask-size: 50% 100%;
-      -webkit-mask-position: left top, right top;
-      -webkit-mask-repeat: no-repeat;
-      mask:
-        radial-gradient(
-          var(--scoop-radius) at left top,
-          transparent 98%,
-          black 99%
-        ),
-        radial-gradient(
-          var(--scoop-radius) at right top,
-          transparent 98%,
-          black 99%
-        );
-      mask-size: 50% 100%;
-      mask-position: left top, right top;
-      mask-repeat: no-repeat;
+  --scoop-radius: 5px; /* Adjust scoop size here */
+   /* Mask: two radial gradients for top-left and top-right */
+   -webkit-mask:
+     radial-gradient(
+       var(--scoop-radius) at left top,
+       transparent 98%,
+       black 99%
+     ),
+     radial-gradient(
+       var(--scoop-radius) at right top,
+       transparent 98%,
+       black 99%
+     );
+   -webkit-mask-size: 50% 100%;
+   -webkit-mask-position: left top, right top;
+   -webkit-mask-repeat: no-repeat;
+   mask:
+     radial-gradient(
+       var(--scoop-radius) at left top,
+       transparent 98%,
+       black 99%
+     ),
+     radial-gradient(
+       var(--scoop-radius) at right top,
+       transparent 98%,
+       black 99%
+     );
+   mask-size: 50% 100%;
+   mask-position: left top, right top;
+   mask-repeat: no-repeat;
 }
 
 .body {
