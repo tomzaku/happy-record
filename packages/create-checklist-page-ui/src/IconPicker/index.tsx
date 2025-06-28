@@ -75,11 +75,14 @@ const IconPicker = ({
             placeholder={<><Icon icon="material-symbols:search" className={styles.searchIcon} />Search icons</>}
             // border="dash"
             value={searchTerm}
+            showClear
             onChange={e => {
               setSearchTerm(e.target.value);
               searchIcons(e.target.value);
-              if (showDropDown !== DropDownStatus.Icon) {
+              if (showDropDown !== DropDownStatus.Icon && e.target.value.length > 0) {
                 setShowDropDown(DropDownStatus.Icon);
+              } else if (e.target.value.length === 0){
+                setShowDropDown(DropDownStatus.Hidden);
               }
             }}
             className={styles.iconSearchInput}
@@ -87,7 +90,7 @@ const IconPicker = ({
               input: styles.searchInput
 
             }}
-            
+
           />
           <ColorView
             value={selectedColor}
