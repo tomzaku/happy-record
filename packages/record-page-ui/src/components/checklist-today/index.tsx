@@ -46,13 +46,6 @@ const ChecklistToday = ({ date }: { date: Date }) => {
               defaultMessage: 'No tasks found!',
             })}
           </Typography.Title>
-          {/* <Typography.Paragraph noMargin onClick={() => {}} style={{}}> */}
-          {/*   {intl.formatMessage({ */}
-          {/*     id: 'ChecklistToday.no-record-description', */}
-          {/*     defaultMessage: */}
-          {/*       'Add your task', */}
-          {/*   })} */}
-          {/* </Typography.Paragraph> */}
           <Button
             type="ghost"
             onClick={() => {
@@ -99,7 +92,7 @@ const ChecklistToday = ({ date }: { date: Date }) => {
               {currentChecklistTemplate?.title}
             </Typography.Text>
             <Checkbox
-              checked={Boolean(currentChecklist?.completedAt)}
+              defaultChecked={Boolean(currentChecklist?.completedAt)}
               className={styles.checkbox}
               onChange={event => {
                 event.stopPropagation();

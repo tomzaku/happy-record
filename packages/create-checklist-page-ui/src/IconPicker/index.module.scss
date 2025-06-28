@@ -1,13 +1,16 @@
 @use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/color' as *;
 @use '@moon-ui/app-scss/function' as *;
 
 .iconSearchInput {
   border-radius: 100px;
   box-sizing: border-box;
   flex: 1;
-  // font-size: toRem(16px);
-  padding: $spacing-sm $spacing-md;
   margin-right: $spacing-sm;
+}
+
+.searchInput {
+  border-radius: 20px;
 }
 
 .inputContainer {
@@ -53,4 +56,11 @@
 
 .colorPicker {
   margin-top: $spacing-sm;
+}
+
+.searchIcon {
+  margin-right: $spacing-xs;
+  width: 16px;
+  height: 16px;
+  color: var(--text-placeholder-color);
 }

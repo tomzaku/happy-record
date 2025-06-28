@@ -37,10 +37,14 @@
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   box-shadow: none;
-  border-bottom: 3px dashed var(--hr-color);
+  // border
+  background-image: linear-gradient(to right, var(--dashed-color-without-transparent) 0%, var(--dashed-color-without-transparent) 50%, transparent 50%, transparent 100%);
+  background-size: 22px 2px;
+  background-repeat: repeat-x;
+  background-position: bottom;
 
   // scooped
-  --scoop-radius: 5px; /* Adjust scoop size here */
+  --scoop-radius: 6px; /* Adjust scoop size here */
   -webkit-mask:
     radial-gradient(
       var(--scoop-radius) at left bottom,
@@ -74,13 +78,18 @@
 }
 
 .cardFooter {
-  border-top: 3px dashed var(--hr-color);
   width: 100%;
   padding-top: 0;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   box-shadow: none;
-  --scoop-radius: 5px; /* Adjust scoop size here */
+
+  // border
+  background-image: linear-gradient(to right, var(--dashed-color-without-transparent) 0%, var(--dashed-color-without-transparent) 50%, transparent 50%, transparent 100%);
+  background-size: 22px 2px;
+  background-repeat: repeat-x;
+  background-position: top;
+  --scoop-radius: 6px; /* Adjust scoop size here */
    /* Mask: two radial gradients for top-left and top-right */
    -webkit-mask:
      radial-gradient(
@@ -116,8 +125,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: $spacing-sm;
-  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.2));
+  padding: 0 $spacing-sm;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08));
 }
 
 .dashed {

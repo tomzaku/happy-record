@@ -72,8 +72,8 @@ const IconPicker = ({
       <>
         <div className={styles.inputContainer}>
           <Input
-            placeholder="Search icons"
-            border="dash"
+            placeholder={<><Icon icon="material-symbols:search" className={styles.searchIcon} />Search icons</>}
+            // border="dash"
             value={searchTerm}
             onChange={e => {
               setSearchTerm(e.target.value);
@@ -83,6 +83,11 @@ const IconPicker = ({
               }
             }}
             className={styles.iconSearchInput}
+            classes={{
+              input: styles.searchInput
+
+            }}
+            
           />
           <ColorView
             value={selectedColor}

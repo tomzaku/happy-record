@@ -25,7 +25,7 @@
   // Card
   --card-background: #{$white};
   --card-shadow: #{$black6};
-  --card-border: #{$black24};
+  --card-border: #{$black6};
   --card-selected-background: #f5f5f5;
   --card-border-hover: #{$primary};
   --card-border-open: #{$primary};
@@ -137,4 +137,6 @@
   --common-task-item-button-text: #{$black80};
   --common-task-item-vertical-division: #{$black24};
   --common-task-action-container-hover: #{$primary};
+
+  --dashed-color-without-transparent: #e6e6e6;
 }
