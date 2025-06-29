@@ -39,10 +39,12 @@ const Timer = ({
     duration,
     startAtBegin: autoStart,
   });
+  const finishedRefCalled = React.useRef(false);
 
   // Call onFinish when timer reaches 0
   React.useEffect(() => {
-    if (timer.time === 0 && onFinish) {
+    if (timer.time === 0 && onFinish && !finishedRefCalled.current) {
+      finishedRefCalled.current = true;
       onFinish();
     }
   }, [timer.time, onFinish]);

@@ -77,7 +77,6 @@ const CoreChecklistForm = ({
   return (
     <div className={styles.container}>
       <Card className={styles.container}>
-        <div className={styles.menu} />
         <TextareaAutosize
           placeholder={intl.formatMessage({
             id: 'CreateChecklist.label-create-checklist-input-placeholder',

@@ -20,7 +20,7 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
   (
     {
       className,
-      border = 'solid',
+      border,
       placeholder,
       value,
       onFocus,
