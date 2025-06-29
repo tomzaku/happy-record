@@ -17,7 +17,22 @@ type Props = React.DetailedHTMLProps<
 };
 
 const Input = React.forwardRef<HTMLInputElement, Props>(
-  ({ className, border = 'solid', placeholder, value, onFocus, onBlur, onChange, classes, showClear, suffix, ...restProps }, ref) => {
+  (
+    {
+      className,
+      border = 'solid',
+      placeholder,
+      value,
+      onFocus,
+      onBlur,
+      onChange,
+      classes,
+      showClear,
+      suffix,
+      ...restProps
+    },
+    ref,
+  ) => {
     const [isFocused, setIsFocused] = useState(false);
     const [inputValue, setInputValue] = useState(value ?? '');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -47,7 +62,10 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
       if (onChange) {
         const event = {
           ...new Event('input', { bubbles: true }),
-          target: inputRef.current,
+          target: {
+            ...inputRef.current,
+            value: '',
+          },
         } as unknown as React.ChangeEvent<HTMLInputElement>;
         onChange(event);
       }
@@ -61,11 +79,13 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
       <div className={cx(styles.inputWrapper, className)}>
         <input
           ref={inputRef}
-          className={cx(styles.input, {
-            [styles.dashBorder]: border === 'dash',
-            [styles.solidBorder]: border === 'solid',
-            [styles.hasSuffix]: hasSuffix,
-          },
+          className={cx(
+            styles.input,
+            {
+              [styles.dashBorder]: border === 'dash',
+              [styles.solidBorder]: border === 'solid',
+              [styles.hasSuffix]: hasSuffix,
+            },
             classes?.input,
           )}
           value={inputValue}
@@ -75,15 +95,14 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
           {...restProps}
         />
         {placeholder && showPlaceholder && (
-          <div className={styles.placeholder} onClick={() => inputRef.current?.focus()}>
+          <div
+            className={styles.placeholder}
+            onClick={() => inputRef.current?.focus()}
+          >
             {placeholder}
           </div>
         )}
-        {suffix && (
-          <div className={styles.suffix}>
-            {suffix}
-          </div>
-        )}
+        {suffix && <div className={styles.suffix}>{suffix}</div>}
         {showCloseIcon && (
           <button
             type="button"
@@ -92,14 +111,25 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
             tabIndex={-1}
             aria-label="Clear input"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 4L12 12M12 4L4 12" stroke="#888" strokeWidth="2" strokeLinecap="round"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 4L12 12M12 4L4 12"
+                stroke="#888"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = 'Input';
