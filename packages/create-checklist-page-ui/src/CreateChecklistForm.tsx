@@ -4,11 +4,21 @@ import CoreChecklistForm, { FormState } from './CoreChecklistForm';
 import { calculateRepeat } from './calculateRepeat';
 import { getDay } from './getDay';
 import { BackHeader } from '@dreamer/header';
+import React from 'react';
+import Card from '@moon-ui/card';
+import Button from '@moon-ui/button';
+import Input from '@moon-ui/input';
+import styles from './index.module.scss';
 
 const CreateCheclistForm = () => {
   const { addChecklistTemplate } = useChecklistTemplates();
   const { addChecklist } = useChecklist();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = React.useState<'create' | 'invitation'>(
+    'create',
+  );
+  const [invitationTemplateId, setInvitationTemplateId] = React.useState('');
+
   const onSubmit = ({
     startedAt,
     selectedRecords,
@@ -43,26 +53,88 @@ const CreateCheclistForm = () => {
     }
     navigate('/');
   };
+
+  const handleInvitationSubmit = () => {
+    // Handle invitation template submission
+    console.log('Invitation template ID:', invitationTemplateId);
+    // Add your logic here to handle the invitation template
+    navigate('/');
+  };
+
   return (
     <>
       <BackHeader
         renderLeftComponent={() => <>Create Task</>}
         onClickLeftButton={() => navigate('/')}
       />
-      <CoreChecklistForm
-        onSubmit={onSubmit}
-        initialValues={
-          {
-            selectedRecords: [],
-            checklistText: '',
-            weeklyHobbies: [getDay()],
-            startedAt: new Date().toISOString().split('T')[0],
-            selectedIcon: 'material-symbols:checklist',
-            selectedColor: '#607d8b',
-            fieldGroups: [],
-          } as FormState
-        }
-      />
+
+      {/* Tab Navigation */}
+      <div className={styles.tabContainer}>
+        <div className={styles.tabNavigation}>
+          <button
+            className={`${styles.tabButton} ${activeTab === 'create' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('create')}
+          >
+            Create New Task
+          </button>
+          <button
+            className={`${styles.tabButton} ${activeTab === 'invitation' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('invitation')}
+          >
+            Use Template
+          </button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'create' && (
+        <CoreChecklistForm
+          onSubmit={onSubmit}
+          initialValues={
+            {
+              selectedRecords: [],
+              checklistText: '',
+              weeklyHobbies: [getDay()],
+              startedAt: new Date().toISOString().split('T')[0],
+              selectedIcon: 'material-symbols:checklist',
+              selectedColor: '#607d8b',
+              fieldGroups: [],
+            } as FormState
+          }
+        />
+      )}
+
+      {activeTab === 'invitation' && (
+        <div className={styles.invitationContainer}>
+          <Card className={styles.invitationCard}>
+            <div className={styles.invitationContent}>
+              <div className={styles.inputGroup}>
+                <label className={styles.inputLabel}>
+                  Your invitation template id
+                </label>
+                <Input
+                  value={invitationTemplateId}
+                  onChange={e => setInvitationTemplateId(e.target.value)}
+                  placeholder="Enter template ID"
+                  className={styles.invitationInput}
+                />
+              </div>
+            </div>
+          </Card>
+          <div className={styles.footer}>
+            <div className={styles.footerCenter}>
+              <Button
+                type="primary"
+                className={styles.submitButton}
+                onClick={handleInvitationSubmit}
+                disabled={!invitationTemplateId.trim()}
+              >
+                SUBMIT
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

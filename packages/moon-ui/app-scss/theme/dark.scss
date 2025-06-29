@@ -105,6 +105,9 @@
   --slider-left-handle: rgba(0, 0, 0, 0.5);
   --slider-right-handle: rgba(0, 0, 0, 0.3);
 
+  // Tab
+  --tab-active-background: #{$primary};
+
   // Drawer
   --drawer-background: #112240;
   --drawer-blur-background: #112240de;
@@ -137,6 +140,6 @@
   // hr
   --hr-color: #0a1929;
   // library
-  
+
   --dashed-color-without-transparent: #0b1929;
 }
