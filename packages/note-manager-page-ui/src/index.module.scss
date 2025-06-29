@@ -18,3 +18,57 @@
   // color: #fff;
   margin-right: $spacing-xs;
 }
+
+.addNoteDrawer {
+  // Add any specific drawer styles if needed
+}
+
+.drawerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.drawerBody {
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.fieldSelector {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.noteEditor {
+  min-height: 200px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: $spacing-sm;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+}
+
+.submitButton {
+  margin-top: $spacing-md;
+}

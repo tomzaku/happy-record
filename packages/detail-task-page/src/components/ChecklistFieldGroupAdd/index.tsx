@@ -194,7 +194,6 @@ const ChecklistFieldGroupAdd = ({
               if (!latestRecord) {
                 return null;
               }
-              console.log('>>>>>>>latestRecord', latestRecord);
               return (
                 <>
                   <List.ItemMeta
@@ -303,7 +302,6 @@ const ChecklistFieldGroupAdd = ({
                   value: value,
                 })),
               });
-              console.log('>RESULT', result);
               setCurrentChecklistRecords([
                 ...result,
                 ...currentChecklistRecords,
