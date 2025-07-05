@@ -8,6 +8,7 @@ import React from 'react';
 import Card from '@moon-ui/card';
 import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
+import { motion } from 'framer-motion';
 import styles from './index.module.scss';
 
 const CreateCheclistForm = () => {
@@ -18,26 +19,10 @@ const CreateCheclistForm = () => {
     'create',
   );
   const [invitationTemplateId, setInvitationTemplateId] = React.useState('');
-  const [slideDirection, setSlideDirection] = React.useState<
-    'left' | 'right' | null
-  >(null);
 
   const handleTabChange = (newTab: 'create' | 'invitation') => {
     if (newTab === activeTab) return;
-
-    // Determine slide direction
-    const tabOrder = ['create', 'invitation'];
-    const currentIndex = tabOrder.indexOf(activeTab);
-    const newIndex = tabOrder.indexOf(newTab);
-    const direction = newIndex > currentIndex ? 'right' : 'left';
-
-    setSlideDirection(direction);
     setActiveTab(newTab);
-
-    // Reset slide direction after animation
-    setTimeout(() => {
-      setSlideDirection(null);
-    }, 300);
   };
 
   const onSubmit = ({
@@ -79,6 +64,13 @@ const CreateCheclistForm = () => {
     navigate(`/checklist-template/shared/${invitationTemplateId}`);
   };
 
+  // Animation variants for framer-motion
+  const tabVariants = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+  };
+
   return (
     <div className={styles.rootContainer}>
       <BackHeader
@@ -104,78 +96,63 @@ const CreateCheclistForm = () => {
         </div>
       </div>
 
-      {/* Tab Content with Slide Animation */}
+      {/* Tab Content with Framer Motion Animation */}
       <div className={styles.tabContent}>
-      {activeTab === 'create' && (
-        <div
-          className={`${styles.tabPanel} ${
-            activeTab === 'create'
-              ? styles.active
-              : slideDirection === 'left'
-                ? styles.slideLeft
-                : styles.slideRight
-          }`}
+        <motion.div
+          key={activeTab}
+          className={styles.tabPanel}
+          variants={tabVariants}
+          initial="initial"
+          animate="animate"
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
         >
-          <CoreChecklistForm
-            onSubmit={onSubmit}
-            initialValues={
-              {
-                selectedRecords: [],
-                checklistText: '',
-                weeklyHobbies: [getDay()],
-                startedAt: new Date().toISOString().split('T')[0],
-                selectedIcon: 'material-symbols:checklist',
-                selectedColor: '#607d8b',
-                fieldGroups: [],
-              } as FormState
-            }
-          />
-        </div>
-
-
-      )}
-        {activeTab === 'invitation' && (
-
-        <div
-          className={`${styles.tabPanel} ${
-            activeTab === 'invitation'
-              ? styles.active
-              : slideDirection === 'left'
-                ? styles.slideLeft
-                : styles.slideRight
-          }`}
-        >
-          <div className={styles.invitationContainer}>
-            <div className={styles.invitationCard}>
-              <div className={styles.invitationContent}>
-                <div className={styles.inputGroup}>
-                  <label className={styles.inputLabel}>
-                    Your invitation template id
-                  </label>
-                  <Input
-                    value={invitationTemplateId}
-                    onChange={e => setInvitationTemplateId(e.target.value)}
-                    placeholder="Enter template ID"
-                    className={styles.invitationInput}
-                  />
+          {activeTab === 'create' ? (
+            <CoreChecklistForm
+              onSubmit={onSubmit}
+              initialValues={
+                {
+                  selectedRecords: [],
+                  checklistText: '',
+                  weeklyHobbies: [getDay()],
+                  startedAt: new Date().toISOString().split('T')[0],
+                  selectedIcon: 'material-symbols:checklist',
+                  selectedColor: '#607d8b',
+                  fieldGroups: [],
+                } as FormState
+              }
+            />
+          ) : (
+            <div className={styles.invitationContainer}>
+              <div className={styles.invitationCard}>
+                <div className={styles.invitationContent}>
+                  <div className={styles.inputGroup}>
+                    <label className={styles.inputLabel}>
+                      Your invitation template id
+                    </label>
+                    <Input
+                      value={invitationTemplateId}
+                      onChange={e => setInvitationTemplateId(e.target.value)}
+                      placeholder="Enter template ID"
+                      className={styles.invitationInput}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className={styles.footer}>
+                <div className={styles.footerCenter}>
+                  <Button
+                    type="primary"
+                    className={styles.submitButton}
+                    onClick={handleInvitationSubmit}
+                    disabled={!invitationTemplateId.trim()}
+                  >
+                    SUBMIT
+                  </Button>
                 </div>
               </div>
             </div>
-            <div className={styles.footer}>
-              <div className={styles.footerCenter}>
-                <Button
-                  type="primary"
-                  className={styles.submitButton}
-                  onClick={handleInvitationSubmit}
-                  disabled={!invitationTemplateId.trim()}
-                >
-                  SUBMIT
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-        )}
+          )}
+        </motion.div>
       </div>
     </div>
   );

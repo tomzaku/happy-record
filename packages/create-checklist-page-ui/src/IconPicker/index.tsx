@@ -81,7 +81,7 @@ const IconPicker = ({
                 Search icons
               </>
             }
-            // border="dash"
+            border="dash"
             value={searchTerm}
             showClear
             onChange={e => {
