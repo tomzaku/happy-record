@@ -106,6 +106,7 @@ const CreateCheclistForm = () => {
 
       {/* Tab Content with Slide Animation */}
       <div className={styles.tabContent}>
+      {activeTab === 'create' && (
         <div
           className={`${styles.tabPanel} ${
             activeTab === 'create'
@@ -130,6 +131,10 @@ const CreateCheclistForm = () => {
             }
           />
         </div>
+
+
+      )}
+        {activeTab === 'invitation' && (
 
         <div
           className={`${styles.tabPanel} ${
@@ -170,6 +175,7 @@ const CreateCheclistForm = () => {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
