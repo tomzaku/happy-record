@@ -45,7 +45,7 @@
 }
 
 .noteEditor {
-  // min-height: 200px;
+ height: 500px;
 }
 
 .textarea {
@@ -71,4 +71,12 @@
 
 .submitButton {
   margin-top: $spacing-md;
+}
+
+.footer {
+  bottom: 0;
+  position: fixed;
+  width: 100%;
+  padding: $spacing-sm;
+  box-sizing: border-box;
 }

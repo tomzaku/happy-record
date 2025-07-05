@@ -14,6 +14,7 @@ import StoryPageUi from '@pregnant/story-page-ui';
 import Audio from '@pregnant/pregnant-audio-player';
 import { AnimatePresence, motion } from 'motion/react';
 import { NoteManagerPage } from '@happy-record/note-manager-page-ui';
+import { AddNotePage } from '@happy-record/add-note-page-ui';
 
 // Hocs
 import RecordPage from '@dreamer/record-page-ui';
@@ -157,6 +158,14 @@ const AppRouter = () => {
           element={
             <AnimationRoute>
               <NoteManagerPage />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/notes/add"
+          element={
+            <AnimationRoute>
+              <AddNotePage />
             </AnimationRoute>
           }
         />

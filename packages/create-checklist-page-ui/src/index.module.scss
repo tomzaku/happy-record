@@ -32,6 +32,8 @@
 }
 
 .container {
+  padding-left: $spacing-xs;
+  padding-right: $spacing-xs;
   padding-top: $spacing-lg;
   padding-bottom: 90px;
 }
@@ -81,7 +83,7 @@
 // Tab content slide animation
 .tabContent {
   position: relative;
-  overflow: hidden;
+  flex: 1;
 }
 
 .tabPanel {
@@ -94,6 +96,7 @@
   top: 0;
   left: 0;
   width: 100%;
+  height: 100%;
 
   &.active {
     transform: translateX(0);
@@ -234,4 +237,10 @@
     outline: none;
     border-color: var(--primary-color);
   }
+}
+
+.rootContainer {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }

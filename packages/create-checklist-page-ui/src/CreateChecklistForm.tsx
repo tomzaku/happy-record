@@ -80,7 +80,7 @@ const CreateCheclistForm = () => {
   };
 
   return (
-    <>
+    <div className={styles.rootContainer}>
       <BackHeader
         renderLeftComponent={() => <>Create Task</>}
         onClickLeftButton={() => navigate('/')}
@@ -141,7 +141,7 @@ const CreateCheclistForm = () => {
           }`}
         >
           <div className={styles.invitationContainer}>
-            <Card className={styles.invitationCard}>
+            <div className={styles.invitationCard}>
               <div className={styles.invitationContent}>
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>
@@ -155,7 +155,7 @@ const CreateCheclistForm = () => {
                   />
                 </div>
               </div>
-            </Card>
+            </div>
             <div className={styles.footer}>
               <div className={styles.footerCenter}>
                 <Button
@@ -171,7 +171,7 @@ const CreateCheclistForm = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 export default CreateCheclistForm;

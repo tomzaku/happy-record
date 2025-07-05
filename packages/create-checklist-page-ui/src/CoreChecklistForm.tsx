@@ -76,7 +76,7 @@ const CoreChecklistForm = ({
 
   return (
     <div className={styles.container}>
-      <Card className={styles.container}>
+      <div className={styles.container}>
         <TextareaAutosize
           placeholder={intl.formatMessage({
             id: 'CreateChecklist.label-create-checklist-input-placeholder',
@@ -107,7 +107,7 @@ const CoreChecklistForm = ({
           fieldGroups={fieldGroups}
           setFieldGroups={setFieldGroups}
         />
-      </Card>
+      </div>
       <div className={styles.footer}>
         <div className={styles.footerCenter}>
           {onClickDeleteButton && (

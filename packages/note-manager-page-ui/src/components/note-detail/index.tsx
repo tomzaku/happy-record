@@ -40,12 +40,8 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
               <Button
                 type="dash"
                 size="sm"
-                // className={styles.deleteButton}
                 onClick={() => {
                   deleteNote(note);
-                  // const newRecords = { ...records };
-                  // delete newRecords[key];
-                  // setRecords(newRecords);
                 }}
               >
                 <Icon

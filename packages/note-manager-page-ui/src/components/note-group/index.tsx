@@ -3,20 +3,20 @@ import Card from '@moon-ui/card';
 import Icon from '@moon-ui/icon/Icon';
 import { useSpring, animated } from '@react-spring/web';
 
-import { useNoteRecords } from '../../useNoteRecords';
 import { useSearchParams } from 'react-router-dom';
 
 import cx from 'classnames';
 import styles from './index.module.scss';
 import Typography from '@moon-ui/typography';
+import { RecordField } from '@dreamer/global/src/store/record-field';
 
 type Props = {
   onChangeField?: (fieldIds: string[]) => void;
+  allNoteFields: RecordField[];
 };
 
-const NoteGroup = ({ onChangeField }: Props) => {
+const NoteGroup = ({ onChangeField, allNoteFields }: Props) => {
   const [isExtended, setIsExtended] = React.useState(false);
-  const { allNoteFields } = useNoteRecords();
   const [search, setSearch] = useSearchParams();
   const fieldId = search.get('fieldId');
 
