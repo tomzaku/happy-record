@@ -29,7 +29,11 @@ import { useIntl } from '@dreamer/translation';
 import styles from './index.module.scss';
 import Checkbox from '@moon-ui/checkbox';
 import AddFieldRecordDialog from './AddFieldRecordDialog';
-import { useRecordField } from '@dreamer/global/src/store/record-field';
+import EditFieldRecordDialog from './EditFieldRecordDialog';
+import {
+  useRecordField,
+  RecordField,
+} from '@dreamer/global/src/store/record-field';
 import Typography from '@moon-ui/typography';
 import DroppableGroup from './DroppableGroup';
 import Button from '@moon-ui/button/src/DefaultButton';
@@ -77,9 +81,12 @@ const RecordTaskSetting = ({
   fieldGroups: FieldGroup[];
   setFieldGroups: (fieldGroups: FieldGroup[]) => void;
 }) => {
-  const { getAllRecordFields } = useRecordField();
+  const { getAllRecordFields, removeRecordField } = useRecordField();
   const intl = useIntl();
   const [showAddFieldRecord, setShowAddFieldRecord] = React.useState(false);
+  const [showEditFieldRecord, setShowEditFieldRecord] = React.useState(false);
+  const [editingRecordField, setEditingRecordField] =
+    React.useState<RecordField | null>(null);
   const [recordFields, setRecordFields] = React.useState(getAllRecordFields());
   const [activeId, setActiveId] = React.useState<string | null>(null); // To track the dragged item
 
@@ -88,7 +95,11 @@ const RecordTaskSetting = ({
   }, []);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before drag starts
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -219,6 +230,7 @@ const RecordTaskSetting = ({
               defaultMessage: 'Group',
             }) + ` ${newGroups.length + 1}`, // Dynamic title
           fields: [id],
+          note: null,
         },
       ]);
     }
@@ -235,6 +247,20 @@ const RecordTaskSetting = ({
     setFieldGroups(newGroups);
   };
 
+  const handleEditRecordField = (recordField: RecordField) => {
+    setEditingRecordField(recordField);
+    setShowEditFieldRecord(true);
+  };
+
+  const handleDeleteRecordField = (idToDelete: string) => {
+    // Remove from record fields
+    removeRecordField(idToDelete);
+    setRecordFields(getAllRecordFields());
+
+    // Remove from selected records and groups
+    handleRemoveRecord(idToDelete);
+  };
+
   const activeRecord = activeId ? getRecordById(activeId) : null;
   console.log('FieldGroup', fieldGroups);
 
@@ -249,6 +275,20 @@ const RecordTaskSetting = ({
           handleAddRecordToGroup({ id: newRcordField.id });
         }}
         onClose={() => setShowAddFieldRecord(false)}
+      />
+      <EditFieldRecordDialog
+        visible={showEditFieldRecord}
+        recordField={editingRecordField}
+        onSubmit={updatedRecordField => {
+          setShowEditFieldRecord(false);
+          setEditingRecordField(null);
+          // Reload fields to reflect changes
+          setRecordFields(getAllRecordFields());
+        }}
+        onClose={() => {
+          setShowEditFieldRecord(false);
+          setEditingRecordField(null);
+        }}
       />
       <Select
         options={recordFields.map(r => ({
@@ -270,13 +310,47 @@ const RecordTaskSetting = ({
                   return (
                     <div className={styles.selected} key={id}>
                       <Typography.Text>{field?.title}</Typography.Text>
-                      <Icon
-                        icon={'material-symbols:close-rounded'}
-                        width={16}
-                        height={16}
-                        className={styles.closeIcon}
-                        onClick={() => handleRemoveRecord(id)}
-                      />
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: '4px',
+                          alignItems: 'center',
+                        }}
+                        onMouseDown={e => e.stopPropagation()}
+                        onTouchStart={e => e.stopPropagation()}
+                      >
+                        {/* <Icon */}
+                        {/*   width={16} */}
+                        {/*   height={16} */}
+                        {/*   icon="material-symbols:edit-outline" */}
+                        {/*   onClick={(e) => { */}
+                        {/*     e.stopPropagation(); */}
+                        {/*     if (field) handleEditRecordField(field); */}
+                        {/*   }} */}
+                        {/*   onMouseDown={(e) => e.stopPropagation()} */}
+                        {/*   onTouchStart={(e) => e.stopPropagation()} */}
+                        {/*   style={{ cursor: 'pointer', color: '#666' }} */}
+                        {/* /> */}
+                        {/* <Icon */}
+                        {/*   width={16} */}
+                        {/*   height={16} */}
+                        {/*   icon="material-symbols:delete-outline" */}
+                        {/*   onClick={(e) => { */}
+                        {/*     e.stopPropagation(); */}
+                        {/*     handleDeleteRecordField(id); */}
+                        {/*   }} */}
+                        {/*   onMouseDown={(e) => e.stopPropagation()} */}
+                        {/*   onTouchStart={(e) => e.stopPropagation()} */}
+                        {/*   style={{ cursor: 'pointer', color: '#ff4444' }} */}
+                        {/* /> */}
+                        <Icon
+                          icon={'material-symbols:close-rounded'}
+                          width={16}
+                          height={16}
+                          className={styles.closeIcon}
+                          onClick={() => handleRemoveRecord(id)}
+                        />
+                      </div>
                     </div>
                   );
                 })}
@@ -360,13 +434,42 @@ const RecordTaskSetting = ({
                       className={styles.item}
                       title={record.title}
                       description={record.description}
-                      // rightComponent={
-                      //   <Checkbox
-                      //     checked={selectedRecords.includes(recordKey)} // Check if it's in selectedRecords
-                      //     size="lg"
-                      //     onClick={() => handleRemoveRecord(recordKey)}
-                      //   />
-                      // }
+                      rightComponent={
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '8px',
+                            alignItems: 'center',
+                          }}
+                          onMouseDown={e => e.stopPropagation()}
+                          onTouchStart={e => e.stopPropagation()}
+                        >
+                          <Icon
+                            width={20}
+                            height={20}
+                            icon="material-symbols:edit-outline"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleEditRecordField(record);
+                            }}
+                            onMouseDown={e => e.stopPropagation()}
+                            onTouchStart={e => e.stopPropagation()}
+                            style={{ cursor: 'pointer', color: '#666' }}
+                          />
+                          {/* <Icon */}
+                          {/*   width={20} */}
+                          {/*   height={20} */}
+                          {/*   icon="material-symbols:delete-outline" */}
+                          {/*   onClick={(e) => { */}
+                          {/*     e.stopPropagation(); */}
+                          {/*     handleDeleteRecordField(recordKey); */}
+                          {/*   }} */}
+                          {/*   onMouseDown={(e) => e.stopPropagation()} */}
+                          {/*   onTouchStart={(e) => e.stopPropagation()} */}
+                          {/*   style={{ cursor: 'pointer', color: '#ff4444' }} */}
+                          {/* /> */}
+                        </div>
+                      }
                     />
                   </SortableItem>
                 );

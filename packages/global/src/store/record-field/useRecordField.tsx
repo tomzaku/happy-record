@@ -76,6 +76,21 @@ export const useRecordField = () => {
     });
   };
 
+  const updateRecordField = (id: string, updates: Partial<RecordField>) => {
+    setRecordFieldList(prev => {
+      if (!prev[id]) {
+        throw new Error(`Record field with id ${id} not found`);
+      }
+      return {
+        ...prev,
+        [id]: {
+          ...prev[id],
+          ...updates,
+        },
+      };
+    });
+  };
+
   return {
     getAllRecordFields,
     getRecordFields: (ids: string[]) => {
@@ -83,5 +98,6 @@ export const useRecordField = () => {
     },
     addRecordField,
     removeRecordField,
+    updateRecordField,
   };
 };
