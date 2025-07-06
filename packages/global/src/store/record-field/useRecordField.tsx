@@ -77,18 +77,22 @@ export const useRecordField = () => {
   };
 
   const updateRecordField = (id: string, updates: Partial<RecordField>) => {
+    let updatedRecord: RecordField | null = null;
     setRecordFieldList(prev => {
       if (!prev[id]) {
         throw new Error(`Record field with id ${id} not found`);
       }
+      const newRecord = {
+        ...prev[id],
+        ...updates,
+      };
+      updatedRecord = newRecord;
       return {
         ...prev,
-        [id]: {
-          ...prev[id],
-          ...updates,
-        },
+        [id]: newRecord,
       };
     });
+    return updatedRecord;
   };
 
   return {

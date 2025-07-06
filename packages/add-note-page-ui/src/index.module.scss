@@ -45,7 +45,7 @@
 }
 
 .noteEditor {
- height: 500px;
+  height: 500px;
 }
 
 .textarea {
@@ -79,4 +79,5 @@
   width: 100%;
   padding: $spacing-sm;
   box-sizing: border-box;
+  box-shadow: 0 -4px 44px rgba(114, 114, 114, 0.14);
 }

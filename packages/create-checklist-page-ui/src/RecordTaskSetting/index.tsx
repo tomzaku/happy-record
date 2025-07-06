@@ -252,17 +252,16 @@ const RecordTaskSetting = ({
     setShowEditFieldRecord(true);
   };
 
-  const handleDeleteRecordField = (idToDelete: string) => {
-    // Remove from record fields
-    removeRecordField(idToDelete);
-    setRecordFields(getAllRecordFields());
-
-    // Remove from selected records and groups
-    handleRemoveRecord(idToDelete);
-  };
-
+  // const handleDeleteRecordField = (idToDelete: string) => {
+  //   // Remove from record fields
+  //   removeRecordField(idToDelete);
+  //   setRecordFields(getAllRecordFields());
+  //
+  //   // Remove from selected records and groups
+  //   handleRemoveRecord(idToDelete);
+  // };
+  //
   const activeRecord = activeId ? getRecordById(activeId) : null;
-  console.log('FieldGroup', fieldGroups);
 
   return (
     <div>
@@ -282,8 +281,12 @@ const RecordTaskSetting = ({
         onSubmit={updatedRecordField => {
           setShowEditFieldRecord(false);
           setEditingRecordField(null);
-          // Reload fields to reflect changes
-          setRecordFields(getAllRecordFields());
+          // Update the local recordFields state with the updated field
+          setRecordFields(prev =>
+            prev.map(field =>
+              field.id === updatedRecordField.id ? updatedRecordField : field,
+            ),
+          );
         }}
         onClose={() => {
           setShowEditFieldRecord(false);

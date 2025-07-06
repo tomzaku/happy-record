@@ -17,7 +17,7 @@ const EditFieldRecord = ({ className, onSubmit, recordField }: Props) => {
   const handleSubmit = (form: FormState) => {
     if (!recordField) return;
 
-    updateRecordField(recordField.id, {
+    const updatedRecordField = updateRecordField(recordField.id, {
       icon: form.icon,
       type: form.type,
       title: form.title,
@@ -25,17 +25,9 @@ const EditFieldRecord = ({ className, onSubmit, recordField }: Props) => {
       description: form.description,
     });
 
-    // Get the updated record field from the store
-    const updatedRecordField = {
-      ...recordField,
-      icon: form.icon,
-      type: form.type,
-      title: form.title,
-      unit: form.unit,
-      description: form.description,
-    };
-
-    onSubmit?.(updatedRecordField);
+    if (updatedRecordField) {
+      onSubmit?.(updatedRecordField);
+    }
   };
 
   // Convert RecordField to FormState for initial values
