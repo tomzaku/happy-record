@@ -62,6 +62,7 @@
   "label-record-custom.type.label": "Type",
   "label-record-custom.unit.description": "Ex: minutes, hours, reps, kg",
   "label-record-custom.unit.label": "Field Unit",
+  "label-record-edit.title": "Edit field",
   "label-start-day.description": "Select the first day",
   "label-start-day.label": "Start Day",
   "label-yes": "YES",
