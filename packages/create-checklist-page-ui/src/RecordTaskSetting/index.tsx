@@ -302,6 +302,7 @@ const RecordTaskSetting = ({
         classes={{
           container: styles.selector,
         }}
+        position="bottom"
         renderInput={() => {
           if (selectedRecords.length === 0) {
             return <Typography.Text>Record & Metric</Typography.Text>;
