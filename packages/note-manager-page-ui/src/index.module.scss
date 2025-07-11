@@ -6,6 +6,10 @@
   padding: $spacing-md;
 }
 
+.containerVertical {
+  flex-direction: column;
+}
+
 .addNoteButton {
   // padding: 10px 20px;
   display: flex;

@@ -9,6 +9,11 @@
   padding: 8px;
   transition: all 0.3s ease;
   overflow: hidden;
+  margin-bottom: $spacing-sm;
+}
+
+.containerMinimal {
+  padding: 0;
 }
 
 .item {
