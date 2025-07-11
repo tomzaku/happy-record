@@ -2,24 +2,31 @@ import { Day } from '@dreamer/tasks-page-common';
 
 export const calculateRepeat = ({
   weeklyHobbies,
+  selectedTime,
 }: {
   weeklyHobbies: Day[];
+  selectedTime?: string;
 }) => {
   if (!weeklyHobbies || weeklyHobbies.length === 0) return undefined;
+
+  // Parse selectedTime if provided, otherwise use defaults
+  const [hour = '8', minute = '0'] = selectedTime
+    ? selectedTime.split(':')
+    : ['8', '0'];
 
   if (weeklyHobbies.length === 7)
     return {
       startedAt: new Date().toISOString(),
       dayOfWeek: '*',
-      minute: '0',
-      hour: '8',
+      minute,
+      hour,
       dayOfMonth: '*',
       month: '*',
     };
   return {
     startedAt: new Date().toISOString(),
-    minute: '0',
-    hour: '8',
+    minute,
+    hour,
     dayOfMonth: '*',
     month: '*',
     dayOfWeek: weeklyHobbies

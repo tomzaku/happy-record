@@ -1,0 +1,11 @@
+@use '@moon-ui/app-scss/function' as *;
+@use 'include-media/dist/include-media' as media;
+@use '@moon-ui/app-scss/metric' as *;
+
+.input {
+  padding: $spacing-xs $spacing-md;
+  font-size: toRem(16px);
+  @include media.media('<=tablet') {
+    width: 120px;
+  }
+}

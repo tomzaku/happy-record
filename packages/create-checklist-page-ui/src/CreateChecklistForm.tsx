@@ -27,6 +27,7 @@ const CreateCheclistForm = () => {
 
   const onSubmit = ({
     startedAt,
+    selectedTime,
     selectedRecords,
     selectedColor,
     selectedIcon,
@@ -34,7 +35,7 @@ const CreateCheclistForm = () => {
     weeklyHobbies,
     fieldGroups,
   }: FormState) => {
-    const repeat = calculateRepeat({ weeklyHobbies });
+    const repeat = calculateRepeat({ weeklyHobbies, selectedTime });
     const { id } = addChecklistTemplate({
       title: checklistText,
       repeat,
@@ -115,6 +116,7 @@ const CreateCheclistForm = () => {
                   checklistText: '',
                   weeklyHobbies: [getDay()],
                   startedAt: new Date().toISOString().split('T')[0],
+                  selectedTime: '',
                   selectedIcon: 'material-symbols:checklist',
                   selectedColor: '#607d8b',
                   fieldGroups: [],

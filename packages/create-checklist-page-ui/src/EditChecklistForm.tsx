@@ -20,6 +20,7 @@ const EditChecklistForm = () => {
   const intl = useIntl();
   const onSubmit = ({
     startedAt,
+    selectedTime,
     selectedRecords,
     selectedColor,
     selectedIcon,
@@ -27,7 +28,7 @@ const EditChecklistForm = () => {
     weeklyHobbies,
     fieldGroups,
   }: FormState) => {
-    const repeat = calculateRepeat({ weeklyHobbies });
+    const repeat = calculateRepeat({ weeklyHobbies, selectedTime });
     updateChecklistTemplate({
       id: template.id,
       records: selectedRecords,
@@ -60,7 +61,7 @@ const EditChecklistForm = () => {
   return (
     <>
       <BackHeader
-        renderLeftComponent={() => <>Edit Task</>}
+        renderLeftComponent={() => <span>Edit Task</span>}
         onClickLeftButton={() => navigate('/')}
       />
       <WarningModal
@@ -99,6 +100,10 @@ const EditChecklistForm = () => {
           startedAt: template?.repeat?.startedAt
             ? new Date(template.repeat.startedAt).toISOString().split('T')[0]
             : new Date().toISOString().split('T')[0],
+          selectedTime:
+            template?.repeat?.hour && template?.repeat?.minute
+              ? `${template.repeat.hour.padStart(2, '0')}:${template.repeat.minute.padStart(2, '0')}`
+              : '',
           selectedIcon: template?.avatar?.name,
           selectedColor: template?.avatar?.color || '#607d8b',
           fieldGroups: template.fieldGroups,
