@@ -31,6 +31,7 @@ export type ChecklistTemplate = {
   // @deprecated use groups instead
   records: string[];
   fieldGroups: FieldGroup[];
+  tags: string[];
 };
 
 const common = {
@@ -45,6 +46,7 @@ const common = {
   createdAt: new Date().toISOString(),
   records: [],
   fieldGroups: [],
+  tags: [],
 };
 
 const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [

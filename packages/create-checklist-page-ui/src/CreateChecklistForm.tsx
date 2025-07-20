@@ -34,6 +34,7 @@ const CreateCheclistForm = () => {
     checklistText,
     weeklyHobbies,
     fieldGroups,
+    tags,
   }: FormState) => {
     const repeat = calculateRepeat({ weeklyHobbies, selectedTime });
     const { id } = addChecklistTemplate({
@@ -46,6 +47,7 @@ const CreateCheclistForm = () => {
       },
       records: selectedRecords,
       fieldGroups,
+      tags,
     });
     // If not repeat we need to create a checklist onetime.
     if (!repeat) {
@@ -120,6 +122,7 @@ const CreateCheclistForm = () => {
                   selectedIcon: 'material-symbols:checklist',
                   selectedColor: '#607d8b',
                   fieldGroups: [],
+                  tags: [],
                 } as FormState
               }
             />

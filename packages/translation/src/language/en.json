@@ -65,6 +65,8 @@
   "label-record-edit.title": "Edit field",
   "label-start-day.description": "Select the first day",
   "label-start-day.label": "Start Day",
+  "label-time.description": "Select the time (optional)",
+  "label-time.label": "Time",
   "label-yes": "YES",
   "label_delete": "Delete",
   "label_edit": "Edit",

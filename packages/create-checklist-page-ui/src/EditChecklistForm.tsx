@@ -27,6 +27,7 @@ const EditChecklistForm = () => {
     checklistText,
     weeklyHobbies,
     fieldGroups,
+    tags,
   }: FormState) => {
     const repeat = calculateRepeat({ weeklyHobbies, selectedTime });
     updateChecklistTemplate({
@@ -40,6 +41,7 @@ const EditChecklistForm = () => {
         color: selectedColor,
       },
       fieldGroups,
+      tags,
     });
     navigate('/');
   };
@@ -107,6 +109,7 @@ const EditChecklistForm = () => {
           selectedIcon: template?.avatar?.name,
           selectedColor: template?.avatar?.color || '#607d8b',
           fieldGroups: template.fieldGroups,
+          tags: template.tags || [],
         }}
       />
     </>

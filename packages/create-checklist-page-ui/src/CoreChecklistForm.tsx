@@ -9,6 +9,7 @@ import { Day } from '@dreamer/tasks-page-common';
 import IconPicker from './IconPicker';
 import Hr from './hr';
 import RecordTaskSetting, { FieldGroup } from './RecordTaskSetting';
+import TagInput from './TagInput';
 
 // Hooks
 import { useIntl } from '@dreamer/translation';
@@ -24,6 +25,7 @@ export type FormState = {
   selectedIcon: string;
   selectedColor: string;
   fieldGroups: FieldGroup[];
+  tags: string[];
 };
 const CoreChecklistForm = ({
   initialValues,
@@ -44,6 +46,7 @@ const CoreChecklistForm = ({
     selectedIcon,
     selectedColor,
     fieldGroups,
+    tags,
   } = form;
 
   // Utility functions for updating form fields
@@ -79,6 +82,10 @@ const CoreChecklistForm = ({
     setForm(prevForm => ({ ...prevForm, fieldGroups }));
   };
 
+  const setTags = (tags: string[]) => {
+    setForm(prevForm => ({ ...prevForm, tags }));
+  };
+
   const intl = useIntl();
 
   return (
@@ -98,6 +105,9 @@ const CoreChecklistForm = ({
           value={checklistText}
         />
         <BuildWeeklyHobby values={weeklyHobbies} setValues={setWeeklyHobbies} />
+        <Hr />
+
+        <TagInput tags={tags} setTags={setTags} />
         <Hr />
 
         <IconPicker
