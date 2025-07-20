@@ -1,14 +1,11 @@
 import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import RecordDay from './components/RecordDay';
 import {
   Checklist,
   ChecklistTemplate,
-  FieldGroup,
   useChecklist,
   useChecklistTemplates,
 } from '@dreamer/global';
-import Note from './components/note/Note';
 import {
   RecordField,
   useRecordField,
@@ -16,18 +13,7 @@ import {
 import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
-import WeeklyRow from './components/WeeklyRow';
-import Select from '@moon-ui/select';
-import Typography from '@moon-ui/typography';
-import styles from './index.module.scss';
 import { useIntl } from '@dreamer/translation';
-
-const minus1Day = (date: Date) => {
-  return new Date(date.getTime() - 24 * 60 * 60 * 1000);
-};
-const plus1Day = (date: Date) => {
-  return new Date(date.getTime() + 24 * 60 * 60 * 1000);
-};
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();
