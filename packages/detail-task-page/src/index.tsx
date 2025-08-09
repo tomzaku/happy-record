@@ -13,12 +13,13 @@ import {
 import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
-import { useIntl } from '@dreamer/translation';
+import TagInput from '@pregnant/create-checklist-page-ui/src/TagInput';
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
-  const { getChecklistTemplate } = useChecklistTemplates();
+  const { getChecklistTemplate, updateChecklistTemplate } =
+    useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
   const { getRecordFields } = useRecordField();
   const checklistId = search.get('checklistId');
@@ -28,6 +29,7 @@ const DetailTaskPage = () => {
     React.useState<ChecklistTemplate>();
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [fields, setFields] = React.useState<RecordField[]>([]);
+  const [tags, setTags] = React.useState<string[]>([]);
   if (!id || !currentDay) {
     return;
   }
@@ -35,6 +37,7 @@ const DetailTaskPage = () => {
   React.useEffect(() => {
     const checklistTemplate = getChecklistTemplate(id);
     setChecklistTemplate(checklistTemplate);
+    setTags(checklistTemplate.tags || []);
     if (!checklistTemplate) return;
 
     const fieldResult = getRecordFields(
@@ -62,21 +65,18 @@ const DetailTaskPage = () => {
       setChecklist(checklist);
     }
   }, [checklistId]);
+  const handleTagsChange = (newTags: string[]) => {
+    updateChecklistTemplate({
+      ...checklistTemplate,
+      tags: newTags,
+    });
+  };
 
   const navigate = useNavigate();
-  const intl = useIntl();
   if (!checklistId || !checklist || !checklistTemplate) {
     return null;
   }
-  const isToday =
-    new Date(currentDay).toLocaleDateString() ===
-    new Date().toLocaleDateString();
-  const dateText = isToday
-    ? intl.formatMessage({
-        id: 'checklist-calendar.today',
-        defaultMessage: 'Today',
-      })
-    : new Date(currentDay).toLocaleDateString();
+  console.log('checklistTemplate', checklistTemplate);
   return (
     <>
       <BackHeader
@@ -92,6 +92,7 @@ const DetailTaskPage = () => {
         )}
         onClickLeftButton={() => navigate('/')}
       />
+      <TagInput tags={tags} setTags={handleTagsChange} />
       <ChecklistFieldGroup
         checklist={checklist}
         checklistTemplate={checklistTemplate}
