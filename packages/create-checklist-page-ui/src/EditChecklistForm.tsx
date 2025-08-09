@@ -1,11 +1,9 @@
 import React from 'react';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
-import Typography from '@moon-ui/typography';
-import { useChecklist, useChecklistTemplates } from '@dreamer/global';
+import { useChecklistTemplates } from '@dreamer/global';
 import { useNavigate, useParams } from 'react-router-dom';
 import CoreChecklistForm, { FormState } from './CoreChecklistForm';
 import { calculateRepeat } from './calculateRepeat';
-import { getDay } from './getDay';
 import { getDaysFromRepeat } from './getDayFromRepeat';
 import { BackHeader } from '@dreamer/header';
 import { useIntl } from '@dreamer/translation';
@@ -29,7 +27,7 @@ const EditChecklistForm = () => {
     fieldGroups,
     tags,
   }: FormState) => {
-    const repeat = calculateRepeat({ weeklyHobbies, selectedTime });
+    const repeat = calculateRepeat({ weeklyHobbies, selectedTime, startedAt });
     updateChecklistTemplate({
       id: template.id,
       records: selectedRecords,
@@ -82,15 +80,11 @@ const EditChecklistForm = () => {
           defaultMessage: 'Cancel',
         })}
         secondaryButtonClick={handleCancelDelete}
-        content={
-          <Typography.Text>
-            {intl.formatMessage({
-              id: 'ChecklistTemplate.delete-confirm-message',
-              defaultMessage:
-                'Are you sure you want to delete this checklist template? This action cannot be undone.',
-            })}
-          </Typography.Text>
-        }
+        content={intl.formatMessage({
+          id: 'ChecklistTemplate.delete-confirm-message',
+          defaultMessage:
+            'Are you sure you want to delete this checklist template? This action cannot be undone.',
+        })}
       />
       <CoreChecklistForm
         onClickDeleteButton={handleDelete}

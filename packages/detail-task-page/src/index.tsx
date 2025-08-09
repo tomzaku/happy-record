@@ -13,7 +13,7 @@ import {
 import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
-import TagInput from '@pregnant/create-checklist-page-ui/src/TagInput';
+import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 
 const DetailTaskPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,7 +29,7 @@ const DetailTaskPage = () => {
     React.useState<ChecklistTemplate>();
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [fields, setFields] = React.useState<RecordField[]>([]);
-  const [tags, setTags] = React.useState<string[]>([]);
+
   if (!id || !currentDay) {
     return;
   }
@@ -37,7 +37,7 @@ const DetailTaskPage = () => {
   React.useEffect(() => {
     const checklistTemplate = getChecklistTemplate(id);
     setChecklistTemplate(checklistTemplate);
-    setTags(checklistTemplate.tags || []);
+
     if (!checklistTemplate) return;
 
     const fieldResult = getRecordFields(
@@ -65,18 +65,12 @@ const DetailTaskPage = () => {
       setChecklist(checklist);
     }
   }, [checklistId]);
-  const handleTagsChange = (newTags: string[]) => {
-    updateChecklistTemplate({
-      ...checklistTemplate,
-      tags: newTags,
-    });
-  };
+
 
   const navigate = useNavigate();
   if (!checklistId || !checklist || !checklistTemplate) {
     return null;
   }
-  console.log('checklistTemplate', checklistTemplate);
   return (
     <>
       <BackHeader
@@ -92,7 +86,13 @@ const DetailTaskPage = () => {
         )}
         onClickLeftButton={() => navigate('/')}
       />
-      <TagInput tags={tags} setTags={handleTagsChange} />
+      <ChecklistGenericInfo
+        checklistTemplate={checklistTemplate}
+        onUpdate={(updatedTemplate) => {
+          updateChecklistTemplate(updatedTemplate);
+          setChecklistTemplate(updatedTemplate);
+        }}
+      />
       <ChecklistFieldGroup
         checklist={checklist}
         checklistTemplate={checklistTemplate}

@@ -5,7 +5,6 @@ import { calculateRepeat } from './calculateRepeat';
 import { getDay } from './getDay';
 import { BackHeader } from '@dreamer/header';
 import React from 'react';
-import Card from '@moon-ui/card';
 import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
 import { motion } from 'framer-motion';
@@ -36,7 +35,7 @@ const CreateCheclistForm = () => {
     fieldGroups,
     tags,
   }: FormState) => {
-    const repeat = calculateRepeat({ weeklyHobbies, selectedTime });
+    const repeat = calculateRepeat({ weeklyHobbies, selectedTime, startedAt });
     const { id } = addChecklistTemplate({
       title: checklistText,
       repeat,

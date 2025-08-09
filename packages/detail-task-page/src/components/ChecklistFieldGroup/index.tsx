@@ -49,7 +49,14 @@ const ChecklistFieldGroup = ({
   );
   const [collapsedGroups, setCollapsedGroups] = React.useState<
     Record<string, boolean>
-  >({});
+  >(
+    checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
+      return {
+        ...acc,
+        [fieldGroup.id]: true, // Start collapsed by default
+      };
+    }, {}),
+  );
 
   const toggleCollapse = (fieldGroupId: string) => {
     setCollapsedGroups(prev => ({
@@ -196,7 +203,7 @@ const ChecklistFieldGroup = ({
     const isCollapsed = collapsedGroups[fieldGroup.id] || false;
 
     return (
-      <Card className={styles.cardContainer}>
+      <Card key={fieldGroup.id} className={styles.cardContainer}>
         <ChecklistFieldGroupHeader
           activeTab={activeTab[fieldGroup.id]}
           onClickHome={() =>

@@ -91,22 +91,21 @@ const TagInput = ({ tags, setTags, className }: TagInputProps) => {
           id: 'label-tag.label',
         })}
         rightComponent={
-          <>
-        {tags.map((tag, index) => (
-          <div key={index} className={styles.tag}>
-            <Typography.Text className={styles.tagText}>{tag}</Typography.Text>
-            <button
-              type="button"
-              className={styles.removeButton}
-              onClick={() => handleRemoveTag(tag)}
-              aria-label="Remove tag"
-            >
-              <Icon width={16} icon="proicons:cancel" />
-            </button>
+          <div className={styles.tagContainer}>
+            {tags.map((tag, index) => (
+              <div key={index} className={styles.tag}>
+                <Typography.Text className={styles.tagText}>{tag}</Typography.Text>
+                <button
+                  type="button"
+                  className={styles.removeButton}
+                  onClick={() => handleRemoveTag(tag)}
+                  aria-label="Remove tag"
+                >
+                  <Icon width={16} icon="proicons:cancel" />
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
-          </>
-
         }
       />
       <div className={styles.inputContainer}>

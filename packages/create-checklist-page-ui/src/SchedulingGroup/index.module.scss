@@ -1,0 +1,242 @@
+@use '@moon-ui/app-scss/function' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/color' as *;
+@use 'include-media/dist/include-media' as media;
+
+.container {
+  margin-bottom: $spacing-md;
+}
+
+.scheduleControls {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.configIconButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary, #666);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--background-hover, rgba(0, 0, 0, 0.05));
+    color: var(--primary-color, #007aff);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// Keep the old configButton styles for backward compatibility if needed elsewhere
+.configButton {
+  padding: $spacing-sm $spacing-md;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 70px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+  background: var(--card-background, #fff);
+  color: var(--primary-color, #007aff);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--primary-color, #007aff);
+    color: #fff;
+    border-color: var(--primary-color, #007aff);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 122, 255, 0.2);
+  }
+}
+
+// Modal styles
+.modalContainer {
+  background: var(--card-background);
+  border-radius: 16px 16px 0 0;
+  height: auto;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+// Target the parent BottomModal sheet directly with global selector
+:global {
+  // This targets the BottomModal sheet that contains our modal
+  [style*='calc(-100vh'] {
+    bottom: 0 !important;
+    height: auto !important;
+    max-height: 90vh !important;
+  }
+}
+
+.desktopModalContainer {
+  background: var(--card-background);
+  border-radius: 16px;
+  height: auto;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 500px;
+  max-width: 600px;
+}
+
+.modalHandle {
+  width: 40px;
+  height: 4px;
+  background: var(--border-color, rgba(0, 0, 0, 0.2));
+  border-radius: 2px;
+  margin: $spacing-sm auto $spacing-xs auto;
+  flex-shrink: 0;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: $spacing-md $spacing-lg $spacing-sm $spacing-lg;
+  background: var(--card-background);
+  border-radius: 16px 16px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  position: relative;
+  flex-shrink: 0;
+  min-height: 50px;
+}
+
+.desktopModalContainer .modalHeader {
+  border-radius: 16px 16px 0 0;
+  padding: $spacing-md $spacing-lg $spacing-sm $spacing-lg;
+  min-height: 50px;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.saveHeaderButton {
+  min-width: 70px;
+  padding: $spacing-sm $spacing-md;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary-color, #007aff);
+  border: 0;
+  border-radius: 8px;
+  position: absolute;
+  right: $spacing-lg;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 11;
+
+  &:hover {
+    background: var(--primary-color-hover, #005bb5);
+  }
+
+  @include media.media('>tablet') {
+    position: absolute;
+    right: $spacing-lg;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
+
+.modalContent {
+  padding: 0 $spacing-lg $spacing-xl;
+  flex: 1;
+  overflow-y: visible;
+}
+
+.desktopModalContainer .modalContent {
+  padding: 0 $spacing-lg $spacing-lg;
+}
+
+.sectionContainer {
+  margin-bottom: $spacing-xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.desktopModalContainer .sectionContainer {
+  margin-bottom: $spacing-lg;
+}
+
+.weeklyHobbyContainer {
+  display: flex;
+  overflow: hidden;
+  padding: $spacing-sm 0 0 0;
+  margin-top: $spacing-sm;
+}
+
+.dateInput {
+  padding: $spacing-xs $spacing-md;
+  font-size: toRem(16px);
+
+  @include media.media('<=tablet') {
+    width: 120px;
+  }
+}
+
+.timeSelector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeLabel {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: var(--text-secondary, #666);
+  font-weight: 500;
+}
+
+.select {
+  margin-top: 2px;
+  padding: 4px 8px;
+  font-size: 16px;
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 4px;
+  background: var(--background-primary, #fff);
+  color: var(--text-primary, #222);
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+}
+
+.colon {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0 4px;
+  color: var(--text-primary, #222);
+  margin-top: 16px; // Align with the select boxes
+}

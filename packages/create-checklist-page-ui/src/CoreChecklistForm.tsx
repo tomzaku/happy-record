@@ -1,10 +1,7 @@
 import React from 'react';
-import Card from '@moon-ui/card';
 import Button from '@moon-ui/button';
 import TextareaAutosize from 'react-textarea-autosize';
-import StartDaySelector from './StartDaySelector';
-import TimeSelector from './TimeSelector';
-import BuildWeeklyHobby from './BuildWeeklyHobby';
+import SchedulingGroup from './SchedulingGroup';
 import { Day } from '@dreamer/tasks-page-common';
 import IconPicker from './IconPicker';
 import Hr from './hr';
@@ -104,7 +101,14 @@ const CoreChecklistForm = ({
           }}
           value={checklistText}
         />
-        <BuildWeeklyHobby values={weeklyHobbies} setValues={setWeeklyHobbies} />
+        <SchedulingGroup
+          weeklyHobbies={weeklyHobbies}
+          setWeeklyHobbies={setWeeklyHobbies}
+          date={startedAt}
+          setDate={setStartedAt}
+          time={selectedTime}
+          setTime={setSelectedTime}
+        />
         <Hr />
 
         <TagInput tags={tags} setTags={setTags} />
@@ -116,10 +120,6 @@ const CoreChecklistForm = ({
           selectedColor={selectedColor}
           setSelectedColor={setSelectedColor}
         />
-        <Hr />
-        <StartDaySelector date={startedAt} setDate={setStartedAt} />
-        <Hr />
-        <TimeSelector time={selectedTime} setTime={setSelectedTime} />
         <Hr />
         <RecordTaskSetting
           selectedRecords={selectedRecords}
