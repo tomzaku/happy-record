@@ -24,7 +24,7 @@ export const ColorView = ({
   );
 };
 
-const ColorPicker = ({ value, setValue, className }: Props) => {
+const ColorPicker = ({ value, setValue, className, colorClassName }: Props) => {
   const colors = [
     '#f44336',
     '#e91e63',
@@ -51,7 +51,11 @@ const ColorPicker = ({ value, setValue, className }: Props) => {
       {colors.map((color, index) => (
         <div
           key={index}
-          className={cn(styles.color, value === color && styles.selected)}
+          className={cn(
+            styles.color,
+            value === color && styles.selected,
+            colorClassName,
+          )}
           style={{ backgroundColor: color }}
           onClick={() => setValue(color)}
         />

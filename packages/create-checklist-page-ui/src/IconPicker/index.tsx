@@ -63,49 +63,51 @@ const IconPicker = ({
           id: 'icon-picker.title',
         })}
         rightComponent={
-          <div className={styles.rightContainer}>
-            <Icon width={24} icon={selectedIcon} color={selectedColor} />
+          <div className={styles.inputContainer}>
+            <Input
+              placeholder={
+                <>
+                  <Icon
+                    icon="material-symbols:search"
+                    className={styles.searchIcon}
+                  />
+                  Search icons
+                </>
+              }
+              border="dash"
+              value={searchTerm}
+              showClear
+              onChange={e => {
+                setSearchTerm(e.target.value);
+                searchIcons(e.target.value);
+                if (e.target.value.length === 0) {
+                  setShowDropDown(DropDownStatus.Hidden);
+                } else {
+                  setShowDropDown(DropDownStatus.Icon);
+                }
+              }}
+              className={styles.iconSearchInput}
+              classes={{
+                input: styles.searchInput,
+              }}
+              renderRightInput={() => {
+                return (
+                  <Icon width={24} icon={selectedIcon} color={selectedColor} />
+                );
+              }}
+            />
+            <ColorView
+              value={selectedColor}
+              className={styles.colorView}
+              onClick={() => {
+                setShowDropDown(DropDownStatus.Color);
+              }}
+            />
           </div>
         }
         noPaddingHorizontal
       />
       <>
-        <div className={styles.inputContainer}>
-          <Input
-            placeholder={
-              <>
-                <Icon
-                  icon="material-symbols:search"
-                  className={styles.searchIcon}
-                />
-                Search icons
-              </>
-            }
-            border="dash"
-            value={searchTerm}
-            showClear
-            onChange={e => {
-              setSearchTerm(e.target.value);
-              searchIcons(e.target.value);
-              if (e.target.value.length === 0) {
-                setShowDropDown(DropDownStatus.Hidden);
-              } else {
-                setShowDropDown(DropDownStatus.Icon);
-              }
-            }}
-            className={styles.iconSearchInput}
-            classes={{
-              input: styles.searchInput,
-            }}
-          />
-          <ColorView
-            value={selectedColor}
-            className={styles.colorView}
-            onClick={() => {
-              setShowDropDown(DropDownStatus.Color);
-            }}
-          />
-        </div>
         {showDropDown === DropDownStatus.Icon && (
           <div
             style={{
