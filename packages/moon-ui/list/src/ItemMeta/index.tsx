@@ -10,7 +10,7 @@ type Props = React.DetailedHTMLProps<
   title: string;
   description?: string;
   rightComponent?: React.ReactNode;
-  noPaddingHorizontal?: boolean
+  noPaddingHorizontal?: boolean;
 };
 
 export default function ItemMeta({
@@ -23,15 +23,24 @@ export default function ItemMeta({
   onClick,
 }: Props) {
   return (
-    <div className={cx(styles.container, noPaddingHorizontal && styles.noPaddingHorizontal, className)} onClick={onClick}>
-      {logo}
-      <div className={styles.body}>
-        <Typography.Paragraph bold noMargin>
-          {title}
-        </Typography.Paragraph>
-        <Typography.Paragraph noMargin isDescription>
-          {description}
-        </Typography.Paragraph>
+    <div
+      className={cx(
+        styles.container,
+        noPaddingHorizontal && styles.noPaddingHorizontal,
+        className,
+      )}
+      onClick={onClick}
+    >
+      <div className={styles.left}>
+        {logo}
+        <div className={styles.body}>
+          <Typography.Paragraph bold noMargin>
+            {title}
+          </Typography.Paragraph>
+          <Typography.Paragraph noMargin isDescription>
+            {description}
+          </Typography.Paragraph>
+        </div>
       </div>
       {rightComponent}
     </div>

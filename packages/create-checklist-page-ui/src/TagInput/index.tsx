@@ -51,7 +51,14 @@ const TagInput = ({ tags, setTags, className }: TagInputProps) => {
     const value = e.target.value;
     setInputValue(value);
     setSearchQuery(value);
+    console.log('Input changed, value:', value, 'setting showSelector to true');
     setShowSelector(true);
+  };
+
+  const handleInputClick = () => {
+    console.log('Input clicked, current showSelector:', showSelector);
+    setShowSelector(!showSelector);
+    console.log('Setting showSelector to:', !showSelector);
   };
 
   const handleSelectTag = (tag: Tag) => {
@@ -91,64 +98,103 @@ const TagInput = ({ tags, setTags, className }: TagInputProps) => {
           id: 'label-tag.label',
         })}
         rightComponent={
-          <div className={styles.tagContainer}>
-            {tags.map((tag, index) => (
-              <div key={index} className={styles.tag}>
-                <Typography.Text className={styles.tagText}>{tag}</Typography.Text>
-                <button
-                  type="button"
-                  className={styles.removeButton}
-                  onClick={() => handleRemoveTag(tag)}
-                  aria-label="Remove tag"
-                >
-                  <Icon width={16} icon="proicons:cancel" />
-                </button>
+          <div className={styles.inputWrapper}>
+            <Input
+              ref={inputRef}
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder={
+                <>
+                  {/* <Icon */}
+                  {/*   icon="material-symbols:search" */}
+                  {/*   className={styles.searchIcon} */}
+                  {/* /> */}
+                  Add a tag (press Enter or comma)
+                </>
+              }
+              border="dash"
+              classes={{
+                input: styles.input,
+              }}
+              onClick={handleInputClick}
+              renderRightInput={() => (
+                <>
+                  <div className={styles.tagsContainer}>
+                    {tags.map((tag, index) => (
+                      <div key={index} className={styles.tag}>
+                        <Typography.Text className={styles.tagText}>
+                          {tag}
+                        </Typography.Text>
+                        <button
+                          type="button"
+                          className={styles.removeButton}
+                          onClick={() => handleRemoveTag(tag)}
+                          aria-label="Remove tag"
+                        >
+                          <Icon width={16} icon="proicons:cancel" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <Icon
+                    icon="material-symbols:keyboard-arrow-down"
+                    className={cx(styles.dropdownArrow, {
+                      [styles.open]: showSelector,
+                    })}
+                  />
+                </>
+              )}
+              renderLeftInput={() => <></>}
+            />
+            {showSelector && (
+              <div ref={selectorRef} className={styles.selector}>
+                {(() => {
+                  console.log(
+                    'Selector visible, searchQuery:',
+                    searchQuery,
+                    'searchTags result:',
+                    searchTags(searchQuery),
+                  );
+                  return null;
+                })()}
+                {searchTags(searchQuery).map(tag => (
+                  <div
+                    key={tag.id}
+                    className={styles.selectorItem}
+                    onClick={() => handleSelectTag(tag)}
+                  >
+                    <Typography.Text>{tag.name}</Typography.Text>
+                  </div>
+                ))}
+                {searchQuery.trim() &&
+                  !searchTags(searchQuery).find(
+                    tag =>
+                      tag.name.toLowerCase() ===
+                      searchQuery.trim().toLowerCase(),
+                  ) && (
+                    <div
+                      className={styles.selectorItem}
+                      onClick={() => handleAddTag(searchQuery)}
+                    >
+                      <Typography.Text>
+                        Create "{searchQuery.trim()}"
+                      </Typography.Text>
+                    </div>
+                  )}
+                {searchTags(searchQuery).length === 0 &&
+                  searchQuery.trim() === '' && (
+                    <div className={styles.selectorItem}>
+                      <Typography.Text>Type to search tags...</Typography.Text>
+                    </div>
+                  )}
               </div>
-            ))}
+            )}
           </div>
         }
       />
-      <div className={styles.inputContainer}>
-        <Input
-          ref={inputRef}
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
-          placeholder={intl.formatMessage({
-            id: 'CreateChecklist.label-add-tag-placeholder',
-            defaultMessage: 'Add a tag (press Enter or comma)',
-          })}
-          border="dash"
-          className={styles.input}
-        />
-        {showSelector && (
-          <div ref={selectorRef} className={styles.selector}>
-            {searchTags(searchQuery).map(tag => (
-              <div
-                key={tag.id}
-                className={styles.selectorItem}
-                onClick={() => handleSelectTag(tag)}
-              >
-                <Typography.Text>{tag.name}</Typography.Text>
-              </div>
-            ))}
-            {searchQuery.trim() && !searchTags(searchQuery).find(tag =>
-              tag.name.toLowerCase() === searchQuery.trim().toLowerCase()
-            ) && (
-                <div
-                  className={styles.selectorItem}
-                  onClick={() => handleAddTag(searchQuery)}
-                >
-                  <Typography.Text>
-                    Create "{searchQuery.trim()}"
-                  </Typography.Text>
-                </div>
-              )}
-          </div>
-        )}
-      </div>
     </div>
   );
 };
 
-export default TagInput; 
+export default TagInput;

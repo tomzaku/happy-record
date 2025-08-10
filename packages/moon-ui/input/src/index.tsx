@@ -13,6 +13,7 @@ type Props = React.DetailedHTMLProps<
   classes?: { input: string };
   showClear?: boolean;
   renderRightInput: () => JSX.Element;
+  renderLeftInput?: () => JSX.Element;
   /** Content to display on the right side of the input (e.g., units like "km", "minutes") */
   suffix?: React.ReactNode;
 };
@@ -31,6 +32,7 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
       showClear,
       suffix,
       renderRightInput,
+      renderLeftInput,
       ...restProps
     },
     ref,
@@ -79,6 +81,9 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
 
     return (
       <div className={cx(styles.inputWrapper, className)}>
+        {renderLeftInput && (
+          <div className={styles.left}>{renderLeftInput()}</div>
+        )}
         <input
           ref={inputRef}
           className={cx(

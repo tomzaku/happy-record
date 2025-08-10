@@ -7,19 +7,27 @@
   // background: var(--card-background);
   display: flex;
   padding: $spacing-sm;
+  justify-content: space-between;
   // @include media.media('<=tablet') {
   //   // padding: $spacing-sm $spacing-md;
   //   padding: $spacing-sm 0;
   // }
 }
+
 .noPaddingHorizontal {
-  padding-left: 0px;
-  padding-right: 0px
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .body {
   display: flex;
-  flex: 1;
+  // flex: 1;
   flex-direction: column;
   margin-left: $spacing-sm;
+  margin-right: $spacing-sm;
+}
+
+.left {
+  display: flex;
+  align-items: center;
 }
