@@ -130,7 +130,7 @@ const IconPicker = ({
                     setShowDropDown(DropDownStatus.Icon);
                   }
                 }}
-                className={styles.iconSearchInput}
+                className={styles.twoLineInput}
                 classes={{
                   input: styles.searchInput,
                 }}

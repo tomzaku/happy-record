@@ -313,23 +313,6 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
                 layout="two-line"
               />
             </div>
-            <div className={styles.modalFooter}>
-              <Button
-                type="ghost"
-                size="lg"
-                onClick={handleModalClose}
-                className={styles.cancelButton}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="lg"
-                onClick={handleSaveIcon}
-                className={styles.saveButton}
-              >
-                Save
-              </Button>
-            </div>
           </div>
         }
       />
@@ -354,23 +337,6 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
                 setValues={setTempWeeklyHobbies}
               />
             </div>
-            <div className={styles.modalFooter}>
-              <Button
-                type="ghost"
-                size="lg"
-                onClick={handleModalClose}
-                className={styles.cancelButton}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="lg"
-                onClick={handleSaveSchedule}
-                className={styles.saveButton}
-              >
-                Save
-              </Button>
-            </div>
           </div>
         }
       />
@@ -389,23 +355,6 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
             <Division />
             <div className={styles.modalContent}>
               <TagInput tags={tempTags} setTags={setTempTags} />
-            </div>
-            <div className={styles.modalFooter}>
-              <Button
-                type="ghost"
-                size="lg"
-                onClick={handleModalClose}
-                className={styles.cancelButton}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="lg"
-                onClick={handleSaveTags}
-                className={styles.saveButton}
-              >
-                Save
-              </Button>
             </div>
           </div>
         }

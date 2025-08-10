@@ -1,11 +1,10 @@
 import React from 'react';
 
-
 // Hooks
 import { useDrag } from '@use-gesture/react';
 
 // Utils
-import cx from 'classnames'
+import cx from 'classnames';
 import { a, useSpring, config } from '@react-spring/web';
 
 import styles from './BottomModal.module.scss';
@@ -52,12 +51,10 @@ export default function BottomModal({ visible, content, onDismiss }: Props) {
       // when the user releases the sheet, we check whether it passed
       // the threshold for it to close, or if we reset it to its open positino
       if (last) {
-        if(my > height * 0.5 || (vy > 0.5 && dy > 0)) {
-         close(vy)
-         onDismiss()
- 
+        if (my > height * 0.5 || (vy > 0.5 && dy > 0)) {
+          close(vy);
+          onDismiss();
         } else {
-
           open({ canceled });
         }
       }
@@ -70,7 +67,7 @@ export default function BottomModal({ visible, content, onDismiss }: Props) {
       filterTaps: true,
       bounds: { top: 0 },
       rubberband: true,
-    }
+    },
   );
 
   const display = y.to(py => (py < height ? 'block' : 'none'));
@@ -89,14 +86,13 @@ export default function BottomModal({ visible, content, onDismiss }: Props) {
     <>
       <a.div
         className={cx(styles.overlay, visible && styles.overlayVisible)}
-        onClick={() => { close(); onDismiss()}}
+        onClick={() => {
+          close();
+          onDismiss();
+        }}
         style={bgStyle}
-        />
-      <a.div
-        className={styles.sheet}
-        {...bind()}
-        style={{ display, bottom: `calc(-100vh + ${height - 100}px)`, y }}
-      >
+      />
+      <a.div className={styles.sheet} {...bind()} style={{ display, y }}>
         {content}
       </a.div>
     </>

@@ -9,6 +9,12 @@
   margin-right: $spacing-sm;
 }
 
+.twoLineInput {
+  border-radius: 100px;
+  box-sizing: border-box;
+  flex: 1;
+}
+
 .searchInput {
   border-radius: 20px;
   min-width: 214px;

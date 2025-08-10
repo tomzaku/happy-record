@@ -6,12 +6,12 @@ import MultiSelectButton from '@moon-ui/button/src/MultiSelectButton';
 import Toggle from '@moon-ui/toggle';
 import Button from '@moon-ui/button';
 import Typography from '@moon-ui/typography';
-import BottomModal from '@moon-ui/modal/src/BottomModal';
 import Modal from '@moon-ui/modal/src/Modal';
 import { useIntl } from '@dreamer/translation';
 import { a, useSpring } from '@react-spring/web';
 import { Day } from '@dreamer/tasks-page-common';
 import styles from './index.module.scss';
+import cx from 'classnames';
 
 const SchedulingGroup = ({
   weeklyHobbies,
@@ -30,66 +30,24 @@ const SchedulingGroup = ({
 }) => {
   const intl = useIntl();
   const [isModalVisible, setIsModalVisible] = React.useState(false);
-  
+
   // Detect if we're on desktop
   const [isDesktop, setIsDesktop] = React.useState(false);
-  
+
   React.useEffect(() => {
     const checkIsDesktop = () => {
       setIsDesktop(window.innerWidth > 768);
     };
-    
+
     checkIsDesktop();
     window.addEventListener('resize', checkIsDesktop);
-    
+
     return () => window.removeEventListener('resize', checkIsDesktop);
   }, []);
 
-  // Fix BottomModal positioning issue
-  React.useEffect(() => {
-    if (isModalVisible && !isDesktop) {
-      const fixModalPosition = () => {
-        // Try multiple selectors to find the problematic element
-        const selectors = [
-          'div[style*="calc(-100vh"]',
-          'div[style*="calc(200px - 100vh"]',
-          'div[style*="bottom: calc"]',
-          '.moon-ui-modal-sheet',
-          '[class*="sheet"]'
-        ];
-        
-        for (const selector of selectors) {
-          const modalSheet = document.querySelector(selector);
-          if (modalSheet && modalSheet instanceof HTMLElement) {
-            console.log('Found modal element:', modalSheet);
-            modalSheet.style.setProperty('bottom', '0', 'important');
-            modalSheet.style.setProperty('height', 'auto', 'important');
-            modalSheet.style.setProperty('max-height', '90vh', 'important');
-            modalSheet.style.setProperty('transform', 'none', 'important');
-            break;
-          }
-        }
-      };
-      
-      // Try multiple times to catch the element
-      const timeouts = [50, 100, 200, 500];
-      const timeoutIds = timeouts.map(delay => 
-        setTimeout(fixModalPosition, delay)
-      );
-      
-      // Also set up an observer
-      const observer = new MutationObserver(fixModalPosition);
-      observer.observe(document.body, { childList: true, subtree: true });
-      
-      return () => {
-        timeoutIds.forEach(clearTimeout);
-        observer.disconnect();
-      };
-    }
-  }, [isModalVisible, isDesktop]);
-  
   // Temporary state for modal editing
-  const [tempWeeklyHobbies, setTempWeeklyHobbies] = React.useState<Day[]>(weeklyHobbies);
+  const [tempWeeklyHobbies, setTempWeeklyHobbies] =
+    React.useState<Day[]>(weeklyHobbies);
   const [tempDate, setTempDate] = React.useState(date);
   const [tempTime, setTempTime] = React.useState(time);
   const [tempHour, setTempHour] = React.useState('');
@@ -154,8 +112,12 @@ const SchedulingGroup = ({
   };
 
   // Generate options
-  const hourOptions = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-  const minuteOptions = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+  const hourOptions = Array.from({ length: 24 }, (_, i) =>
+    i.toString().padStart(2, '0'),
+  );
+  const minuteOptions = Array.from({ length: 60 }, (_, i) =>
+    i.toString().padStart(2, '0'),
+  );
 
   const animationStyles = useSpring({
     maxHeight: 80, // Always show the day selection buttons when modal is open
@@ -163,7 +125,11 @@ const SchedulingGroup = ({
 
   // Modal content component
   const modalContent = (
-    <div className={isDesktop ? styles.desktopModalContainer : styles.modalContainer}>
+    <div
+      className={
+        isDesktop ? styles.desktopModalContainer : styles.modalContainer
+      }
+    >
       {!isDesktop && <div className={styles.modalHandle}></div>}
       <div className={styles.modalHeader}>
         <Typography.Title level={3} noMargin className={styles.modalTitle}>
@@ -242,7 +208,7 @@ const SchedulingGroup = ({
             }
           />
         </div>
-        
+
         {/* Time Selector Section */}
         <div className={styles.sectionContainer}>
           <List.ItemMeta
@@ -263,10 +229,16 @@ const SchedulingGroup = ({
                     defaultMessage: 'Hour',
                     id: 'label-time.hour',
                   })}
-                  <select value={tempHour} onChange={handleTempHourChange} className={styles.select}>
+                  <select
+                    value={tempHour}
+                    onChange={handleTempHourChange}
+                    className={styles.select}
+                  >
                     <option value="">--</option>
                     {hourOptions.map(h => (
-                      <option key={h} value={h}>{h}</option>
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -276,10 +248,16 @@ const SchedulingGroup = ({
                     defaultMessage: 'Minute',
                     id: 'label-time.minute',
                   })}
-                  <select value={tempMinute} onChange={handleTempMinuteChange} className={styles.select}>
+                  <select
+                    value={tempMinute}
+                    onChange={handleTempMinuteChange}
+                    className={styles.select}
+                  >
                     <option value="">--</option>
                     {minuteOptions.map(m => (
-                      <option key={m} value={m}>{m}</option>
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -302,46 +280,83 @@ const SchedulingGroup = ({
     }
 
     const parts = [];
-    
-    const allDays = [Day.Mon, Day.Tue, Day.Wed, Day.Thu, Day.Fri, Day.Sat, Day.Sun];
+
+    const allDays = [
+      Day.Mon,
+      Day.Tue,
+      Day.Wed,
+      Day.Thu,
+      Day.Fri,
+      Day.Sat,
+      Day.Sun,
+    ];
     const weekdays = [Day.Mon, Day.Tue, Day.Wed, Day.Thu, Day.Fri];
     const weekend = [Day.Sat, Day.Sun];
-    
+
     // Check for common patterns
-    if (weeklyHobbies.length === 7 && allDays.every(day => weeklyHobbies.includes(day))) {
+    if (
+      weeklyHobbies.length === 7 &&
+      allDays.every(day => weeklyHobbies.includes(day))
+    ) {
       parts.push('Everyday');
-    } else if (weeklyHobbies.length === 5 && weekdays.every(day => weeklyHobbies.includes(day))) {
+    } else if (
+      weeklyHobbies.length === 5 &&
+      weekdays.every(day => weeklyHobbies.includes(day))
+    ) {
       parts.push('Weekdays');
-    } else if (weeklyHobbies.length === 2 && weekend.every(day => weeklyHobbies.includes(day))) {
+    } else if (
+      weeklyHobbies.length === 2 &&
+      weekend.every(day => weeklyHobbies.includes(day))
+    ) {
       parts.push('Weekend');
     } else {
       // Show individual days for other combinations, sorted in week order
-      const dayOrder = [Day.Mon, Day.Tue, Day.Wed, Day.Thu, Day.Fri, Day.Sat, Day.Sun];
-      const sortedDays = weeklyHobbies.sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
-      
-      const dayLabels = sortedDays.map(day => {
-        switch(day) {
-          case Day.Mon: return 'Mon';
-          case Day.Tue: return 'Tue';
-          case Day.Wed: return 'Wed';
-          case Day.Thu: return 'Thu';
-          case Day.Fri: return 'Fri';
-          case Day.Sat: return 'Sat';
-          case Day.Sun: return 'Sun';
-          default: return '';
-        }
-      }).join(', ');
+      const dayOrder = [
+        Day.Mon,
+        Day.Tue,
+        Day.Wed,
+        Day.Thu,
+        Day.Fri,
+        Day.Sat,
+        Day.Sun,
+      ];
+      const sortedDays = weeklyHobbies.sort(
+        (a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b),
+      );
+
+      const dayLabels = sortedDays
+        .map(day => {
+          switch (day) {
+            case Day.Mon:
+              return 'Mon';
+            case Day.Tue:
+              return 'Tue';
+            case Day.Wed:
+              return 'Wed';
+            case Day.Thu:
+              return 'Thu';
+            case Day.Fri:
+              return 'Fri';
+            case Day.Sat:
+              return 'Sat';
+            case Day.Sun:
+              return 'Sun';
+            default:
+              return '';
+          }
+        })
+        .join(', ');
       parts.push(dayLabels);
     }
-    
+
     if (date) {
       parts.push(`Start: ${date}`);
     }
-    
+
     if (time) {
       parts.push(`Time: ${time}`);
     }
-    
+
     return parts.join(' • ');
   };
 
@@ -393,11 +408,20 @@ const SchedulingGroup = ({
           content={modalContent}
         />
       ) : (
-        <BottomModal
-          visible={isModalVisible}
-          onDismiss={handleModalClose}
-          content={modalContent}
-        />
+        <>
+          {/* Simple overlay */}
+          {isModalVisible && (
+            <div className={styles.simpleOverlay} onClick={handleModalClose} />
+          )}
+          {/* Simple bottom sheet */}
+          <div
+            className={cx(styles.simpleBottomSheet, {
+              [styles.visible]: isModalVisible,
+            })}
+          >
+            {modalContent}
+          </div>
+        </>
       )}
     </>
   );

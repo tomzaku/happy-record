@@ -10,7 +10,7 @@
   width: 100%;
   box-shadow: 0 8px 25px var(--card-shadow);
   border: 1px solid var(--modal-from-bottom-border);
-  z-index:  $modal-z-index;
+  z-index: $modal-z-index;
   max-width: 600px;
 }
 
@@ -30,11 +30,11 @@
   z-index: $modal-z-index;
   position: fixed;
   left: 2vw;
-  height: calc(100vh + 100px);
   width: 96vw;
-  border-radius: 12px 12px 0px;
+  border-radius: 12px 12px 0 0;
   background: #fff;
   touch-action: none;
+  bottom: 0;
 }
 
 .overlayVisible {
@@ -42,4 +42,3 @@
   min-height: fill-available;
   min-height: -webkit-fill-available;
 }
-
