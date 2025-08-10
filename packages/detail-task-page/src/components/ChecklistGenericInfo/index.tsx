@@ -38,25 +38,33 @@ enum EditModal {
 const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
   const intl = useIntl();
   const [isCollapsed, setIsCollapsed] = React.useState(true);
-  const [activeModal, setActiveModal] = React.useState<EditModal>(EditModal.None);
-  
+  const [activeModal, setActiveModal] = React.useState<EditModal>(
+    EditModal.None,
+  );
+
   // Form states for editing
-  const [tempIcon, setTempIcon] = React.useState(checklistTemplate.avatar?.name || '');
-  const [tempColor, setTempColor] = React.useState(checklistTemplate.avatar?.color || '#607d8b');
+  const [tempIcon, setTempIcon] = React.useState(
+    checklistTemplate.avatar?.name || '',
+  );
+  const [tempColor, setTempColor] = React.useState(
+    checklistTemplate.avatar?.color || '#607d8b',
+  );
   const [tempStartDay, setTempStartDay] = React.useState(
-    checklistTemplate.repeat?.startedAt 
+    checklistTemplate.repeat?.startedAt
       ? new Date(checklistTemplate.repeat.startedAt).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0],
   );
   const [tempTime, setTempTime] = React.useState(
     checklistTemplate.repeat?.hour && checklistTemplate.repeat?.minute
       ? `${checklistTemplate.repeat.hour.padStart(2, '0')}:${checklistTemplate.repeat.minute.padStart(2, '0')}`
-      : ''
+      : '',
   );
   const [tempWeeklyHobbies, setTempWeeklyHobbies] = React.useState<Day[]>(
-    getDaysFromRepeat(checklistTemplate.repeat)
+    getDaysFromRepeat(checklistTemplate.repeat),
   );
-  const [tempTags, setTempTags] = React.useState<string[]>(checklistTemplate.tags || []);
+  const [tempTags, setTempTags] = React.useState<string[]>(
+    checklistTemplate.tags || [],
+  );
 
   const formatDisplayTime = () => {
     if (checklistTemplate.repeat?.hour && checklistTemplate.repeat?.minute) {
@@ -69,17 +77,17 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
     const days = getDaysFromRepeat(checklistTemplate.repeat);
     if (days.length === 0) return 'Not set';
     if (days.length === 7) return 'Every day';
-    
+
     const dayNames = {
       [Day.Mon]: 'Mon',
-      [Day.Tue]: 'Tue', 
+      [Day.Tue]: 'Tue',
       [Day.Wed]: 'Wed',
       [Day.Thu]: 'Thu',
       [Day.Fri]: 'Fri',
       [Day.Sat]: 'Sat',
       [Day.Sun]: 'Sun',
     };
-    
+
     return days.map(day => dayNames[day]).join(', ');
   };
 
@@ -110,11 +118,11 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
   };
 
   const handleSaveSchedule = () => {
-    const repeat = calculateRepeat({ 
-      weeklyHobbies: tempWeeklyHobbies, 
-      selectedTime: tempTime 
+    const repeat = calculateRepeat({
+      weeklyHobbies: tempWeeklyHobbies,
+      selectedTime: tempTime,
     });
-    
+
     onUpdate({
       ...checklistTemplate,
       repeat: {
@@ -137,14 +145,16 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
     setTempIcon(checklistTemplate.avatar?.name || '');
     setTempColor(checklistTemplate.avatar?.color || '#607d8b');
     setTempStartDay(
-      checklistTemplate.repeat?.startedAt 
-        ? new Date(checklistTemplate.repeat.startedAt).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0]
+      checklistTemplate.repeat?.startedAt
+        ? new Date(checklistTemplate.repeat.startedAt)
+            .toISOString()
+            .split('T')[0]
+        : new Date().toISOString().split('T')[0],
     );
     setTempTime(
       checklistTemplate.repeat?.hour && checklistTemplate.repeat?.minute
         ? `${checklistTemplate.repeat.hour.padStart(2, '0')}:${checklistTemplate.repeat.minute.padStart(2, '0')}`
-        : ''
+        : '',
     );
     setTempWeeklyHobbies(getDaysFromRepeat(checklistTemplate.repeat));
     setTempTags(checklistTemplate.tags || []);
@@ -158,18 +168,27 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
   return (
     <>
       <Card className={styles.cardContainer}>
-        <div className={styles.header} onClick={() => setIsCollapsed(!isCollapsed)}>
+        <div
+          className={styles.header}
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
           <div className={styles.titleSection}>
-            <Icon 
-              width={24} 
-              icon={checklistTemplate.avatar?.name || 'solar:settings-linear'} 
+            <Icon
+              width={24}
+              icon={checklistTemplate.avatar?.name || 'solar:settings-linear'}
               color={checklistTemplate.avatar?.color || '#607d8b'}
             />
-            <Typography.Title level={4}>General Settings</Typography.Title>
+            <Typography.Title level={4} noMargin>
+              General Settings
+            </Typography.Title>
           </div>
-          <Icon 
-            width={20} 
-            icon={isCollapsed ? 'solar:alt-arrow-down-linear' : 'solar:alt-arrow-up-linear'} 
+          <Icon
+            width={20}
+            icon={
+              isCollapsed
+                ? 'solar:alt-arrow-down-linear'
+                : 'solar:alt-arrow-up-linear'
+            }
           />
         </div>
 
@@ -193,14 +212,17 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
               description="Customize appearance"
               rightComponent={
                 <div className={styles.displayRow}>
-                  <Icon 
-                    width={24} 
-                    icon={checklistTemplate.avatar?.name || 'solar:question-circle-linear'} 
+                  <Icon
+                    width={24}
+                    icon={
+                      checklistTemplate.avatar?.name ||
+                      'solar:question-circle-linear'
+                    }
                     color={checklistTemplate.avatar?.color || '#607d8b'}
                   />
-                  <Icon 
-                    width={16} 
-                    icon="solar:pen-2-line-duotone" 
+                  <Icon
+                    width={16}
+                    icon="solar:pen-2-line-duotone"
                     className={styles.editIcon}
                     onClick={() => {
                       resetModalStates();
@@ -224,11 +246,11 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
               rightComponent={
                 <div className={styles.displayRow}>
                   <Typography.Text>{formatDisplayStartDate()}</Typography.Text>
-                  <Icon 
-                    width={16} 
-                    icon="solar:pen-2-line-duotone" 
+                  <Icon
+                    width={16}
+                    icon="solar:pen-2-line-duotone"
                     className={styles.editIcon}
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       resetModalStates();
                       setActiveModal(EditModal.Schedule);
@@ -249,11 +271,11 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
               title="Tags"
               description={formatDisplayTags()}
               rightComponent={
-                <Icon 
-                  width={16} 
-                  icon="solar:pen-2-line-duotone" 
+                <Icon
+                  width={16}
+                  icon="solar:pen-2-line-duotone"
                   className={styles.editIcon}
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     resetModalStates();
                     setActiveModal(EditModal.Tags);
@@ -277,7 +299,9 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
         content={
           <div className={styles.modalContainer}>
             <div className={styles.modalHeader}>
-              <Typography.Title level={3} noMargin>Edit Icon & Color</Typography.Title>
+              <Typography.Title level={3} noMargin>
+                Edit Icon & Color
+              </Typography.Title>
             </div>
             <Division />
             <div className={styles.modalContent}>
@@ -286,6 +310,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
                 setSelectedIcon={setTempIcon}
                 selectedColor={tempColor}
                 setSelectedColor={setTempColor}
+                layout="two-line"
               />
             </div>
             <div className={styles.modalFooter}>
@@ -316,18 +341,14 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
         content={
           <div className={styles.modalContainer}>
             <div className={styles.modalHeader}>
-              <Typography.Title level={3} noMargin>Edit Schedule</Typography.Title>
+              <Typography.Title level={3} noMargin>
+                Edit Schedule
+              </Typography.Title>
             </div>
             <Division />
             <div className={styles.modalContent}>
-              <StartDaySelector
-                date={tempStartDay}
-                setDate={setTempStartDay}
-              />
-              <TimeSelector
-                time={tempTime}
-                setTime={setTempTime}
-              />
+              <StartDaySelector date={tempStartDay} setDate={setTempStartDay} />
+              <TimeSelector time={tempTime} setTime={setTempTime} />
               <BuildWeeklyHobby
                 values={tempWeeklyHobbies}
                 setValues={setTempWeeklyHobbies}
@@ -361,14 +382,13 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
         content={
           <div className={styles.modalContainer}>
             <div className={styles.modalHeader}>
-              <Typography.Title level={3} noMargin>Edit Tags</Typography.Title>
+              <Typography.Title level={3} noMargin>
+                Edit Tags
+              </Typography.Title>
             </div>
             <Division />
             <div className={styles.modalContent}>
-              <TagInput
-                tags={tempTags}
-                setTags={setTempTags}
-              />
+              <TagInput tags={tempTags} setTags={setTempTags} />
             </div>
             <div className={styles.modalFooter}>
               <Button

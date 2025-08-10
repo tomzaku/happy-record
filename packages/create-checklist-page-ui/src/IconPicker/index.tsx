@@ -18,6 +18,7 @@ type Props = {
   className?: string;
   selectedColor: string;
   setSelectedColor: (color: string) => void;
+  layout?: 'single' | 'two-line';
 };
 
 enum DropDownStatus {
@@ -31,6 +32,7 @@ const IconPicker = ({
   className,
   selectedColor,
   setSelectedColor,
+  layout = 'single',
 }: Props) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [icons, setIcons] = useState<string[]>([]);
@@ -56,57 +58,115 @@ const IconPicker = ({
 
   return (
     <div className={cx(className, styles.container)}>
-      <List.ItemMeta
-        logo={<Icon width={24} icon={'tdesign:icon'} />}
-        title={intl.formatMessage({
-          defaultMessage: 'Icons',
-          id: 'icon-picker.title',
-        })}
-        rightComponent={
-          <div className={styles.inputContainer}>
-            <Input
-              placeholder={
-                <>
-                  <Icon
-                    icon="material-symbols:search"
-                    className={styles.searchIcon}
-                  />
-                  Search icons
-                </>
-              }
-              border="dash"
-              value={searchTerm}
-              showClear
-              onChange={e => {
-                setSearchTerm(e.target.value);
-                searchIcons(e.target.value);
-                if (e.target.value.length === 0) {
-                  setShowDropDown(DropDownStatus.Hidden);
-                } else {
-                  setShowDropDown(DropDownStatus.Icon);
-                }
-              }}
-              className={styles.iconSearchInput}
-              classes={{
-                input: styles.searchInput,
-              }}
-              renderRightInput={() => {
-                return (
-                  <Icon width={24} icon={selectedIcon} color={selectedColor} />
-                );
-              }}
-            />
-            <ColorView
-              value={selectedColor}
-              className={styles.colorView}
-              onClick={() => {
-                setShowDropDown(DropDownStatus.Color);
-              }}
-            />
-          </div>
-        }
-        noPaddingHorizontal
-      />
+      {layout === 'single' ? (
+        <List.ItemMeta
+          logo={<Icon width={24} icon={'tdesign:icon'} />}
+          title={intl.formatMessage({
+            defaultMessage: 'Icons',
+            id: 'icon-picker.title',
+          })}
+          rightComponent={
+            <div className={styles.rightContainer}>
+              <Input
+                placeholder="Search icons"
+                border="dash"
+                value={searchTerm}
+                showClear
+                onChange={e => {
+                  setSearchTerm(e.target.value);
+                  searchIcons(e.target.value);
+                  if (e.target.value.length === 0) {
+                    setShowDropDown(DropDownStatus.Hidden);
+                  } else {
+                    setShowDropDown(DropDownStatus.Icon);
+                  }
+                }}
+                className={styles.iconSearchInput}
+                classes={{
+                  input: styles.searchInput,
+                }}
+                renderRightInput={() => {
+                  return (
+                    <Icon
+                      width={24}
+                      icon={selectedIcon}
+                      color={selectedColor}
+                    />
+                  );
+                }}
+              />
+              <ColorView
+                value={selectedColor}
+                className={styles.colorView}
+                onClick={() => {
+                  setShowDropDown(DropDownStatus.Color);
+                }}
+              />
+            </div>
+          }
+          noPaddingHorizontal
+        />
+      ) : (
+        <>
+          {/* First row: Icons */}
+          <List.ItemMeta
+            logo={<Icon width={24} icon={'tdesign:icon'} />}
+            title={intl.formatMessage({
+              defaultMessage: 'Icons',
+              id: 'icon-picker.title',
+            })}
+            rightComponent={
+              <Input
+                placeholder="Search icons"
+                border="dash"
+                value={searchTerm}
+                showClear
+                onChange={e => {
+                  setSearchTerm(e.target.value);
+                  searchIcons(e.target.value);
+                  if (e.target.value.length === 0) {
+                    setShowDropDown(DropDownStatus.Hidden);
+                  } else {
+                    setShowDropDown(DropDownStatus.Icon);
+                  }
+                }}
+                className={styles.iconSearchInput}
+                classes={{
+                  input: styles.searchInput,
+                }}
+                renderRightInput={() => {
+                  return (
+                    <Icon
+                      width={24}
+                      icon={selectedIcon}
+                      color={selectedColor}
+                    />
+                  );
+                }}
+              />
+            }
+            noPaddingHorizontal
+          />
+          {/* Second row: Colors */}
+          <List.ItemMeta
+            logo={<Icon width={24} icon={'solar:pallete-2-linear'} />}
+            title={intl.formatMessage({
+              defaultMessage: 'Colors',
+              id: 'icon-picker.color-title',
+            })}
+            rightComponent={
+              <ColorView
+                value={selectedColor}
+                className={styles.colorView}
+                onClick={() => {
+                  setShowDropDown(DropDownStatus.Color);
+                }}
+              />
+            }
+            noPaddingHorizontal
+          />
+        </>
+      )}
       <>
         {showDropDown === DropDownStatus.Icon && (
           <div

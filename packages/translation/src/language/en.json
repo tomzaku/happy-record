@@ -15,7 +15,6 @@
   "ChecklistTemplate.delete-confirm-title": "Delete Checklist Template",
   "ChecklistTemplatePageInfo.back": "Back",
   "ChecklistToday.no-record": "No tasks found!",
-  "CreateChecklist.label-add-tag-placeholder": "Add a tag (press Enter or comma)",
   "CreateChecklist.label-create-checklist-input-placeholder": "Write your task here",
   "CreateChecklist.label-delete": "DELETE",
   "CreateChecklist.label-submit": "SUBMIT",

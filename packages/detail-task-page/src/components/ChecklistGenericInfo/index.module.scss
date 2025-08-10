@@ -1,3 +1,5 @@
+@use '@moon-ui/app-scss/metric' as *;
+
 .cardContainer {
   margin-bottom: 16px;
   border-radius: 12px;
@@ -65,7 +67,7 @@
 
 .modalContent {
   flex: 1;
-  padding: 0 24px;
+  padding: $spacing-sm;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -116,10 +118,5 @@
   .content {
     padding: 0 16px 12px;
     gap: 8px;
-  }
-
-  .modalContent {
-    padding: 16px 0;
-    gap: 20px;
   }
 }
