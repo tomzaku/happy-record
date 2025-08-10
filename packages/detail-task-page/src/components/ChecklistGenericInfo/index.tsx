@@ -14,12 +14,10 @@ import { Day } from '@dreamer/tasks-page-common';
 // Import existing components for editing
 import IconPicker from '@pregnant/create-checklist-page-ui/src/IconPicker';
 import ColorPicker from '@pregnant/create-checklist-page-ui/src/ColorPicker';
-import StartDaySelector from '@pregnant/create-checklist-page-ui/src/StartDaySelector';
-import TimeSelector from '@pregnant/create-checklist-page-ui/src/TimeSelector';
-import BuildWeeklyHobby from '@pregnant/create-checklist-page-ui/src/BuildWeeklyHobby';
 import TagInput from '@pregnant/create-checklist-page-ui/src/TagInput';
 import { getDaysFromRepeat } from '@pregnant/create-checklist-page-ui/src/getDayFromRepeat';
 import { calculateRepeat } from '@pregnant/create-checklist-page-ui/src/calculateRepeat';
+import { ScheduleModalContent } from '@pregnant/create-checklist-page-ui';
 
 import styles from './index.module.scss';
 
@@ -329,13 +327,23 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
               </Typography.Title>
             </div>
             <Division />
-            <div className={styles.modalContent}>
-              <StartDaySelector date={tempStartDay} setDate={setTempStartDay} />
-              <TimeSelector time={tempTime} setTime={setTempTime} />
-              <BuildWeeklyHobby
-                values={tempWeeklyHobbies}
-                setValues={setTempWeeklyHobbies}
-              />
+            <ScheduleModalContent
+              tempWeeklyHobbies={tempWeeklyHobbies}
+              setTempWeeklyHobbies={setTempWeeklyHobbies}
+              tempDate={tempStartDay}
+              setTempDate={setTempStartDay}
+              tempTime={tempTime}
+              setTempTime={setTempTime}
+              isDesktop={false}
+            />
+            <Division />
+            <div className={styles.modalFooter}>
+              <Button
+                onClick={handleSaveSchedule}
+                className={styles.saveButton}
+              >
+                Save
+              </Button>
             </div>
           </div>
         }
