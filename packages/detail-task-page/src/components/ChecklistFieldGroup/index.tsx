@@ -53,7 +53,7 @@ const ChecklistFieldGroup = ({
     checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
       return {
         ...acc,
-        [fieldGroup.id]: true, // Start collapsed by default
+        [fieldGroup.id]: false,
       };
     }, {}),
   );

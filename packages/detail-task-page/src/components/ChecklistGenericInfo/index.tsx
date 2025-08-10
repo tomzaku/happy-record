@@ -300,8 +300,10 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
               <Typography.Title level={3} noMargin>
                 Edit Icon & Color
               </Typography.Title>
+              <Button onClick={handleSaveIcon} className={styles.saveButton}>
+                Save
+              </Button>
             </div>
-            <Division />
             <div className={styles.modalContent}>
               <IconPicker
                 selectedIcon={tempIcon}
@@ -325,8 +327,13 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
               <Typography.Title level={3} noMargin>
                 Edit Schedule
               </Typography.Title>
+              <Button
+                onClick={handleSaveSchedule}
+                className={styles.saveButton}
+              >
+                Save
+              </Button>
             </div>
-            <Division />
             <ScheduleModalContent
               tempWeeklyHobbies={tempWeeklyHobbies}
               setTempWeeklyHobbies={setTempWeeklyHobbies}
@@ -336,15 +343,6 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
               setTempTime={setTempTime}
               isDesktop={false}
             />
-            <Division />
-            <div className={styles.modalFooter}>
-              <Button
-                onClick={handleSaveSchedule}
-                className={styles.saveButton}
-              >
-                Save
-              </Button>
-            </div>
           </div>
         }
       />
@@ -359,10 +357,13 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
               <Typography.Title level={3} noMargin>
                 Edit Tags
               </Typography.Title>
+              <Button onClick={handleSaveTags} className={styles.saveButton}>
+                Save
+              </Button>
             </div>
-            <Division />
             <div className={styles.modalContent}>
               <TagInput tags={tempTags} setTags={setTempTags} />
+              <div style={{ height: 100 }} />
             </div>
           </div>
         }
