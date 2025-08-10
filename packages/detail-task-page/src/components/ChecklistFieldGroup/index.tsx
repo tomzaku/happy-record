@@ -19,6 +19,7 @@ import ChecklistFieldGroupAdd from '../ChecklistFieldGroupAdd';
 import ChecklistFieldGroupHistory from '../ChecklistFieldGroupHistory';
 import ChecklistFieldGroupView from '../ChecklistFieldGroupView';
 import ChecklistFieldMetric from '../ChecklistFieldMetric';
+import ChecklistFieldGroupConfig from '../ChecklistFieldGroupConfig';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 
 type Props = {
@@ -58,6 +59,46 @@ const ChecklistFieldGroup = ({
     }, {}),
   );
 
+  // New state for config settings
+  const [defaultTabs, setDefaultTabs] = React.useState<
+    Record<string, ChecklistFieldGroupTab>
+  >(
+    checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
+      return {
+        ...acc,
+        [fieldGroup.id]: ChecklistFieldGroupTab.Home,
+      };
+    }, {}),
+  );
+
+  const [activeTabs, setActiveTabs] = React.useState<
+    Record<string, ChecklistFieldGroupTab[]>
+  >(
+    checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
+      return {
+        ...acc,
+        [fieldGroup.id]: [
+          ChecklistFieldGroupTab.Home,
+          ChecklistFieldGroupTab.History,
+          ChecklistFieldGroupTab.Metric,
+          ChecklistFieldGroupTab.Config,
+          ChecklistFieldGroupTab.Add,
+        ],
+      };
+    }, {}),
+  );
+
+  const [collapseDefaults, setCollapseDefaults] = React.useState<
+    Record<string, boolean>
+  >(
+    checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
+      return {
+        ...acc,
+        [fieldGroup.id]: false,
+      };
+    }, {}),
+  );
+
   const toggleCollapse = (fieldGroupId: string) => {
     setCollapsedGroups(prev => ({
       ...prev,
@@ -71,6 +112,7 @@ const ChecklistFieldGroup = ({
       [ChecklistFieldGroupTab.History]: 'Record History',
       [ChecklistFieldGroupTab.Add]: 'Add Record',
       [ChecklistFieldGroupTab.Metric]: 'Metric',
+      [ChecklistFieldGroupTab.Config]: 'Group Settings',
     };
     // return tabToTitle[activeTab[fieldGroup.id]];
     return fieldGroup.title;
@@ -151,6 +193,53 @@ const ChecklistFieldGroup = ({
         );
         break;
       }
+      case ChecklistFieldGroupTab.Config: {
+        tabContent = (
+          <ChecklistFieldGroupConfig
+            fieldGroup={fieldGroup}
+            onUpdateFieldGroup={updatedGroup => {
+              updateChecklistTemplate({
+                ...checklistTemplate,
+                fieldGroups: [
+                  ...checklistTemplate.fieldGroups.slice(0, index),
+                  updatedGroup,
+                  ...checklistTemplate.fieldGroups.slice(index + 1),
+                ],
+              });
+            }}
+            defaultTab={
+              defaultTabs[fieldGroup.id] || ChecklistFieldGroupTab.Home
+            }
+            onUpdateDefaultTab={tab => {
+              setDefaultTabs(prev => ({
+                ...prev,
+                [fieldGroup.id]: tab,
+              }));
+              setActiveTab(prev => ({
+                ...prev,
+                [fieldGroup.id]: tab,
+              }));
+            }}
+            activeTabs={
+              activeTabs[fieldGroup.id] || [ChecklistFieldGroupTab.Home]
+            }
+            onUpdateActiveTabs={tabs => {
+              setActiveTabs(prev => ({
+                ...prev,
+                [fieldGroup.id]: tabs,
+              }));
+            }}
+            collapseDefault={collapseDefaults[fieldGroup.id] || false}
+            onUpdateCollapseDefault={collapsed => {
+              setCollapseDefaults(prev => ({
+                ...prev,
+                [fieldGroup.id]: collapsed,
+              }));
+            }}
+          />
+        );
+        break;
+      }
       default: {
         tabContent = (
           <ChecklistFieldGroupView
@@ -206,6 +295,15 @@ const ChecklistFieldGroup = ({
       <Card key={fieldGroup.id} className={styles.cardContainer}>
         <ChecklistFieldGroupHeader
           activeTab={activeTab[fieldGroup.id]}
+          activeTabs={
+            activeTabs[fieldGroup.id] || [
+              ChecklistFieldGroupTab.Home,
+              ChecklistFieldGroupTab.History,
+              ChecklistFieldGroupTab.Metric,
+              ChecklistFieldGroupTab.Config,
+              ChecklistFieldGroupTab.Add,
+            ]
+          }
           onClickHome={() =>
             setActiveTab({
               ...activeTab,
@@ -228,6 +326,12 @@ const ChecklistFieldGroup = ({
             setActiveTab({
               ...activeTab,
               [fieldGroup.id]: ChecklistFieldGroupTab.Metric,
+            })
+          }
+          onClickConfig={() =>
+            setActiveTab({
+              ...activeTab,
+              [fieldGroup.id]: ChecklistFieldGroupTab.Config,
             })
           }
           renderTitle={() => renderTitle(fieldGroup)}

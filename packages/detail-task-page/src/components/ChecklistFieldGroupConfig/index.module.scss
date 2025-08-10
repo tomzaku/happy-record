@@ -1,0 +1,73 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xl;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.sectionTitle {
+  color: var(--text-title-primary-color);
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.inputGroup {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.tabOptions {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.tabOption {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.checkboxItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--card-group-background);
+  }
+}
+
+.collapseSetting {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--card-group-background);
+  }
+}

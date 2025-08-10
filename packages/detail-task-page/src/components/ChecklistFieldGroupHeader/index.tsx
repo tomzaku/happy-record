@@ -12,6 +12,7 @@ export enum ChecklistFieldGroupTab {
   History,
   Add,
   Metric,
+  Config,
 }
 
 const ChecklistFieldGroupHeader = ({
@@ -19,7 +20,15 @@ const ChecklistFieldGroupHeader = ({
   onClickHistory,
   onClickAdd,
   onClickMetric,
+  onClickConfig,
   activeTab,
+  activeTabs = [
+    ChecklistFieldGroupTab.Home,
+    ChecklistFieldGroupTab.History,
+    ChecklistFieldGroupTab.Metric,
+    ChecklistFieldGroupTab.Config,
+    ChecklistFieldGroupTab.Add,
+  ],
   renderTitle = () => null,
   isCollapsed = false,
   onToggleCollapse,
@@ -28,7 +37,9 @@ const ChecklistFieldGroupHeader = ({
   onClickHistory: () => void;
   onClickAdd: () => void;
   onClickMetric: () => void;
+  onClickConfig: () => void;
   activeTab: ChecklistFieldGroupTab;
+  activeTabs?: ChecklistFieldGroupTab[];
   renderTitle?: () => React.ReactNode;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -39,26 +50,38 @@ const ChecklistFieldGroupHeader = ({
     }
     callback();
   };
-  const buttons = [
+  const allButtons = [
     {
       icon: 'solar:home-2-line-duotone',
       iconActive: 'solar:home-2-bold',
       onClick: onClickTab(onClickHome),
       isActive: activeTab === ChecklistFieldGroupTab.Home,
+      tab: ChecklistFieldGroupTab.Home,
     },
     {
       icon: 'solar:clock-square-broken',
       iconActive: 'solar:clock-square-bold',
       onClick: onClickTab(onClickHistory),
       isActive: activeTab === ChecklistFieldGroupTab.History,
+      tab: ChecklistFieldGroupTab.History,
     },
     {
       icon: 'solar:chart-square-linear',
       iconActive: 'solar:chart-square-bold',
       onClick: onClickTab(onClickMetric),
       isActive: activeTab === ChecklistFieldGroupTab.Metric,
+      tab: ChecklistFieldGroupTab.Metric,
+    },
+    {
+      icon: 'solar:settings-line-duotone',
+      iconActive: 'solar:settings-bold',
+      onClick: onClickTab(onClickConfig),
+      isActive: activeTab === ChecklistFieldGroupTab.Config,
+      tab: ChecklistFieldGroupTab.Config,
     },
   ];
+
+  const buttons = allButtons.filter(button => activeTabs.includes(button.tab));
   const intl = useIntl();
   return (
     <>
@@ -95,20 +118,22 @@ const ChecklistFieldGroupHeader = ({
             icon={isActive ? iconActive : icon}
           />
         ))}
-        <Button
-          className={cx(
-            styles.button,
-            activeTab === ChecklistFieldGroupTab.Add && styles.buttonActive,
-          )}
-          type="dash"
-          onClick={onClickTab(onClickAdd)}
-        >
-          <Icon icon="material-symbols:add" className={styles.addIcon} />
-          {intl.formatMessage({
-            id: 'record-header.add-record',
-            defaultMessage: 'Add',
-          })}
-        </Button>
+        {activeTabs.includes(ChecklistFieldGroupTab.Add) && (
+          <Button
+            className={cx(
+              styles.button,
+              activeTab === ChecklistFieldGroupTab.Add && styles.buttonActive,
+            )}
+            type="dash"
+            onClick={onClickTab(onClickAdd)}
+          >
+            <Icon icon="material-symbols:add" className={styles.addIcon} />
+            {intl.formatMessage({
+              id: 'record-header.add-record',
+              defaultMessage: 'Add',
+            })}
+          </Button>
+        )}
       </div>
     </>
   );
