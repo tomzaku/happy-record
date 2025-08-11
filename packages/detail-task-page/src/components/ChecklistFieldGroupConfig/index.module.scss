@@ -71,3 +71,8 @@
     background-color: var(--card-group-background);
   }
 }
+
+.submitButton {
+  align-self: flex-start;
+  margin-top: $spacing-md;
+}

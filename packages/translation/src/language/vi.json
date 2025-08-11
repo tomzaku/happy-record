@@ -68,6 +68,7 @@
   "checklist-field-group-config.active-tabs": "Các Tab Hoạt Động",
   "checklist-field-group-config.collapse-default": "Thu Gọn Mặc Định",
   "checklist-field-group-config.collapse-default-description": "Bắt đầu ở trạng thái thu gọn",
+  "checklist-field-group-config.submit": "Lưu Thay Đổi",
   "setting-page.description-theme": "Cấu hình giao diện cho toàn bộ trang",
   "setting-page.label-dark": "Tối",
   "setting-page.label-light": "Sáng",

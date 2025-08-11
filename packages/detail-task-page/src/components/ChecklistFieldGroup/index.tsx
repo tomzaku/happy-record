@@ -44,7 +44,7 @@ const ChecklistFieldGroup = ({
     checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
       return {
         ...acc,
-        [fieldGroup.id]: ChecklistFieldGroupTab.Home,
+        [fieldGroup.id]: fieldGroup.defaultTab ?? ChecklistFieldGroupTab.Home,
       };
     }, {}),
   );
@@ -54,47 +54,7 @@ const ChecklistFieldGroup = ({
     checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
       return {
         ...acc,
-        [fieldGroup.id]: false,
-      };
-    }, {}),
-  );
-
-  // New state for config settings
-  const [defaultTabs, setDefaultTabs] = React.useState<
-    Record<string, ChecklistFieldGroupTab>
-  >(
-    checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
-      return {
-        ...acc,
-        [fieldGroup.id]: ChecklistFieldGroupTab.Home,
-      };
-    }, {}),
-  );
-
-  const [activeTabs, setActiveTabs] = React.useState<
-    Record<string, ChecklistFieldGroupTab[]>
-  >(
-    checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
-      return {
-        ...acc,
-        [fieldGroup.id]: [
-          ChecklistFieldGroupTab.Home,
-          ChecklistFieldGroupTab.History,
-          ChecklistFieldGroupTab.Metric,
-          ChecklistFieldGroupTab.Config,
-          ChecklistFieldGroupTab.Add,
-        ],
-      };
-    }, {}),
-  );
-
-  const [collapseDefaults, setCollapseDefaults] = React.useState<
-    Record<string, boolean>
-  >(
-    checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
-      return {
-        ...acc,
-        [fieldGroup.id]: false,
+        [fieldGroup.id]: fieldGroup.collapseDefault ?? false,
       };
     }, {}),
   );
@@ -206,35 +166,20 @@ const ChecklistFieldGroup = ({
                   ...checklistTemplate.fieldGroups.slice(index + 1),
                 ],
               });
-            }}
-            defaultTab={
-              defaultTabs[fieldGroup.id] || ChecklistFieldGroupTab.Home
-            }
-            onUpdateDefaultTab={tab => {
-              setDefaultTabs(prev => ({
-                ...prev,
-                [fieldGroup.id]: tab,
-              }));
-              setActiveTab(prev => ({
-                ...prev,
-                [fieldGroup.id]: tab,
-              }));
-            }}
-            activeTabs={
-              activeTabs[fieldGroup.id] || [ChecklistFieldGroupTab.Home]
-            }
-            onUpdateActiveTabs={tabs => {
-              setActiveTabs(prev => ({
-                ...prev,
-                [fieldGroup.id]: tabs,
-              }));
-            }}
-            collapseDefault={collapseDefaults[fieldGroup.id] || false}
-            onUpdateCollapseDefault={collapsed => {
-              setCollapseDefaults(prev => ({
-                ...prev,
-                [fieldGroup.id]: collapsed,
-              }));
+              // Update local state immediately for better UX
+              if (updatedGroup.defaultTab !== undefined) {
+                setActiveTab(prev => ({
+                  ...prev,
+                  [fieldGroup.id]:
+                    updatedGroup.defaultTab as ChecklistFieldGroupTab,
+                }));
+              }
+              if (updatedGroup.collapseDefault !== undefined) {
+                setCollapsedGroups(prev => ({
+                  ...prev,
+                  [fieldGroup.id]: updatedGroup.collapseDefault as boolean,
+                }));
+              }
             }}
           />
         );
@@ -296,7 +241,7 @@ const ChecklistFieldGroup = ({
         <ChecklistFieldGroupHeader
           activeTab={activeTab[fieldGroup.id]}
           activeTabs={
-            activeTabs[fieldGroup.id] || [
+            fieldGroup.activeTabs ?? [
               ChecklistFieldGroupTab.Home,
               ChecklistFieldGroupTab.History,
               ChecklistFieldGroupTab.Metric,

@@ -13,35 +13,29 @@ import styles from './index.module.scss';
 interface ChecklistFieldGroupConfigProps {
   fieldGroup: FieldGroup;
   onUpdateFieldGroup: (updatedGroup: FieldGroup) => void;
-  defaultTab: ChecklistFieldGroupTab;
-  onUpdateDefaultTab: (tab: ChecklistFieldGroupTab) => void;
-  activeTabs: ChecklistFieldGroupTab[];
-  onUpdateActiveTabs: (tabs: ChecklistFieldGroupTab[]) => void;
-  collapseDefault: boolean;
-  onUpdateCollapseDefault: (collapsed: boolean) => void;
 }
 
-const ChecklistFieldGroupConfig: React.FC<ChecklistFieldGroupConfigProps> = ({
+const ChecklistFieldGroupConfig = ({
   fieldGroup,
   onUpdateFieldGroup,
-  defaultTab,
-  onUpdateDefaultTab,
-  activeTabs,
-  onUpdateActiveTabs,
-  collapseDefault,
-  onUpdateCollapseDefault,
-}) => {
+}: ChecklistFieldGroupConfigProps) => {
   const intl = useIntl();
   const [groupName, setGroupName] = React.useState(fieldGroup.title);
-
-  const handleSaveGroupName = () => {
-    if (groupName.trim() && groupName !== fieldGroup.title) {
-      onUpdateFieldGroup({
-        ...fieldGroup,
-        title: groupName.trim(),
-      });
-    }
-  };
+  const [defaultTab, setDefaultTab] = React.useState<ChecklistFieldGroupTab>(
+    fieldGroup.defaultTab ?? ChecklistFieldGroupTab.Home,
+  );
+  const [activeTabs, setActiveTabs] = React.useState<ChecklistFieldGroupTab[]>(
+    fieldGroup.activeTabs ?? [
+      ChecklistFieldGroupTab.Home,
+      ChecklistFieldGroupTab.History,
+      ChecklistFieldGroupTab.Metric,
+      ChecklistFieldGroupTab.Config,
+      ChecklistFieldGroupTab.Add,
+    ],
+  );
+  const [collapseDefault, setCollapseDefault] = React.useState<boolean>(
+    fieldGroup.collapseDefault ?? false,
+  );
 
   const handleTabToggle = (tab: ChecklistFieldGroupTab) => {
     const newActiveTabs = activeTabs.includes(tab)
@@ -50,13 +44,23 @@ const ChecklistFieldGroupConfig: React.FC<ChecklistFieldGroupConfigProps> = ({
 
     // Ensure at least one tab is always active
     if (newActiveTabs.length > 0) {
-      onUpdateActiveTabs(newActiveTabs);
+      setActiveTabs(newActiveTabs);
 
       // If the default tab is being removed, set the first remaining tab as default
       if (!newActiveTabs.includes(defaultTab)) {
-        onUpdateDefaultTab(newActiveTabs[0]);
+        setDefaultTab(newActiveTabs[0]);
       }
     }
+  };
+
+  const handleSubmit = () => {
+    onUpdateFieldGroup({
+      ...fieldGroup,
+      title: groupName.trim(),
+      defaultTab,
+      activeTabs,
+      collapseDefault,
+    });
   };
 
   const tabOptions = [
@@ -99,20 +103,9 @@ const ChecklistFieldGroupConfig: React.FC<ChecklistFieldGroupConfigProps> = ({
               id: 'checklist-field-group-config.group-name-placeholder',
               defaultMessage: 'Enter group name',
             })}
-            onBlur={handleSaveGroupName}
-            onKeyDown={e => e.key === 'Enter' && handleSaveGroupName()}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+            renderRightInput={() => <></>}
           />
-          <Button
-            type="primary"
-            size="sm"
-            onClick={handleSaveGroupName}
-            disabled={!groupName.trim() || groupName === fieldGroup.title}
-          >
-            {intl.formatMessage({
-              id: 'checklist-field-group-config.save',
-              defaultMessage: 'Save',
-            })}
-          </Button>
         </div>
       </div>
 
@@ -129,7 +122,7 @@ const ChecklistFieldGroupConfig: React.FC<ChecklistFieldGroupConfigProps> = ({
               key={value}
               type={defaultTab === value ? 'primary' : 'dash'}
               size="sm"
-              onClick={() => onUpdateDefaultTab(value)}
+              onClick={() => setDefaultTab(value)}
               className={styles.tabOption}
             >
               <Icon icon={icon} width={16} />
@@ -171,7 +164,7 @@ const ChecklistFieldGroupConfig: React.FC<ChecklistFieldGroupConfigProps> = ({
         <div className={styles.collapseSetting}>
           <Checkbox
             checked={collapseDefault}
-            onChange={e => onUpdateCollapseDefault(e.target.checked)}
+            onChange={e => setCollapseDefault(e.target.checked)}
           />
           <Typography.Text>
             {intl.formatMessage({
@@ -180,6 +173,20 @@ const ChecklistFieldGroupConfig: React.FC<ChecklistFieldGroupConfigProps> = ({
             })}
           </Typography.Text>
         </div>
+      </div>
+
+      <div className={styles.section}>
+        <Button
+          type="primary"
+          size="lg"
+          onClick={handleSubmit}
+          className={styles.submitButton}
+        >
+          {intl.formatMessage({
+            id: 'checklist-field-group-config.submit',
+            defaultMessage: 'Save Changes',
+          })}
+        </Button>
       </div>
     </div>
   );

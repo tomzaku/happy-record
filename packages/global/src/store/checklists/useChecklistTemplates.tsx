@@ -9,6 +9,9 @@ export type FieldGroup = {
   title: string;
   fields: string[];
   note: unknown;
+  defaultTab?: number;
+  activeTabs?: number[];
+  collapseDefault?: boolean;
 };
 export type ChecklistTemplate = {
   id: string;

@@ -11,7 +11,7 @@ import styles from './index.module.scss';
 import cx from 'classnames';
 import ScheduleModalContent from './ScheduleModalContent';
 
-const SchedulingGroup = ({
+export const SchedulingGroup = ({
   weeklyHobbies,
   setWeeklyHobbies,
   date,
@@ -272,3 +272,4 @@ const SchedulingGroup = ({
 };
 
 export default SchedulingGroup;
+export { default as ScheduleModalContent } from './ScheduleModalContent';
