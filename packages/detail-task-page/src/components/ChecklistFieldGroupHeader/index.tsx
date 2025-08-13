@@ -83,33 +83,60 @@ const ChecklistFieldGroupHeader = ({
 
   const buttons = allButtons.filter(button => activeTabs.includes(button.tab));
   const intl = useIntl();
+
+  // Find the config/settings button
+  const configButton = allButtons.find(
+    button => button.tab === ChecklistFieldGroupTab.Config,
+  );
+  const otherButtons = buttons.filter(
+    button => button.tab !== ChecklistFieldGroupTab.Config,
+  );
+
   return (
     <>
       <div className={styles.container}>
-        <div onClick={onToggleCollapse} className={styles.titleContainer}>
-          {onToggleCollapse && (
-            <motion.div
-              initial={{ rotate: 0 }}
-              animate={{ rotate: isCollapsed ? -180 : 0 }}
-              transition={{
-                type: 'spring',
-                stiffness: 300,
-                damping: 30,
-              }}
-              className={styles.iconGroup}
-            >
+        <div className={styles.left}>
+          <div onClick={onToggleCollapse} className={styles.titleContainer}>
+            {onToggleCollapse && (
+              <motion.div
+                initial={{ rotate: 0 }}
+                animate={{ rotate: isCollapsed ? -180 : 0 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 300,
+                  damping: 30,
+                }}
+                className={styles.iconGroup}
+              >
+                <Icon
+                  className={styles.collapseIcon}
+                  width={20}
+                  icon="solar:alt-arrow-down-line-duotone"
+                />
+              </motion.div>
+            )}
+            <Typography.Title level={4} noMargin>
+              {renderTitle()}
+            </Typography.Title>
+          </div>
+          {configButton &&
+            activeTabs.includes(ChecklistFieldGroupTab.Config) && (
               <Icon
-                className={styles.collapseIcon}
-                width={20}
-                icon="solar:alt-arrow-down-line-duotone"
+                onClick={configButton.onClick}
+                className={cx(
+                  styles.icon,
+                  configButton.isActive && styles.iconActive,
+                )}
+                width={16}
+                icon={
+                  configButton.isActive
+                    ? configButton.iconActive
+                    : configButton.icon
+                }
               />
-            </motion.div>
-          )}
-          <Typography.Title level={4} noMargin className={styles.title}>
-            {renderTitle()}
-          </Typography.Title>
+            )}
         </div>
-        {buttons.map(({ icon, iconActive, onClick, isActive }, index) => (
+        {otherButtons.map(({ icon, iconActive, onClick, isActive }, index) => (
           <Icon
             key={index}
             onClick={onClick}
@@ -127,7 +154,14 @@ const ChecklistFieldGroupHeader = ({
             type="dash"
             onClick={onClickTab(onClickAdd)}
           >
-            <Icon icon="material-symbols:add" className={styles.addIcon} />
+            <Icon
+              icon="material-symbols:add"
+              className={cx(
+                styles.addIcon,
+                activeTab === ChecklistFieldGroupTab.Add &&
+                  styles.addIconActive,
+              )}
+            />
             {intl.formatMessage({
               id: 'record-header.add-record',
               defaultMessage: 'Add',

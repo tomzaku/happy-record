@@ -315,7 +315,7 @@ const ChecklistFieldGroupAdd = ({
           Submit
         </Button>
       </div>
-      <Hr />
+      <Hr classes={{ hr: styles.hr }} />
       {currentChecklistRecords.length === 0
         ? renderEmpty()
         : renderCurrentDay()}

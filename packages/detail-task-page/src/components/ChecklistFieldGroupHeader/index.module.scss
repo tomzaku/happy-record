@@ -7,11 +7,17 @@
   justify-content: flex-end;
 }
 
-.titleContainer {
+.left {
   display: flex;
   align-items: center;
   flex: 1;
+}
+
+.titleContainer {
+  display: flex;
+  align-items: center;
   gap: $spacing-xs;
+  margin-right: $spacing-xs;
 }
 
 .collapseIcon {
@@ -28,10 +34,6 @@
   display: flex;
 }
 
-.title {
-  flex: 1;
-}
-
 .button {
   display: flex;
   align-items: center;
@@ -40,11 +42,17 @@
 }
 
 .buttonActive {
-  border: 1px dashed var(--button-default-background);
+  border: 1px solid var(--button-default-background);
+  background: var(--button-default-background);
+  color: #fff;
 }
 
 .addIcon {
   margin-right: $spacing-xs;
+}
+
+.addIconActive {
+  color: #fff;
 }
 
 .icon {

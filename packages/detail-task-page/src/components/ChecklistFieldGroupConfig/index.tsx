@@ -178,7 +178,7 @@ const ChecklistFieldGroupConfig = ({
       <div className={styles.section}>
         <Button
           type="primary"
-          size="lg"
+          size="md"
           onClick={handleSubmit}
           className={styles.submitButton}
         >
