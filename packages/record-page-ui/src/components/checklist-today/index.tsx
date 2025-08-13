@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 import Button from '@moon-ui/button/src/DefaultButton';
 
-const ChecklistToday = ({ date }: { date: Date }) => {
+const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: string }) => {
   const { getChecklistByGivingDate, updateChecklist } = useChecklist();
   const [checklistByGivingDateIds, setChecklistByGivingDateIds] =
     React.useState<string[]>([]);
@@ -25,10 +25,10 @@ const ChecklistToday = ({ date }: { date: Date }) => {
   const intl = useIntl();
 
   React.useEffect(() => {
-    const { checklist, checklistIds } = getChecklistByGivingDate({ date });
+    const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
     setChecklist(checklist);
     setChecklistByGivingDateIds(checklistIds);
-  }, [date]);
+  }, [date, selectedTag]);
 
   if (checklistByGivingDateIds.length === 0) {
     return (

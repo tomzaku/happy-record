@@ -11,7 +11,7 @@ import cx from 'classnames';
 import Typography from '@moon-ui/typography';
 import { useNavigate } from 'react-router-dom';
 
-const ChecklistToday = ({ date }: { date: Date }) => {
+const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: string }) => {
   const { getChecklistByGivingDate, updateChecklist } = useChecklist();
   const { checklistTemplate } = useChecklistTemplates();
   const navigate = useNavigate();
@@ -22,10 +22,10 @@ const ChecklistToday = ({ date }: { date: Date }) => {
     React.useState<string[]>([]);
 
   React.useEffect(() => {
-    const { checklist, checklistIds } = getChecklistByGivingDate({ date });
+    const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
     setChecklist(checklist);
     setChecklistByGivingDateIds(checklistIds);
-  }, [date]);
+  }, [date, selectedTag]);
 
   return (
     <div className={styles.container}>

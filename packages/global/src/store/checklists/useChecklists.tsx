@@ -24,7 +24,7 @@ export const useChecklist = () => {
     useChecklistTemplates();
 
   const getRepeatChecklistByGivingDate = React.useCallback(
-    ({ date }: { date: Date } = { date: new Date() }) => {
+    ({ date, selectedTag }: { date: Date; selectedTag?: string } = { date: new Date() }) => {
       const checklistsByGivingDate = Object.values(checklist).filter(
         currentChecklist =>
           new Date(currentChecklist.startedAt).toLocaleDateString() ===
@@ -57,9 +57,19 @@ export const useChecklist = () => {
           }
         },
       );
+
+      // Filter by selected tag if provided
+      let filteredChecklists = checklists;
+      if (selectedTag && selectedTag !== 'all') {
+        filteredChecklists = checklists.filter(checklist => {
+          const template = checklistTemplate[checklist.checklistTemplateId];
+          return template?.tags?.includes(selectedTag);
+        });
+      }
+
       return {
-        checklistIds: checklists.map(checklist => checklist.id),
-        checklist: checklists.reduce(
+        checklistIds: filteredChecklists.map(checklist => checklist.id),
+        checklist: filteredChecklists.reduce(
           (acc: Record<string, Checklist>, checklist: Checklist) => ({
             ...acc,
             [checklist.id]: checklist,
@@ -101,9 +111,10 @@ export const useChecklist = () => {
   );
 
   const getChecklistByGivingDate = React.useCallback(
-    ({ date }: { date: Date }) => {
+    ({ date, selectedTag }: { date: Date; selectedTag?: string }) => {
       const { checklistIds, checklist } = getRepeatChecklistByGivingDate({
         date,
+        selectedTag,
       });
       return {
         checklist,

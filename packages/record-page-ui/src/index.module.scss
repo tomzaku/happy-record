@@ -160,3 +160,30 @@
   padding-left: 12px;
   padding-right: 12px;
 }
+
+.tagSelectorContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+  padding: 0 12px;
+  width: 100%;
+}
+
+.selectContainer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.selectInput {
+  padding: 2px $spacing-md !important;
+}
+
+.selectElement {
+  border: 0 !important;
+}
+
+.selectIcon {
+  margin-left: $spacing-xs;
+}

@@ -24,9 +24,10 @@ import styles from './index.module.scss';
 type Props = {
   currentDate: Date;
   onDateChange: (date: Date) => void;
+  selectedTag?: string;
 };
 
-const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
+const WeeklyCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
   const { getChecklistByGivingDate } = useChecklist();
   const { getChecklistTemplate, getChecklistTemplateIdsByGivingDate } =
     useChecklistTemplates();
@@ -51,12 +52,15 @@ const WeeklyCalendar = ({ currentDate, onDateChange }: Props) => {
     const tasksMap = new Map();
 
     weekDays.forEach(date => {
-      const { checklist } = getChecklistByGivingDate({ date });
+      const { checklist } = getChecklistByGivingDate({ 
+        date, 
+        selectedTag: selectedTag === 'all' ? undefined : selectedTag 
+      });
       tasksMap.set(date.toISOString().split('T')[0], Object.values(checklist));
     });
 
     return tasksMap;
-  }, [weekDays, getChecklistTemplateIdsByGivingDate, getChecklistTemplate]);
+  }, [weekDays, getChecklistTemplateIdsByGivingDate, getChecklistTemplate, selectedTag]);
 
   const handlePrevWeek = React.useCallback(() => {
     const prevWeek = new Date(currentDate);
