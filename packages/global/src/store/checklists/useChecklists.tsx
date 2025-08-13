@@ -24,18 +24,35 @@ export const useChecklist = () => {
     useChecklistTemplates();
 
   const getRepeatChecklistByGivingDate = React.useCallback(
-    ({ date, selectedTag }: { date: Date; selectedTag?: string } = { date: new Date() }) => {
+    (
+      { date, selectedTag }: { date: Date; selectedTag?: string } = {
+        date: new Date(),
+      },
+    ) => {
+      // Get existing checklists for the given date
       const checklistsByGivingDate = Object.values(checklist).filter(
         currentChecklist =>
           new Date(currentChecklist.startedAt).toLocaleDateString() ===
           date.toLocaleDateString(),
       );
+
+      console.log(
+        'Checklists for date:',
+        date.toLocaleDateString(),
+        checklistsByGivingDate,
+      );
+
+      // Get scheduled checklist template IDs for the given date
       const checklistTemplatesByGivingDateIds =
         getChecklistTemplateIdsByGivingDate({
           date,
         });
-      const checklists: Checklist[] = checklistTemplatesByGivingDateIds.map(
-        id => {
+
+      console.log('Scheduled template IDs:', checklistTemplatesByGivingDateIds);
+
+      // Create checklists from scheduled templates
+      const scheduledChecklists: Checklist[] =
+        checklistTemplatesByGivingDateIds.map(id => {
           const foundChecklist = checklistsByGivingDate.find(
             c => c.checklistTemplateId === id,
           );
@@ -55,13 +72,48 @@ export const useChecklist = () => {
               })(),
             };
           }
+        });
+
+      console.log('Scheduled checklists:', scheduledChecklists);
+
+      // Get checklists without schedule (created for specific dates)
+      const nonScheduledChecklists = checklistsByGivingDate.filter(
+        existingChecklist => {
+          // Check if this checklist template has a repeat schedule
+          const template =
+            checklistTemplate[existingChecklist.checklistTemplateId];
+
+          // A checklist is considered non-scheduled if the template has no repeat schedule
+          const hasSchedule =
+            template?.repeat &&
+            template.repeat.dayOfWeek &&
+            template.repeat.dayOfWeek.trim() !== '';
+
+          console.log(
+            'Template for checklist',
+            existingChecklist.id,
+            ':',
+            template?.title,
+            'hasSchedule:',
+            hasSchedule,
+          );
+
+          // Include if it doesn't have a schedule (was created for a specific date)
+          return !hasSchedule;
         },
       );
 
+      console.log('Non-scheduled checklists:', nonScheduledChecklists);
+
+      // Combine scheduled and non-scheduled checklists
+      const allChecklists = [...scheduledChecklists, ...nonScheduledChecklists];
+
+      console.log('All checklists:', allChecklists);
+
       // Filter by selected tag if provided
-      let filteredChecklists = checklists;
+      let filteredChecklists = allChecklists;
       if (selectedTag && selectedTag !== 'all') {
-        filteredChecklists = checklists.filter(checklist => {
+        filteredChecklists = allChecklists.filter(checklist => {
           const template = checklistTemplate[checklist.checklistTemplateId];
           return template?.tags?.includes(selectedTag);
         });
