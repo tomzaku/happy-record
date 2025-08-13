@@ -1,4 +1,6 @@
 public/build/
 dist
 stats.html
+playwright-report
+test-results
 
