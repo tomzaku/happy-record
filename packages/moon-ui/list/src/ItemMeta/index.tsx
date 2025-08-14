@@ -42,7 +42,7 @@ export default function ItemMeta({
           </Typography.Paragraph>
         </div>
       </div>
-      <div>{rightComponent}</div>
+      <div className={styles.right}>{rightComponent}</div>
     </div>
   );
 }
