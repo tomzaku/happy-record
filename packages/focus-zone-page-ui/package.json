@@ -1,0 +1,26 @@
+{
+  "name": "@dreamer/focus-zone-page-ui",
+  "version": "1.0.0",
+  "description": "Focus Zone - Productivity companion with timer and ambient sounds",
+  "main": "src/index.tsx",
+  "dependencies": {
+    "@dreamer/timer-hook": "^1.0.0",
+    "@dreamer/music-controller-common": "^1.0.0",
+    "@dreamer/pomodoro-common": "^1.0.0",
+    "@moon-ui/button": "^1.0.0",
+    "@moon-ui/typography": "^1.0.0",
+    "@moon-ui/icon": "^1.0.0",
+    "@moon-ui/slider": "^1.0.0",
+    "@moon-ui/card": "^1.0.0",
+    "@moon-ui/toggle": "^1.0.0",
+    "react": "^18.0.0",
+    "react-router-dom": "^6.0.0",
+    "classnames": "^2.3.2",
+    "framer-motion": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "sass": "^1.60.0"
+  }
+}

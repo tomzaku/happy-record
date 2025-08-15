@@ -76,13 +76,23 @@ const DetailTaskPage = () => {
       <BackHeader
         renderLeftComponent={() => <div>{checklistTemplate?.title}</div>}
         renderRightComponent={() => (
-          <Icon
-            onClick={() => {
-              navigate(`/edit-checklist/${id}`);
-            }}
-            width={24}
-            icon="solar:pen-new-square-linear"
-          />
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <Icon
+              onClick={() => {
+                navigate(`/task/${id}/focus`);
+              }}
+              width={24}
+              icon="material-symbols:psychology"
+              style={{ cursor: 'pointer' }}
+            />
+            <Icon
+              onClick={() => {
+                navigate(`/edit-checklist/${id}`);
+              }}
+              width={24}
+              icon="solar:pen-new-square-linear"
+            />
+          </div>
         )}
         onClickLeftButton={() => navigate('/')}
       />

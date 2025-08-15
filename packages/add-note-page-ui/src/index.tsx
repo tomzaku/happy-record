@@ -7,7 +7,7 @@ import {
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { format } from 'date-fns';
 import AppHeader, { BackHeader } from '@dreamer/header';
-import NoteEditor from '@dreamer/detail-task-page/src/components/note/NoteEditor/';
+import NoteEditor from '@moon-ui/note-editor';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';

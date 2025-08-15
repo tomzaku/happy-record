@@ -1,5 +1,5 @@
 import React from 'react';
-import NoteEditor from '@dreamer/detail-task-page/src/components/note/NoteEditor';
+import NoteEditor from '@moon-ui/note-editor';
 import Drawer from '@moon-ui/drawer';
 import Typography from '@moon-ui/typography';
 import Icon from '@moon-ui/icon/Icon';

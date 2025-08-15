@@ -27,6 +27,7 @@
     "vite-plugin-pwa": "^1.0.0"
   },
   "dependencies": {
+    "@dreamer/focus-zone-page-ui": "^1.0.0",
     "@dreamer/music-controller-mobile": "^1.0.0",
     "@dreamer/translation": "^1.0.0",
     "date-fns": "^2.29.3",

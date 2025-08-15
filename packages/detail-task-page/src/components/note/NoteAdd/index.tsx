@@ -1,6 +1,6 @@
 import React from 'react';
 import { RecordField } from '@dreamer/global/src/store/record-field';
-import NoteEditor from '../NoteEditor';
+import NoteEditor from '@moon-ui/note-editor';
 import Select from '@moon-ui/select';
 
 import styles from './index.module.scss';

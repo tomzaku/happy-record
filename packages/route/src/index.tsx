@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Header from '@dreamer/header';
 import SettingPage from '@dreamer/setting-page-ui';
 import DetailTaskPage from '@dreamer/detail-task-page';
+import FocusZonePage from '@dreamer/focus-zone-page-ui';
 import PregnantIntro from '@pregnant/pregnant-intro';
 import PregnantPage from '@pregnant/pregnant-page-ui';
 import {
@@ -54,6 +55,14 @@ const AppRouter = () => {
           element={
             <AnimationRoute>
               <DetailTaskPage />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/task/:taskId/focus"
+          element={
+            <AnimationRoute>
+              <FocusZonePage />
             </AnimationRoute>
           }
         />

@@ -6,6 +6,7 @@ import type { YooptaContentValue, YooptaOnChangeOptions } from '@yoopta/editor';
 import styles from './index.module.scss';
 import cx from 'classnames';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
+import BlockNote from './BlockNote';
 
 type Props = {
   value: YooptaContentValue;
@@ -213,3 +214,4 @@ function NoteEditor({
 }
 
 export default NoteEditor;
+export { BlockNote };

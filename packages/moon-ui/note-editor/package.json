@@ -1,8 +1,13 @@
 {
-  "name": "@dreamer/detail-task-page",
+  "name": "@moon-ui/note-editor",
   "version": "1.0.0",
+  "description": "Note editor component with Yoopta editor support",
   "main": "src/index.tsx",
-  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "@blocknote/ariakit": "^0.31.1",
     "@blocknote/core": "^0.31.1",
@@ -28,12 +33,9 @@
     "@yoopta/paragraph": "^4.9.9",
     "@yoopta/table": "^4.9.9",
     "@yoopta/toolbar": "^4.9.9",
-    "@yoopta/video": "^4.9.9",
-    "@moon-ui/note-editor": "^1.0.0",
-    "framer-motion": "^12.12.1",
-    "qs": "6.14.0",
-    "slate": "^0.117.0",
-    "slate-dom": "^0.116.0",
-    "slate-react": "^0.117.1"
+    "@yoopta/video": "^4.9.9"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
   }
 }

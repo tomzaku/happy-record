@@ -3,7 +3,7 @@ import { useLocalStorageAll } from './useLocalStorage';
 import { useStorageSync } from '@dreamer/global/src/hook/useStorageSync';
 import { useUser } from '@dreamer/global/src/hook/useUser';
 import Typography from '@moon-ui/typography';
-import NoteEditor from '@dreamer/detail-task-page/src/components/note/NoteEditor';
+import NoteEditor from '@moon-ui/note-editor';
 
 function LocalStorageEditor() {
   const { syncToCloud, syncFromCloud } = useStorageSync();

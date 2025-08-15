@@ -3,7 +3,7 @@ import { RecordField } from '@dreamer/global/src/store/record-field';
 import { Checklist, ChecklistTemplate, FieldGroup } from '@dreamer/global';
 
 import styles from './index.module.scss';
-import NoteEditor from '../note/NoteEditor/';
+import NoteEditor from '@moon-ui/note-editor';
 import type { YooptaContentValue } from '@yoopta/editor';
 
 type Props = {

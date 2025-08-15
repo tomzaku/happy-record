@@ -4,7 +4,7 @@ import Icon from '@moon-ui/icon/Icon';
 import Input from '@moon-ui/input';
 import List from '@moon-ui/list';
 import Typography from '@moon-ui/typography';
-import NoteEditor from '../note/NoteEditor/';
+import NoteEditor from '@moon-ui/note-editor';
 import { v4 } from 'uuid';
 
 import styles from './index.module.scss';

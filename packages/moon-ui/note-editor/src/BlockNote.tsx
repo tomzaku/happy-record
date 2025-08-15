@@ -24,7 +24,7 @@ type Props = {
   showEditIcon?: boolean;
 };
 
-function NoteEditor({
+function BlockNote({
   value,
   setValue,
   readOnly,
@@ -83,4 +83,4 @@ function NoteEditor({
   );
 }
 
-export default NoteEditor;
+export default BlockNote;
