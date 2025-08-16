@@ -30,10 +30,15 @@
   min-height: fill-available;
   min-height: -webkit-fill-available;
   min-width: 100vw;
-  // overflow: hidden;
-  transform: translateY(0%);
+  overflow: hidden;
+  transform: translateY(100%);
   position: fixed;
-  top: 100%;
+  top: 0;
+  left: 0;
+  z-index: $drawer-z-index;
+  transition: transform 0.1s ease-out;
+  display: flex;
+  flex-direction: column;
 
   @include media.media('>=tablet') {
     left: unset;

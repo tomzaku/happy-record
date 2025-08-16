@@ -27,7 +27,7 @@ export default function Drawer({
   }, [visible]);
 
   const animationStyles = useSpring({
-    translateX: visible ? -100 : 0,
+    translateY: visible ? 0 : 100,
     opacity: visible ? 1 : 0,
     onRest: () => {
       if (!visible) {
@@ -53,7 +53,7 @@ export default function Drawer({
         className={cx(styles.container, className)}
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
         style={{
-          transform: animationStyles.translateX.to(x => `translateY(${x}%)`),
+          transform: animationStyles.translateY.to(y => `translateY(${y}%)`),
           opacity: animationStyles.opacity,
         }}
       >
