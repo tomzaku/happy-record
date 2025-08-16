@@ -1,217 +1,379 @@
-import React from 'react';
-
-import YooptaEditor, { createYooptaEditor } from '@yoopta/editor';
-import type { YooptaContentValue, YooptaOnChangeOptions } from '@yoopta/editor';
-
-import styles from './index.module.scss';
-import cx from 'classnames';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
-import BlockNote from './BlockNote';
+import { LexicalComposer } from '@lexical/react/LexicalComposer';
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
+import { ContentEditable } from '@lexical/react/LexicalContentEditable';
+import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
+import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
+import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { ListPlugin } from '@lexical/react/LexicalListPlugin';
+import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
+import {
+  $getRoot,
+  $createParagraphNode,
+  $createTextNode,
+  EditorState,
+  FORMAT_TEXT_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
+  UNDO_COMMAND,
+  REDO_COMMAND,
+  TextFormatType,
+  ElementFormatType,
+} from 'lexical';
+import { ListNode, ListItemNode } from '@lexical/list';
+import { LinkNode } from '@lexical/link';
+import { Icon } from '@moon-ui/icon/Icon';
+import Button from '@moon-ui/button';
+import cx from 'classnames';
+import styles from './index.module.scss';
 
 type Props = {
-  value: YooptaContentValue;
-  setValue: (value: YooptaContentValue) => void;
+  value: string;
+  setValue: (value: string) => void;
   readOnly?: boolean;
   classes?: {
     container?: string;
   };
-  onClickEdit?: () => void;
-  onClickSave?: () => void;
-  shouldShowSaveButton?: boolean;
-  withoutBorder?: boolean;
-  showEditIcon?: boolean;
-  key?: string | number; // Add key prop to force re-mount
+  key?: string | number;
 };
+
+// Enhanced toolbar component
+function ToolbarPlugin({ readOnly }: { readOnly?: boolean }) {
+  const [editor] = useLexicalComposerContext();
+  const [fontSize, setFontSize] = useState(15);
+  const [textColor, setTextColor] = useState('#000000');
+  const [highlightColor, setHighlightColor] = useState('#ffff00');
+
+  const formatText = (format: TextFormatType) => {
+    editor.dispatchCommand(FORMAT_TEXT_COMMAND, format);
+  };
+
+  const formatElement = (format: ElementFormatType) => {
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, format);
+  };
+
+  const undo = () => {
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+  };
+
+  const redo = () => {
+    editor.dispatchCommand(REDO_COMMAND, undefined);
+  };
+
+  const insertLink = () => {
+    const url = prompt('Enter URL:');
+    if (url) {
+      // @ts-expect-error - Lexical command types are complex
+      editor.dispatchCommand('TOGGLE_LINK', url);
+    }
+  };
+
+  const insertCode = () => {
+    // For now, we'll use a simple approach - insert code formatting
+    editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code' as TextFormatType);
+  };
+
+  const changeFontSize = (delta: number) => {
+    const newSize = Math.max(8, Math.min(72, fontSize + delta));
+    setFontSize(newSize);
+    // Note: Font size changes would need a custom plugin or different approach
+    // For now, we'll just update the state
+  };
+
+  const changeTextColor = (color: string) => {
+    setTextColor(color);
+    // Note: Color changes would need a custom plugin or different approach
+    // For now, we'll just update the state
+  };
+
+  const changeHighlightColor = (color: string) => {
+    setHighlightColor(color);
+    // Note: Highlight changes would need a custom plugin or different approach
+    // For now, we'll just update the state
+  };
+
+  if (readOnly) return null;
+
+  return (
+    <div className={styles.toolbar}>
+      {/* Undo/Redo */}
+      <button onClick={undo} className={styles.toolbarButton} title="Undo">
+        <Icon icon="mdi:undo" width={16} height={16} />
+      </button>
+      <button onClick={redo} className={styles.toolbarButton} title="Redo">
+        <Icon icon="mdi:redo" width={16} height={16} />
+      </button>
+
+      <div className={styles.divider} />
+
+      {/* Paragraph Style */}
+      <select className={styles.select} defaultValue="normal">
+        <option value="normal">Normal</option>
+        <option value="h1">Heading 1</option>
+        <option value="h2">Heading 2</option>
+        <option value="h3">Heading 3</option>
+        <option value="h4">Heading 4</option>
+        <option value="h5">Heading 5</option>
+        <option value="h6">Heading 6</option>
+      </select>
+
+      {/* Font Family */}
+      <select className={styles.select} defaultValue="arial">
+        <option value="arial">Arial</option>
+        <option value="times">Times New Roman</option>
+        <option value="courier">Courier New</option>
+        <option value="georgia">Georgia</option>
+        <option value="verdana">Verdana</option>
+      </select>
+
+      {/* Font Size */}
+      <button
+        onClick={() => changeFontSize(-1)}
+        className={styles.toolbarButton}
+        title="Decrease font size"
+      >
+        <Icon icon="mdi:minus" width={16} height={16} />
+      </button>
+      <input
+        type="number"
+        value={fontSize}
+        onChange={e => setFontSize(Number(e.target.value))}
+        className={styles.fontSizeInput}
+        min="8"
+        max="72"
+      />
+      <button
+        onClick={() => changeFontSize(1)}
+        className={styles.toolbarButton}
+        title="Increase font size"
+      >
+        <Icon icon="mdi:plus" width={16} height={16} />
+      </button>
+
+      <div className={styles.divider} />
+
+      {/* Text Formatting */}
+      <button
+        onClick={() => formatText('bold' as TextFormatType)}
+        className={styles.toolbarButton}
+        title="Bold"
+      >
+        <Icon icon="mdi:format-bold" width={16} height={16} />
+      </button>
+      <button
+        onClick={() => formatText('italic' as TextFormatType)}
+        className={styles.toolbarButton}
+        title="Italic"
+      >
+        <Icon icon="mdi:format-italic" width={16} height={16} />
+      </button>
+      <button
+        onClick={() => formatText('underline' as TextFormatType)}
+        className={styles.toolbarButton}
+        title="Underline"
+      >
+        <Icon icon="mdi:format-underline" width={16} height={16} />
+      </button>
+
+      <div className={styles.divider} />
+
+      {/* Code */}
+      <button
+        onClick={insertCode}
+        className={styles.toolbarButton}
+        title="Insert code"
+      >
+        <Icon icon="mdi:code-tags" width={16} height={16} />
+      </button>
+
+      {/* Link */}
+      <button
+        onClick={insertLink}
+        className={styles.toolbarButton}
+        title="Insert link"
+      >
+        <Icon icon="mdi:link" width={16} height={16} />
+      </button>
+
+      <div className={styles.divider} />
+
+      {/* Text Color */}
+      <div className={styles.colorPickerContainer}>
+        <button className={styles.toolbarButton} title="Text color">
+          <Icon icon="mdi:format-color-text" width={16} height={16} />
+        </button>
+        <input
+          type="color"
+          value={textColor}
+          onChange={e => changeTextColor(e.target.value)}
+          className={styles.colorPicker}
+        />
+      </div>
+
+      {/* Highlight Color */}
+      <div className={styles.colorPickerContainer}>
+        <button className={styles.toolbarButton} title="Highlight color">
+          <Icon icon="mdi:format-color-highlight" width={16} height={16} />
+        </button>
+        <input
+          type="color"
+          value={highlightColor}
+          onChange={e => changeHighlightColor(e.target.value)}
+          className={styles.colorPicker}
+        />
+      </div>
+
+      <div className={styles.divider} />
+
+      {/* Insert Menu */}
+      <select className={styles.select} defaultValue="">
+        <option value="">+ Insert</option>
+        <option value="image">Image</option>
+        <option value="table">Table</option>
+        <option value="list">List</option>
+        <option value="quote">Quote</option>
+      </select>
+
+      <div className={styles.divider} />
+
+      {/* Alignment */}
+      <button
+        onClick={() => formatElement('left' as ElementFormatType)}
+        className={styles.toolbarButton}
+        title="Align left"
+      >
+        <Icon icon="mdi:format-align-left" width={16} height={16} />
+      </button>
+      <button
+        onClick={() => formatElement('center' as ElementFormatType)}
+        className={styles.toolbarButton}
+        title="Align center"
+      >
+        <Icon icon="mdi:format-align-center" width={16} height={16} />
+      </button>
+      <button
+        onClick={() => formatElement('right' as ElementFormatType)}
+        className={styles.toolbarButton}
+        title="Align right"
+      >
+        <Icon icon="mdi:format-align-right" width={16} height={16} />
+      </button>
+      <button
+        onClick={() => formatElement('justify' as ElementFormatType)}
+        className={styles.toolbarButton}
+        title="Justify"
+      >
+        <Icon icon="mdi:format-align-justify" width={16} height={16} />
+      </button>
+    </div>
+  );
+}
+
+// Plugin to handle value changes
+function ValueSyncPlugin({
+  value,
+  setValue,
+}: {
+  value: string;
+  setValue: (value: string) => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+
+  const onChange = (editorState: EditorState) => {
+    editorState.read(() => {
+      const root = $getRoot();
+      // Get rich text content as JSON to preserve formatting
+      const json = editorState.toJSON();
+      setValue(JSON.stringify(json));
+    });
+  };
+
+  // Initialize editor with value if provided
+  useEffect(() => {
+    if (value && typeof value === 'string') {
+      try {
+        // Try to parse as JSON first (rich text)
+        const parsedValue = JSON.parse(value);
+        editor.setEditorState(editor.parseEditorState(parsedValue));
+      } catch {
+        // Fallback to plain text
+        editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode(value));
+          root.append(paragraph);
+        });
+      }
+    }
+  }, [value, editor]);
+
+  return <OnChangePlugin onChange={onChange} />;
+}
 
 function NoteEditor({
   value,
   setValue,
-  readOnly,
+  readOnly = false,
   classes,
-  showEditIcon,
-  onClickEdit,
-  onClickSave,
-  shouldShowSaveButton,
-  withoutBorder,
   key,
 }: Props) {
-  const [isFocused, setIsFocused] = React.useState(false);
   const { theme } = usePomodoroGlobalConfig();
-  const [isLoaded, setIsLoaded] = React.useState(false);
-  const [plugins, setPlugins] = React.useState<unknown[]>([]);
-  const [tools, setTools] = React.useState<Record<string, unknown>>({});
-  const [marks, setMarks] = React.useState<unknown[]>([]);
 
-  const editor = React.useMemo(() => createYooptaEditor(), []);
-  const selectionRef = React.useRef(null);
-
-  // Dynamically load all Yoopta components
-  React.useEffect(() => {
-    const loadComponents = async () => {
-      try {
-        const [
-          { default: Paragraph },
-          { default: Blockquote },
-          { default: Embed },
-          { default: Link },
-          { default: Callout },
-          { default: Accordion },
-          { NumberedList, BulletedList, TodoList },
-          { Bold, Italic, CodeMark, Underline, Strike, Highlight },
-          { HeadingOne, HeadingThree, HeadingTwo },
-          { default: Code },
-          { default: Table },
-          { default: Divider },
-          { default: ActionMenuList, DefaultActionMenuRender },
-          { default: Toolbar, DefaultToolbarRender },
-          { default: LinkTool, DefaultLinkToolRender },
-        ] = await Promise.all([
-          import('@yoopta/paragraph'),
-          import('@yoopta/blockquote'),
-          import('@yoopta/embed'),
-          import('@yoopta/link'),
-          import('@yoopta/callout'),
-          import('@yoopta/accordion'),
-          import('@yoopta/lists'),
-          import('@yoopta/marks'),
-          import('@yoopta/headings'),
-          import('@yoopta/code'),
-          import('@yoopta/table'),
-          import('@yoopta/divider'),
-          import('@yoopta/action-menu-list'),
-          import('@yoopta/toolbar'),
-          import('@yoopta/link-tool'),
-        ]);
-
-        const loadedPlugins = [
-          Paragraph,
-          Table,
-          Divider.extend({
-            elementProps: {
-              divider: props => ({
-                ...props,
-                color: '#e5e7eb',
-              }),
-            },
-          }),
-          Accordion,
-          HeadingOne,
-          HeadingTwo,
-          HeadingThree,
-          Blockquote,
-          Callout,
-          NumberedList,
-          BulletedList,
-          TodoList,
-          Code,
-          Link,
-          Embed.extend({
-            elementProps: {
-              embed: props => ({
-                ...props,
-                sizes: { width: 400, height: 300 },
-              }),
-            },
-          }),
-        ];
-
-        const loadedTools = {
-          ActionMenu: {
-            render: DefaultActionMenuRender,
-            tool: ActionMenuList,
-          },
-          Toolbar: {
-            render: DefaultToolbarRender,
-            tool: Toolbar,
-          },
-          LinkTool: {
-            render: DefaultLinkToolRender,
-            tool: LinkTool,
-          },
-        };
-
-        const loadedMarks = [
-          Bold,
-          Italic,
-          CodeMark,
-          Underline,
-          Strike,
-          Highlight,
-        ];
-
-        setPlugins(loadedPlugins);
-        setTools(loadedTools);
-        setMarks(loadedMarks);
-        setIsLoaded(true);
-      } catch (error) {
-        console.error('Failed to load Yoopta components:', error);
-        setIsLoaded(true); // Still set to true to show editor
-      }
-    };
-    loadComponents();
-  }, []);
-
-  const onChange = (
-    value: YooptaContentValue,
-    options: YooptaOnChangeOptions,
-  ) => {
-    setValue(value);
-  };
-
-  const handleFocus = () => {
-    setIsFocused(true);
-  };
-
-  const handleBlur = () => {
-    setIsFocused(false);
-  };
-
-  const isEmpty =
-    !value ||
-    (Array.isArray(value) && value.length === 0) ||
-    (Array.isArray(value) &&
-      value.length === 1 &&
-      value[0]?.type === 'paragraph' &&
-      (!value[0]?.children ||
-        value[0]?.children?.length === 0 ||
-        (value[0]?.children?.length === 1 &&
-          value[0]?.children[0]?.text === '')));
+  const initialConfig = useMemo(
+    () => ({
+      namespace: 'NoteEditor',
+      nodes: [ListNode, ListItemNode, LinkNode],
+      theme: {
+        root: 'outline-none',
+        text: {
+          bold: 'font-bold',
+          italic: 'italic',
+          underline: 'underline',
+        },
+      },
+      onError: (error: Error) => {
+        console.error('Lexical editor error:', error);
+      },
+    }),
+    [],
+  );
 
   return (
     <div
-      ref={selectionRef}
-      className={cx(
-        styles.container,
-        classes?.container,
-        withoutBorder && styles.withoutBorder,
-        styles[`theme${theme === Theme.Dark ? 'Dark' : 'Light'}`],
-      )}
-      data-theme={theme}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
+      className={cx(styles.editorContainer, classes?.container)}
+      style={{
+        backgroundColor: theme === Theme.Dark ? '#2d2d2d' : 'white',
+        color: theme === Theme.Dark ? '#ffffff' : '#000000',
+      }}
     >
-      {isEmpty && !isFocused && (
-        <div className={styles.placeholder}>Type text..</div>
-      )}
-      {plugins.length === 0 || !isLoaded ? null : (
-        <YooptaEditor
-          readOnly={readOnly}
-          key={key} // Use key to force re-mount when needed
-          // selectionBoxRoot={selectionRef}
-          editor={editor}
-          marks={marks}
-          plugins={plugins}
-          value={value}
-          placeholder="Type text.."
-          tools={tools}
-          style={{ width: '100%', paddingBottom: 30 }}
-          onChange={onChange}
-          autoFocus={false}
-        />
-      )}
+      <LexicalComposer initialConfig={initialConfig} key={key}>
+        <div style={{ position: 'relative' }}>
+          <ToolbarPlugin readOnly={readOnly} />
+          <div style={{ position: 'relative' }}>
+            <RichTextPlugin
+              contentEditable={
+                <ContentEditable className={styles.contentEditable} />
+              }
+              placeholder={
+                <div className={styles.placeholder}>
+                  Start writing your note...
+                </div>
+              }
+              ErrorBoundary={() => <div>Something went wrong!</div>}
+            />
+            <HistoryPlugin />
+            <AutoFocusPlugin />
+            <ListPlugin />
+            <LinkPlugin />
+            <ValueSyncPlugin value={value} setValue={setValue} />
+          </div>
+        </div>
+      </LexicalComposer>
     </div>
   );
 }
 
 export default NoteEditor;
-export { BlockNote };

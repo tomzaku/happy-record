@@ -1,7 +1,7 @@
 {
   "name": "@moon-ui/note-editor",
   "version": "1.0.0",
-  "description": "Note editor component with Yoopta editor support",
+  "description": "Note editor component with Lexical editor support",
   "main": "src/index.tsx",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,6 +14,19 @@
     "@blocknote/mantine": "^0.31.1",
     "@blocknote/react": "^0.31.1",
     "@blocknote/shadcn": "^0.31.1",
+    "@lexical/code": "^0.34.0",
+    "@lexical/file": "^0.34.0",
+    "@lexical/history": "^0.34.0",
+    "@lexical/html": "^0.34.0",
+    "@lexical/link": "^0.34.0",
+    "@lexical/list": "^0.34.0",
+    "@lexical/overflow": "^0.34.0",
+    "@lexical/plain-text": "^0.34.0",
+    "@lexical/react": "^0.34.0",
+    "@lexical/rich-text": "^0.34.0",
+    "@lexical/selection": "^0.34.0",
+    "@lexical/table": "^0.34.0",
+    "@lexical/utils": "^0.34.0",
     "@mdxeditor/editor": "3.32.3",
     "@yoopta/accordion": "^4.9.9",
     "@yoopta/action-menu-list": "^4.9.9",
