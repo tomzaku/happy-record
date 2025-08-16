@@ -2,6 +2,7 @@ import React from 'react';
 import IconBack from '@moon-ui/icon/IconBack';
 
 import styles from './AppHeader.module.scss';
+import Typography from '@moon-ui/typography';
 
 type Props = {
   onClickBackButton?: () => void;
@@ -19,7 +20,9 @@ const MobileHeader = ({
       <div className={styles.left}>
         {onClickBackButton && <IconBack onClick={onClickBackButton} />}
       </div>
-      <div>{title}</div>
+      <Typography.Title level={4} noMargin>
+        {title}
+      </Typography.Title>
       <div className={styles.right}>{rightComponent}</div>
     </div>
   );

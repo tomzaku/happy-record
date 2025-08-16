@@ -7,6 +7,7 @@ import styles from './index.module.scss';
 type Props = {
   logo: React.ReactNode;
   title: string;
+  description?: string;
   active: boolean;
   onToggle: () => void;
   volume?: number;
@@ -16,19 +17,27 @@ type Props = {
 export default function SoundItem({
   logo,
   title,
+  description,
   active,
   onToggle,
   volume = 1,
   onChangeVolume,
 }: Props) {
   return (
-    <div>
+    <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          {logo}
-          <Typography.Paragraph className={styles.title}>
-            {title}
-          </Typography.Paragraph>
+          <div className={styles.iconContainer}>{logo}</div>
+          <div className={styles.textContent}>
+            <Typography.Paragraph className={styles.title}>
+              {title}
+            </Typography.Paragraph>
+            {description && (
+              <Typography.Text className={styles.description}>
+                {description}
+              </Typography.Text>
+            )}
+          </div>
         </div>
         <Toggle checked={active} onChange={onToggle} />
       </div>

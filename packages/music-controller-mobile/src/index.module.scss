@@ -14,3 +14,31 @@
 .drawer {
   z-index: $drawer-z-index-2;
 }
+
+.content {
+  padding: 12px 0;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.categorySection {
+  margin-bottom: 20px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.categoryTitle {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 16px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.soundList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
