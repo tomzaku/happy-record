@@ -15,6 +15,7 @@ import IconMoon from '@moon-ui/icon/IconMoon';
 import { MobileHeader } from '@dreamer/header';
 import IconWave from '@moon-ui/icon/IconWave';
 import IconCoffeeShop from '@moon-ui/icon/IconCoffeeShop';
+import { Icon } from '@moon-ui/icon/Icon';
 
 import styles from './index.module.scss';
 import {
@@ -95,17 +96,54 @@ const soundInfo: SoundInfo = {
     logoActive: <IconCoffeeShop className={styles.iconActive} />,
     message: {
       id: 'music-controller-mobile.label-busy-coffee',
-      defaultMessage: 'Busy Coffee',
+      defaultMessage: 'Coffee Lofi',
     },
   },
-  [TypeSound.StreamRiver]: {
-    logo: <IconWaterfall className={styles.iconInactive} />,
-    logoActive: <IconWaterfall className={styles.iconActive} />,
+  [TypeSound.LofiHiphop]: {
+    logo: (
+      <Icon icon="solar:music-notes-linear" className={styles.iconInactive} />
+    ),
+    logoActive: (
+      <Icon icon="solar:music-notes-linear" className={styles.iconActive} />
+    ),
     message: {
-      id: 'music-controller-mobile.label-stream-river',
-      defaultMessage: 'Stream River',
+      id: 'music-controller-mobile.label-lofi-hiphop',
+      defaultMessage: 'Lofi Hip Hop',
     },
   },
+  [TypeSound.LofiSideBySide]: {
+    logo: (
+      <Icon icon="solar:music-notes-linear" className={styles.iconInactive} />
+    ),
+    logoActive: (
+      <Icon icon="solar:music-notes-linear" className={styles.iconActive} />
+    ),
+    message: {
+      id: 'music-controller-mobile.label-lofi-side-by-side',
+      defaultMessage: 'Lofi side by side',
+    },
+  },
+  [TypeSound.LofiAfrobeatBurna]: {
+    logo: (
+      <Icon icon="solar:music-notes-linear" className={styles.iconInactive} />
+    ),
+    logoActive: (
+      <Icon icon="solar:music-notes-linear" className={styles.iconActive} />
+    ),
+    message: {
+      id: 'music-controller-mobile.label-lofi-2',
+      defaultMessage: 'Another awesome lofi',
+    },
+  },
+
+  // [TypeSound.StreamRiver]: {
+  //   logo: <IconWaterfall className={styles.iconInactive} />,
+  //   logoActive: <IconWaterfall className={styles.iconActive} />,
+  //   message: {
+  //     id: 'music-controller-mobile.label-stream-river',
+  //     defaultMessage: 'Stream River',
+  //   },
+  // },
 };
 
 export default function MusicControllerMobile({
@@ -120,7 +158,7 @@ export default function MusicControllerMobile({
     Record<string, boolean>
   >({});
   const [volumeSound, setVolumeSound] = React.useState<Record<string, number>>(
-    {}
+    {},
   );
 
   return (
@@ -158,7 +196,7 @@ export default function MusicControllerMobile({
                 });
               }}
             />
-          )
+          ),
         )}
       </div>
     </Drawer>

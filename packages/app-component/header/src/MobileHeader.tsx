@@ -19,7 +19,7 @@ const MobileHeader = ({
       <div className={styles.left}>
         {onClickBackButton && <IconBack onClick={onClickBackButton} />}
       </div>
-      <div >{title}</div>
+      <div>{title}</div>
       <div className={styles.right}>{rightComponent}</div>
     </div>
   );

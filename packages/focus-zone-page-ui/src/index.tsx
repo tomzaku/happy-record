@@ -8,6 +8,7 @@ import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 import { BackHeader } from '@dreamer/header';
 import FocusSoundSection from './FocusSoundSection';
+import MusicControllerMobile from '@dreamer/music-controller-mobile';
 
 // Hooks and utilities
 import { usePomodoroGlobalConfig, Theme } from '@dreamer/pomodoro-common';
@@ -57,6 +58,9 @@ const FocusZonePage: React.FC = () => {
   const [activeSound, setActiveSound] = useState<FocusSound | null>(null);
   const [soundVolume, setSoundVolume] = useState(70);
   const [isSoundPlaying, setIsSoundPlaying] = useState(false);
+
+  // Music modal state
+  const [isMusicModalVisible, setIsMusicModalVisible] = useState(false);
 
   // Stopwatch timer effect
   useEffect(() => {
@@ -159,18 +163,28 @@ const FocusZonePage: React.FC = () => {
       <BackHeader
         renderLeftComponent={() => <div>Focus Zone</div>}
         renderRightComponent={() => (
-          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-            <Icon
-              onClick={toggleTheme}
-              width={24}
-              icon={
-                theme === Theme.Light
-                  ? 'material-symbols:dark-mode'
-                  : 'material-symbols:light-mode'
-              }
-              style={{ cursor: 'pointer' }}
-            />
-          </motion.div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+              <Icon
+                onClick={() => setIsMusicModalVisible(true)}
+                width={24}
+                icon="material-symbols:music-note"
+                style={{ cursor: 'pointer' }}
+              />
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+              <Icon
+                onClick={toggleTheme}
+                width={24}
+                icon={
+                  theme === Theme.Light
+                    ? 'material-symbols:dark-mode'
+                    : 'material-symbols:light-mode'
+                }
+                style={{ cursor: 'pointer' }}
+              />
+            </motion.div>
+          </div>
         )}
         onClickLeftButton={() => navigate(-1)}
       />
@@ -314,6 +328,12 @@ const FocusZonePage: React.FC = () => {
         {/*   onVolumeChange={handleVolumeChange} */}
         {/* /> */}
       </motion.div>
+
+      {/* Music Controller Modal */}
+      <MusicControllerMobile
+        visible={isMusicModalVisible}
+        onClickBackButton={() => setIsMusicModalVisible(false)}
+      />
     </div>
   );
 };

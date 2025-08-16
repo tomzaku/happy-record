@@ -7,6 +7,8 @@ export enum TypeSound {
   RainAndThunder = 'rain-and-thunder',
   Rain = 'rain',
   Wave = 'wave',
-  StreamRiver = 'stream-river'
+  StreamRiver = 'stream-river',
+  LofiAfrobeatBurna = 'lofi-afrobeat-burna',
+  LofiHiphop = 'lofi-hiphop',
+  LofiSideBySide = 'lofi-side-by-side',
 }
-
