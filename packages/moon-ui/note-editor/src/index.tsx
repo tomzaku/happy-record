@@ -1,5 +1,7 @@
-import BlockNote from './BlockNote'
+// import BlockNote from './BlockNote'
 import React, { ReactNode, ErrorInfo } from 'react';
+
+const BlockNote = React.lazy(() => import('./BlockNote'));
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -12,7 +14,10 @@ interface ErrorBoundaryState {
   errorInfo: ErrorInfo | null;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -41,8 +46,12 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         <div>
           <h2>Something went wrong.</h2>
           {this.state.error && <pre>{this.state.error.toString()}</pre>}
-          {this.state.errorInfo && <pre>{this.state.errorInfo.componentStack}</pre>}
-          <button onClick={() => this.props.setValue(undefined)}>clear value</button>
+          {this.state.errorInfo && (
+            <pre>{this.state.errorInfo.componentStack}</pre>
+          )}
+          <button onClick={() => this.props.setValue(undefined)}>
+            clear value
+          </button>
         </div>
       );
     }
@@ -51,14 +60,12 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
-const NoteEditor = (props: any) => {
+const NoteEditor = (props: unknown) => {
   return (
     <ErrorBoundary {...props}>
       <BlockNote {...props} />
     </ErrorBoundary>
-  )
+  );
+};
 
-}
-
-
-export default NoteEditor
+export default NoteEditor;

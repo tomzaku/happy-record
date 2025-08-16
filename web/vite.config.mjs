@@ -77,9 +77,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          apexcharts: ['react-apexcharts', 'apexcharts'],
-        }
+        // manualChunks: {
+        //   apexcharts: ['react-apexcharts', 'apexcharts'],
+        // }
       }
     }
   },
