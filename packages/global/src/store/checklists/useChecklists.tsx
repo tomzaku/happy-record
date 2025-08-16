@@ -36,19 +36,11 @@ export const useChecklist = () => {
           date.toLocaleDateString(),
       );
 
-      console.log(
-        'Checklists for date:',
-        date.toLocaleDateString(),
-        checklistsByGivingDate,
-      );
-
       // Get scheduled checklist template IDs for the given date
       const checklistTemplatesByGivingDateIds =
         getChecklistTemplateIdsByGivingDate({
           date,
         });
-
-      console.log('Scheduled template IDs:', checklistTemplatesByGivingDateIds);
 
       // Create checklists from scheduled templates
       const scheduledChecklists: Checklist[] =
@@ -74,8 +66,6 @@ export const useChecklist = () => {
           }
         });
 
-      console.log('Scheduled checklists:', scheduledChecklists);
-
       // Get checklists without schedule (created for specific dates)
       const nonScheduledChecklists = checklistsByGivingDate.filter(
         existingChecklist => {
@@ -89,26 +79,13 @@ export const useChecklist = () => {
             template.repeat.dayOfWeek &&
             template.repeat.dayOfWeek.trim() !== '';
 
-          console.log(
-            'Template for checklist',
-            existingChecklist.id,
-            ':',
-            template?.title,
-            'hasSchedule:',
-            hasSchedule,
-          );
-
           // Include if it doesn't have a schedule (was created for a specific date)
           return !hasSchedule;
         },
       );
 
-      console.log('Non-scheduled checklists:', nonScheduledChecklists);
-
       // Combine scheduled and non-scheduled checklists
       const allChecklists = [...scheduledChecklists, ...nonScheduledChecklists];
-
-      console.log('All checklists:', allChecklists);
 
       // Filter by selected tag if provided
       let filteredChecklists = allChecklists;
