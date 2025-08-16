@@ -79,7 +79,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           apexcharts: ['react-apexcharts', 'apexcharts'],
-          mdxeditor: ['@mdxeditor/editor'],
         }
       }
     }

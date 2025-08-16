@@ -3,7 +3,6 @@ import {
   ChecklistRecord,
   useChecklistRecord,
 } from '@dreamer/global/src/store/checklist-record';
-import Division from '@moon-ui/division';
 import Card from '@moon-ui/card';
 
 import styles from './index.module.scss';
@@ -20,6 +19,7 @@ type Props = {
 
 const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
   const { updateChecklistRecord, deleteChecklistRecord } = useChecklistRecord();
+  
   const noteFieldMap = allNoteFields.reduce<Record<string, RecordField>>(
     (acc, field) => ({
       ...acc,
@@ -27,6 +27,15 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
     }),
     {},
   );
+
+  const handleNoteValueChange = (note: ChecklistRecord, value: any) => {
+    updateChecklistRecord(note.id, {
+      value,
+      checklistTemplateId: note.checklistTemplateId,
+      folderId: note.folderId,
+    });
+  };
+
   return (
     <div className={styles.container}>
       {allNotes.map(note => {
@@ -52,9 +61,15 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
               </Button>
             </div>
             <Card className={styles.noteItem}>
-              {typeof note.value == 'string' ? null : (
-                <NoteEditor value={note.value} withoutBorder />
-              )}
+              {(() => {
+                return (
+                  <NoteEditor 
+                    value={note.value} 
+                    setValue={(value: Block[]) => handleNoteValueChange(note, value)}
+                    withoutBorder 
+                  />
+                );
+              })()}
             </Card>
           </>
         );

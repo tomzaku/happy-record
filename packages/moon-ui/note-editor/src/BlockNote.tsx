@@ -35,6 +35,7 @@ function BlockNote({
   shouldShowSaveButton,
   withoutBorder,
 }: Props) {
+  console.log(">>>VALUE", value)
   const editor = useCreateBlockNote({
     domAttributes: {
       editor: {

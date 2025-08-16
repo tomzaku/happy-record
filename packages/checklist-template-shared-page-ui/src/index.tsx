@@ -12,7 +12,6 @@ import Card from '@moon-ui/card';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { useNavigate } from 'react-router-dom';
-import NoteEditor from '@moon-ui/note-editor';
 import Typography from '@moon-ui/typography';
 import styles from './index.module.scss';
 import Drawer from '@moon-ui/drawer';
