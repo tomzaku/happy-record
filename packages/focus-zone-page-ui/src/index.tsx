@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import cx from 'classnames';
 
 // UI Components
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
-import Slider from '@moon-ui/slider';
 import { BackHeader } from '@dreamer/header';
+import FocusSoundSection from './FocusSoundSection';
 
 // Hooks and utilities
-import { useTimer } from '@dreamer/timer-hook';
-import { useAudioPlayer } from '@dreamer/music-controller-common/src/hooks';
 import { usePomodoroGlobalConfig, Theme } from '@dreamer/pomodoro-common';
 
 // Styles
@@ -32,33 +30,6 @@ interface PomodoroPhase {
   label: string;
 }
 
-const FOCUS_SOUNDS: FocusSound[] = [
-  {
-    id: 'forest-rain',
-    name: 'Forest Rain',
-    description: 'Gentle rain sounds with forest ambience',
-    category: 'nature',
-  },
-  {
-    id: 'ocean-waves',
-    name: 'Ocean Waves',
-    description: 'Calming ocean waves for deep focus',
-    category: 'nature',
-  },
-  {
-    id: 'ambient-flow',
-    name: 'Ambient Flow',
-    description: 'Ethereal synthesizer soundscapes',
-    category: 'ambient',
-  },
-  {
-    id: 'white-noise',
-    name: 'White Noise',
-    description: 'Clean white noise for concentration',
-    category: 'ambient',
-  },
-];
-
 const POMODORO_PHASES: PomodoroPhase[] = [
   { type: 'work', duration: 25 * 60, label: 'Work Session' },
   { type: 'break', duration: 5 * 60, label: 'Short Break' },
@@ -70,7 +41,6 @@ const POMODORO_PHASES: PomodoroPhase[] = [
 
 const FocusZonePage: React.FC = () => {
   const navigate = useNavigate();
-  const { taskId } = useParams<{ taskId: string }>();
   const { theme, setTheme } = usePomodoroGlobalConfig();
 
   // Timer states
@@ -87,17 +57,6 @@ const FocusZonePage: React.FC = () => {
   const [activeSound, setActiveSound] = useState<FocusSound | null>(null);
   const [soundVolume, setSoundVolume] = useState(70);
   const [isSoundPlaying, setIsSoundPlaying] = useState(false);
-
-  // Audio player hook
-  const {
-    play,
-    pause,
-    isPlaying: audioIsPlaying,
-    currentTime,
-    duration,
-  } = useAudioPlayer({
-    autoPlayDefault: false,
-  });
 
   // Stopwatch timer effect
   useEffect(() => {
@@ -167,20 +126,13 @@ const FocusZonePage: React.FC = () => {
   const toggleSound = (sound: FocusSound) => {
     if (activeSound?.id === sound.id) {
       // Toggle current sound
-      if (isSoundPlaying) {
-        pause();
-        setIsSoundPlaying(false);
-      } else {
-        play();
-        setIsSoundPlaying(true);
-      }
+      setIsSoundPlaying(!isSoundPlaying);
     } else {
       // Switch to new sound
       setActiveSound(sound);
       setIsSoundPlaying(true);
       // In a real app, you would load and play the new audio file
       // For now, we'll simulate it
-      play();
     }
   };
 
@@ -353,126 +305,14 @@ const FocusZonePage: React.FC = () => {
           </motion.button>
         </div>
 
-        {/* Instruction */}
-        <Typography.Text className={styles.instruction}>
-          Touch start to begin timing.
-        </Typography.Text>
-
         {/* Focus Sounds Section */}
-        <motion.div
-          className={styles.focusSoundsSection}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <div className={styles.sectionHeader}>
-            <div className={styles.bullet} />
-            <Typography.Title level={3} className={styles.title}>
-              Focus Sounds
-            </Typography.Title>
-          </div>
-
-          {/* Active Sound Card */}
-          {activeSound && (
-            <motion.div
-              className={cx(styles.soundCard, styles.active)}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-            >
-              <div className={styles.soundHeader}>
-                <div className={styles.soundInfo}>
-                  <Typography.Title level={4} className={styles.soundTitle}>
-                    {activeSound.name}
-                  </Typography.Title>
-                  <Typography.Text className={styles.soundDescription}>
-                    {activeSound.description}
-                  </Typography.Text>
-                </div>
-                <div
-                  className={cx(styles.soundTag, styles[activeSound.category])}
-                >
-                  {activeSound.category === 'nature' ? 'N' : 'A'}
-                </div>
-              </div>
-              <div className={styles.soundControls}>
-                <motion.button
-                  className={cx(styles.playButton, {
-                    [styles.playing]: isSoundPlaying,
-                    [styles.stopped]: !isSoundPlaying,
-                  })}
-                  onClick={() => toggleSound(activeSound)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Icon
-                    icon={
-                      isSoundPlaying
-                        ? 'material-symbols:pause'
-                        : 'material-symbols:play-arrow'
-                    }
-                    width={24}
-                    height={24}
-                  />
-                </motion.button>
-                <div className={styles.volumeControl}>
-                  <Icon
-                    icon="material-symbols:volume-up"
-                    width={20}
-                    height={20}
-                    className={styles.volumeIcon}
-                  />
-                  <Slider
-                    className={styles.volumeSlider}
-                    value={soundVolume}
-                    onChange={handleVolumeChange}
-                    min={0}
-                    max={100}
-                    step={1}
-                  />
-                  <span className={styles.volumeText}>{soundVolume}%</span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Sound Options */}
-          {FOCUS_SOUNDS.map((sound, index) => (
-            <motion.div
-              key={sound.id}
-              className={styles.soundOption}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
-              onClick={() => toggleSound(sound)}
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className={styles.playIcon}>
-                <Icon
-                  icon={
-                    activeSound?.id === sound.id && isSoundPlaying
-                      ? 'material-symbols:pause'
-                      : 'material-symbols:play-arrow'
-                  }
-                  width={20}
-                  height={20}
-                />
-              </div>
-              <div className={styles.soundInfo}>
-                <Typography.Text className={styles.soundTitle}>
-                  {sound.name}
-                </Typography.Text>
-                <Typography.Text className={styles.soundDescription}>
-                  {sound.description}
-                </Typography.Text>
-              </div>
-              <div className={cx(styles.soundTag, styles[sound.category])}>
-                {sound.category === 'nature' ? 'N' : 'A'}
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+        {/* <FocusSoundSection */}
+        {/*   activeSound={activeSound} */}
+        {/*   soundVolume={soundVolume} */}
+        {/*   isSoundPlaying={isSoundPlaying} */}
+        {/*   onSoundToggle={toggleSound} */}
+        {/*   onVolumeChange={handleVolumeChange} */}
+        {/* /> */}
       </motion.div>
     </div>
   );
