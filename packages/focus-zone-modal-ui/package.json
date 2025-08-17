@@ -1,7 +1,7 @@
 {
-  "name": "@dreamer/focus-zone-page-ui",
+  "name": "@dreamer/focus-zone-modal-ui",
   "version": "1.0.0",
-  "description": "Focus Zone - Productivity companion with timer and ambient sounds",
+  "description": "Focus Zone Modal - Productivity companion with timer and ambient sounds, designed to be used as a modal overlay",
   "main": "src/index.tsx",
   "dependencies": {
     "@dreamer/global-tool-common": "^1.0.0",

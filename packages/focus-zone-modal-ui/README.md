@@ -1,6 +1,6 @@
-# Focus Zone - Productivity Companion
+# Focus Zone Modal - Productivity Companion
 
-A beautiful, zen-like focus zone page designed to enhance productivity and concentration. This component provides a distraction-free environment with integrated timer functionality and ambient sounds.
+A beautiful, zen-like focus zone modal designed to enhance productivity and concentration. This component provides a distraction-free environment with integrated timer functionality and ambient sounds, designed to be used as a modal overlay that can be opened from any page.
 
 ## Features
 
@@ -30,8 +30,47 @@ A beautiful, zen-like focus zone page designed to enhance productivity and conce
 
 ## Usage
 
-### Navigation
-The Focus Zone can be accessed from any task detail page by clicking the psychology icon in the header.
+### Basic Modal Integration
+
+```tsx
+import FocusZoneModal from '@dreamer/focus-zone-modal-ui';
+
+const TaskDetailPage = () => {
+  const [isFocusZoneOpen, setIsFocusZoneOpen] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState<string>('');
+  const [currentTaskTitle, setCurrentTaskTitle] = useState<string>('');
+
+  const openFocusZone = (taskId: string, taskTitle: string) => {
+    setCurrentTaskId(taskId);
+    setCurrentTaskTitle(taskTitle);
+    setIsFocusZoneOpen(true);
+  };
+
+  return (
+    <div>
+      <button onClick={() => openFocusZone('task-123', 'Complete Project')}>
+        Open Focus Zone
+      </button>
+      
+      <FocusZoneModal
+        visible={isFocusZoneOpen}
+        taskId={currentTaskId}
+        taskTitle={currentTaskTitle}
+        onDismiss={() => setIsFocusZoneOpen(false)}
+      />
+    </div>
+  );
+};
+```
+
+### Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `visible` | `boolean` | Yes | Controls whether the modal is visible |
+| `taskId` | `string` | No | The ID of the current task for context |
+| `taskTitle` | `string` | No | The title of the current task to display |
+| `onDismiss` | `() => void` | Yes | Callback function when the modal is dismissed |
 
 ### Timer Modes
 1. **Stopwatch**: Click "Start" to begin timing, "Pause" to pause, "Reset" to clear
@@ -65,11 +104,23 @@ The Focus Zone can be accessed from any task detail page by clicking the psychol
 
 ## Integration
 
-The Focus Zone is designed to integrate seamlessly with the existing task management system:
+The Focus Zone Modal is designed to integrate seamlessly with any page in your application:
 
-```typescript
-// Navigate to focus zone for a specific task
-navigate(`/task/${taskId}/focus`);
+```tsx
+// Open focus zone for a specific task
+const openFocusZone = (taskId: string, taskTitle: string) => {
+  setCurrentTaskId(taskId);
+  setCurrentTaskTitle(taskTitle);
+  setIsFocusZoneOpen(true);
+};
+
+// The modal will overlay the current page without navigation
+<FocusZoneModal
+  visible={isFocusZoneOpen}
+  taskId={currentTaskId}
+  taskTitle={currentTaskTitle}
+  onDismiss={() => setIsFocusZoneOpen(false)}
+/>
 ```
 
 ## Future Enhancements
@@ -80,3 +131,5 @@ navigate(`/task/${taskId}/focus`);
 - [ ] Integration with task completion tracking
 - [ ] Custom sound upload support
 - [ ] Focus session history
+- [ ] Keyboard shortcuts for modal control
+- [ ] Focus mode persistence across sessions

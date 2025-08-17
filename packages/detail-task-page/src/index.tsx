@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Checklist,
@@ -12,6 +12,7 @@ import {
 } from '@dreamer/global/src/store/record-field';
 import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
+import FocusZoneModal from '@dreamer/focus-zone-modal-ui';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 
@@ -29,6 +30,9 @@ const DetailTaskPage = () => {
     React.useState<ChecklistTemplate>();
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [fields, setFields] = React.useState<RecordField[]>([]);
+
+  // Focus Zone Modal state
+  const [isFocusZoneOpen, setIsFocusZoneOpen] = useState(false);
 
   if (!id || !currentDay) {
     return;
@@ -79,7 +83,7 @@ const DetailTaskPage = () => {
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <Icon
               onClick={() => {
-                navigate(`/task/${id}/focus`);
+                setIsFocusZoneOpen(true);
               }}
               width={24}
               icon="material-symbols:psychology"
@@ -108,6 +112,13 @@ const DetailTaskPage = () => {
         checklistTemplate={checklistTemplate}
         fields={fields}
         currentDay={currentDay}
+      />
+
+      <FocusZoneModal
+        visible={isFocusZoneOpen}
+        taskId={id}
+        taskTitle={checklistTemplate?.title}
+        onDismiss={() => setIsFocusZoneOpen(false)}
       />
     </>
   );
