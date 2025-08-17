@@ -12,7 +12,7 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(8px);
-  z-index: 1000;
+  z-index: 1000; /* Lower than modal container */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -36,8 +36,11 @@
   background: var(--focus-zone-container-background);
   border-radius: 0;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  z-index: 1001;
+  z-index: 1001; /* Higher than overlay, lower than other modals */
   animation: modalEntrance 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Debug: ensure modal doesn't block other elements */
+  pointer-events: auto;
 
   /* Mobile responsive */
   @media (max-width: 768px) {
@@ -122,8 +125,12 @@
 }
 
 .focusSoundsSection {
-  position: relative;
-  z-index: 10001;
+  position: fixed;
+  z-index: 99999;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .sectionHeader {

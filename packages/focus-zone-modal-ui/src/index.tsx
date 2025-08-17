@@ -250,16 +250,20 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
           className={styles.backHeader}
         >
           <div className={styles.backHeaderContent}>
-            <Typography.Text>Focus Zone</Typography.Text>
+            <Typography.Title level={3} noMargin>Focus Zone</Typography.Title>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                <Icon
-                  onClick={() => setIsMusicModalVisible(true)}
-                  width={24}
-                  icon="material-symbols:music-note"
-                  style={{ cursor: 'pointer' }}
-                />
-              </motion.div>
+                             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                 <Icon
+                   onClick={() => {
+                     console.log('Music icon clicked, setting modal visible');
+                     setIsMusicModalVisible(true);
+                     console.log('Modal state after set:', true);
+                   }}
+                   width={24}
+                   icon="material-symbols:music-note"
+                   style={{ cursor: 'pointer' }}
+                 />
+               </motion.div>
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
                 <Icon
                   onClick={toggleTheme}
@@ -283,34 +287,6 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Task Information Section */}
-        {/* {taskTitle && ( */}
-        {/*   <motion.div */}
-        {/*     className={styles.taskInfoSection} */}
-        {/*     initial={{ opacity: 0, y: -20 }} */}
-        {/*     animate={{ opacity: 1, y: 0 }} */}
-        {/*     transition={{ duration: 0.5, delay: 0.2 }} */}
-        {/*   > */}
-        {/*     <div className={styles.taskInfoCard}> */}
-        {/*       <Icon */}
-        {/*         icon="material-symbols:psychology" */}
-        {/*         width={24} */}
-        {/*         height={24} */}
-        {/*         style={{ color: '#667eea' }} */}
-        {/*       /> */}
-        {/*       <div className={styles.taskInfoContent}> */}
-        {/*         <Typography.Text className={styles.taskInfoLabel}> */}
-        {/*           Currently Focusing On */}
-        {/*         </Typography.Text> */}
-        {/*         <Typography.Title level={4} className={styles.taskInfoTitle}> */}
-        {/*           {taskTitle} */}
-        {/*         </Typography.Title> */}
-        {/*       </div> */}
-        {/*     </div> */}
-        {/*   </motion.div> */}
-        {/* )} */}
-
         {/* Timer Section */}
         <motion.div
           className={styles.timerSection}
@@ -574,20 +550,19 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
             </motion.button>
           </div>
         </motion.div>
-
-        {/* Music Controller Modal */}
-        <MusicControllerMobile
-          visible={isMusicModalVisible}
-          onClickBackButton={() => setIsMusicModalVisible(false)}
-        />
-
-        {/* Notification Permission Modal */}
-        <NotificationPermissionModal
-          visible={showNotificationPermissionModal}
-          onDismiss={() => setShowNotificationPermissionModal(false)}
-          onRequestPermission={requestNotificationPermission}
-        />
       </div>
+
+      <MusicControllerMobile
+        visible={isMusicModalVisible}
+        onClickBackButton={() => setIsMusicModalVisible(false)}
+      />
+
+      {/* Notification Permission Modal - Rendered outside Focus Zone Modal */}
+      <NotificationPermissionModal
+        visible={showNotificationPermissionModal}
+        onDismiss={() => setShowNotificationPermissionModal(false)}
+        onRequestPermission={requestNotificationPermission}
+      />
     </>
   );
 };

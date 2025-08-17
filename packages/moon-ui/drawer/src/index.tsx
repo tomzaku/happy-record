@@ -10,12 +10,14 @@ type Props = {
   visible: boolean;
   className?: string;
   onBlur?: () => void;
+  classes?: Record<string, string>;
 };
 
 export default function Drawer({
   children,
   visible,
   className,
+  classes,
   onBlur,
 }: Props) {
   const [isVisible, setIsVisible] = useState(visible);
@@ -42,7 +44,7 @@ export default function Drawer({
 
   return createPortal(
     <animated.div
-      className={cx(styles.blurContainer, visible && styles.visible)}
+      className={cx(styles.blurContainer, visible && styles.visible, className)}
       onClick={onBlur}
       style={{
         visibility: isVisible ? 'visible' : 'hidden',
@@ -50,7 +52,7 @@ export default function Drawer({
       }}
     >
       <animated.div
-        className={cx(styles.container, className)}
+        className={cx(styles.container)}
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
         style={{
           transform: animationStyles.translateY.to(y => `translateY(${y}%)`),
