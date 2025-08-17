@@ -121,7 +121,6 @@ const FocusZonePage: React.FC = () => {
     setPomodoroTime(POMODORO_PHASES[0].duration);
   };
 
-
   const toggleTheme = () => {
     setTheme(theme === Theme.Light ? Theme.Dark : Theme.Light);
   };
@@ -134,7 +133,11 @@ const FocusZonePage: React.FC = () => {
   };
 
   return (
-    <div className={styles.container}>
+    <div
+      className={cx(styles.container, {
+        [styles.lightTheme]: theme === Theme.Light,
+      })}
+    >
       <BackHeader
         renderLeftComponent={() => <div>Focus Zone</div>}
         renderRightComponent={() => (
@@ -207,7 +210,7 @@ const FocusZonePage: React.FC = () => {
             className={styles.pomodoroProgress}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
           >
             <div className={styles.circularProgressContainer}>
               <motion.div
@@ -230,12 +233,7 @@ const FocusZonePage: React.FC = () => {
                     strokeWidth="8"
                     fill="none"
                   />
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    fill="#7455b021"
-                  />
+                  <circle cx="60" cy="60" r="50" fill="#7455b021" />
                   <motion.circle
                     cx="60"
                     cy="60"
@@ -248,18 +246,19 @@ const FocusZonePage: React.FC = () => {
                     strokeDashoffset={`${2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)}`}
                     initial={{ strokeDashoffset: 2 * Math.PI * 54 }}
                     animate={{
-                      strokeDashoffset: 2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)
+                      strokeDashoffset:
+                        2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100),
                     }}
                     transition={{
                       duration: 0.8,
-                      ease: "easeInOut",
-                      type: "spring",
+                      ease: 'easeInOut',
+                      type: 'spring',
                       stiffness: 100,
-                      damping: 20
+                      damping: 20,
                     }}
                     style={{
-                      transformOrigin: "center",
-                      transform: "rotate(-90deg)"
+                      transformOrigin: 'center',
+                      transform: 'rotate(-90deg)',
                     }}
                   />
                   {/* Animated glow effect */}
@@ -275,23 +274,30 @@ const FocusZonePage: React.FC = () => {
                     strokeDashoffset={`${2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)}`}
                     initial={{ strokeDashoffset: 2 * Math.PI * 54, opacity: 0 }}
                     animate={{
-                      strokeDashoffset: 2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100),
-                      opacity: [0, 0.6, 0]
+                      strokeDashoffset:
+                        2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100),
+                      opacity: [0, 0.6, 0],
                     }}
                     transition={{
                       duration: 2,
-                      ease: "easeInOut",
+                      ease: 'easeInOut',
                       repeat: Infinity,
-                      repeatType: "reverse"
+                      repeatType: 'reverse',
                     }}
                     style={{
-                      transformOrigin: "center",
-                      transform: "rotate(-90deg)"
+                      transformOrigin: 'center',
+                      transform: 'rotate(-90deg)',
                     }}
                   />
                   {/* Gradient definition */}
                   <defs>
-                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <linearGradient
+                      id="progressGradient"
+                      x1="0%"
+                      y1="0%"
+                      x2="100%"
+                      y2="100%"
+                    >
                       <stop offset="0%" stopColor="#667eea" />
                       <stop offset="100%" stopColor="#764ba2" />
                     </linearGradient>
@@ -300,10 +306,7 @@ const FocusZonePage: React.FC = () => {
 
                 {/* Clock display inside the circle */}
                 <div className={styles.clockDisplay}>
-                  <div
-                    className={styles.timeDisplay}
-                    key={pomodoroTime}
-                  >
+                  <div className={styles.timeDisplay} key={pomodoroTime}>
                     {formatPomodoroTime(pomodoroTime)}
                   </div>
                   <motion.div
@@ -386,7 +389,6 @@ const FocusZonePage: React.FC = () => {
             Reset
           </motion.button>
         </div>
-
       </motion.div>
 
       {/* Music Controller Modal */}

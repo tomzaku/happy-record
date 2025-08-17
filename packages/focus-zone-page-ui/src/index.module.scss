@@ -4,6 +4,7 @@
 
 .container {
   min-height: 100vh;
+  box-sizing: border-box;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -11,31 +12,24 @@
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
-
-  // Dark theme (default)
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%);
-    pointer-events: none;
-  }
-
-  // Light theme
-  [data-theme='light'] & {
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
-
-    &::before {
-      background: radial-gradient(circle at 20% 80%, rgba(100, 116, 139, 0.1) 0%, transparent 50%),
-                  radial-gradient(circle at 80% 20%, rgba(148, 163, 184, 0.1) 0%, transparent 50%);
-    }
-  }
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 80%,
+    rgba(120, 119, 198, 0.1) 0%,
+    transparent 50%),
+    radial-gradient(circle at 80% 20%,
+    rgba(255, 119, 198, 0.1) 0%,
+    transparent 50%);
+  pointer-events: none;
 }
 
 .header {
@@ -43,63 +37,49 @@
   margin-bottom: 8px;
   position: relative;
   z-index: 1;
+}
 
-  .title {
-    font-size: 28px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 8px;
-  }
+.header .title {
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
 
-  .subtitle {
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.7);
-    font-weight: 400;
-    transition: color 0.3s ease;
-  }
-
-  // Light theme
-  [data-theme='light'] & {
-    .subtitle {
-      color: rgba(0, 0, 0, 0.7);
-    }
-  }
+.header .subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+  transition: color 0.3s ease;
 }
 
 .focusSoundsSection {
   position: relative;
   z-index: 1;
+}
 
-  .sectionHeader {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
+.focusSoundsSection .sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
 
-    .bullet {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
+.focusSoundsSection .sectionHeader .bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
 
-      .title {
-    font-size: 20px;
-    font-weight: 600;
-    color: white;
-    transition: color 0.3s ease;
-  }
-
-  // Light theme
-  [data-theme='light'] & {
-    .title {
-      color: #1e293b;
-    }
-  }
-  }
+.focusSoundsSection .sectionHeader .title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  transition: color 0.3s ease;
 }
 
 .soundCard {
@@ -110,655 +90,623 @@
   margin-bottom: 16px;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
-
-  &.active {
-    background: rgba(102, 126, 234, 0.15);
-    border-color: rgba(102, 126, 234, 0.3);
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  }
-
-  // Light theme
-  [data-theme='light'] & {
-    background: rgba(0, 0, 0, 0.03);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-
-    &:hover {
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    }
-  }
-
-  .soundHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 16px;
-
-          .soundInfo {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-
-        .soundTitle {
-          font-size: 18px;
-          font-weight: 600;
-          color: white;
-          line-height: 1.2;
-          transition: color 0.3s ease;
-        }
-
-        .soundDescription {
-          font-size: 14px;
-          color: rgba(255, 255, 255, 0.7);
-          line-height: 1.4;
-          transition: color 0.3s ease;
-        }
-
-        // Light theme
-        [data-theme='light'] & {
-          .soundTitle {
-            color: #1e293b;
-          }
-
-          .soundDescription {
-            color: rgba(0, 0, 0, 0.7);
-          }
-        }
-      }
-
-    .soundTag {
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-
-      &.nature {
-        background: rgba(76, 175, 80, 0.2);
-        color: #4caf50;
-        border: 1px solid rgba(76, 175, 80, 0.3);
-      }
-
-      &.ambient {
-        background: rgba(156, 39, 176, 0.2);
-        color: #9c27b0;
-        border: 1px solid rgba(156, 39, 176, 0.3);
-      }
-    }
-  }
-
-  .soundControls {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-
-    .playButton {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-
-      &.playing {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-      }
-
-      &.stopped {
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.15);
-        }
-      }
-
-      // Light theme
-      [data-theme='light'] & {
-        &.stopped {
-          background: rgba(0, 0, 0, 0.1);
-          color: #1e293b;
-          border: 1px solid rgba(0, 0, 0, 0.2);
-
-          &:hover {
-            background: rgba(0, 0, 0, 0.15);
-          }
-        }
-      }
-    }
-
-    .volumeControl {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      .volumeIcon {
-        color: white;
-        opacity: 0.8;
-        transition: color 0.3s ease;
-      }
-
-      .volumeSlider {
-        flex: 1;
-      }
-
-      .volumeText {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.8);
-        min-width: 40px;
-        text-align: right;
-        transition: color 0.3s ease;
-      }
-
-      // Light theme
-      [data-theme='light'] & {
-        .volumeIcon {
-          color: #1e293b;
-        }
-
-        .volumeText {
-          color: rgba(0, 0, 0, 0.8);
-        }
-      }
-    }
-  }
 }
 
-.soundOption {
+.soundCard.active {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+}
+
+.soundCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.soundCard .soundHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.soundCard .soundInfo {
+  flex: 1;
+  margin-right: 16px;
+}
+
+.soundCard .soundTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.soundCard .soundDescription {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}
+
+.soundCard .soundTag {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.soundCard .soundTag.nature {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.soundCard .soundTag.ambient {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.soundCard .soundControls {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px;
-  border-radius: 12px;
+}
+
+.soundCard .playButton {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.soundCard .playButton.playing {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+}
+
+.soundCard .playButton.stopped {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.soundCard .playButton:hover {
+  transform: scale(1.05);
+}
+
+.soundCard .volumeControl {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.soundCard .volumeIcon {
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.soundCard .volumeSlider {
+  flex: 1;
+  min-width: 100px;
+}
+
+.soundCard .volumeText {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  min-width: 32px;
+  text-align: right;
+}
+
+.soundOption {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
   margin-bottom: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(4px);
-  }
+.soundOption:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateX(4px);
+}
 
-  // Light theme
-  [data-theme='light'] & {
-    background: rgba(0, 0, 0, 0.02);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+.soundOption .playIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
 
-    &:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-  }
+.soundOption:hover .playIcon {
+  background: rgba(102, 126, 234, 0.2);
+  color: #fff;
+}
 
-      .playIcon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      transition: all 0.3s ease;
+.soundOption .soundInfo {
+  flex: 1;
+}
 
-      &:hover {
-        background: rgba(102, 126, 234, 0.2);
-      }
+.soundOption .soundTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
 
-      // Light theme
-      [data-theme='light'] & {
-        background: rgba(0, 0, 0, 0.1);
-        color: #1e293b;
+.soundOption .soundDescription {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
 
-        &:hover {
-          background: rgba(102, 126, 234, 0.2);
-        }
-      }
-    }
+.soundOption .soundTag {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
 
-      .soundInfo {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+.soundOption .soundTag.nature {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
 
-      .soundTitle {
-        font-size: 16px;
-        font-weight: 500;
-        color: white;
-        line-height: 1.2;
-        transition: color 0.3s ease;
-      }
-
-      .soundDescription {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
-        line-height: 1.3;
-        transition: color 0.3s ease;
-      }
-
-      // Light theme
-      [data-theme='light'] & {
-        .soundTitle {
-          color: #1e293b;
-        }
-
-        .soundDescription {
-          color: rgba(0, 0, 0, 0.6);
-        }
-      }
-    }
-
-  .soundTag {
-    padding: 3px 10px;
-    border-radius: 16px;
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-
-    &.nature {
-      background: rgba(76, 175, 80, 0.2);
-      color: #4caf50;
-    }
-
-    &.ambient {
-      background: rgba(156, 39, 176, 0.2);
-      color: #9c27b0;
-    }
-  }
+.soundOption .soundTag.ambient {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
 }
 
 .timerSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
   position: relative;
   z-index: 1;
+  min-height: 60vh;
+}
 
-  // Tab styles (reused from create-checklist-page-ui)
-  .tabContainer {
-    margin-bottom: 24px;
-  }
+.timerSection .tabContainer {
+  margin-bottom: 24px;
+}
 
-  .tabNavigation {
-    display: flex;
-    background: transparent;
-    border-radius: 0;
-    padding: 0;
-    position: relative;
-    overflow: visible;
-    border: none;
-    gap: 32px;
-  }
+.timerSection .tabNavigation {
+  display: flex;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  position: relative;
+  overflow: visible;
+  border: 0;
+  gap: 32px;
+}
 
-  .tabButton {
-    flex: none;
-    padding: 8px 0;
-    border: 0;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    border-radius: 0;
-    transition: all 0.3s ease;
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    outline: none;
+.timerSection .tabButton {
+  flex: none;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 0;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  outline: none;
+}
 
-    &:hover {
-      color: rgba(255, 255, 255, 0.8);
-    }
+.timerSection .tabButton:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
 
-    &.activeTab {
-      color: white;
-      font-weight: 600;
-      
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: -4px;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        border-radius: 1px;
-      }
-    }
-  }
+.timerSection .tabButton.activeTab {
+  color: #fff;
+  font-weight: 600;
+}
 
-  // Light theme adjustments
-  [data-theme='light'] & {
-    .tabButton {
-      color: rgba(0, 0, 0, 0.6);
+.timerSection .tabButton.activeTab::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 1px;
+}
 
-      &:hover {
-        color: rgba(0, 0, 0, 0.8);
-      }
+.timerSection .timerDisplay {
+  text-align: center;
+  margin-bottom: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-      &.activeTab {
-        color: #1e293b;
-      }
-    }
-  }
+.timerSection .timerDisplay .time {
+  font-size: 64px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  letter-spacing: 2px;
+  transition: color 0.3s ease;
+}
 
-  .timerDisplay {
-    text-align: center;
-    margin-bottom: 32px;
+.timerSection .timerControls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 0;
+  margin-top: auto;
+  width: 100%;
+  max-width: 400px;
+}
 
-    .time {
-      font-size: 64px;
-      font-weight: 700;
-      color: white;
-      text-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
-      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-      letter-spacing: 2px;
-      transition: color 0.3s ease;
-    }
+.timerSection .timerControls .controlButton {
+  flex: 1;
+  height: 56px;
+  border-radius: 16px;
+  border: 0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
 
-    // Light theme
-    [data-theme='light'] & {
-      .time {
-        color: #1e293b;
-        text-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
-      }
-    }
-  }
+.timerSection .timerControls .controlButton.start {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
 
-  .timerControls {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
+.timerSection .timerControls .controlButton.start:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+}
 
-    .controlButton {
-      flex: 1;
-      height: 56px;
-      border-radius: 16px;
-      border: none;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.3s ease;
+.timerSection .timerControls .controlButton.reset {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
 
-      &.start {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+.timerSection .timerControls .controlButton.reset:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
 
-        &:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
-        }
-      }
-
-      &.reset {
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.15);
-          transform: translateY(-2px);
-        }
-      }
-    }
-  }
-
-  .instruction {
-    text-align: center;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.6);
-    font-style: italic;
-    transition: color 0.3s ease;
-  }
-
-  // Light theme
-  [data-theme='light'] & {
-    .instruction {
-      color: rgba(0, 0, 0, 0.6);
-    }
-  }
+.timerSection .instruction {
+  text-align: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+  transition: color 0.3s ease;
 }
 
 .pomodoroProgress {
-  margin-bottom: 32px;
+  margin-bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
+  flex: 1;
+  justify-content: center;
+}
 
-  // CSS custom properties for background opacity
-  --background-opacity-outer: 0.05;
-  --background-opacity-inner: 0.08;
-  --background-blur: 0.5px;
+.pomodoroProgress .circularProgressContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 250px;
+}
 
-  .circularProgressContainer {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 160px;
-    height: 250px;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
-      animation: pulse 3s ease-in-out infinite;
-    }
+.pomodoroProgress .circularProgressContainer::before {
+  content: '';
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+  rgba(102, 126, 234, 0.1) 0%,
+  transparent 70%);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.pomodoroProgress .progressWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 140px;
+  height: 140px;
+}
+
+.pomodoroProgress .circularProgress {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.3));
+  animation: rotate 20s linear infinite;
+}
+
+.pomodoroProgress .circularProgress::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center,
+  rgba(255, 255, 255, 0.05) 0%,
+  transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pomodoroProgress .clockDisplay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+}
+
+.pomodoroProgress .timeDisplay {
+  font-size: 42px;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: timeGlow 2s ease-in-out infinite alternate;
+  line-height: 1;
+  text-align: center;
+}
+
+.pomodoroProgress .phaseLabel {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  max-width: 80px;
+  line-height: 1.2;
+  text-align: center;
+  animation: fadeInOut 4s ease-in-out infinite;
+  margin-top: 2px;
+}
+
+.pomodoroProgress .progressPercentage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pomodoroProgress .percentageText {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: percentageBounce 1s ease-in-out infinite;
+}
+
+.pomodoroProgress .completedText {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: slideUpDown 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
   }
 
-  .progressWrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 140px;
-    height: 140px;
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
   }
 
-  @keyframes pulse {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 0.5;
-    }
-    50% {
-      transform: scale(1.1);
-      opacity: 0.8;
-    }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes timeGlow {
+  from {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
-  .circularProgress {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.3));
-    animation: rotate 20s linear infinite;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
-      border-radius: 50%;
-      pointer-events: none;
-    }
+  to {
+    text-shadow:
+      0 2px 12px rgba(102, 126, 234, 0.4),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
 
-    // Background circle styling
-    circle[fill] {
-      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
-      transition: all 0.3s ease;
-      
-      &:hover {
-        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
-      }
-    }
-
-    // Specific styling for outer background
-    circle[fill="rgba(255, 255, 255, 0.05)"] {
-      backdrop-filter: blur(var(--background-blur));
-    }
-
-    // Specific styling for inner background
-    circle[fill="rgba(255, 255, 255, 0.08)"] {
-      backdrop-filter: blur(calc(var(--background-blur) * 2));
-    }
+@keyframes fadeInOut {
+  0%,
+  100% {
+    opacity: 0.6;
   }
 
-  @keyframes rotate {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes percentageBounce {
+  0%,
+  100% {
+    transform: scale(1);
   }
 
-  .clockDisplay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    z-index: 2;
-    width: 100%;
-    height: 100%;
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes slideUpDown {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+// Utility classes for light theme
+.light-theme {
+  .title {
+    color: #1e293b;
+  }
+
+  .time {
+    color: #1e293b;
+    text-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+  }
+
+  .reset {
+    background: rgba(0, 0, 0, 0.1);
+    color: #1e293b;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+  }
+
+  .reset:hover {
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .instruction {
+    color: rgba(0, 0, 0, 0.6);
   }
 
   .timeDisplay {
-    font-size: 42px;
-    font-weight: 700;
-    color: white;
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    animation: timeGlow 2s ease-in-out infinite alternate;
-    line-height: 1;
-    text-align: center;
-  }
-
-  @keyframes timeGlow {
-    from {
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-    to {
-      text-shadow: 0 2px 12px rgba(102, 126, 234, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
+    color: #1e293b;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .phaseLabel {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 500;
-    max-width: 80px;
-    line-height: 1.2;
-    text-align: center;
-    animation: fadeInOut 4s ease-in-out infinite;
-    margin-top: 2px;
-  }
-
-  @keyframes fadeInOut {
-    0%, 100% {
-      opacity: 0.6;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
-
-  .progressPercentage {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .percentageText {
-    font-size: 18px;
-    font-weight: 700;
-    color: white;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: percentageBounce 1s ease-in-out infinite;
-  }
-
-  @keyframes percentageBounce {
-    0%, 100% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.05);
-    }
+    color: rgba(0, 0, 0, 0.8);
   }
 
   .completedText {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    animation: slideUpDown 3s ease-in-out infinite;
+    color: rgba(0, 0, 0, 0.6);
   }
 
-  @keyframes slideUpDown {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-2px);
-    }
+  .soundTitle {
+    color: #1e293b;
   }
 
-  // Light theme
-  [data-theme='light'] & {
-    --background-opacity-outer: 0.1;
-    --background-opacity-inner: 0.15;
-    --background-blur: 1px;
-
-    .timeDisplay {
-      color: #1e293b;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .phaseLabel {
-      color: rgba(0, 0, 0, 0.8);
-    }
-
-    .completedText {
-      color: rgba(0, 0, 0, 0.6);
-    }
+  .soundDescription {
+    color: rgba(0, 0, 0, 0.7);
   }
+
+  .volumeIcon {
+    color: #1e293b;
+  }
+
+  .volumeText {
+    color: rgba(0, 0, 0, 0.6);
+  }
+}
+
+// Remove the old complex light theme selectors
+[data-theme='light'] .container {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+}
+
+[data-theme='light'] .container::before {
+  background:
+    radial-gradient(circle at 20% 80%,
+    rgba(100, 116, 139, 0.1) 0%,
+    transparent 50%),
+    radial-gradient(circle at 80% 20%,
+    rgba(148, 163, 184, 0.1) 0%,
+    transparent 50%);
+}
+
+[data-theme='light'] .header .subtitle {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme='light'] .timerSection .tabButton {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='light'] .timerSection .tabButton:hover {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme='light'] .timerSection .tabButton.activeTab {
+  color: #1e293b;
 }
 
 // Animation classes
@@ -771,6 +719,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -786,6 +735,7 @@
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
