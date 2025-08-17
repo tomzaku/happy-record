@@ -527,6 +527,11 @@
   align-items: center;
   gap: 20px;
 
+  // CSS custom properties for background opacity
+  --background-opacity-outer: 0.05;
+  --background-opacity-inner: 0.08;
+  --background-blur: 0.5px;
+
   .circularProgressContainer {
     position: relative;
     display: flex;
@@ -583,6 +588,26 @@
       border-radius: 50%;
       pointer-events: none;
     }
+
+    // Background circle styling
+    circle[fill] {
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+      transition: all 0.3s ease;
+      
+      &:hover {
+        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+      }
+    }
+
+    // Specific styling for outer background
+    circle[fill="rgba(255, 255, 255, 0.05)"] {
+      backdrop-filter: blur(var(--background-blur));
+    }
+
+    // Specific styling for inner background
+    circle[fill="rgba(255, 255, 255, 0.08)"] {
+      backdrop-filter: blur(calc(var(--background-blur) * 2));
+    }
   }
 
   @keyframes rotate {
@@ -610,7 +635,7 @@
   }
 
   .timeDisplay {
-    font-size: 24px;
+    font-size: 42px;
     font-weight: 700;
     color: white;
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
@@ -698,6 +723,10 @@
 
   // Light theme
   [data-theme='light'] & {
+    --background-opacity-outer: 0.1;
+    --background-opacity-inner: 0.15;
+    --background-blur: 1px;
+
     .timeDisplay {
       color: #1e293b;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);

@@ -219,10 +219,9 @@ const FocusZonePage: React.FC = () => {
                 <svg
                   className={styles.circularProgress}
                   viewBox="0 0 120 120"
-                  width="220"
-                  height="220"
+                  width="250"
+                  height="250"
                 >
-                  {/* Background circle */}
                   <circle
                     cx="60"
                     cy="60"
@@ -231,7 +230,12 @@ const FocusZonePage: React.FC = () => {
                     strokeWidth="8"
                     fill="none"
                   />
-                  {/* Progress circle */}
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="50"
+                    fill="#7455b021"
+                  />
                   <motion.circle
                     cx="60"
                     cy="60"
