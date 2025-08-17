@@ -741,3 +741,72 @@
     transform: translateX(0);
   }
 }
+
+// Task Information Section
+.taskInfoSection {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 16px;
+}
+
+.taskInfoCard {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.taskInfoCard:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.taskInfoContent {
+  flex: 1;
+}
+
+.taskInfoLabel {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.taskInfoTitle {
+  color: #fff;
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.3;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+// Light theme adjustments for task info
+[data-theme='light'] .taskInfoCard {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='light'] .taskInfoCard:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme='light'] .taskInfoLabel {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='light'] .taskInfoTitle {
+  color: #1e293b;
+  text-shadow: none;
+}

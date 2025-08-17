@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import cx from 'classnames';
 
@@ -9,9 +9,12 @@ import Typography from '@moon-ui/typography';
 import { BackHeader } from '@dreamer/header';
 import FocusSoundSection from './FocusSoundSection';
 import MusicControllerMobile from '@dreamer/music-controller-mobile';
+import NotificationPermissionModal from './NotificationPermissionModal';
 
 // Hooks and utilities
 import { usePomodoroGlobalConfig, Theme } from '@dreamer/pomodoro-common';
+import { notify } from '@dreamer/notification';
+import { useChecklistTemplates } from '@dreamer/global';
 
 // Styles
 import styles from './index.module.scss';
@@ -32,7 +35,7 @@ interface PomodoroPhase {
 }
 
 const POMODORO_PHASES: PomodoroPhase[] = [
-  { type: 'work', duration: 2 * 60, label: 'Work Session' },
+  { type: 'work', duration: 0.1 * 60, label: 'Work Session' },
   { type: 'break', duration: 5 * 60, label: 'Short Break' },
   { type: 'work', duration: 25 * 60, label: 'Work Session' },
   { type: 'break', duration: 5 * 60, label: 'Short Break' },
@@ -42,7 +45,12 @@ const POMODORO_PHASES: PomodoroPhase[] = [
 
 const FocusZonePage: React.FC = () => {
   const navigate = useNavigate();
+  const { taskId } = useParams<{ taskId: string }>();
   const { theme, setTheme } = usePomodoroGlobalConfig();
+  const { getChecklistTemplate } = useChecklistTemplates();
+
+  // Get task information
+  const [taskTitle, setTaskTitle] = useState<string>('');
 
   // Timer states
   const [timerMode, setTimerMode] = useState<'stopwatch' | 'pomodoro'>(
@@ -56,6 +64,12 @@ const FocusZonePage: React.FC = () => {
 
   // Music modal state
   const [isMusicModalVisible, setIsMusicModalVisible] = useState(false);
+
+  // Notification permission modal state
+  const [showNotificationPermissionModal, setShowNotificationPermissionModal] =
+    useState(false);
+  const [hasNotificationPermission, setHasNotificationPermission] =
+    useState(false);
 
   // Stopwatch timer effect
   useEffect(() => {
@@ -77,8 +91,22 @@ const FocusZonePage: React.FC = () => {
           if (prev <= 1) {
             // Phase completed, move to next phase
             const nextPhase = (pomodoroPhase + 1) % POMODORO_PHASES.length;
+            const nextPhaseData = POMODORO_PHASES[nextPhase];
+
+            // Show notification when transitioning to break mode
+            if (nextPhaseData.type === 'break') {
+              notify('Break Time! 🎉', {
+                body: `Time to take a ${nextPhaseData.label.toLowerCase()}!`,
+                icon: '/logo/dreamer-192x192.png',
+                badge: '/logo/dreamer-192x192.png',
+                tag: 'pomodoro-break',
+                requireInteraction: false,
+                silent: false,
+              });
+            }
+
             setPomodoroPhase(nextPhase);
-            return POMODORO_PHASES[nextPhase].duration;
+            return nextPhaseData.duration;
           }
           return prev - 1;
         });
@@ -86,6 +114,16 @@ const FocusZonePage: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [isPomodoroRunning, pomodoroTime, pomodoroPhase]);
+
+  // Get task information when component mounts
+  useEffect(() => {
+    if (taskId) {
+      const checklistTemplate = getChecklistTemplate(taskId);
+      if (checklistTemplate) {
+        setTaskTitle(checklistTemplate.title);
+      }
+    }
+  }, [taskId, getChecklistTemplate]);
 
   // Format time functions
   const formatStopwatchTime = (time: number): string => {
@@ -111,7 +149,11 @@ const FocusZonePage: React.FC = () => {
     setStopwatchTime(0);
   };
 
-  const togglePomodoro = () => {
+  const togglePomodoro = async () => {
+    if (!isPomodoroRunning) {
+      // Starting pomodoro, check notification permission
+      await checkNotificationPermission();
+    }
     setIsPomodoroRunning(!isPomodoroRunning);
   };
 
@@ -123,6 +165,47 @@ const FocusZonePage: React.FC = () => {
 
   const toggleTheme = () => {
     setTheme(theme === Theme.Light ? Theme.Dark : Theme.Light);
+  };
+
+  // Check and request notification permission
+  const checkNotificationPermission = async () => {
+    if (!('Notification' in window)) {
+      return false;
+    }
+
+    if (Notification.permission === 'granted') {
+      setHasNotificationPermission(true);
+      return true;
+    }
+
+    if (Notification.permission === 'denied') {
+      setHasNotificationPermission(false);
+      return false;
+    }
+
+    // Permission is 'default', show modal to request
+    setShowNotificationPermissionModal(true);
+    return false;
+  };
+
+  const requestNotificationPermission = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        setHasNotificationPermission(true);
+        setShowNotificationPermissionModal(false);
+        return true;
+      } else {
+        setHasNotificationPermission(false);
+        setShowNotificationPermissionModal(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+      setHasNotificationPermission(false);
+      setShowNotificationPermissionModal(false);
+      return false;
+    }
   };
 
   const getCurrentPhase = () => POMODORO_PHASES[pomodoroPhase];
@@ -166,6 +249,33 @@ const FocusZonePage: React.FC = () => {
         )}
         onClickLeftButton={() => navigate(-1)}
       />
+
+      {/* Task Information Section */}
+      {/* {taskTitle && ( */}
+      {/*   <motion.div */}
+      {/*     className={styles.taskInfoSection} */}
+      {/*     initial={{ opacity: 0, y: -20 }} */}
+      {/*     animate={{ opacity: 1, y: 0 }} */}
+      {/*     transition={{ duration: 0.5, delay: 0.2 }} */}
+      {/*   > */}
+      {/*     <div className={styles.taskInfoCard}> */}
+      {/*       <Icon */}
+      {/*         icon="material-symbols:psychology" */}
+      {/*         width={24} */}
+      {/*         height={24} */}
+      {/*         style={{ color: '#667eea' }} */}
+      {/*       /> */}
+      {/*       <div className={styles.taskInfoContent}> */}
+      {/*         <Typography.Text className={styles.taskInfoLabel}> */}
+      {/*           Currently Focusing On */}
+      {/*         </Typography.Text> */}
+      {/*         <Typography.Title level={4} className={styles.taskInfoTitle}> */}
+      {/*           {taskTitle} */}
+      {/*         </Typography.Title> */}
+      {/*       </div> */}
+      {/*     </div> */}
+      {/*   </motion.div> */}
+      {/* )} */}
 
       {/* Timer Section */}
       <motion.div
@@ -321,6 +431,11 @@ const FocusZonePage: React.FC = () => {
               </motion.div>
             </div>
 
+            {taskTitle && (
+              <Typography.Text className={styles.taskInfoLabel}>
+                {taskTitle}
+              </Typography.Text>
+            )}
             {/* Progress percentage indicator */}
             <motion.div
               className={styles.progressPercentage}
@@ -395,6 +510,13 @@ const FocusZonePage: React.FC = () => {
       <MusicControllerMobile
         visible={isMusicModalVisible}
         onClickBackButton={() => setIsMusicModalVisible(false)}
+      />
+
+      {/* Notification Permission Modal */}
+      <NotificationPermissionModal
+        visible={showNotificationPermissionModal}
+        onDismiss={() => setShowNotificationPermissionModal(false)}
+        onRequestPermission={requestNotificationPermission}
       />
     </div>
   );
