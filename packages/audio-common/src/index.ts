@@ -48,11 +48,13 @@ export const createBasedAudio = <T extends string>(
   const sounds: Record<string, HTMLAudioElement> = {};
   const loopStates: Record<string, boolean> = {};
   const originalVolumes: Record<string, number> = {}; // Store original volume levels
-
+  const crossfadeSounds: Record<string, HTMLAudioElement> = {}; // Second audio for crossfade
+  const crossfadeStates: Record<string, boolean> = {}; // Track crossfade sound states
+  
   const loadTypeSound = async (typeSound: T) => {
     return new Audio(getLink(audioMap[typeSound]));
   };
-
+  
   const toggleSound = async (
     typeSound: T,
     toggleValue: boolean,
@@ -61,57 +63,79 @@ export const createBasedAudio = <T extends string>(
     if (!sounds[typeSound]) {
       const sound = await loadTypeSound(typeSound);
       sounds[typeSound] = sound;
-
-      // Set up seamless looping with volume crossfade
+      
+      // Create crossfade sound instance
+      const crossfadeSound = await loadTypeSound(typeSound);
+      crossfadeSounds[typeSound] = crossfadeSound;
+      crossfadeStates[typeSound] = false;
+      
+      // Set up seamless looping with dual-audio crossfade
       sound.addEventListener('timeupdate', () => {
         if (loopStates[typeSound] && sound.duration > 0) {
           const timeLeft = sound.duration - sound.currentTime;
-
-          // Volume fade out in last 2 seconds
+          
+          // Start crossfade sound 2 seconds before main sound ends
+          if (timeLeft <= FADE_DURATION && !crossfadeStates[typeSound]) {
+            crossfadeSound.currentTime = sound.duration - FADE_DURATION;
+            crossfadeSound.volume = 0;
+            crossfadeSound.play().catch(console.error);
+            crossfadeStates[typeSound] = true;
+          }
+          
+          // Volume fade out for main sound in last 2 seconds
           if (timeLeft <= FADE_DURATION) {
             const fadeProgress = timeLeft / FADE_DURATION;
             const targetVolume = originalVolumes[typeSound] || 1;
             sound.volume = targetVolume * fadeProgress;
+            
+            // Simultaneously fade in crossfade sound
+            const crossfadeProgress = 1 - fadeProgress;
+            crossfadeSound.volume = targetVolume * crossfadeProgress;
           }
-
+          
           // Check if we're 2.5 seconds away from the end
           if (sound.currentTime >= sound.duration - GAP_SOUND_SECOND) {
-            // Seamlessly restart from beginning with fade in
+            // Reset main sound to beginning
             sound.currentTime = 0;
-            sound.volume = 0; // Start silent
-
-            // Gradually increase volume over 2 seconds
-            let fadeInTime = 0;
-            const fadeInInterval = setInterval(() => {
-              fadeInTime += 0.1; // Update every 100ms
-              const fadeInProgress = Math.min(fadeInTime / FADE_DURATION, 1);
-              const targetVolume = originalVolumes[typeSound] || 1;
-              sound.volume = targetVolume * fadeInProgress;
-
-              if (fadeInProgress >= 1) {
-                clearInterval(fadeInInterval);
-              }
-            }, 100);
+            sound.volume = originalVolumes[typeSound] || 1;
+            
+            // Stop crossfade sound and reset
+            crossfadeSound.pause();
+            crossfadeSound.currentTime = 0;
+            crossfadeStates[typeSound] = false;
           }
         }
       });
     }
-
+    
     if (toggleValue) {
       if (options?.loop) {
         loopStates[typeSound] = true;
         // Don't use native loop to avoid gaps
         sounds[typeSound].loop = false;
+        if (crossfadeSounds[typeSound]) {
+          crossfadeSounds[typeSound].loop = false;
+        }
       } else {
         loopStates[typeSound] = false;
+        // Stop crossfade sound when main sound stops
+        if (crossfadeSounds[typeSound]) {
+          crossfadeSounds[typeSound].pause();
+          crossfadeStates[typeSound] = false;
+        }
       }
       sounds[typeSound].play();
     } else {
       loopStates[typeSound] = false;
       sounds[typeSound].pause();
+      // Stop crossfade sound
+      if (crossfadeSounds[typeSound]) {
+        crossfadeSounds[typeSound].pause();
+        crossfadeStates[typeSound] = false;
+      }
     }
   };
-
+  
   const setSoundVolume = async (typeSound: T, volume: number) => {
     if (!sounds[typeSound]) {
       return;
@@ -119,20 +143,46 @@ export const createBasedAudio = <T extends string>(
     // Store original volume for crossfade calculations
     originalVolumes[typeSound] = volume;
     sounds[typeSound].volume = volume;
+    // Also set volume on crossfade sound
+    if (crossfadeSounds[typeSound]) {
+      crossfadeSounds[typeSound].volume = volume;
+    }
   };
-
+  
   const loadSounds = async (typeSounds: T[] = Object.keys(audioMap) as T[]) => {
     const result = await Promise.all(typeSounds.map(loadTypeSound));
     typeSounds.forEach((typeSound, index) => {
       sounds[typeSound] = result[index];
     });
+    
+    // Also load crossfade sounds
+    const crossfadeResults = await Promise.all(typeSounds.map(loadTypeSound));
+    typeSounds.forEach((typeSound, index) => {
+      crossfadeSounds[typeSound] = crossfadeResults[index];
+      crossfadeStates[typeSound] = false;
+    });
   };
-
+  
   return {
     toggleSound,
     setSoundVolume,
     sounds,
     loadSounds,
+    // Add functions to get current state
+    getActiveSounds: (): Record<T, boolean> => {
+      const activeSounds: Record<T, boolean> = {} as Record<T, boolean>;
+      Object.keys(sounds).forEach(typeSound => {
+        activeSounds[typeSound as T] = sounds[typeSound] && !sounds[typeSound].paused;
+      });
+      return activeSounds;
+    },
+    getSoundVolumes: (): Record<T, number> => {
+      const soundVolumes: Record<T, number> = {} as Record<T, number>;
+      Object.keys(sounds).forEach(typeSound => {
+        soundVolumes[typeSound as T] = sounds[typeSound] ? sounds[typeSound].volume : 1;
+      });
+      return soundVolumes;
+    },
   };
 };
 
@@ -142,13 +192,15 @@ export const createGoogleDriveAudio = <T extends string>(
   const sounds: Record<string, HTMLAudioElement> = {};
   const loopStates: Record<string, boolean> = {};
   const originalVolumes: Record<string, number> = {}; // Store original volume levels
-
+  const crossfadeSounds: Record<string, HTMLAudioElement> = {}; // Second audio for crossfade
+  const crossfadeStates: Record<string, boolean> = {}; // Track crossfade sound states
+  
   const loadTypeSound = async (typeSound: T) => {
     return new Audio(
       `https://drive.google.com/uc?export=download&id=${googleDriverIdMap[typeSound]}`,
     );
   };
-
+  
   const toggleSound = async (
     typeSound: T,
     toggleValue: boolean,
@@ -157,57 +209,79 @@ export const createGoogleDriveAudio = <T extends string>(
     if (!sounds[typeSound]) {
       const sound = await loadTypeSound(typeSound);
       sounds[typeSound] = sound;
-
-      // Set up seamless looping with volume crossfade
+      
+      // Create crossfade sound instance
+      const crossfadeSound = await loadTypeSound(typeSound);
+      crossfadeSounds[typeSound] = crossfadeSound;
+      crossfadeStates[typeSound] = false;
+      
+      // Set up seamless looping with dual-audio crossfade
       sound.addEventListener('timeupdate', () => {
         if (loopStates[typeSound] && sound.duration > 0) {
           const timeLeft = sound.duration - sound.currentTime;
-
-          // Volume fade out in last 2 seconds
+          
+          // Start crossfade sound 2 seconds before main sound ends
+          if (timeLeft <= FADE_DURATION && !crossfadeStates[typeSound]) {
+            crossfadeSound.currentTime = sound.duration - FADE_DURATION;
+            crossfadeSound.volume = 0;
+            crossfadeSound.play().catch(console.error);
+            crossfadeStates[typeSound] = true;
+          }
+          
+          // Volume fade out for main sound in last 2 seconds
           if (timeLeft <= FADE_DURATION) {
             const fadeProgress = timeLeft / FADE_DURATION;
             const targetVolume = originalVolumes[typeSound] || 1;
             sound.volume = targetVolume * fadeProgress;
+            
+            // Simultaneously fade in crossfade sound
+            const crossfadeProgress = 1 - fadeProgress;
+            crossfadeSound.volume = targetVolume * crossfadeProgress;
           }
-
+          
           // Check if we're 2.5 seconds away from the end
           if (sound.currentTime >= sound.duration - GAP_SOUND_SECOND) {
-            // Seamlessly restart from beginning with fade in
+            // Reset main sound to beginning
             sound.currentTime = 0;
-            sound.volume = 0; // Start silent
-
-            // Gradually increase volume over 2 seconds
-            let fadeInTime = 0;
-            const fadeInInterval = setInterval(() => {
-              fadeInTime += 0.1; // Update every 100ms
-              const fadeInProgress = Math.min(fadeInTime / FADE_DURATION, 1);
-              const targetVolume = originalVolumes[typeSound] || 1;
-              sound.volume = targetVolume * fadeInProgress;
-
-              if (fadeInProgress >= 1) {
-                clearInterval(fadeInInterval);
-              }
-            }, 100);
+            sound.volume = originalVolumes[typeSound] || 1;
+            
+            // Stop crossfade sound and reset
+            crossfadeSound.pause();
+            crossfadeSound.currentTime = 0;
+            crossfadeStates[typeSound] = false;
           }
         }
       });
     }
-
+    
     if (toggleValue) {
       if (options?.loop) {
         loopStates[typeSound] = true;
         // Don't use native loop to avoid gaps
         sounds[typeSound].loop = false;
+        if (crossfadeSounds[typeSound]) {
+          crossfadeSounds[typeSound].loop = false;
+        }
       } else {
         loopStates[typeSound] = false;
+        // Stop crossfade sound when main sound stops
+        if (crossfadeSounds[typeSound]) {
+          crossfadeSounds[typeSound].pause();
+          crossfadeStates[typeSound] = false;
+        }
       }
       sounds[typeSound].play();
     } else {
       loopStates[typeSound] = false;
       sounds[typeSound].pause();
+      // Stop crossfade sound
+      if (crossfadeSounds[typeSound]) {
+        crossfadeSounds[typeSound].pause();
+        crossfadeStates[typeSound] = false;
+      }
     }
   };
-
+  
   const setSoundVolume = async (typeSound: T, volume: number) => {
     if (!sounds[typeSound]) {
       return;
@@ -215,8 +289,12 @@ export const createGoogleDriveAudio = <T extends string>(
     // Store original volume for crossfade calculations
     originalVolumes[typeSound] = volume;
     sounds[typeSound].volume = volume;
+    // Also set volume on crossfade sound
+    if (crossfadeSounds[typeSound]) {
+      crossfadeSounds[typeSound].volume = volume;
+    }
   };
-
+  
   const loadSounds = async (
     typeSounds: T[] = Object.keys(googleDriverIdMap) as T[],
   ) => {
@@ -224,13 +302,35 @@ export const createGoogleDriveAudio = <T extends string>(
     typeSounds.forEach((typeSound, index) => {
       sounds[typeSound] = result[index];
     });
+    
+    // Also load crossfade sounds
+    const crossfadeResults = await Promise.all(typeSounds.map(loadTypeSound));
+    typeSounds.forEach((typeSound, index) => {
+      crossfadeSounds[typeSound] = crossfadeResults[index];
+      crossfadeStates[typeSound] = false;
+    });
   };
-
+  
   return {
     toggleSound,
     setSoundVolume,
     sounds,
     loadSounds,
+    // Add functions to get current state
+    getActiveSounds: (): Record<T, boolean> => {
+      const activeSounds: Record<T, boolean> = {} as Record<T, boolean>;
+      Object.keys(sounds).forEach(typeSound => {
+        activeSounds[typeSound as T] = sounds[typeSound] && !sounds[typeSound].paused;
+      });
+      return activeSounds;
+    },
+    getSoundVolumes: (): Record<T, number> => {
+      const soundVolumes: Record<T, number> = {} as Record<T, number>;
+      Object.keys(sounds).forEach(typeSound => {
+        soundVolumes[typeSound as T] = sounds[typeSound] ? sounds[typeSound].volume : 1;
+      });
+      return soundVolumes;
+    },
   };
 };
 
@@ -241,11 +341,13 @@ export const createRemoteAudio = <T extends string>(
   const sounds: Record<string, HTMLAudioElement> = {};
   const loopStates: Record<string, boolean> = {};
   const originalVolumes: Record<string, number> = {}; // Store original volume levels
-
+  const crossfadeSounds: Record<string, HTMLAudioElement> = {}; // Second audio for crossfade
+  const crossfadeStates: Record<string, boolean> = {}; // Track crossfade sound states
+  
   const loadTypeSound = async (typeSound: T) => {
     return new Audio(getLink(typeSound));
   };
-
+  
   const toggleSound = async (
     typeSound: T,
     toggleValue: boolean,
@@ -254,58 +356,79 @@ export const createRemoteAudio = <T extends string>(
     if (!sounds[typeSound]) {
       const sound = await loadTypeSound(typeSound);
       sounds[typeSound] = sound;
-
-      // Set up seamless looping with volume crossfade
+      
+      // Create crossfade sound instance
+      const crossfadeSound = await loadTypeSound(typeSound);
+      crossfadeSounds[typeSound] = crossfadeSound;
+      crossfadeStates[typeSound] = false;
+      
+      // Set up seamless looping with dual-audio crossfade
       sound.addEventListener('timeupdate', () => {
         if (loopStates[typeSound] && sound.duration > 0) {
-          const timeLeft =
-            sound.duration - sound.currentTime - GAP_SOUND_SECOND + 0.5;
-
-          // Volume fade out in last 2 seconds
+          const timeLeft = sound.duration - sound.currentTime;
+          
+          // Start crossfade sound 2 seconds before main sound ends
+          if (timeLeft <= FADE_DURATION && !crossfadeStates[typeSound]) {
+            crossfadeSound.currentTime = sound.duration - FADE_DURATION;
+            crossfadeSound.volume = 0;
+            crossfadeSound.play().catch(console.error);
+            crossfadeStates[typeSound] = true;
+          }
+          
+          // Volume fade out for main sound in last 2 seconds
           if (timeLeft <= FADE_DURATION) {
             const fadeProgress = timeLeft / FADE_DURATION;
             const targetVolume = originalVolumes[typeSound] || 1;
             sound.volume = targetVolume * fadeProgress;
+            
+            // Simultaneously fade in crossfade sound
+            const crossfadeProgress = 1 - fadeProgress;
+            crossfadeSound.volume = targetVolume * crossfadeProgress;
           }
-
+          
           // Check if we're 2.5 seconds away from the end
           if (sound.currentTime >= sound.duration - GAP_SOUND_SECOND) {
-            // Seamlessly restart from beginning with fade in
+            // Reset main sound to beginning
             sound.currentTime = 0.5;
-            sound.volume = 0; // Start silent
-
-            // Gradually increase volume over 2 seconds
-            let fadeInTime = 0;
-            const fadeInInterval = setInterval(() => {
-              fadeInTime += 0.1; // Update every 100ms
-              const fadeInProgress = Math.min(fadeInTime / FADE_DURATION, 1);
-              const targetVolume = originalVolumes[typeSound] || 1;
-              sound.volume = targetVolume * fadeInProgress;
-
-              if (fadeInProgress >= 1) {
-                clearInterval(fadeInInterval);
-              }
-            }, 100);
+            sound.volume = originalVolumes[typeSound] || 1;
+            
+            // Stop crossfade sound and reset
+            crossfadeSound.pause();
+            crossfadeSound.currentTime = 0;
+            crossfadeStates[typeSound] = false;
           }
         }
       });
     }
-
+    
     if (toggleValue) {
       if (options?.loop) {
         loopStates[typeSound] = true;
         // Don't use native loop to avoid gaps
         sounds[typeSound].loop = false;
+        if (crossfadeSounds[typeSound]) {
+          crossfadeSounds[typeSound].loop = false;
+        }
       } else {
         loopStates[typeSound] = false;
+        // Stop crossfade sound when main sound stops
+        if (crossfadeSounds[typeSound]) {
+          crossfadeSounds[typeSound].pause();
+          crossfadeStates[typeSound] = false;
+        }
       }
       sounds[typeSound].play();
     } else {
       loopStates[typeSound] = false;
       sounds[typeSound].pause();
+      // Stop crossfade sound
+      if (crossfadeSounds[typeSound]) {
+        crossfadeSounds[typeSound].pause();
+        crossfadeStates[typeSound] = false;
+      }
     }
   };
-
+  
   const setSoundVolume = async (typeSound: T, volume: number) => {
     if (!sounds[typeSound]) {
       return;
@@ -313,19 +436,45 @@ export const createRemoteAudio = <T extends string>(
     // Store original volume for crossfade calculations
     originalVolumes[typeSound] = volume;
     sounds[typeSound].volume = volume;
+    // Also set volume on crossfade sound
+    if (crossfadeSounds[typeSound]) {
+      crossfadeSounds[typeSound].volume = volume;
+    }
   };
-
+  
   const loadSounds = async (typeSounds: T[] = Object.keys(idMap) as T[]) => {
     const result = await Promise.all(typeSounds.map(loadTypeSound));
     typeSounds.forEach((typeSound, index) => {
       sounds[typeSound] = result[index];
     });
+    
+    // Also load crossfade sounds
+    const crossfadeResults = await Promise.all(typeSounds.map(loadTypeSound));
+    typeSounds.forEach((typeSound, index) => {
+      crossfadeSounds[typeSound] = crossfadeResults[index];
+      crossfadeStates[typeSound] = false;
+    });
   };
-
+  
   return {
     toggleSound,
     setSoundVolume,
     sounds,
     loadSounds,
+    // Add functions to get current state
+    getActiveSounds: (): Record<T, boolean> => {
+      const activeSounds: Record<T, boolean> = {} as Record<T, boolean>;
+      Object.keys(sounds).forEach(typeSound => {
+        activeSounds[typeSound as T] = sounds[typeSound] && !sounds[typeSound].paused;
+      });
+      return activeSounds;
+    },
+    getSoundVolumes: (): Record<T, number> => {
+      const soundVolumes: Record<T, number> = {} as Record<T, number>;
+      Object.keys(sounds).forEach(typeSound => {
+        soundVolumes[typeSound as T] = sounds[typeSound] ? sounds[typeSound].volume : 1;
+      });
+      return soundVolumes;
+    },
   };
 };

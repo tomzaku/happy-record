@@ -521,67 +521,195 @@
 }
 
 .pomodoroProgress {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 
-  .progressBar {
-    width: 100%;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 12px;
-
-    .progressFill {
-      height: 100%;
-      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-      border-radius: 3px;
-      transition: width 0.3s ease;
+  .circularProgressContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 160px;
+    height: 250px;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+      animation: pulse 3s ease-in-out infinite;
     }
   }
 
-  .phaseInfo {
+  .progressWrapper {
+    position: relative;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-    transition: color 0.3s ease;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 140px;
+    height: 140px;
+  }
 
-    .currentPhase {
-      font-weight: 500;
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.5;
     }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.8;
+    }
+  }
 
-    .timeRemaining {
-      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  .circularProgress {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.3));
+    animation: rotate 20s linear infinite;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+  }
+
+  @keyframes rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .clockDisplay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+  }
+
+  .timeDisplay {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    animation: timeGlow 2s ease-in-out infinite alternate;
+    line-height: 1;
+    text-align: center;
+  }
+
+  @keyframes timeGlow {
+    from {
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    to {
+      text-shadow: 0 2px 12px rgba(102, 126, 234, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .phaseLabel {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    max-width: 80px;
+    line-height: 1.2;
+    text-align: center;
+    animation: fadeInOut 4s ease-in-out infinite;
+    margin-top: 2px;
+  }
+
+  @keyframes fadeInOut {
+    0%, 100% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .progressPercentage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .percentageText {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: percentageBounce 1s ease-in-out infinite;
+  }
+
+  @keyframes percentageBounce {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+
+  .completedText {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: slideUpDown 3s ease-in-out infinite;
+  }
+
+  @keyframes slideUpDown {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-2px);
     }
   }
 
   // Light theme
   [data-theme='light'] & {
-    .phaseInfo {
+    .timeDisplay {
+      color: #1e293b;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .phaseLabel {
       color: rgba(0, 0, 0, 0.8);
     }
-  }
-}
 
-// Responsive design
-@media (max-width: 768px) {
-  .container {
-    padding: 16px;
-    gap: 20px;
-  }
-
-  .header .title {
-    font-size: 24px;
-  }
-
-  .timerDisplay .time {
-    font-size: 48px;
-  }
-
-  .timerControls .controlButton {
-    height: 48px;
-    font-size: 14px;
+    .completedText {
+      color: rgba(0, 0, 0, 0.6);
+    }
   }
 }
 

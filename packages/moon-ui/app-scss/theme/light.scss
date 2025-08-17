@@ -3,6 +3,10 @@
 [data-theme='light'] {
   --background: #{$white};
 
+  // Surface colors
+  --surface-primary: #ffffff;
+  --surface-secondary: #f8f9fa;
+
   // Text
   --text-color: #{$black};
   --text-color-invert: #{$white};

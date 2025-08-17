@@ -22,6 +22,8 @@ import {
   setSoundVolume,
   toggleSound,
   TypeSound,
+  getActiveSounds,
+  getSoundVolumes,
 } from '@dreamer/music-controller-common';
 import IconWaterfall from '@moon-ui/icon/IconWaterfall';
 import Typography from '@moon-ui/typography';
@@ -186,12 +188,22 @@ export default function MusicControllerMobile({
   onClickBackButton?: () => void;
 }) {
   const intl = useIntl();
+  
+  // Initialize state with current audio system state
   const [soundActiveId, setSoundActiveId] = React.useState<
     Record<TypeSound, boolean>
-  >({} as Record<TypeSound, boolean>);
+  >(() => getActiveSounds());
   const [volumeSound, setVolumeSound] = React.useState<
     Record<TypeSound, number>
-  >({} as Record<TypeSound, number>);
+  >(() => getSoundVolumes());
+
+  // Sync state with audio system when component mounts or becomes visible
+  React.useEffect(() => {
+    if (visible) {
+      setSoundActiveId(getActiveSounds());
+      setVolumeSound(getSoundVolumes());
+    }
+  }, [visible]);
 
   // Group sounds by category
   const groupedSounds = Object.entries(soundInfo).reduce(

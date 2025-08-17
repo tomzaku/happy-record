@@ -32,7 +32,7 @@ interface PomodoroPhase {
 }
 
 const POMODORO_PHASES: PomodoroPhase[] = [
-  { type: 'work', duration: 25 * 60, label: 'Work Session' },
+  { type: 'work', duration: 2 * 60, label: 'Work Session' },
   { type: 'break', duration: 5 * 60, label: 'Short Break' },
   { type: 'work', duration: 25 * 60, label: 'Work Session' },
   { type: 'break', duration: 5 * 60, label: 'Short Break' },
@@ -46,18 +46,13 @@ const FocusZonePage: React.FC = () => {
 
   // Timer states
   const [timerMode, setTimerMode] = useState<'stopwatch' | 'pomodoro'>(
-    'stopwatch',
+    'pomodoro',
   );
   const [stopwatchTime, setStopwatchTime] = useState(0);
   const [isStopwatchRunning, setIsStopwatchRunning] = useState(false);
   const [pomodoroPhase, setPomodoroPhase] = useState(0);
   const [pomodoroTime, setPomodoroTime] = useState(POMODORO_PHASES[0].duration);
   const [isPomodoroRunning, setIsPomodoroRunning] = useState(false);
-
-  // Sound states
-  const [activeSound, setActiveSound] = useState<FocusSound | null>(null);
-  const [soundVolume, setSoundVolume] = useState(70);
-  const [isSoundPlaying, setIsSoundPlaying] = useState(false);
 
   // Music modal state
   const [isMusicModalVisible, setIsMusicModalVisible] = useState(false);
@@ -126,26 +121,6 @@ const FocusZonePage: React.FC = () => {
     setPomodoroTime(POMODORO_PHASES[0].duration);
   };
 
-  // Sound control functions
-  const toggleSound = (sound: FocusSound) => {
-    if (activeSound?.id === sound.id) {
-      // Toggle current sound
-      setIsSoundPlaying(!isSoundPlaying);
-    } else {
-      // Switch to new sound
-      setActiveSound(sound);
-      setIsSoundPlaying(true);
-      // In a real app, you would load and play the new audio file
-      // For now, we'll simulate it
-    }
-  };
-
-  const handleVolumeChange = (value: number | number[]) => {
-    if (typeof value === 'number') {
-      setSoundVolume(value);
-      // In a real app, you would update the audio volume
-    }
-  };
 
   const toggleTheme = () => {
     setTheme(theme === Theme.Light ? Theme.Dark : Theme.Light);
@@ -189,20 +164,6 @@ const FocusZonePage: React.FC = () => {
         onClickLeftButton={() => navigate(-1)}
       />
 
-      <motion.div
-        className={styles.header}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <Typography.Title level={1} className={styles.title}>
-          Focus Zone
-        </Typography.Title>
-        <Typography.Text className={styles.subtitle}>
-          Productivity companion
-        </Typography.Text>
-      </motion.div>
-
       {/* Timer Section */}
       <motion.div
         className={styles.timerSection}
@@ -213,18 +174,6 @@ const FocusZonePage: React.FC = () => {
         {/* Mode Tabs */}
         <div className={styles.tabContainer}>
           <div className={styles.tabNavigation}>
-            <button
-              className={`${styles.tabButton} ${timerMode === 'stopwatch' ? styles.activeTab : ''}`}
-              onClick={() => setTimerMode('stopwatch')}
-            >
-              <Icon
-                icon="material-symbols:timer"
-                width={18}
-                height={18}
-                style={{ marginRight: '8px' }}
-              />
-              Stopwatch
-            </button>
             <button
               className={`${styles.tabButton} ${timerMode === 'pomodoro' ? styles.activeTab : ''}`}
               onClick={() => setTimerMode('pomodoro')}
@@ -237,6 +186,18 @@ const FocusZonePage: React.FC = () => {
               />
               Pomodoro
             </button>
+            <button
+              className={`${styles.tabButton} ${timerMode === 'stopwatch' ? styles.activeTab : ''}`}
+              onClick={() => setTimerMode('stopwatch')}
+            >
+              <Icon
+                icon="material-symbols:timer"
+                width={18}
+                height={18}
+                style={{ marginRight: '8px' }}
+              />
+              Stopwatch
+            </button>
           </div>
         </div>
 
@@ -244,38 +205,141 @@ const FocusZonePage: React.FC = () => {
         {timerMode === 'pomodoro' && (
           <motion.div
             className={styles.pomodoroProgress}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            transition={{ duration: 0.4 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            <div className={styles.progressBar}>
+            <div className={styles.circularProgressContainer}>
               <motion.div
-                className={styles.progressFill}
-                style={{ width: `${getPomodoroProgress()}%` }}
-                initial={{ width: 0 }}
-                animate={{ width: `${getPomodoroProgress()}%` }}
-                transition={{ duration: 0.3 }}
-              />
+                className={styles.progressWrapper}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.2 }}
+              >
+                <svg
+                  className={styles.circularProgress}
+                  viewBox="0 0 120 120"
+                  width="220"
+                  height="220"
+                >
+                  {/* Background circle */}
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="54"
+                    stroke="rgba(255, 255, 255, 0.1)"
+                    strokeWidth="8"
+                    fill="none"
+                  />
+                  {/* Progress circle */}
+                  <motion.circle
+                    cx="60"
+                    cy="60"
+                    r="54"
+                    stroke="url(#progressGradient)"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 54}`}
+                    strokeDashoffset={`${2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)}`}
+                    initial={{ strokeDashoffset: 2 * Math.PI * 54 }}
+                    animate={{
+                      strokeDashoffset: 2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)
+                    }}
+                    transition={{
+                      duration: 0.8,
+                      ease: "easeInOut",
+                      type: "spring",
+                      stiffness: 100,
+                      damping: 20
+                    }}
+                    style={{
+                      transformOrigin: "center",
+                      transform: "rotate(-90deg)"
+                    }}
+                  />
+                  {/* Animated glow effect */}
+                  <motion.circle
+                    cx="60"
+                    cy="60"
+                    r="54"
+                    stroke="rgba(102, 126, 234, 0.3)"
+                    strokeWidth="12"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 54}`}
+                    strokeDashoffset={`${2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)}`}
+                    initial={{ strokeDashoffset: 2 * Math.PI * 54, opacity: 0 }}
+                    animate={{
+                      strokeDashoffset: 2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100),
+                      opacity: [0, 0.6, 0]
+                    }}
+                    transition={{
+                      duration: 2,
+                      ease: "easeInOut",
+                      repeat: Infinity,
+                      repeatType: "reverse"
+                    }}
+                    style={{
+                      transformOrigin: "center",
+                      transform: "rotate(-90deg)"
+                    }}
+                  />
+                  {/* Gradient definition */}
+                  <defs>
+                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#667eea" />
+                      <stop offset="100%" stopColor="#764ba2" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+
+                {/* Clock display inside the circle */}
+                <div className={styles.clockDisplay}>
+                  <div
+                    className={styles.timeDisplay}
+                    key={pomodoroTime}
+                  >
+                    {formatPomodoroTime(pomodoroTime)}
+                  </div>
+                  <motion.div
+                    className={styles.phaseLabel}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                  >
+                    {getCurrentPhase().label}
+                  </motion.div>
+                </div>
+              </motion.div>
             </div>
-            <div className={styles.phaseInfo}>
-              <span className={styles.currentPhase}>
-                {getCurrentPhase().label}
+
+            {/* Progress percentage indicator */}
+            <motion.div
+              className={styles.progressPercentage}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <span className={styles.percentageText}>
+                {Math.round(getPomodoroProgress())}%
               </span>
-              <span className={styles.timeRemaining}>
-                {formatPomodoroTime(pomodoroTime)}
-              </span>
-            </div>
+              <span className={styles.completedText}>completed</span>
+            </motion.div>
           </motion.div>
         )}
 
         {/* Timer Display */}
-        <div className={styles.timerDisplay}>
-          <Typography.Title level={1} className={styles.time}>
-            {timerMode === 'stopwatch'
-              ? formatStopwatchTime(stopwatchTime)
-              : formatPomodoroTime(pomodoroTime)}
-          </Typography.Title>
-        </div>
+
+        {timerMode === 'stopwatch' && (
+          <div className={styles.timerDisplay}>
+            <Typography.Title level={1} className={styles.time}>
+              {timerMode === 'stopwatch'
+                ? formatStopwatchTime(stopwatchTime)
+                : formatPomodoroTime(pomodoroTime)}
+            </Typography.Title>
+          </div>
+        )}
 
         {/* Timer Controls */}
         <div className={styles.timerControls}>
@@ -319,14 +383,6 @@ const FocusZonePage: React.FC = () => {
           </motion.button>
         </div>
 
-        {/* Focus Sounds Section */}
-        {/* <FocusSoundSection */}
-        {/*   activeSound={activeSound} */}
-        {/*   soundVolume={soundVolume} */}
-        {/*   isSoundPlaying={isSoundPlaying} */}
-        {/*   onSoundToggle={toggleSound} */}
-        {/*   onVolumeChange={handleVolumeChange} */}
-        {/* /> */}
       </motion.div>
 
       {/* Music Controller Modal */}
