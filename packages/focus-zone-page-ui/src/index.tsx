@@ -7,7 +7,6 @@ import cx from 'classnames';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 import { BackHeader } from '@dreamer/header';
-import FocusSoundSection from './FocusSoundSection';
 import MusicControllerMobile from '@dreamer/music-controller-mobile';
 import NotificationPermissionModal from './NotificationPermissionModal';
 
@@ -35,7 +34,7 @@ interface PomodoroPhase {
 }
 
 const POMODORO_PHASES: PomodoroPhase[] = [
-  { type: 'work', duration: 0.1 * 60, label: 'Work Session' },
+  { type: 'work', duration: 25 * 60, label: 'Work Session' },
   { type: 'break', duration: 5 * 60, label: 'Short Break' },
   { type: 'work', duration: 25 * 60, label: 'Work Session' },
   { type: 'break', duration: 5 * 60, label: 'Short Break' },
