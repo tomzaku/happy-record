@@ -297,7 +297,7 @@ const FocusZonePage: React.FC = () => {
                 height={18}
                 style={{ marginRight: '8px' }}
               />
-              Pomodoro
+              <Typography.Paragraph noMargin>Pomodoro</Typography.Paragraph>
             </button>
             <button
               className={`${styles.tabButton} ${timerMode === 'stopwatch' ? styles.activeTab : ''}`}
@@ -309,7 +309,7 @@ const FocusZonePage: React.FC = () => {
                 height={18}
                 style={{ marginRight: '8px' }}
               />
-              Stopwatch
+              <Typography.Text>Stopwatch</Typography.Text>
             </button>
           </div>
         </div>
@@ -332,18 +332,40 @@ const FocusZonePage: React.FC = () => {
                 <svg
                   className={styles.circularProgress}
                   viewBox="0 0 120 120"
-                  width="250"
-                  height="250"
+                  width="350"
+                  height="350"
                 >
                   <circle
                     cx="60"
                     cy="60"
                     r="54"
-                    stroke="rgba(255, 255, 255, 0.1)"
+                    // stroke="rgba(255, 255, 255, 0.1)"
                     strokeWidth="8"
                     fill="none"
+                    className={styles.strokeCircle}
                   />
-                  <circle cx="60" cy="60" r="50" fill="#7455b021" />
+                  <motion.circle
+                    cx="60"
+                    cy="60"
+                    r="50"
+                    fill="#7455b021"
+                    animate={
+                      isPomodoroRunning
+                        ? {
+                            scale: [1, 1.3, 1],
+                          }
+                        : {}
+                    }
+                    transition={
+                      isPomodoroRunning
+                        ? {
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }
+                        : {}
+                    }
+                  />
                   <motion.circle
                     cx="60"
                     cy="60"
@@ -432,9 +454,9 @@ const FocusZonePage: React.FC = () => {
             </div>
 
             {taskTitle && (
-              <Typography.Text className={styles.taskInfoLabel}>
+              <Typography.Title level={2} noMargin className={styles.taskTitle}>
                 {taskTitle}
-              </Typography.Text>
+              </Typography.Title>
             )}
             {/* Progress percentage indicator */}
             <motion.div
@@ -446,7 +468,9 @@ const FocusZonePage: React.FC = () => {
               <span className={styles.percentageText}>
                 {Math.round(getPomodoroProgress())}%
               </span>
-              <span className={styles.completedText}>completed</span>
+              <Typography.Text className={styles.completedText}>
+                completed
+              </Typography.Text>
             </motion.div>
           </motion.div>
         )}
@@ -455,7 +479,10 @@ const FocusZonePage: React.FC = () => {
 
         {timerMode === 'stopwatch' && (
           <div className={styles.timerDisplay}>
-            <Typography.Title level={1} className={styles.time}>
+            <Typography.Title
+              level={1}
+              className={cx(styles.time, styles.timerDisplayTime)}
+            >
               {timerMode === 'stopwatch'
                 ? formatStopwatchTime(stopwatchTime)
                 : formatPomodoroTime(pomodoroTime)}
@@ -466,7 +493,11 @@ const FocusZonePage: React.FC = () => {
         {/* Timer Controls */}
         <div className={styles.timerControls}>
           <motion.button
-            className={cx(styles.controlButton, styles.start)}
+            className={cx(
+              styles.controlButton,
+              styles.start,
+              styles.controlButtonStart,
+            )}
             onClick={
               timerMode === 'stopwatch' ? toggleStopwatch : togglePomodoro
             }
@@ -495,7 +526,11 @@ const FocusZonePage: React.FC = () => {
                 : 'Start'}
           </motion.button>
           <motion.button
-            className={cx(styles.controlButton, styles.reset)}
+            className={cx(
+              styles.controlButton,
+              styles.reset,
+              styles.controlButtonReset,
+            )}
             onClick={timerMode === 'stopwatch' ? resetStopwatch : resetPomodoro}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.98 }}

@@ -1,0 +1,228 @@
+// Focus Zone Theme Variables
+// This file contains all the color and styling variables specific to the Focus Zone page
+
+// Dark Theme Variables
+[data-theme='dark'] {
+  // Container and Background
+  --focus-zone-container-background: linear-gradient(135deg,
+  #1a1a2e 0%,
+  #16213e 50%,
+  #0f3460 100%);
+  --focus-zone-container-before-radial-1: rgba(120, 119, 198, 0.1);
+  --focus-zone-container-before-radial-2: rgba(255, 119, 198, 0.1);
+
+  // Text Colors
+  --focus-zone-text-primary: #fff;
+  --focus-zone-text-secondary: rgba(255, 255, 255, 0.7);
+  --focus-zone-text-tertiary: rgba(255, 255, 255, 0.6);
+  --focus-zone-text-quaternary: rgba(255, 255, 255, 0.8);
+  --focus-zone-text-quinary: rgba(255, 255, 255, 0.5);
+
+  // Header and Title
+  --focus-zone-header-title-gradient: linear-gradient(135deg,
+  #667eea 0%,
+  #764ba2 100%);
+  --focus-zone-header-subtitle: rgba(255, 255, 255, 0.7);
+
+  // Sound Cards
+  --focus-zone-sound-card-background: rgba(255, 255, 255, 0.05);
+  --focus-zone-sound-card-border: rgba(255, 255, 255, 0.1);
+  --focus-zone-sound-card-active-background: rgba(102, 126, 234, 0.15);
+  --focus-zone-sound-card-active-border: rgba(102, 126, 234, 0.3);
+  --focus-zone-sound-card-active-shadow: rgba(102, 126, 234, 0.2);
+  --focus-zone-sound-card-hover-shadow: rgba(0, 0, 0, 0.2);
+
+  // Sound Tags
+  --focus-zone-sound-tag-nature: linear-gradient(135deg,
+  #10b981 0%,
+  #059669 100%);
+  --focus-zone-sound-tag-ambient: linear-gradient(135deg,
+  #8b5cf6 0%,
+  #7c3aed 100%);
+
+  // Play Buttons
+  --focus-zone-play-button-playing: linear-gradient(135deg,
+  #ef4444 0%,
+  #dc2626 100%);
+  --focus-zone-play-button-playing-shadow: rgba(239, 68, 68, 0.3);
+  --focus-zone-play-button-stopped: linear-gradient(135deg,
+  #10b981 0%,
+  #059669 100%);
+  --focus-zone-play-button-stopped-shadow: rgba(16, 185, 129, 0.3);
+
+  // Sound Options
+  --focus-zone-sound-option-background: rgba(255, 255, 255, 0.03);
+  --focus-zone-sound-option-border: rgba(255, 255, 255, 0.08);
+  --focus-zone-sound-option-hover-background: rgba(255, 255, 255, 0.05);
+  --focus-zone-sound-option-hover-border: rgba(255, 255, 255, 0.12);
+  --focus-zone-sound-option-play-icon: rgba(255, 255, 255, 0.1);
+  --focus-zone-sound-option-play-icon-hover: rgba(102, 126, 234, 0.2);
+
+  // Tab Navigation
+  --focus-zone-tab-button: rgba(255, 255, 255, 0.6);
+  --focus-zone-tab-button-hover: rgba(255, 255, 255, 0.8);
+  --focus-zone-tab-button-active: #fff;
+  --focus-zone-tab-button-active-underline: linear-gradient(90deg,
+  #667eea 0%,
+  #764ba2 100%);
+
+  // Timer Display
+  --focus-zone-timer-time: #fff;
+  --focus-zone-timer-time-shadow: rgba(102, 126, 234, 0.3);
+
+  // Timer Controls
+  --focus-zone-control-button-start: linear-gradient(135deg,
+  #667eea 0%,
+  #764ba2 100%);
+  --focus-zone-control-button-start-shadow: rgba(102, 126, 234, 0.3);
+  --focus-zone-control-button-start-hover-shadow: rgba(102, 126, 234, 0.4);
+  --focus-zone-control-button-reset-background: rgba(255, 255, 255, 0.1);
+  --focus-zone-control-button-reset-border: rgba(255, 255, 255, 0.2);
+  --focus-zone-control-button-reset-hover: rgba(255, 255, 255, 0.15);
+
+  // Timer Instructions
+  --focus-zone-instruction: rgba(255, 255, 255, 0.6);
+
+  // Circular Progress
+  --focus-zone-progress-container-before: rgba(102, 126, 234, 0.1);
+  --focus-zone-progress-shadow: rgba(102, 126, 234, 0.3);
+  --focus-zone-progress-before: rgba(255, 255, 255, 0.05);
+
+  // Clock Display
+  --focus-zone-clock-time: #fff;
+  --focus-zone-clock-time-shadow: rgba(0, 0, 0, 0.3);
+  --focus-zone-clock-time-glow: rgba(102, 126, 234, 0.4);
+  --focus-zone-clock-phase: rgba(255, 255, 255, 0.8);
+
+  // Progress Percentage
+  --focus-zone-percentage-gradient: linear-gradient(135deg,
+  #667eea 0%,
+  #764ba2 100%);
+  --focus-zone-completed: rgba(255, 255, 255, 0.6);
+
+  // Task Info
+  --focus-zone-task-info-background: rgba(255, 255, 255, 0.08);
+  --focus-zone-task-info-border: rgba(255, 255, 255, 0.15);
+  --focus-zone-task-info-hover-background: rgba(255, 255, 255, 0.1);
+  --focus-zone-task-info-hover-border: rgba(255, 255, 255, 0.2);
+  --focus-zone-task-info-shadow: rgba(0, 0, 0, 0.1);
+  --focus-zone-task-info-hover-shadow: rgba(0, 0, 0, 0.15);
+  --focus-zone-task-info-label: rgba(255, 255, 255, 0.6);
+  --focus-zone-task-info-title: #fff;
+  --focus-zone-task-info-title-shadow: rgba(0, 0, 0, 0.2);
+
+  --focus-zone-circle-progress-stroke: rgba(255, 255, 255, 0.1);
+}
+
+// Light Theme Variables
+[data-theme='light'] {
+  // Container and Background
+  --focus-zone-container-background: linear-gradient(135deg,
+  #f8f9fa 0%,
+  #e9ecef 50%,
+  #dee2e6 100%);
+  --focus-zone-container-before-radial-1: rgba(120, 119, 198, 0.05);
+  --focus-zone-container-before-radial-2: rgba(255, 119, 198, 0.05);
+
+  // Text Colors
+  --focus-zone-text-primary: #000;
+  --focus-zone-text-secondary: rgba(0, 0, 0, 0.7);
+  --focus-zone-text-tertiary: rgba(0, 0, 0, 0.6);
+  --focus-zone-text-quaternary: rgba(0, 0, 0, 0.8);
+  --focus-zone-text-quinary: rgba(0, 0, 0, 0.5);
+
+  // Header and Title
+  --focus-zone-header-title-gradient: linear-gradient(135deg,
+  #0b7dc2 0%,
+  #334d6e 100%);
+  --focus-zone-header-subtitle: rgba(0, 0, 0, 0.7);
+
+  // Sound Cards
+  --focus-zone-sound-card-background: rgba(0, 0, 0, 0.03);
+  --focus-zone-sound-card-border: rgba(0, 0, 0, 0.1);
+  --focus-zone-sound-card-active-background: rgba(11, 125, 194, 0.15);
+  --focus-zone-sound-card-active-border: rgba(11, 125, 194, 0.3);
+  --focus-zone-sound-card-active-shadow: rgba(11, 125, 194, 0.2);
+  --focus-zone-sound-card-hover-shadow: rgba(0, 0, 0, 0.1);
+
+  // Sound Tags
+  --focus-zone-sound-tag-nature: linear-gradient(135deg,
+  #10b981 0%,
+  #059669 100%);
+  --focus-zone-sound-tag-ambient: linear-gradient(135deg,
+  #8b5cf6 0%,
+  #7c3aed 100%);
+
+  // Play Buttons
+  --focus-zone-play-button-playing: linear-gradient(135deg,
+  #ef4444 0%,
+  #dc2626 100%);
+  --focus-zone-play-button-playing-shadow: rgba(239, 68, 68, 0.3);
+  --focus-zone-play-button-stopped: linear-gradient(135deg,
+  #10b981 0%,
+  #059669 100%);
+  --focus-zone-play-button-stopped-shadow: rgba(16, 185, 129, 0.3);
+
+  // Sound Options
+  --focus-zone-sound-option-background: rgba(0, 0, 0, 0.02);
+  --focus-zone-sound-option-border: rgba(0, 0, 0, 0.08);
+  --focus-zone-sound-option-hover-background: rgba(0, 0, 0, 0.04);
+  --focus-zone-sound-option-hover-border: rgba(0, 0, 0, 0.12);
+  --focus-zone-sound-option-play-icon: rgba(0, 0, 0, 0.1);
+  --focus-zone-sound-option-play-icon-hover: rgba(11, 125, 194, 0.2);
+
+  // Tab Navigation
+  --focus-zone-tab-button: rgba(0, 0, 0, 0.6);
+  --focus-zone-tab-button-hover: rgba(0, 0, 0, 0.8);
+  --focus-zone-tab-button-active: #000;
+  --focus-zone-tab-button-active-underline: linear-gradient(90deg,
+  #0b7dc2 0%,
+  #334d6e 100%);
+
+  // Timer Display
+  --focus-zone-timer-time: #000;
+  --focus-zone-timer-time-shadow: rgba(11, 125, 194, 0.3);
+
+  // Timer Controls
+  --focus-zone-control-button-start: linear-gradient(135deg,
+  #0b7dc2 0%,
+  #334d6e 100%);
+  --focus-zone-control-button-start-shadow: rgba(11, 125, 194, 0.3);
+  --focus-zone-control-button-start-hover-shadow: rgba(11, 125, 194, 0.4);
+  --focus-zone-control-button-reset-background: rgba(0, 0, 0, 0.05);
+  --focus-zone-control-button-reset-border: rgba(0, 0, 0, 0.2);
+  --focus-zone-control-button-reset-hover: rgba(0, 0, 0, 0.08);
+
+  // Timer Instructions
+  --focus-zone-instruction: rgba(0, 0, 0, 0.6);
+
+  // Circular Progress
+  --focus-zone-progress-container-before: rgba(11, 125, 194, 0.1);
+  --focus-zone-progress-shadow: rgba(11, 125, 194, 0.3);
+  --focus-zone-progress-before: rgba(0, 0, 0, 0.05);
+
+  // Clock Display
+  --focus-zone-clock-time: #000;
+  --focus-zone-clock-time-shadow: rgba(0, 0, 0, 0.2);
+  --focus-zone-clock-time-glow: rgba(11, 125, 194, 0.4);
+  --focus-zone-clock-phase: rgba(0, 0, 0, 0.8);
+
+  // Progress Percentage
+  --focus-zone-percentage-gradient: linear-gradient(135deg,
+  #0b7dc2 0%,
+  #334d6e 100%);
+  --focus-zone-completed: rgba(0, 0, 0, 0.6);
+
+  // Task Info
+  --focus-zone-task-info-background: rgba(0, 0, 0, 0.03);
+  --focus-zone-task-info-border: rgba(0, 0, 0, 0.15);
+  --focus-zone-task-info-hover-background: rgba(0, 0, 0, 0.05);
+  --focus-zone-task-info-hover-border: rgba(0, 0, 0, 0.2);
+  --focus-zone-task-info-shadow: rgba(0, 0, 0, 0.05);
+  --focus-zone-task-info-hover-shadow: rgba(0, 0, 0, 0.1);
+  --focus-zone-task-info-label: rgba(0, 0, 0, 0.6);
+  --focus-zone-task-info-title: #000;
+  --focus-zone-task-info-title-shadow: rgba(0, 0, 0, 0.1);
+
+  --focus-zone-circle-progress-stroke: #7355b012;
+}
