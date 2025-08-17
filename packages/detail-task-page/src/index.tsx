@@ -119,6 +119,7 @@ const DetailTaskPage = () => {
         taskId={id}
         taskTitle={checklistTemplate?.title}
         onDismiss={() => setIsFocusZoneOpen(false)}
+        onOpenModal={() => setIsFocusZoneOpen(true)}
       />
     </>
   );

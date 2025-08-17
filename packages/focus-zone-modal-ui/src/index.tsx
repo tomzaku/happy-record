@@ -8,6 +8,7 @@ import Typography, { Title, Text } from '@moon-ui/typography';
 
 import MusicControllerMobile from '@dreamer/music-controller-mobile';
 import NotificationPermissionModal from './NotificationPermissionModal';
+import FocusZoneFAB from './FocusZoneFAB';
 
 // Hooks and utilities
 import { usePomodoroGlobalConfig, Theme } from '@dreamer/pomodoro-common';
@@ -37,6 +38,7 @@ interface FocusZoneModalProps {
   taskId?: string;
   taskTitle?: string;
   onDismiss: () => void;
+  onOpenModal: () => void;
 }
 
 const POMODORO_PHASES: PomodoroPhase[] = [
@@ -52,7 +54,8 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
   visible,
   taskId,
   taskTitle: propTaskTitle,
-  onDismiss
+  onDismiss,
+  onOpenModal
 }) => {
   const { theme, setTheme } = usePomodoroGlobalConfig();
   const { getChecklistTemplate } = useChecklistTemplates();
@@ -154,6 +157,8 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+
+
   // Timer control functions
   const toggleStopwatch = () => {
     setIsStopwatchRunning(!isStopwatchRunning);
@@ -230,327 +235,349 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
     return (elapsed / currentPhase.duration) * 100;
   };
 
-  if (!visible) return null;
+
 
   return (
     <>
-      {/* Overlay */}
-      <div
-        className={styles.modalOverlay}
-        onClick={onDismiss}
-      />
+      {/* FAB - Show when modal is closed */}
+      {!visible && (
+        <FocusZoneFAB
+          timerMode={timerMode}
+          stopwatchTime={stopwatchTime}
+          pomodoroTime={pomodoroTime}
+          isStopwatchRunning={isStopwatchRunning}
+          isPomodoroRunning={isPomodoroRunning}
+          onToggleStopwatch={toggleStopwatch}
+          onTogglePomodoro={togglePomodoro}
+          onResetStopwatch={resetStopwatch}
+          onResetPomodoro={resetPomodoro}
+          onOpenModal={onOpenModal}
+          onOpenMusicPlayer={() => setIsMusicModalVisible(true)}
+        />
+      )}
 
-      {/* Modal Content */}
-      <div
-        className={cx(styles.modalContainer, {
-          [styles.lightTheme]: theme === Theme.Light,
-        })}
-      >
-        <div
-          className={styles.backHeader}
-        >
-          <div className={styles.backHeaderContent}>
-            <Typography.Title level={3} noMargin>Focus Zone</Typography.Title>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                 <Icon
-                   onClick={() => {
-                     console.log('Music icon clicked, setting modal visible');
-                     setIsMusicModalVisible(true);
-                     console.log('Modal state after set:', true);
-                   }}
-                   width={24}
-                   icon="material-symbols:music-note"
-                   style={{ cursor: 'pointer' }}
-                 />
-               </motion.div>
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                <Icon
-                  onClick={toggleTheme}
-                  width={24}
-                  icon={
-                    theme === Theme.Light
-                      ? 'material-symbols:dark-mode'
-                      : 'material-symbols:light-mode'
-                  }
-                  style={{ cursor: 'pointer' }}
-                />
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                <Icon
-                  onClick={onDismiss}
-                  width={24}
-                  icon="material-symbols:close"
-                  style={{ cursor: 'pointer' }}
-                />
-              </motion.div>
-            </div>
-          </div>
-        </div>
-        {/* Timer Section */}
-        <motion.div
-          className={styles.timerSection}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          {/* Mode Tabs */}
-          <div className={styles.tabContainer}>
-            <div className={styles.tabNavigation}>
-              <button
-                className={`${styles.tabButton} ${timerMode === 'pomodoro' ? styles.activeTab : ''}`}
-                onClick={() => setTimerMode('pomodoro')}
-              >
-                <Icon
-                  icon="material-symbols:restaurant"
-                  width={18}
-                  height={18}
-                  style={{ marginRight: '8px' }}
-                />
-                <span>Pomodoro</span>
-              </button>
-              <button
-                className={`${styles.tabButton} ${timerMode === 'stopwatch' ? styles.activeTab : ''}`}
-                onClick={() => setTimerMode('stopwatch')}
-              >
-                <Icon
-                  icon="material-symbols:timer"
-                  width={18}
-                  height={18}
-                  style={{ marginRight: '8px' }}
-                />
-                <span>Stopwatch</span>
-              </button>
-            </div>
-          </div>
+      {/* Modal - Show when visible is true */}
+      {visible && (
+        <>
+          {/* Overlay */}
+          <div
+            className={styles.modalOverlay}
+            onClick={onDismiss}
+          />
 
-          {/* Pomodoro Progress */}
-          {timerMode === 'pomodoro' && (
-            <motion.div
-              className={styles.pomodoroProgress}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
+          {/* Modal Content */}
+          <div
+            className={cx(styles.modalContainer, {
+              [styles.lightTheme]: theme === Theme.Light,
+            })}
+          >
+            <div
+              className={styles.backHeader}
             >
-              <div className={styles.circularProgressContainer}>
-                <motion.div
-                  className={styles.progressWrapper}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <svg
-                    className={styles.circularProgress}
-                    viewBox="0 0 120 120"
-                    width="350"
-                    height="350"
+              <div className={styles.backHeaderContent}>
+                <Typography.Title level={3} noMargin>Focus Zone</Typography.Title>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                 <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                     <Icon
+                       onClick={() => {
+                         console.log('Music icon clicked, setting modal visible');
+                         setIsMusicModalVisible(true);
+                         console.log('Modal state after set:', true);
+                       }}
+                       width={24}
+                       icon="material-symbols:music-note"
+                       style={{ cursor: 'pointer' }}
+                     />
+                   </motion.div>
+                  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                    <Icon
+                      onClick={toggleTheme}
+                      width={24}
+                      icon={
+                        theme === Theme.Light
+                          ? 'material-symbols:dark-mode'
+                          : 'material-symbols:light-mode'
+                      }
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                    <Icon
+                      onClick={onDismiss}
+                      width={24}
+                      icon="material-symbols:close"
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+            {/* Timer Section */}
+            <motion.div
+              className={styles.timerSection}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              {/* Mode Tabs */}
+              <div className={styles.tabContainer}>
+                <div className={styles.tabNavigation}>
+                  <button
+                    className={`${styles.tabButton} ${timerMode === 'pomodoro' ? styles.activeTab : ''}`}
+                    onClick={() => setTimerMode('pomodoro')}
                   >
-                    <circle
-                      cx="60"
-                      cy="60"
-                      r="54"
-                      // stroke="rgba(255, 255, 255, 0.1)"
-                      strokeWidth="8"
-                      fill="none"
-                      className={styles.strokeCircle}
+                    <Icon
+                      icon="material-symbols:restaurant"
+                      width={18}
+                      height={18}
+                      style={{ marginRight: '8px' }}
                     />
-                    <motion.circle
-                      cx="60"
-                      cy="60"
-                      r="50"
-                      fill="#7455b021"
-                      animate={
-                        isPomodoroRunning
-                          ? {
-                            scale: [1, 1.3, 1],
-                          }
-                          : {}
-                      }
-                      transition={
-                        isPomodoroRunning
-                          ? {
-                            duration: 1,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                          }
-                          : {}
-                      }
+                    <span>Pomodoro</span>
+                  </button>
+                  <button
+                    className={`${styles.tabButton} ${timerMode === 'stopwatch' ? styles.activeTab : ''}`}
+                    onClick={() => setTimerMode('stopwatch')}
+                  >
+                    <Icon
+                      icon="material-symbols:timer"
+                      width={18}
+                      height={18}
+                      style={{ marginRight: '8px' }}
                     />
-                    <motion.circle
-                      cx="60"
-                      cy="60"
-                      r="54"
-                      stroke="url(#progressGradient)"
-                      strokeWidth="8"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 54}`}
-                      strokeDashoffset={`${2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)}`}
-                      initial={{ strokeDashoffset: 2 * Math.PI * 54 }}
-                      animate={{
-                        strokeDashoffset:
-                          2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100),
-                      }}
-                      transition={{
-                        duration: 0.8,
-                        ease: 'easeInOut',
-                        type: 'spring',
-                        stiffness: 100,
-                        damping: 20,
-                      }}
-                      style={{
-                        transformOrigin: 'center',
-                        transform: 'rotate(-90deg)',
-                      }}
-                    />
-                    {/* Animated glow effect */}
-                    <motion.circle
-                      cx="60"
-                      cy="60"
-                      r="54"
-                      stroke="rgba(102, 126, 234, 0.3)"
-                      strokeWidth="12"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 54}`}
-                      strokeDashoffset={`${2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)}`}
-                      initial={{ strokeDashoffset: 2 * Math.PI * 54, opacity: 0 }}
-                      animate={{
-                        strokeDashoffset:
-                          2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100),
-                        opacity: [0, 0.6, 0],
-                      }}
-                      transition={{
-                        duration: 2,
-                        ease: 'easeInOut',
-                        repeat: Infinity,
-                        repeatType: 'reverse',
-                      }}
-                      style={{
-                        transformOrigin: 'center',
-                        transform: 'rotate(-90deg)',
-                      }}
-                    />
-                    {/* Gradient definition */}
-                    <defs>
-                      <linearGradient
-                        id="progressGradient"
-                        x1="0%"
-                        y1="0%"
-                        x2="100%"
-                        y2="100%"
-                      >
-                        <stop offset="0%" stopColor="#667eea" />
-                        <stop offset="100%" stopColor="#764ba2" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-
-                  {/* Clock display inside the circle */}
-                  <div className={styles.clockDisplay}>
-                    <div className={styles.timeDisplay} key={pomodoroTime}>
-                      {formatPomodoroTime(pomodoroTime)}
-                    </div>
-                    <motion.div
-                      className={styles.phaseLabel}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.2 }}
-                    >
-                      {getCurrentPhase().label}
-                    </motion.div>
-                  </div>
-                </motion.div>
+                    <span>Stopwatch</span>
+                  </button>
+                </div>
               </div>
 
-              {taskTitle && (
-                <Title level={2} noMargin className={styles.taskTitle}>
-                  {taskTitle}
-                </Title>
+              {/* Pomodoro Progress */}
+              {timerMode === 'pomodoro' && (
+                <motion.div
+                  className={styles.pomodoroProgress}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                >
+                  <div className={styles.circularProgressContainer}>
+                    <motion.div
+                      className={styles.progressWrapper}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <svg
+                        className={styles.circularProgress}
+                        viewBox="0 0 120 120"
+                        width="350"
+                        height="350"
+                      >
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="54"
+                          // stroke="rgba(255, 255, 255, 0.1)"
+                          strokeWidth="8"
+                          fill="none"
+                          className={styles.strokeCircle}
+                        />
+                        <motion.circle
+                          cx="60"
+                          cy="60"
+                          r="50"
+                          fill="#7455b021"
+                          animate={
+                            isPomodoroRunning
+                              ? {
+                                scale: [1, 1.3, 1],
+                              }
+                              : {}
+                          }
+                          transition={
+                            isPomodoroRunning
+                              ? {
+                                duration: 1,
+                                repeat: Infinity,
+                                ease: 'easeInOut',
+                              }
+                              : {}
+                          }
+                        />
+                        <motion.circle
+                          cx="60"
+                          cy="60"
+                          r="54"
+                          stroke="url(#progressGradient)"
+                          strokeWidth="8"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 54}`}
+                          strokeDashoffset={`${2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)}`}
+                          initial={{ strokeDashoffset: 2 * Math.PI * 54 }}
+                          animate={{
+                            strokeDashoffset:
+                              2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100),
+                          }}
+                          transition={{
+                            duration: 0.8,
+                            ease: 'easeInOut',
+                            type: 'spring',
+                            stiffness: 100,
+                            damping: 20,
+                          }}
+                          style={{
+                            transformOrigin: 'center',
+                            transform: 'rotate(-90deg)',
+                          }}
+                        />
+                        {/* Animated glow effect */}
+                        <motion.circle
+                          cx="60"
+                          cy="60"
+                          r="54"
+                          stroke="rgba(102, 126, 234, 0.3)"
+                          strokeWidth="12"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 54}`}
+                          strokeDashoffset={`${2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)}`}
+                          initial={{ strokeDashoffset: 2 * Math.PI * 54, opacity: 0 }}
+                          animate={{
+                            strokeDashoffset:
+                              2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100),
+                            opacity: [0, 0.6, 0],
+                          }}
+                          transition={{
+                            duration: 2,
+                            ease: 'easeInOut',
+                            repeat: Infinity,
+                            repeatType: 'reverse',
+                          }}
+                          style={{
+                            transformOrigin: 'center',
+                            transform: 'rotate(-90deg)',
+                          }}
+                        />
+                        {/* Gradient definition */}
+                        <defs>
+                          <linearGradient
+                            id="progressGradient"
+                            x1="0%"
+                            y1="0%"
+                            x2="100%"
+                            y2="100%"
+                          >
+                            <stop offset="0%" stopColor="#667eea" />
+                            <stop offset="100%" stopColor="#764ba2" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+
+                      {/* Clock display inside the circle */}
+                      <div className={styles.clockDisplay}>
+                        <div className={styles.timeDisplay} key={pomodoroTime}>
+                          {formatPomodoroTime(pomodoroTime)}
+                        </div>
+                        <motion.div
+                          className={styles.phaseLabel}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: 0.2 }}
+                        >
+                          {getCurrentPhase().label}
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {taskTitle && (
+                    <Title level={2} noMargin className={styles.taskTitle}>
+                      {taskTitle}
+                    </Title>
+                  )}
+                  {/* Progress percentage indicator */}
+                  <motion.div
+                    className={styles.progressPercentage}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                  >
+                    <span className={styles.percentageText}>
+                      {Math.round(getPomodoroProgress())}%
+                    </span>
+                    <Text className={styles.completedText}>
+                      completed
+                    </Text>
+                  </motion.div>
+                </motion.div>
               )}
-              {/* Progress percentage indicator */}
-              <motion.div
-                className={styles.progressPercentage}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <span className={styles.percentageText}>
-                  {Math.round(getPomodoroProgress())}%
-                </span>
-                <Text className={styles.completedText}>
-                  completed
-                </Text>
-              </motion.div>
-            </motion.div>
-          )}
 
-          {/* Timer Display */}
+              {/* Timer Display */}
 
-          {timerMode === 'stopwatch' && (
-            <div className={styles.timerDisplay}>
-              <Title
-                level={1}
-                className={cx(styles.time, styles.timerDisplayTime)}
-              >
-                {timerMode === 'stopwatch'
-                  ? formatStopwatchTime(stopwatchTime)
-                  : formatPomodoroTime(pomodoroTime)}
-              </Title>
-            </div>
-          )}
-
-          {/* Timer Controls */}
-          <div className={styles.timerControls}>
-            <motion.button
-              className={cx(
-                styles.controlButton,
-                styles.start,
-                styles.controlButtonStart,
+              {timerMode === 'stopwatch' && (
+                <div className={styles.timerDisplay}>
+                  <Title
+                    level={1}
+                    className={cx(styles.time, styles.timerDisplayTime)}
+                  >
+                    {timerMode === 'stopwatch'
+                      ? formatStopwatchTime(stopwatchTime)
+                      : formatPomodoroTime(pomodoroTime)}
+                  </Title>
+                </div>
               )}
-              onClick={
-                timerMode === 'stopwatch' ? toggleStopwatch : togglePomodoro
-              }
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Icon
-                icon={
-                  timerMode === 'stopwatch'
+
+              {/* Timer Controls */}
+              <div className={styles.timerControls}>
+                <motion.button
+                  className={cx(
+                    styles.controlButton,
+                    styles.start,
+                    styles.controlButtonStart,
+                  )}
+                  onClick={
+                    timerMode === 'stopwatch' ? toggleStopwatch : togglePomodoro
+                  }
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Icon
+                    icon={
+                      timerMode === 'stopwatch'
+                        ? isStopwatchRunning
+                          ? 'material-symbols:pause'
+                          : 'material-symbols:play-arrow'
+                        : isPomodoroRunning
+                          ? 'material-symbols:pause'
+                          : 'material-symbols:play-arrow'
+                    }
+                    width={20}
+                    height={20}
+                  />
+                  {timerMode === 'stopwatch'
                     ? isStopwatchRunning
-                      ? 'material-symbols:pause'
-                      : 'material-symbols:play-arrow'
+                      ? 'Pause'
+                      : 'Start'
                     : isPomodoroRunning
-                      ? 'material-symbols:pause'
-                      : 'material-symbols:play-arrow'
-                }
-                width={20}
-                height={20}
-              />
-              {timerMode === 'stopwatch'
-                ? isStopwatchRunning
-                  ? 'Pause'
-                  : 'Start'
-                : isPomodoroRunning
-                  ? 'Pause'
-                  : 'Start'}
-            </motion.button>
-            <motion.button
-              className={cx(
-                styles.controlButton,
-                styles.reset,
-                styles.controlButtonReset,
-              )}
-              onClick={timerMode === 'stopwatch' ? resetStopwatch : resetPomodoro}
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Icon icon="material-symbols:refresh" width={20} height={20} />
-              Reset
-            </motion.button>
+                      ? 'Pause'
+                      : 'Start'}
+                </motion.button>
+                <motion.button
+                  className={cx(
+                    styles.controlButton,
+                    styles.reset,
+                    styles.controlButtonReset,
+                  )}
+                  onClick={timerMode === 'stopwatch' ? resetStopwatch : resetPomodoro}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Icon icon="material-symbols:refresh" width={20} height={20} />
+                  Reset
+                </motion.button>
+              </div>
+            </motion.div>
           </div>
-        </motion.div>
-      </div>
+        </>
+      )}
 
       <MusicControllerMobile
         visible={isMusicModalVisible}
