@@ -22,12 +22,7 @@
 
 .collapseIcon {
   cursor: pointer;
-  color: var(--icon-secondary);
   transition: color 0.2s ease;
-
-  &:hover {
-    color: var(--icon-primary);
-  }
 }
 
 .iconGroup {

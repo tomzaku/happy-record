@@ -41,15 +41,6 @@
   
   /* Debug: ensure modal doesn't block other elements */
   pointer-events: auto;
-
-  /* Mobile responsive */
-  @media (max-width: 768px) {
-    padding: 16px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 12px;
-  }
 }
 
 .modalContainer::before {
@@ -450,7 +441,6 @@
   margin-bottom: 0;
   margin-top: auto;
   width: 100%;
-  max-width: 400px;
 }
 
 .controlButton {
@@ -870,7 +860,6 @@
   }
 }
 
-/* Focus Zone FAB Container */
 .fabContainer {
   position: fixed;
   bottom: 24px;
@@ -880,11 +869,6 @@
   flex-direction: column-reverse;
   align-items: flex-end;
   gap: 8px;
-
-  @media (max-width: 768px) {
-    bottom: 16px;
-    right: 16px;
-  }
 }
 
 /* Main Compact FAB */

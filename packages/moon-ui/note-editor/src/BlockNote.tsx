@@ -35,7 +35,6 @@ function BlockNote({
   shouldShowSaveButton,
   withoutBorder,
 }: Props) {
-  console.log(">>>VALUE", value)
   const editor = useCreateBlockNote({
     domAttributes: {
       editor: {
@@ -44,12 +43,6 @@ function BlockNote({
     },
     initialContent: value,
   });
-  //   React.useEffect(() => {
-  //   if (editor && value) {
-  //     // Replace the root blocks with the new content
-  //     editor.replaceBlocks(editor.document, value);
-  //   }
-  // }, [editor, value]);
   const { theme } = usePomodoroGlobalConfig();
   return (
     <div

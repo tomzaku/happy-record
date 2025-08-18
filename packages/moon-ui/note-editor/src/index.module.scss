@@ -84,6 +84,10 @@
   overflow: hidden;
 }
 
+.editor {
+  background: var(--card-background);
+}
+
 .contentEditable {
   min-height: 200px;
   padding: 16px;

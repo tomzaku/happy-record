@@ -119,14 +119,14 @@ const ChecklistFieldGroupAdd = ({
               {
                 day: today
                   ? intl.formatMessage({
-                      id: 'ChecklistFieldGroupView.today',
-                      defaultMessage: 'today',
-                    })
+                    id: 'ChecklistFieldGroupView.today',
+                    defaultMessage: 'today',
+                  })
                   : new Date(currentDay).toLocaleDateString(),
               },
             )}
           </Typography.Title>
-          <Typography.Paragraph noMargin onClick={() => {}} style={{}}>
+          <Typography.Paragraph noMargin onClick={() => { }} style={{}}>
             {intl.formatMessage({
               id: 'ChecklistFieldGroupView.noRecordDescription',
               defaultMessage:
@@ -156,9 +156,9 @@ const ChecklistFieldGroupAdd = ({
               {
                 day: today
                   ? intl.formatMessage({
-                      id: 'ChecklistFieldGroupView.current-day',
-                      defaultMessage: 'today',
-                    })
+                    id: 'ChecklistFieldGroupView.current-day',
+                    defaultMessage: 'today',
+                  })
                   : new Date(currentDay).toLocaleDateString(),
               },
             )}
@@ -228,7 +228,7 @@ const ChecklistFieldGroupAdd = ({
                 rightComponent={
                   <>
                     <Input
-                      suffix={field.unit}
+                      suffix={<Typography.Text>{field.unit}</Typography.Text>}
                       value={`${fieldRecord[field.id]}`}
                       onChange={e => {
                         setFieldRecord({
@@ -315,10 +315,14 @@ const ChecklistFieldGroupAdd = ({
           Submit
         </Button>
       </div>
-      <Hr classes={{ hr: styles.hr }} />
-      {currentChecklistRecords.length === 0
-        ? renderEmpty()
-        : renderCurrentDay()}
+      {currentChecklistRecords.length > 0 && (
+        <>
+
+          <Hr classes={{ hr: styles.hr }} />
+          {renderCurrentDay()}
+        </>
+
+      )}
     </>
   );
 };

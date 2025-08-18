@@ -55,7 +55,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
     }
   };
 
-  // Check if any timer is running
   const isAnyTimerRunning = (): boolean => {
     return isStopwatchRunning || isPomodoroRunning;
   };
@@ -74,7 +73,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
 
   return (
     <div className={styles.fabContainer}>
-      {/* Main Compact FAB */}
       <motion.div
         className={styles.focusZoneFAB}
         initial={{ scale: 0, opacity: 0 }}
@@ -82,32 +80,14 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
         exit={{ scale: 0, opacity: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        {/* Play/Pause Button */}
-        {/* <motion.button */}
-        {/*   className={styles.fabPlayPauseButton} */}
-        {/*   onClick={handlePlayPause} */}
-        {/*   whileHover={{ scale: 1.1 }} */}
-        {/*   whileTap={{ scale: 0.9 }} */}
-        {/* > */}
-        {/*   <Icon */}
-        {/*     icon={ */}
-        {/*       isAnyTimerRunning() */}
-        {/*         ? 'material-symbols:pause' */}
-        {/*         : 'material-symbols:play-arrow' */}
-        {/*     } */}
-        {/*     width={16} */}
-        {/*     height={16} */}
-        {/*   /> */}
-        {/* </motion.button> */}
-
-        {/* Time Display */}
         <div
-          onClick={handlePlayPause}
+          onClick={() => {
+            onOpenModal();
+          }}
           className={styles.fabTime}>
           {getCurrentTimeDisplay()}
         </div>
 
-        {/* Hamburger Menu Button */}
         <motion.button
           className={styles.fabHamburgerButton}
           onClick={toggleMenu}
@@ -122,7 +102,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
         </motion.button>
       </motion.div>
 
-      {/* Expandable Menu */}
       <AnimatePresence>
         {isMenuExpanded && (
           <motion.div
@@ -132,7 +111,22 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
             exit={{ opacity: 0, scale: 0.8, y: 10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            {/* Zoom/Expand Button */}
+            <motion.button
+              className={styles.fabMenuItem}
+              onClick={() => {
+                handlePlayPause();
+                setIsMenuExpanded(false);
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Icon
+                icon="solar:play-circle-outline"
+                width={16}
+                height={16}
+              />
+              <span>{isAnyTimerRunning() ? "Pause" : "Playing"}</span>
+            </motion.button>
             <motion.button
               className={styles.fabMenuItem}
               onClick={() => {
@@ -150,7 +144,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
               <span>Zoom</span>
             </motion.button>
 
-            {/* Reset Button */}
             <motion.button
               className={styles.fabMenuItem}
               onClick={() => {
@@ -172,7 +165,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
               <span>Reset</span>
             </motion.button>
 
-            {/* Music Player Button */}
             <motion.button
               className={styles.fabMenuItem}
               onClick={() => {
