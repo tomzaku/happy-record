@@ -73,7 +73,7 @@ export default function BottomModal({ visible, content, onDismiss }: Props) {
   const display = y.to(py => (py < height ? 'block' : 'none'));
 
   const bgStyle = {
-    opacity: y.to([0, height], [0.4, 0], 'clamp'),
+    opacity: y.to([0, height], [0.9, 0], 'clamp'),
   };
   React.useEffect(() => {
     if (visible) {

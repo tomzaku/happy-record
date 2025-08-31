@@ -332,7 +332,7 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
                       height={18}
                       style={{ marginRight: '8px' }}
                     />
-                    <span>Pomodoro</span>
+                    <Typography.Text>Pomodoro</Typography.Text>
                   </button>
                   <button
                     className={`${styles.tabButton} ${timerMode === 'stopwatch' ? styles.activeTab : ''}`}
@@ -344,7 +344,7 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
                       height={18}
                       style={{ marginRight: '8px' }}
                     />
-                    <span>Stopwatch</span>
+                    <Typography.Text>Stopwatch</Typography.Text>
                   </button>
                 </div>
               </div>

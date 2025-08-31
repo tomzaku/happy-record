@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@moon-ui/icon/Icon';
 import styles from './index.module.scss';
+import Typography from '@moon-ui/typography';
 
 interface FocusZoneFABProps {
   timerMode: 'stopwatch' | 'pomodoro';
@@ -80,13 +81,13 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
         exit={{ scale: 0, opacity: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        <div
+        <Typography.Text
           onClick={() => {
             onOpenModal();
           }}
           className={styles.fabTime}>
-          {getCurrentTimeDisplay()}
-        </div>
+            {getCurrentTimeDisplay()}
+        </Typography.Text>
 
         <motion.button
           className={styles.fabHamburgerButton}
