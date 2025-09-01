@@ -98,27 +98,4 @@
 
 
 
-.configButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: var(--text-description-color);
-  background: none;
-  border: none;
-  margin-left: $spacing-md;
 
-  &:hover {
-    background: var(--surface-secondary);
-    color: var(--text-color);
-  }
-
-  &.active {
-    background: var(--surface-secondary);
-    color: var(--icon-primary);
-  }
-}

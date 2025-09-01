@@ -77,19 +77,18 @@ const ChecklistFieldGroupHeader = ({
       tab: ChecklistFieldGroupTab.Add,
       label: 'Submit',
     },
+    {
+      icon: 'solar:settings-line-duotone',
+      iconActive: 'solar:settings-bold',
+      onClick: onClickTab(onClickConfig),
+      isActive: activeTab === ChecklistFieldGroupTab.Config,
+      tab: ChecklistFieldGroupTab.Config,
+      label: 'Settings',
+    },
   ];
 
   const tabs = allTabs.filter(tab => activeTabs.includes(tab.tab));
   const intl = useIntl();
-
-  // Find the config/settings button
-  const configButton = {
-    icon: 'solar:settings-line-duotone',
-    iconActive: 'solar:settings-bold',
-    onClick: onClickTab(onClickConfig),
-    isActive: activeTab === ChecklistFieldGroupTab.Config,
-    tab: ChecklistFieldGroupTab.Config,
-  };
 
   return (
     <>
@@ -138,26 +137,6 @@ const ChecklistFieldGroupHeader = ({
               <div className={styles.activeIndicator} />
             </button>
           ))}
-          
-          {configButton &&
-            activeTabs.includes(ChecklistFieldGroupTab.Config) && (
-              <button
-                onClick={configButton.onClick}
-                className={cx(
-                  styles.configButton,
-                  configButton.isActive && styles.active,
-                )}
-              >
-                <Icon
-                  width={20}
-                  icon={
-                    configButton.isActive
-                      ? configButton.iconActive
-                      : configButton.icon
-                  }
-                />
-              </button>
-            )}
         </div>
       </div>
     </>
