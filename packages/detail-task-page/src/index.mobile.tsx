@@ -113,6 +113,10 @@ const DetailTaskPageMobile = () => {
         checklistTemplate={checklistTemplate}
         fields={fields}
         currentDay={currentDay}
+        onUpdateChecklistTemplate={(updatedTemplate) => {
+          updateChecklistTemplate(updatedTemplate);
+          setChecklistTemplate(updatedTemplate);
+        }}
       />
 
       <FocusZoneModal

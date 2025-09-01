@@ -131,6 +131,10 @@ const DetailTaskPageDesktop = () => {
                   checklistTemplate={checklistTemplate}
                   fields={fields}
                   currentDay={currentDay}
+                  onUpdateChecklistTemplate={(updatedTemplate) => {
+                    updateChecklistTemplate(updatedTemplate);
+                    setChecklistTemplate(updatedTemplate);
+                  }}
                 />
             </div>
             <div className={styles.side}>

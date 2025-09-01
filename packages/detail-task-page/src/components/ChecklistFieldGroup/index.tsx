@@ -28,6 +28,7 @@ type Props = {
   checklistTemplate: ChecklistTemplate;
   fields: RecordField[];
   currentDay: string;
+  onUpdateChecklistTemplate?: (updatedTemplate: ChecklistTemplate) => void;
 };
 
 const ChecklistFieldGroup = ({
@@ -35,6 +36,7 @@ const ChecklistFieldGroup = ({
   checklistTemplate,
   fields,
   currentDay,
+  onUpdateChecklistTemplate,
 }: Props) => {
   const today = isToday(currentDay);
   const { updateChecklist } = useChecklist();
@@ -310,10 +312,16 @@ const ChecklistFieldGroup = ({
     });
   }
   const handleAddFieldGroup = (newGroup: FieldGroup) => {
-    updateChecklistTemplate({
+    const updatedTemplate = {
       ...checklistTemplate,
       fieldGroups: [...checklistTemplate.fieldGroups, newGroup],
-    });
+    };
+    updateChecklistTemplate(updatedTemplate);
+    
+    // Update local state immediately for better UX
+    if (onUpdateChecklistTemplate) {
+      onUpdateChecklistTemplate(updatedTemplate);
+    }
   };
 
   return (

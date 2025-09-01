@@ -86,8 +86,7 @@ const ChecklistFieldGroupAddGroupDesktop = ({
     <>
       <div className={styles.container}>
         <List.ItemMeta
-          logo={<Icon width={24} icon="solar:folder-plus-line-duotone" />}
-          noPaddingHorizontal
+          logo={<Icon width={24} icon="solar:folder-open-line-duotone" />}
           title={intl.formatMessage({
             defaultMessage: 'Field Groups',
             id: 'label-field-groups',
@@ -98,7 +97,7 @@ const ChecklistFieldGroupAddGroupDesktop = ({
               <Button
                 onClick={handleModalOpen}
                 className={styles.addButton}
-                type="primary"
+                type="dash"
               >
                 <Icon width={16} icon="material-symbols:add" />
                 {intl.formatMessage({
