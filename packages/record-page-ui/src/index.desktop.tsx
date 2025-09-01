@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import ChecklistTodayDesktop from './components/checklist-today/ChecklistToday.desktop';
-import WeeklyCalendar from './components/weekly-calendar';
+import WeeklyCalendarVertical from './components/weekly-calendar/WeeklyCalendarVertical';
 import MusicAudioPlayer from '@pregnant/music-audio-player';
 import { DesktopDrawer } from '@dreamer/header';
 import styles from './index.module.scss';
@@ -100,7 +100,7 @@ const TaskListPage = () => {
         {/* Right Calendar */}
         <div className={styles.rightCalendar}>
           <Card className={styles.calendarCard}>
-            <WeeklyCalendar 
+            <WeeklyCalendarVertical 
               currentDate={startDate} 
               onDateChange={setStartDate} 
               selectedTag={selectedTag}
