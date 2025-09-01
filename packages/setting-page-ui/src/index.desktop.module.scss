@@ -6,14 +6,12 @@
   padding-bottom: 80px;
   height: 100vh;
   display: flex;
-  flex-direction: column;
   position: relative;
   background: var(--background);
 }
 
 .desktopBody {
   display: flex;
-  padding: 24px 24px 24px 320px; // Left padding accounts for fixed drawer
   flex: 1;
   overflow: hidden;
   position: relative;
@@ -24,7 +22,6 @@
   flex-direction: column;
   overflow: hidden;
   width: 100%;
-  max-width: 800px;
 }
 
 .pageHeader {

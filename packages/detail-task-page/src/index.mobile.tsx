@@ -101,6 +101,7 @@ const DetailTaskPageMobile = () => {
         onClickLeftButton={() => navigate('/')}
       />
       <ChecklistGenericInfo
+        isDefaultCollapsed
         checklistTemplate={checklistTemplate}
         onUpdate={(updatedTemplate) => {
           updateChecklistTemplate(updatedTemplate);

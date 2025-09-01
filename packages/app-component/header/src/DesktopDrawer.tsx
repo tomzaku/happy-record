@@ -8,6 +8,7 @@ import styles from './DesktopDrawer.module.scss';
 const DesktopDrawer = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMinimized, setIsMinimized] = React.useState(true);
 
   const navigationItems = [
     {
@@ -50,13 +51,30 @@ const DesktopDrawer = () => {
     }
   };
 
+  const handleToggleMinimize = () => {
+    setIsMinimized(!isMinimized);
+  };
+
   return (
-    <div className={styles.leftDrawer}>
+    <div className={cx(styles.leftDrawer, isMinimized && styles.minimized)}>
       <div className={styles.drawerHeader}>
         <div className={styles.appBrand}>
-          <Typography.Title level={3} className={styles.appTitle}>
-            Dreamer
-          </Typography.Title>
+          <button
+            className={styles.toggleButton}
+            onClick={handleToggleMinimize}
+            aria-label={isMinimized ? 'Expand drawer' : 'Minimize drawer'}
+          >
+            <Icon 
+              icon="solar:hamburger-menu-line-duotone" 
+              width={20} 
+              className={styles.toggleIcon}
+            />
+          </button>
+          {!isMinimized && (
+            <Typography.Title level={3} className={styles.appTitle}>
+              Dreamer
+            </Typography.Title>
+          )}
         </div>
       </div>
       <nav className={styles.navigationMenu}>
@@ -65,9 +83,11 @@ const DesktopDrawer = () => {
             key={item.id}
             className={cx(
               styles.navigationItem,
-              isActivePath(item.path) && styles.activeNavigationItem
+              isActivePath(item.path) && styles.activeNavigationItem,
+              isMinimized && styles.minimizedNavigationItem
             )}
             onClick={() => handleNavigationClick(item.id)}
+            title={isMinimized ? item.label : undefined}
           >
             <div className={cx(
               styles.navigationIcon,
@@ -75,14 +95,21 @@ const DesktopDrawer = () => {
             )}>
               <Icon className={isActivePath(item.path) ? styles.activeNavigationIcon:''} icon={item.icon} width={20} />
             </div>
-            <div className={styles.navigationContent}>
-              <Typography.Text className={styles.navigationLabel}>
+            {!isMinimized && (
+              <div className={styles.navigationContent}>
+                <Typography.Text className={styles.navigationLabel}>
+                  {item.label}
+                </Typography.Text>
+                <Typography.Text className={styles.navigationDescription}>
+                  {item.description}
+                </Typography.Text>
+              </div>
+            )}
+            {isMinimized && (
+              <Typography.Text className={styles.minimizedLabel}>
                 {item.label}
               </Typography.Text>
-              <Typography.Text className={styles.navigationDescription}>
-                {item.description}
-              </Typography.Text>
-            </div>
+            )}
           </button>
         ))}
       </nav>

@@ -10,18 +10,37 @@
   overflow: hidden;
   width: 280px;
   border: 1px solid var(--card-border);
+  transition: width 0.3s ease;
+
+  &.minimized {
+    width: 80px;
+  }
 }
 
 .drawerHeader {
   padding: 20px 20px 16px 20px;
   border-bottom: 1px solid var(--division-color);
   background: var(--drawer-background);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  position: relative;
+
+  .minimized & {
+    padding: 16px 12px;
+    justify-content: center;
+  }
 }
 
 .appBrand {
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
+
+  .minimized & {
+    justify-content: center;
+  }
 }
 
 .appIcon {
@@ -33,6 +52,29 @@
   color: var(--text-title-primary-color);
   font-size: 20px;
   font-weight: 700;
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  color: var(--text-description-color);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--surface-secondary);
+    color: var(--text-color);
+  }
+}
+
+.toggleIcon {
+  transition: transform 0.3s ease;
 }
 
 .navigationMenu {
@@ -65,6 +107,14 @@
     background: var(--card-selected-background);
     border-right: 3px solid var(--icon-primary);
   }
+
+  &.minimizedNavigationItem {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 8px;
+    align-items: center;
+    text-align: center;
+  }
 }
 
 .navigationIcon {
@@ -77,6 +127,12 @@
   background: var(--surface-secondary);
   color: var(--icon-color-inactive-invert);
   transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  .minimizedNavigationItem & {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 .navigationItem:hover .navigationIcon {
@@ -108,4 +164,17 @@
   color: var(--text-description-color);
   margin: 0;
   line-height: 1.4;
+}
+
+.minimizedLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-color);
+  margin: 0;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

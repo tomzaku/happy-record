@@ -24,6 +24,7 @@ import styles from './index.module.scss';
 type Props = {
   checklistTemplate: ChecklistTemplate;
   onUpdate: (template: ChecklistTemplate) => void;
+  isDefaultCollapsed: boolean;
 };
 
 enum EditModal {
@@ -33,9 +34,9 @@ enum EditModal {
   Tags,
 }
 
-const ChecklistGenericInfo = ({ checklistTemplate, onUpdate }: Props) => {
+const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed }: Props) => {
   const intl = useIntl();
-  const [isCollapsed, setIsCollapsed] = React.useState(true);
+  const [isCollapsed, setIsCollapsed] = React.useState(isDefaultCollapsed);
   const [activeModal, setActiveModal] = React.useState<EditModal>(
     EditModal.None,
   );

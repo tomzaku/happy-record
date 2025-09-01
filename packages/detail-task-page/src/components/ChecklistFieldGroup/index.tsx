@@ -67,13 +67,13 @@ const ChecklistFieldGroup = ({
   };
 
   const renderTitle = (fieldGroup: FieldGroup) => {
-    const tabToTitle = {
-      [ChecklistFieldGroupTab.Home]: `${today ? 'Today' : new Date(currentDay).toLocaleDateString()}`,
-      [ChecklistFieldGroupTab.History]: 'Record History',
-      [ChecklistFieldGroupTab.Add]: 'Add Record',
-      [ChecklistFieldGroupTab.Metric]: 'Metric',
-      [ChecklistFieldGroupTab.Config]: 'Group Settings',
-    };
+    // const tabToTitle = {
+    //   [ChecklistFieldGroupTab.Home]: `${today ? 'Today' : new Date(currentDay).toLocaleDateString()}`,
+    //   [ChecklistFieldGroupTab.History]: 'Record History',
+    //   [ChecklistFieldGroupTab.Add]: 'Add Record',
+    //   [ChecklistFieldGroupTab.Metric]: 'Metric',
+    //   [ChecklistFieldGroupTab.Config]: 'Group Settings',
+    // };
     // return tabToTitle[activeTab[fieldGroup.id]];
     return fieldGroup.title;
   };

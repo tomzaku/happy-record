@@ -5,14 +5,10 @@
 .desktopContainer {
   display: flex;
   min-height: 100vh;
-  background: var(--background);
 }
 
 .desktopBody {
   flex: 1;
-  margin-left: 304px; // 280px drawer width + 24px margin
-  padding: 24px;
-  background: var(--background);
 }
 
 .content {
@@ -24,12 +20,12 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 32px;
-  padding: 24px;
-  background: var(--card-background);
-  border-radius: 16px;
-  border: 1px solid var(--card-border);
-  box-shadow: 0 2px 8px var(--card-shadow);
+  margin-bottom: $spacing-md;;
+  padding: $spacing-md;
+  // background: var(--card-background);
+  // border-radius: 8px;
+  // border: 1px solid var(--card-border);
+  // box-shadow: 0 2px 8px var(--card-shadow);
 }
 
 .titleSection {
@@ -82,24 +78,24 @@
 
 .mainContent {
   display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 24px;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
   align-items: start;
 }
 
 .leftColumn {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 12px;
 }
 
-.rightColumn {
+.main {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 12px;
 }
 
-.infoCard, .fieldsCard {
+.fieldsCard {
   border: 1px solid var(--card-border);
   border-radius: 12px;
   background: var(--card-background);
@@ -129,37 +125,4 @@
   color: var(--text-description-color);
   font-size: 14px;
   line-height: 1.5;
-}
-
-// Responsive design
-@media (max-width: 1200px) {
-  .mainContent {
-    grid-template-columns: 1fr;
-  }
-  
-  .leftColumn {
-    order: 2;
-  }
-  
-  .rightColumn {
-    order: 1;
-  }
-}
-
-@media (max-width: 768px) {
-  .desktopBody {
-    margin-left: 0;
-    padding: 16px;
-  }
-  
-  .header {
-    flex-direction: column;
-    gap: 16px;
-    align-items: flex-start;
-  }
-  
-  .headerActions {
-    width: 100%;
-    justify-content: flex-start;
-  }
 }

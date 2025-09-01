@@ -18,7 +18,6 @@ import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import styles from './index.desktop.module.scss';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button/src/DefaultButton';
-import Card from '@moon-ui/card';
 
 const DetailTaskPageDesktop = () => {
   const { id } = useParams<{ id: string }>();
@@ -97,9 +96,6 @@ const DetailTaskPageDesktop = () => {
                 <Typography.Title level={2} className={styles.pageTitle}>
                   {checklistTemplate.title}
                 </Typography.Title>
-                <Typography.Text className={styles.subtitle}>
-                  Task Details
-                </Typography.Text>
               </div>
             </div>
             <div className={styles.headerActions}>
@@ -128,35 +124,24 @@ const DetailTaskPageDesktop = () => {
 
           {/* Main Content */}
           <div className={styles.mainContent}>
-            <div className={styles.leftColumn}>
-              <Card className={styles.infoCard}>
-                <ChecklistGenericInfo
-                  checklistTemplate={checklistTemplate}
-                  onUpdate={(updatedTemplate) => {
-                    updateChecklistTemplate(updatedTemplate);
-                    setChecklistTemplate(updatedTemplate);
-                  }}
-                />
-              </Card>
-            </div>
             
-            <div className={styles.rightColumn}>
-              <Card className={styles.fieldsCard}>
-                <div className={styles.fieldsHeader}>
-                  <Typography.Title level={4} className={styles.fieldsTitle}>
-                    Task Fields
-                  </Typography.Title>
-                  <Typography.Text className={styles.fieldsDescription}>
-                    Record your progress and notes for this task
-                  </Typography.Text>
-                </div>
+            <div className={styles.main}>
                 <ChecklistFieldGroup
                   checklist={checklist}
                   checklistTemplate={checklistTemplate}
                   fields={fields}
                   currentDay={currentDay}
                 />
-              </Card>
+            </div>
+            <div className={styles.side}>
+                <ChecklistGenericInfo
+                  isDefaultCollapsed={false}
+                  checklistTemplate={checklistTemplate}
+                  onUpdate={(updatedTemplate) => {
+                    updateChecklistTemplate(updatedTemplate);
+                    setChecklistTemplate(updatedTemplate);
+                  }}
+                />
             </div>
           </div>
         </div>

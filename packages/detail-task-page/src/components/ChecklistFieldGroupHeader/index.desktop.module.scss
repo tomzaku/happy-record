@@ -1,0 +1,124 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/color' as *;
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  background: var(--card-background);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.titleContainer {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-right: $spacing-lg;
+  cursor: pointer;
+  padding: $spacing-sm 0;
+}
+
+.collapseIcon {
+  cursor: pointer;
+  transition: color 0.2s ease;
+  color: var(--text-description-color);
+
+  &:hover {
+    color: var(--text-color);
+  }
+}
+
+.iconGroup {
+  display: flex;
+}
+
+.tabsContainer {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-sm $spacing-md;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  background: none;
+  border: none;
+  color: var(--text-description-color);
+  min-width: 80px;
+
+  &:hover {
+    color: var(--text-color);
+    background: var(--surface-secondary);
+  }
+
+  &.active {
+    color: var(--icon-primary);
+    background: var(--surface-secondary);
+  }
+}
+
+.tabIcon {
+  margin-bottom: $spacing-xs;
+  transition: all 0.2s ease;
+}
+
+.tabLabel {
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.activeIndicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--icon-primary);
+  border-radius: 2px 2px 0 0;
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+
+  .tab.active & {
+    transform: scaleX(1);
+  }
+}
+
+
+
+.configButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-description-color);
+  background: none;
+  border: none;
+  margin-left: $spacing-md;
+
+  &:hover {
+    background: var(--surface-secondary);
+    color: var(--text-color);
+  }
+
+  &.active {
+    background: var(--surface-secondary);
+    color: var(--icon-primary);
+  }
+}
