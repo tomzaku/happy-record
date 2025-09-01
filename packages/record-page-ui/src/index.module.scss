@@ -1,6 +1,4 @@
 @use '@moon-ui/app-scss/metric' as *;
-@use '@moon-ui/app-scss/theme/light.scss' as *;
-@use '@moon-ui/app-scss/theme/dark.scss' as *;
 @use 'include-media/dist/include-media' as media;
 
 .container {
@@ -13,6 +11,7 @@
   display: flex;
   position: relative;
   background: var(--background);
+  margin-top: $spacing-lg;
 }
 
 .desktopBody {

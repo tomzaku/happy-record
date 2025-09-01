@@ -20,10 +20,10 @@ const formatSchedule = (repeat?: { hour: string; minute: string; dayOfWeek: stri
   if (!repeat || !repeat.dayOfWeek) {
     return 'No schedule';
   }
-  
+
   const time = `${repeat.hour.padStart(2, '0')}:${repeat.minute.padStart(2, '0')}`;
   const days = formatDaysOfWeek(repeat.dayOfWeek);
-  
+
   return `${time} • ${days}`;
 };
 
@@ -31,22 +31,22 @@ const formatDaysOfWeek = (dayOfWeek: string): string => {
   if (!dayOfWeek || dayOfWeek === '*') {
     return 'Every day';
   }
-  
+
   const dayNumbers = dayOfWeek.split(',');
   if (dayNumbers.length === 7) {
     return 'Every day';
   }
-  
+
   const dayNames = {
     '0': 'Sun',
-    '1': 'Mon', 
+    '1': 'Mon',
     '2': 'Tue',
     '3': 'Wed',
     '4': 'Thu',
     '5': 'Fri',
     '6': 'Sat'
   };
-  
+
   const formattedDays = dayNumbers.map(day => dayNames[day as keyof typeof dayNames] || day);
   return formattedDays.join(', ');
 };
@@ -108,13 +108,13 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
           {checklistByGivingDateIds.length} task{checklistByGivingDateIds.length !== 1 ? 's' : ''}
         </Typography.Text>
       </div>
-      
+
       <div className={styles.tasksList}>
         {checklistByGivingDateIds.map((id, index) => {
           const currentChecklist = checklist[id];
           const currentChecklistTemplate =
             checklistTemplate[currentChecklist.checklistTemplateId];
-          
+
           return (
             <Card
               key={id}
@@ -122,6 +122,11 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
                 styles.taskCard,
                 currentChecklist?.completedAt && styles.completedTask
               )}
+              onClick={() =>
+                navigate(
+                  `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
+                )
+              }
             >
               <div className={styles.taskHeader}>
                 <div className={styles.taskIcon}>
@@ -133,14 +138,9 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
                   />
                 </div>
                 <div className={styles.taskInfo}>
-                  <Typography.Title 
-                    level={5} 
+                  <Typography.Title
+                    level={5}
                     className={styles.taskTitle}
-                    onClick={() =>
-                      navigate(
-                        `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
-                      )
-                    }
                   >
                     {currentChecklistTemplate?.title}
                   </Typography.Title>
@@ -171,6 +171,7 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
                     className={styles.checkbox}
                     onChange={event => {
                       event.stopPropagation();
+                      event.preventDefault();
                       updateChecklist({
                         ...currentChecklist,
                         completedAt: event.target.checked
@@ -185,7 +186,7 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
           );
         })}
       </div>
-      
+
       <Button
         type="dash"
         size="lg"

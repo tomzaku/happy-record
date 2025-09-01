@@ -18,7 +18,6 @@ const TaskListPage = () => {
   const [key, setKey] = React.useState(0);
   const [flipping, setFlipping] = React.useState(false);
   const [selectedTag, setSelectedTag] = React.useState('all');
-  const navigate = useNavigate();
   const { getAllTags } = useTags();
 
   // Update key and trigger flip when date changes
