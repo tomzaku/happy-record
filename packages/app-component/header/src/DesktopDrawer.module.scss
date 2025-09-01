@@ -1,0 +1,117 @@
+@use '@moon-ui/app-scss/theme/light.scss' as *;
+@use '@moon-ui/app-scss/theme/dark.scss' as *;
+
+// Left Drawer Styles - Fixed positioning
+.leftDrawer {
+  background: var(--drawer-background);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: fixed;
+  left: 24px;
+  top: 24px;
+  bottom: 104px; // Account for bottom player
+  width: 280px;
+  z-index: 100;
+  border: 1px solid var(--card-border);
+}
+
+.drawerHeader {
+  padding: 20px 20px 16px 20px;
+  border-bottom: 1px solid var(--division-color);
+  background: var(--drawer-background);
+}
+
+.appBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.appIcon {
+  color: var(--icon-primary);
+}
+
+.appTitle {
+  margin: 0;
+  color: var(--text-title-primary-color);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.navigationMenu {
+  flex: 1;
+  padding: 12px 0;
+}
+
+.navigationItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-color);
+  text-align: left;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+
+  &:active {
+    background: var(--card-selected-background);
+  }
+
+  &.activeNavigationItem {
+    background: var(--card-selected-background);
+    border-right: 3px solid var(--icon-primary);
+  }
+}
+
+.navigationIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--surface-secondary);
+  color: var(--icon-color-inactive-invert);
+  transition: all 0.2s ease;
+}
+
+.navigationItem:hover .navigationIcon {
+  background: var(--icon-primary);
+  color: var(--icon-color-revert);
+}
+
+.activeNavigationIcon {
+  background: var(--icon-primary) !important;
+  color: var(--icon-color-revert) !important;
+}
+
+.navigationContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navigationLabel {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.navigationDescription {
+  font-size: 14px;
+  color: var(--text-description-color);
+  margin: 0;
+  line-height: 1.4;
+}

@@ -1,0 +1,71 @@
+@use '@moon-ui/app-scss/theme/light.scss' as *;
+@use '@moon-ui/app-scss/theme/dark.scss' as *;
+
+// Desktop-specific styles
+.desktopContainer {
+  padding-bottom: 80px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: var(--background);
+}
+
+.desktopBody {
+  display: flex;
+  padding: 24px 24px 24px 320px; // Left padding accounts for fixed drawer
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.centerContent {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding: 0 12px;
+}
+
+.pageTitle {
+  margin: 0;
+}
+
+.addNoteButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--button-default-background);
+  color: var(--button-ghost-color-invert, white);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--button-action-background);
+    transform: translateY(-1px);
+  }
+}
+
+.addIcon {
+  color: var(--button-ghost-color-invert, white);
+}
+
+.notesContainer {
+  display: flex;
+  gap: 24px;
+  height: calc(100vh - 200px);
+  overflow: hidden;
+}

@@ -1,8 +1,43 @@
 @use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/theme/light.scss' as *;
+@use '@moon-ui/app-scss/theme/dark.scss' as *;
 @use 'include-media/dist/include-media' as media;
 
 .container {
   padding-bottom: 80px;
+}
+
+// Desktop-specific styles
+.desktopContainer {
+  padding-bottom: 80px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: var(--background);
+}
+
+.desktopBody {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 24px;
+  padding: 24px 24px 24px 320px; // Left padding accounts for fixed drawer
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.centerContent {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rightCalendar {
+  .calendarCard {
+    height: 100%;
+    overflow: hidden;
+  }
 }
 
 .row {
@@ -186,4 +221,55 @@
 
 .selectIcon {
   margin-left: $spacing-xs;
+}
+
+// Task View Styles
+.taskHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 12px;
+}
+
+.taskTitle {
+  margin: 0;
+  color: var(--text-title-primary-color);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.tagFilter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filterLabel {
+  color: var(--text-description-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+// Responsive design
+@include media.media('<=desktop') {
+  .desktopBody {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .centerContent {
+    order: 1;
+  }
+
+  .rightCalendar {
+    order: 2;
+  }
+}
+
+@include media.media('<=tablet') {
+  .desktopBody {
+    padding: 12px;
+  }
 }

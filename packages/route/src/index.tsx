@@ -2,7 +2,9 @@ import React from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Header from '@dreamer/header';
 import SettingPage from '@dreamer/setting-page-ui';
+import SettingPageDesktop from '@dreamer/setting-page-ui/src/index.desktop';
 import DetailTaskPage from '@dreamer/detail-task-page';
+import DetailTaskPageDesktop from '@dreamer/detail-task-page/src/index.desktop';
 
 import PregnantIntro from '@pregnant/pregnant-intro';
 import PregnantPage from '@pregnant/pregnant-page-ui';
@@ -16,6 +18,7 @@ import StoryPageUi from '@pregnant/story-page-ui';
 import Audio from '@pregnant/pregnant-audio-player';
 import { AnimatePresence, motion } from 'motion/react';
 import { NoteManagerPage } from '@happy-record/note-manager-page-ui';
+import { NoteManagerPageDesktop } from '@happy-record/note-manager-page-ui/src/index.desktop';
 import { AddNotePage } from '@happy-record/add-note-page-ui';
 
 // Hocs
@@ -23,6 +26,7 @@ import RecordPage from '@dreamer/record-page-ui';
 import LocalStorageEditor from './local-storage-editor';
 import TasksSharedPage from '@happy-record/tasks-shared-page-ui';
 import ChecklistTemplateSharedPageUi from '@happy-record/checklist-template-shared-page-ui';
+import { useIsMobile } from '@dreamer/global';
 
 const AnimationRoute = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -39,6 +43,7 @@ const AnimationRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRouter = () => {
   const location = useLocation(); // Get the current location
+  const isMobile = useIsMobile();
 
   return (
     <AnimatePresence mode="wait">
@@ -55,7 +60,7 @@ const AppRouter = () => {
           path="/task/:id"
           element={
             <AnimationRoute>
-              <DetailTaskPage />
+              {isMobile ? <DetailTaskPage /> : <DetailTaskPageDesktop />}
             </AnimationRoute>
           }
         />
@@ -128,7 +133,7 @@ const AppRouter = () => {
           path="/setting"
           element={
             <AnimationRoute>
-              <SettingPage />
+              {isMobile ? <SettingPage /> : <SettingPageDesktop />}
             </AnimationRoute>
           }
         />
@@ -160,7 +165,7 @@ const AppRouter = () => {
           path="/notes"
           element={
             <AnimationRoute>
-              <NoteManagerPage />
+              {isMobile ? <NoteManagerPage /> : <NoteManagerPageDesktop />}
             </AnimationRoute>
           }
         />
