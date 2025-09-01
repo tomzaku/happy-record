@@ -30,12 +30,18 @@ const AddGroupModalContent = ({
   onCancel,
 }: AddGroupModalContentProps) => {
   const intl = useIntl();
-  console.log("SELECTED FIELDS", selectedFields)
+  
+  // Debug: Log when selectedFields changes
+  React.useEffect(() => {
+    console.log('selectedFields changed:', selectedFields);
+  }, [selectedFields]);
 
   const handleFieldToggle = (fieldId: string) => {
+    console.log('Toggling field:', fieldId, 'Current selectedFields:', selectedFields);
     const newSelectedFields = selectedFields.includes(fieldId)
       ? selectedFields.filter(id => id !== fieldId)
       : [...selectedFields, fieldId];
+    console.log('New selectedFields:', newSelectedFields);
     setSelectedFields(newSelectedFields);
   };
 
@@ -134,10 +140,12 @@ const AddGroupModalContent = ({
             ) : (
               availableFields.map(fieldId => {
                 const { title, icon } = getFieldDisplayInfo(fieldId);
+                const isChecked = selectedFields.includes(fieldId);
                 return (
                   <div key={fieldId} className={styles.fieldItem}>
                     <Checkbox
-                      checked={selectedFields.includes(fieldId)}
+                      key={`${fieldId}-${isChecked}`}
+                      checked={isChecked}
                       onChange={() => handleFieldToggle(fieldId)}
                       className={styles.fieldCheckbox}
                     />
