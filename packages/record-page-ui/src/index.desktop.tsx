@@ -82,14 +82,14 @@ const TaskListPage = () => {
                 transition: 'all 0.2s ease',
               }}
             >
-              <Card className={cx(styles.flipper)}>
+              <div className={cx(styles.flipper)}>
                 <div className={styles.front} key={key}>
                   <ChecklistTodayDesktop 
                     date={startDate} 
                     selectedTag={selectedTag === 'all' ? undefined : selectedTag}
                   />
                 </div>
-              </Card>
+              </div>
             </div>
           </div>
         </div>

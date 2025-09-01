@@ -51,9 +51,6 @@
   }
   
   &.completedTask {
-    opacity: 0.6;
-    background: var(--card-selected-background);
-    
     .taskTitle {
       text-decoration: line-through;
       color: var(--text-description-color);

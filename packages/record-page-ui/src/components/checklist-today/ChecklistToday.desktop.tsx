@@ -165,13 +165,16 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
                     )}
                   </div>
                 </div>
-                <div className={styles.taskActions}>
+                <div 
+                  className={styles.taskActions}
+                  onClick={event => {
+                    event.stopPropagation();
+                  }}
+                >
                   <Checkbox
                     defaultChecked={Boolean(currentChecklist?.completedAt)}
                     className={styles.checkbox}
                     onChange={event => {
-                      event.stopPropagation();
-                      event.preventDefault();
                       updateChecklist({
                         ...currentChecklist,
                         completedAt: event.target.checked
