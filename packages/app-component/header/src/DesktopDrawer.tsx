@@ -54,9 +54,8 @@ const DesktopDrawer = () => {
     <div className={styles.leftDrawer}>
       <div className={styles.drawerHeader}>
         <div className={styles.appBrand}>
-          <Icon icon="solar:heart-bold" width={32} className={styles.appIcon} />
           <Typography.Title level={3} className={styles.appTitle}>
-            Happy Record
+            Dreamer
           </Typography.Title>
         </div>
       </div>

@@ -4,17 +4,11 @@
 // Left Drawer Styles - Fixed positioning
 .leftDrawer {
   background: var(--drawer-background);
-  border-radius: 16px;
   box-shadow: 0 4px 12px var(--card-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  position: fixed;
-  left: 24px;
-  top: 24px;
-  bottom: 104px; // Account for bottom player
   width: 280px;
-  z-index: 100;
   border: 1px solid var(--card-border);
 }
 

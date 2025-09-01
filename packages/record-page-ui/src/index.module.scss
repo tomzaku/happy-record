@@ -7,12 +7,10 @@
   padding-bottom: 80px;
 }
 
-// Desktop-specific styles
 .desktopContainer {
   padding-bottom: 80px;
   height: 100vh;
   display: flex;
-  flex-direction: column;
   position: relative;
   background: var(--background);
 }
@@ -21,7 +19,6 @@
   display: grid;
   grid-template-columns: 1fr 350px;
   gap: 24px;
-  padding: 24px 24px 24px 320px; // Left padding accounts for fixed drawer
   flex: 1;
   overflow: hidden;
   position: relative;
