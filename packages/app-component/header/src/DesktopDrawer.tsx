@@ -64,9 +64,9 @@ const DesktopDrawer = () => {
             onClick={handleToggleMinimize}
             aria-label={isMinimized ? 'Expand drawer' : 'Minimize drawer'}
           >
-            <Icon 
-              icon="solar:hamburger-menu-line-duotone" 
-              width={20} 
+            <Icon
+              icon="solar:hamburger-menu-line-duotone"
+              width={20}
               className={styles.toggleIcon}
             />
           </button>
@@ -93,7 +93,7 @@ const DesktopDrawer = () => {
               styles.navigationIcon,
               isActivePath(item.path) && styles.activeNavigationIcon
             )}>
-              <Icon className={isActivePath(item.path) ? styles.activeNavigationIcon:''} icon={item.icon} width={20} />
+              <Icon className={isActivePath(item.path) ? styles.activeNavigationIcon : ''} icon={item.icon} width={20} />
             </div>
             {!isMinimized && (
               <div className={styles.navigationContent}>
