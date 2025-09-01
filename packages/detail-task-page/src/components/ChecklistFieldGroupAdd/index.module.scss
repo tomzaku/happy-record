@@ -1,4 +1,5 @@
 @use '@moon-ui/app-scss/metric' as *;
+@use 'include-media/dist/include-media' as media;
 
 @keyframes shake {
   0%,
@@ -23,6 +24,9 @@
   width: 100px;
   padding: 6px;
   text-align: end;
+  @include media.media('>=tablet') {
+    width: 200px;
+  }
 }
 
 .unit {
