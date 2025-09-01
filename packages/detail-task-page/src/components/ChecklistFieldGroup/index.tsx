@@ -21,6 +21,7 @@ import ChecklistFieldGroupView from '../ChecklistFieldGroupView';
 import ChecklistFieldMetric from '../ChecklistFieldMetric';
 import ChecklistFieldGroupConfig from '../ChecklistFieldGroupConfig';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
+import ChecklistFieldGroupAddGroup from '../ChecklistFieldGroupAddGroup';
 
 type Props = {
   checklist: Checklist;
@@ -230,81 +231,89 @@ const ChecklistFieldGroup = ({
       </AnimatePresence>
     );
   };
-  return checklistTemplate.fieldGroups.map((fieldGroup, index) => {
-    const fieldDetails = fieldGroup.fields
-      .map(fieldId => fields.find(field => field.id === fieldId))
-      .filter((field): field is RecordField => field !== undefined);
-    const isCollapsed = collapsedGroups[fieldGroup.id] || false;
+  const renderBody = () => {
+    return checklistTemplate.fieldGroups.map((fieldGroup, index) => {
+      const fieldDetails = fieldGroup.fields
+        .map(fieldId => fields.find(field => field.id === fieldId))
+        .filter((field): field is RecordField => field !== undefined);
+      const isCollapsed = collapsedGroups[fieldGroup.id] || false;
 
-    return (
-      <Card key={fieldGroup.id} className={styles.cardContainer}>
-        <ChecklistFieldGroupHeader
-          activeTab={activeTab[fieldGroup.id]}
-          activeTabs={
-            fieldGroup.activeTabs ?? [
-              ChecklistFieldGroupTab.Home,
-              ChecklistFieldGroupTab.History,
-              ChecklistFieldGroupTab.Metric,
-              ChecklistFieldGroupTab.Config,
-              ChecklistFieldGroupTab.Add,
-            ]
-          }
-          onClickHome={() =>
-            setActiveTab({
-              ...activeTab,
-              [fieldGroup.id]: ChecklistFieldGroupTab.Home,
-            })
-          }
-          onClickHistory={() =>
-            setActiveTab({
-              ...activeTab,
-              [fieldGroup.id]: ChecklistFieldGroupTab.History,
-            })
-          }
-          onClickAdd={() =>
-            setActiveTab({
-              ...activeTab,
-              [fieldGroup.id]: ChecklistFieldGroupTab.Add,
-            })
-          }
-          onClickMetric={() =>
-            setActiveTab({
-              ...activeTab,
-              [fieldGroup.id]: ChecklistFieldGroupTab.Metric,
-            })
-          }
-          onClickConfig={() =>
-            setActiveTab({
-              ...activeTab,
-              [fieldGroup.id]: ChecklistFieldGroupTab.Config,
-            })
-          }
-          renderTitle={() => renderTitle(fieldGroup)}
-          isCollapsed={isCollapsed}
-          onToggleCollapse={() => toggleCollapse(fieldGroup.id)}
-        />
-        <motion.div
-          initial={false}
-          animate={{
-            height: isCollapsed ? 0 : 'auto',
-            opacity: isCollapsed ? 0 : 1,
-          }}
-          transition={{
-            height: {
-              type: 'spring',
-              stiffness: 300,
-              damping: 30,
-            },
-            opacity: {
-              duration: 0.2,
-            },
-          }}
-        >
-          <Hr classes={{ hr: styles.hr }} />
-          {renderTab({ fieldGroup, fieldDetails, index })}
-        </motion.div>
-      </Card>
-    );
-  });
+      return (
+        <Card key={fieldGroup.id} className={styles.cardContainer}>
+          <ChecklistFieldGroupHeader
+            activeTab={activeTab[fieldGroup.id]}
+            activeTabs={
+              fieldGroup.activeTabs ?? [
+                ChecklistFieldGroupTab.Home,
+                ChecklistFieldGroupTab.History,
+                ChecklistFieldGroupTab.Metric,
+                ChecklistFieldGroupTab.Config,
+                ChecklistFieldGroupTab.Add,
+              ]
+            }
+            onClickHome={() =>
+              setActiveTab({
+                ...activeTab,
+                [fieldGroup.id]: ChecklistFieldGroupTab.Home,
+              })
+            }
+            onClickHistory={() =>
+              setActiveTab({
+                ...activeTab,
+                [fieldGroup.id]: ChecklistFieldGroupTab.History,
+              })
+            }
+            onClickAdd={() =>
+              setActiveTab({
+                ...activeTab,
+                [fieldGroup.id]: ChecklistFieldGroupTab.Add,
+              })
+            }
+            onClickMetric={() =>
+              setActiveTab({
+                ...activeTab,
+                [fieldGroup.id]: ChecklistFieldGroupTab.Metric,
+              })
+            }
+            onClickConfig={() =>
+              setActiveTab({
+                ...activeTab,
+                [fieldGroup.id]: ChecklistFieldGroupTab.Config,
+              })
+            }
+            renderTitle={() => renderTitle(fieldGroup)}
+            isCollapsed={isCollapsed}
+            onToggleCollapse={() => toggleCollapse(fieldGroup.id)}
+          />
+          <motion.div
+            initial={false}
+            animate={{
+              height: isCollapsed ? 0 : 'auto',
+              opacity: isCollapsed ? 0 : 1,
+            }}
+            transition={{
+              height: {
+                type: 'spring',
+                stiffness: 300,
+                damping: 30,
+              },
+              opacity: {
+                duration: 0.2,
+              },
+            }}
+          >
+            <Hr classes={{ hr: styles.hr }} />
+            {renderTab({ fieldGroup, fieldDetails, index })}
+          </motion.div>
+        </Card>
+      );
+    });
+  }
+  return (
+    <>
+      {renderBody()}
+      <ChecklistFieldGroupAddGroup />
+    </>
+  )
 };
 export default ChecklistFieldGroup;
