@@ -1,0 +1,141 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/color' as *;
+
+.modalContent {
+  background: var(--card-background);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg $spacing-lg $spacing-md;
+  border-bottom: 1px solid var(--division-color);
+}
+
+.closeIcon {
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  color: var(--text-description-color);
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.content {
+  flex: 1;
+  padding: $spacing-lg;
+  overflow-y: auto;
+}
+
+.section {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.sectionTitle {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-color);
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.nameInput {
+  width: 100%;
+}
+
+.selectAllButton {
+  font-size: 12px;
+  padding: $spacing-xs $spacing-sm;
+}
+
+.fieldsList {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--division-color);
+  border-radius: 8px;
+  background: var(--background);
+}
+
+.fieldItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border-bottom: 1px solid var(--division-color);
+  transition: background-color 0.2s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+}
+
+.fieldCheckbox {
+  flex-shrink: 0;
+}
+
+.fieldLabel {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl;
+  text-align: center;
+}
+
+.emptyIcon {
+  color: var(--text-description-color);
+  margin-bottom: $spacing-sm;
+}
+
+.emptyText {
+  color: var(--text-description-color);
+  font-size: 14px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg $spacing-lg;
+  border-top: 1px solid var(--division-color);
+}
+
+.cancelButton {
+  padding: $spacing-sm $spacing-lg;
+}
+
+.saveButton {
+  padding: $spacing-sm $spacing-lg;
+}
