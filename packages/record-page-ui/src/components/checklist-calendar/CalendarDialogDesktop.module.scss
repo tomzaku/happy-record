@@ -1,0 +1,173 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+
+// .dialog {
+//   background: var(--card-background);
+//   border-radius: 12px;
+//   box-shadow: 0 8px 24px var(--card-shadow);
+//   width: 320px;
+//   max-height: 400px;
+//   overflow: hidden;
+//   display: flex;
+//   flex-direction: column;
+// }
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--division-color);
+}
+
+.title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.closeIcon {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  color: var(--text-description-color);
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.calendarContainer {
+  padding: 12px 16px;
+  flex: 1;
+}
+
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.navIcon {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  color: var(--text-description-color);
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.monthYear {
+  font-weight: 600;
+  font-size: 14px;
+  flex: 1;
+  text-align: center;
+  color: var(--text-color);
+}
+
+.calendarGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-description-color);
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.calendarDay {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+
+  &:hover {
+    background-color: var(--surface-secondary);
+    border-color: var(--button-action-color);
+  }
+}
+
+.dayText {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.selectedDay {
+  background-color: var(--button-action-color);
+  border-color: var(--button-action-color);
+
+  .dayText {
+    color: var(--text-color-invert);
+    font-weight: 600;
+  }
+
+  &:hover {
+    background-color: var(--button-action-color);
+  }
+}
+
+.today {
+  border-color: var(--button-action-color);
+
+  .dayText {
+    color: var(--button-action-color);
+    font-weight: 600;
+  }
+
+  &.selectedDay {
+    .dayText {
+      color: var(--text-color-invert);
+    }
+  }
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  padding: 8px 16px 12px;
+  border-top: 1px solid var(--division-color);
+}
+
+.todayButton {
+  cursor: pointer;
+  color: var(--button-action-color);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  border: 1px solid var(--button-action-color);
+
+  &:hover {
+    background-color: var(--button-action-color);
+    color: var(--text-color-invert);
+  }
+}

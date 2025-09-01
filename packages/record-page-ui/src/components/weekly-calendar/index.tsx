@@ -27,7 +27,7 @@ type Props = {
   selectedTag?: string;
 };
 
-const WeeklyCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
+const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Props) => {
   const { getChecklistByGivingDate } = useChecklist();
   const { getChecklistTemplate, getChecklistTemplateIdsByGivingDate } =
     useChecklistTemplates();
@@ -200,4 +200,4 @@ const WeeklyCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
   );
 };
 
-export default WeeklyCalendar;
+export default WeeklyCalendarHorizontal;

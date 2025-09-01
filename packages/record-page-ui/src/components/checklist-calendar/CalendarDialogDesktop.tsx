@@ -2,23 +2,23 @@ import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 import { useState, useEffect } from 'react';
 import { useIntl } from '@dreamer/translation';
+import { Modal } from '@moon-ui/modal';
 
-import styles from './CalendarDialog.module.scss';
-import Drawer from '@moon-ui/drawer';
+import styles from './CalendarDialogDesktop.module.scss';
 
-interface CalendarDialogProps {
+interface CalendarDialogDesktopProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   onClose: () => void;
   isOpen: boolean;
 }
 
-const CalendarDialogMobile = ({
+const CalendarDialogDesktop = ({
   selectedDate,
   onDateSelect,
   onClose,
   isOpen,
-}: CalendarDialogProps) => {
+}: CalendarDialogDesktopProps) => {
   const intl = useIntl();
   const [currentMonth, setCurrentMonth] = useState(
     new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1),
@@ -64,12 +64,6 @@ const CalendarDialogMobile = ({
     onDateSelect(new Date());
   };
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   const daysInMonth = getDaysInMonth(currentMonth);
   const firstDayOfMonth = getFirstDayOfMonth(currentMonth);
   const days = [];
@@ -96,77 +90,85 @@ const CalendarDialogMobile = ({
         className={`${styles.calendarDay} ${isSelected ? styles.selectedDay : ''} ${isToday ? styles.today : ''}`}
         onClick={() => handleDateClick(day)}
       >
-        {day}
+        <Typography.Text className={styles.dayText}>
+          {day}
+        </Typography.Text>
       </div>,
     );
   }
 
-  return (
-    <Drawer visible={isOpen} onBlur={handleOverlayClick}>
-      <div className={styles.dialog}>
-        <div className={styles.header}>
-          <Typography.Title level={5} noMargin className={styles.title}>
-            {intl.formatMessage({
-              id: 'calendar-dialog.title',
-              defaultMessage: 'Select Date',
-            })}
-          </Typography.Title>
+  const calendarContent = (
+    <div>
+      <div className={styles.header}>
+        <Typography.Title level={5} noMargin className={styles.title}>
+          {intl.formatMessage({
+            id: 'calendar-dialog.title',
+            defaultMessage: 'Select Date',
+          })}
+        </Typography.Title>
+        <Icon
+          onClick={onClose}
+          width={16}
+          icon="basil:close-outline"
+          className={styles.closeIcon}
+        />
+      </div>
+
+      <div className={styles.calendarContainer}>
+        <div className={styles.calendarHeader}>
           <Icon
-            onClick={onClose}
+            onClick={handlePrevMonth}
             width={20}
-            icon="basil:close-outline"
-            className={styles.closeIcon}
+            icon="basil:skip-prev-outline"
+            className={styles.navIcon}
+          />
+          <Typography.Text className={styles.monthYear}>
+            {currentMonth.toLocaleDateString('en-US', {
+              month: 'long',
+              year: 'numeric',
+            })}
+          </Typography.Text>
+          <Icon
+            onClick={handleNextMonth}
+            width={20}
+            icon="basil:skip-next-outline"
+            className={styles.navIcon}
           />
         </div>
 
-        <div className={styles.calendarContainer}>
-          <div className={styles.calendarHeader}>
-            <Icon
-              onClick={handlePrevMonth}
-              width={24}
-              icon="basil:skip-prev-outline"
-              className={styles.navIcon}
-            />
-            <Typography.Text className={styles.monthYear}>
-              {currentMonth.toLocaleDateString('en-US', {
-                month: 'long',
-                year: 'numeric',
-              })}
-            </Typography.Text>
-            <Icon
-              onClick={handleNextMonth}
-              width={24}
-              icon="basil:skip-next-outline"
-              className={styles.navIcon}
-            />
+        <div className={styles.calendarGrid}>
+          <div className={styles.weekdays}>
+            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
+              <Typography.Text key={day} className={styles.weekday}>
+                {day}
+              </Typography.Text>
+            ))}
           </div>
-
-          <div className={styles.calendarGrid}>
-            <div className={styles.weekdays}>
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <Typography.Text key={day} className={styles.weekday}>
-                  {day}
-                </Typography.Text>
-              ))}
-            </div>
-            <Typography.Text className={styles.days}>{days}</Typography.Text>
-          </div>
-        </div>
-
-        <div className={styles.footer}>
-          <Typography.Text
-            onClick={handleTodayClick}
-            className={styles.todayButton}
-          >
-            {intl.formatMessage({
-              id: 'calendar-dialog.today',
-              defaultMessage: 'Today',
-            })}
-          </Typography.Text>
+          <div className={styles.days}>{days}</div>
         </div>
       </div>
-    </Drawer>
+
+      <div className={styles.footer}>
+        <Typography.Text
+          onClick={handleTodayClick}
+          className={styles.todayButton}
+        >
+          {intl.formatMessage({
+            id: 'calendar-dialog.today',
+            defaultMessage: 'Today',
+          })}
+        </Typography.Text>
+      </div>
+    </div>
+  );
+
+  return (
+    <Modal 
+      visible={isOpen} 
+      onDismiss={onClose}
+      content={calendarContent}
+    />
   );
 };
 
-export default CalendarDialogMobile;
+export default CalendarDialogDesktop;

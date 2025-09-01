@@ -45,9 +45,7 @@ const TaskListPage = () => {
         <div className={styles.centerContent}>
           <div className={styles.taskListContainer}>
             <div className={styles.taskHeader}>
-              <Typography.Title level={3} className={styles.taskTitle}>
-                Today's Tasks
-              </Typography.Title>
+              <div />
               <div className={styles.tagFilter}>
                 <Typography.Text className={styles.filterLabel}>Filter by Tag:</Typography.Text>
                 <Select
@@ -85,7 +83,7 @@ const TaskListPage = () => {
                 transition: 'all 0.2s ease',
               }}
             >
-              <Card className={cx(styles.cardFooter, styles.flipper)}>
+              <Card className={cx(styles.flipper)}>
                 <div className={styles.front} key={key}>
                   <ChecklistTodayDesktop 
                     date={startDate} 

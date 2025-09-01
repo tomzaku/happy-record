@@ -19,7 +19,7 @@ import {
   addWeeks,
   subWeeks,
 } from 'date-fns';
-import CalendarDialog from '../checklist-calendar/CalendarDialog';
+import CalendarDialogDesktop from '../checklist-calendar/CalendarDialogDesktop';
 import styles from './WeeklyCalendarVertical.module.scss';
 
 type Props = {
@@ -39,7 +39,7 @@ const WeeklyCalendarVertical = ({ currentDate, onDateChange, selectedTag }: Prop
   // Calculate the range of weeks to display
   const weeksToShow = React.useMemo(() => {
     const weeks = [];
-    const startWeek = subWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 2);
+    const startWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
     
     for (let i = 0; i < visibleWeeks; i++) {
       const weekStart = addWeeks(startWeek, i);
@@ -99,6 +99,10 @@ const WeeklyCalendarVertical = ({ currentDate, onDateChange, selectedTag }: Prop
 
   const handleTodayClick = React.useCallback(() => {
     onDateChange(new Date());
+    // Scroll to top of calendar container
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
   }, [onDateChange]);
 
   const handleDayClick = React.useCallback(
@@ -122,7 +126,7 @@ const WeeklyCalendarVertical = ({ currentDate, onDateChange, selectedTag }: Prop
 
   return (
     <>
-      <CalendarDialog
+      <CalendarDialogDesktop
         selectedDate={currentDate}
         onDateSelect={handleDateSelect}
         onClose={handleCloseCalendarDialog}
@@ -130,17 +134,23 @@ const WeeklyCalendarVertical = ({ currentDate, onDateChange, selectedTag }: Prop
       />
       
       <div className={styles.container}>
-        {/* Header with Today button */}
-        <div className={styles.header}>
-          <div className={styles.navigation}>
-            <Button
-              onClick={handleTodayClick}
-              className={styles.todayButton}
-            >
-              Today
-            </Button>
-          </div>
-        </div>
+                        {/* Header with Today button */}
+                <div className={styles.header}>
+                  <div className={styles.navigation}>
+                    <Button
+                      onClick={() => setShowCalendarDialog(true)}
+                      className={styles.selectDayButton}
+                    >
+                      Select day
+                    </Button>
+                    <Button
+                      onClick={handleTodayClick}
+                      className={styles.todayButton}
+                    >
+                      Today
+                    </Button>
+                  </div>
+                </div>
 
         {/* Calendar content */}
         <div className={styles.calendarContainer} ref={containerRef}>
