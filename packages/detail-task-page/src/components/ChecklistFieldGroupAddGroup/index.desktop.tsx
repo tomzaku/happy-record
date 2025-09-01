@@ -4,7 +4,7 @@ import List from '@moon-ui/list';
 import Button from '@moon-ui/button';
 import { Modal } from '@moon-ui/modal';
 import { useIntl } from '@dreamer/translation';
-import { FieldGroup } from '@dreamer/global';
+import { FieldGroup, RecordField } from '@dreamer/global';
 import styles from './index.desktop.module.scss';
 import AddGroupModalContent from './AddGroupModalContent';
 
@@ -12,12 +12,14 @@ interface ChecklistFieldGroupAddGroupDesktopProps {
   fieldGroups?: FieldGroup[];
   onAddFieldGroup: (newGroup: FieldGroup) => void;
   availableFields?: string[];
+  allRecordFields: RecordField[];
 }
 
 const ChecklistFieldGroupAddGroupDesktop = ({
   fieldGroups = [],
   onAddFieldGroup,
   availableFields = [],
+  allRecordFields,
 }: ChecklistFieldGroupAddGroupDesktopProps) => {
   const intl = useIntl();
   const [isModalVisible, setIsModalVisible] = React.useState(false);
@@ -61,6 +63,7 @@ const ChecklistFieldGroupAddGroupDesktop = ({
       selectedFields={tempSelectedFields}
       setSelectedFields={setTempSelectedFields}
       availableFields={availableFields}
+      allRecordFields={allRecordFields}
       onSave={handleSave}
       onCancel={handleModalClose}
     />

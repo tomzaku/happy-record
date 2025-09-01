@@ -5,6 +5,7 @@ import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
 import Checkbox from '@moon-ui/checkbox';
 import { useIntl } from '@dreamer/translation';
+import { RecordField } from '@dreamer/global';
 import styles from './AddGroupModalContent.module.scss';
 
 interface AddGroupModalContentProps {
@@ -13,6 +14,7 @@ interface AddGroupModalContentProps {
   selectedFields: string[];
   setSelectedFields: (fields: string[]) => void;
   availableFields: string[];
+  allRecordFields: RecordField[];
   onSave: () => void;
   onCancel: () => void;
 }
@@ -23,17 +25,24 @@ const AddGroupModalContent = ({
   selectedFields,
   setSelectedFields,
   availableFields,
+  allRecordFields,
   onSave,
   onCancel,
 }: AddGroupModalContentProps) => {
   const intl = useIntl();
-  console.log(">availableFields", availableFields)
+  console.log("SELECTED FIELDS", selectedFields)
 
   const handleFieldToggle = (fieldId: string) => {
     const newSelectedFields = selectedFields.includes(fieldId)
       ? selectedFields.filter(id => id !== fieldId)
       : [...selectedFields, fieldId];
     setSelectedFields(newSelectedFields);
+  };
+
+  // Get field display info
+  const getFieldDisplayInfo = (fieldId: string) => {
+    const field = allRecordFields.find(f => f.id === fieldId);
+    return field ? { title: field.title, icon: field.icon } : { title: fieldId, icon: 'solar:document-linear' };
   };
 
   const handleSelectAll = () => {
@@ -123,18 +132,22 @@ const AddGroupModalContent = ({
                 </Typography.Text>
               </div>
             ) : (
-              availableFields.map(fieldId => (
-                <div key={fieldId} className={styles.fieldItem}>
-                  <Checkbox
-                    checked={selectedFields.includes(fieldId)}
-                    onChange={() => handleFieldToggle(fieldId)}
-                    className={styles.fieldCheckbox}
-                  />
-                  <Typography.Text className={styles.fieldLabel}>
-                    {fieldId}
-                  </Typography.Text>
-                </div>
-              ))
+              availableFields.map(fieldId => {
+                const { title, icon } = getFieldDisplayInfo(fieldId);
+                return (
+                  <div key={fieldId} className={styles.fieldItem}>
+                    <Checkbox
+                      checked={selectedFields.includes(fieldId)}
+                      onChange={() => handleFieldToggle(fieldId)}
+                      className={styles.fieldCheckbox}
+                    />
+                    <Icon width={16} icon={icon} className={styles.fieldIcon} />
+                    <Typography.Text className={styles.fieldLabel}>
+                      {title}
+                    </Typography.Text>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

@@ -99,6 +99,11 @@
   flex-shrink: 0;
 }
 
+.fieldIcon {
+  flex-shrink: 0;
+  color: var(--text-description-color);
+}
+
 .fieldLabel {
   flex: 1;
   font-size: 14px;

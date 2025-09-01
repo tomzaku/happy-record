@@ -3,7 +3,7 @@ import { Icon } from '@moon-ui/icon/Icon';
 import List from '@moon-ui/list';
 import Button from '@moon-ui/button';
 import { useIntl } from '@dreamer/translation';
-import { FieldGroup } from '@dreamer/global';
+import { FieldGroup, RecordField } from '@dreamer/global';
 import styles from './index.mobile.module.scss';
 import cx from 'classnames';
 import AddGroupModalContent from './AddGroupModalContent';
@@ -12,12 +12,14 @@ interface ChecklistFieldGroupAddGroupMobileProps {
   fieldGroups?: FieldGroup[];
   onAddFieldGroup: (newGroup: FieldGroup) => void;
   availableFields?: string[];
+  allRecordFields: RecordField[];
 }
 
 const ChecklistFieldGroupAddGroupMobile = ({
   fieldGroups = [],
   onAddFieldGroup,
   availableFields = [],
+  allRecordFields,
 }: ChecklistFieldGroupAddGroupMobileProps) => {
   const intl = useIntl();
   const [isModalVisible, setIsModalVisible] = React.useState(false);
@@ -61,6 +63,7 @@ const ChecklistFieldGroupAddGroupMobile = ({
       selectedFields={tempSelectedFields}
       setSelectedFields={setTempSelectedFields}
       availableFields={availableFields}
+      allRecordFields={allRecordFields}
       onSave={handleSave}
       onCancel={handleModalClose}
     />

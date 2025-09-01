@@ -309,10 +309,20 @@ const ChecklistFieldGroup = ({
       );
     });
   }
+  const handleAddFieldGroup = (newGroup: FieldGroup) => {
+    updateChecklistTemplate({
+      ...checklistTemplate,
+      fieldGroups: [...checklistTemplate.fieldGroups, newGroup],
+    });
+  };
+
   return (
     <>
       {renderBody()}
-      <ChecklistFieldGroupAddGroup />
+      <ChecklistFieldGroupAddGroup
+        fieldGroups={checklistTemplate.fieldGroups}
+        onAddFieldGroup={handleAddFieldGroup}
+      />
     </>
   )
 };

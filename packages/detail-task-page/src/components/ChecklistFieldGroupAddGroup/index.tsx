@@ -1,7 +1,7 @@
 import React from 'react';
 import ChecklistFieldGroupAddGroupMobile from './index.mobile';
 import ChecklistFieldGroupAddGroupDesktop from './index.desktop';
-import { useIsMobile } from '@dreamer/global';
+import { useIsMobile, useRecordField, RecordField } from '@dreamer/global';
 import { FieldGroup } from '@dreamer/global';
 
 interface ChecklistFieldGroupAddGroupProps {
@@ -13,16 +13,31 @@ interface ChecklistFieldGroupAddGroupProps {
 const ChecklistFieldGroupAddGroup = ({
   fieldGroups = [],
   onAddFieldGroup,
-  availableFields = [],
+  availableFields,
 }: ChecklistFieldGroupAddGroupProps) => {
   const isMobile = useIsMobile();
+  const { getAllRecordFields } = useRecordField();
+  
+  // Get available fields from record fields if not provided
+  const actualAvailableFields = React.useMemo(() => {
+    if (availableFields) {
+      return availableFields;
+    }
+    return getAllRecordFields().map((field: RecordField) => field.id);
+  }, [availableFields, getAllRecordFields]);
+
+  // Get all record fields for display
+  const allRecordFields = React.useMemo(() => {
+    return getAllRecordFields();
+  }, [getAllRecordFields]);
   
   if (isMobile) {
     return (
       <ChecklistFieldGroupAddGroupMobile
         fieldGroups={fieldGroups}
         onAddFieldGroup={onAddFieldGroup}
-        availableFields={availableFields}
+        availableFields={actualAvailableFields}
+        allRecordFields={allRecordFields}
       />
     );
   }
@@ -31,7 +46,8 @@ const ChecklistFieldGroupAddGroup = ({
     <ChecklistFieldGroupAddGroupDesktop
       fieldGroups={fieldGroups}
       onAddFieldGroup={onAddFieldGroup}
-      availableFields={availableFields}
+      availableFields={actualAvailableFields}
+      allRecordFields={allRecordFields}
     />
   );
 };
