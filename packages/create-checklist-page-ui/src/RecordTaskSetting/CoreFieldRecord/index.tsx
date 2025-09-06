@@ -10,7 +10,6 @@ import styles from './index.module.scss';
 import cx from 'classnames';
 import IconPicker from '../../IconPicker';
 import Radio from '@moon-ui/radio';
-import { RecordField } from '@dreamer/global/src/store/record-field';
 
 export type FormState = {
   icon: string;
@@ -25,6 +24,7 @@ type Props = {
   className?: string;
   initialValues?: Partial<FormState>;
   onSubmit?: (form: FormState) => void;
+  onCancel?: () => void;
   submitButtonText?: string;
 };
 
@@ -32,6 +32,7 @@ const CoreFieldRecord = ({
   className,
   initialValues = {},
   onSubmit,
+  onCancel,
   submitButtonText,
 }: Props) => {
   const intl = useIntl();
@@ -154,6 +155,20 @@ const CoreFieldRecord = ({
         }
       />
       <div className={styles.addFieldButtonContainer}>
+        {onCancel && (
+          <Button 
+            block 
+            size="lg" 
+            type="ghost" 
+            onClick={onCancel}
+            className={styles.cancelButton}
+          >
+            {intl.formatMessage({
+              defaultMessage: 'Cancel',
+              id: 'label-cancel',
+            })}
+          </Button>
+        )}
         <Button block size="lg" type="primary" onClick={handleSubmit}>
           {submitButtonText ||
             intl.formatMessage({

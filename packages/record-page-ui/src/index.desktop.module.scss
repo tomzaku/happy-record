@@ -1,0 +1,247 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use 'include-media/dist/include-media' as media;
+
+.container {
+  padding-bottom: 80px;
+}
+
+.desktopContainer {
+  height: 100vh;
+  display: flex;
+  position: relative;
+}
+
+.desktopBody {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: $spacing-lg;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  margin-left: 20px;
+}
+
+.centerContent {
+  display: flex;
+  margin-top: $spacing-lg;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rightCalendar {
+  .calendarCard {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0;
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+  padding: 0 12px;
+}
+
+.player {
+  bottom: 0;
+  position: fixed;
+  width: 100%;
+
+  @include media.media('<=tablet') {
+    max-width: 600px;
+  }
+}
+
+.hr {
+  height: 2px !important;
+}
+
+.hrContainer {
+  margin-bottom: 0 !important;
+}
+
+.card {
+  width: 100%;
+  padding-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: none;
+  // border
+  background-image: linear-gradient(to right, var(--dashed-color-without-transparent) 0%, var(--dashed-color-without-transparent) 80%, transparent 50%, transparent 100%);
+  background-size: 22px 2px;
+  background-repeat: repeat-x;
+  background-position: bottom;
+
+  // scooped
+  --scoop-radius: 10px; /* Adjust scoop size here */
+  -webkit-mask:
+    radial-gradient(
+      var(--scoop-radius) at left bottom,
+      transparent 98%,
+      black 99%
+    ),
+    radial-gradient(
+      var(--scoop-radius) at right bottom,
+      transparent 98%,
+      black 99%
+    );
+  -webkit-mask-size: 50% 100%;
+  -webkit-mask-position: left bottom, right bottom;
+  -webkit-mask-repeat: no-repeat;
+  mask:
+    radial-gradient(
+      var(--scoop-radius) at left bottom,
+      transparent 98%,
+      black 99%
+    ),
+    radial-gradient(
+      var(--scoop-radius) at right bottom,
+      transparent 98%,
+      black 99%
+    );
+  mask-size: 50% 100%;
+  mask-position: left bottom, right bottom;
+  mask-repeat: no-repeat;
+  border-radius: 18px 18px 0 0; /* optional: rounded top corners */
+  box-sizing: border-box;
+}
+
+.cardFooter {
+  width: 100%;
+  padding-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  box-shadow: none;
+
+  // border
+  background-image: linear-gradient(to right, var(--dashed-color-without-transparent) 0%, var(--dashed-color-without-transparent) 80%, transparent 50%, transparent 100%);
+  background-size: 22px 2px;
+  background-repeat: repeat-x;
+  background-position: top;
+  --scoop-radius: 10px; /* Adjust scoop size here */
+   /* Mask: two radial gradients for top-left and top-right */
+   -webkit-mask:
+     radial-gradient(
+       var(--scoop-radius) at left top,
+       transparent 98%,
+       black 99%
+     ),
+     radial-gradient(
+       var(--scoop-radius) at right top,
+       transparent 98%,
+       black 99%
+     );
+   -webkit-mask-size: 50% 100%;
+   -webkit-mask-position: left top, right top;
+   -webkit-mask-repeat: no-repeat;
+   mask:
+     radial-gradient(
+       var(--scoop-radius) at left top,
+       transparent 98%,
+       black 99%
+     ),
+     radial-gradient(
+       var(--scoop-radius) at right top,
+       transparent 98%,
+       black 99%
+     );
+   mask-size: 50% 100%;
+   mask-position: left top, right top;
+   mask-repeat: no-repeat;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 $spacing-sm;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08));
+}
+
+.dashed {
+  border-top: 2px dashed #b0b0b0;
+  margin: 16px 0;
+  height: 0;
+  background: none;
+}
+
+.flipContainer {
+  background: var(--card-background);
+  overflow: hidden;
+  min-height: 120px;
+  width: 100%;
+}
+
+.flipper {
+  // Spring animation is now handled by react-motion
+  width: 100%;
+}
+
+.front {
+  width: 100%;
+  // min-height: 120px;
+}
+
+.taskListContainer {
+  overflow: hidden;
+  padding-bottom: 20px;
+  width: 100%;
+}
+
+.tagSelectorContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+  padding: 0 12px;
+  width: 100%;
+}
+
+.selectContainer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.selectInput {
+  padding: 2px $spacing-md !important;
+}
+
+.selectElement {
+  border: 0 !important;
+}
+
+.selectIcon {
+  margin-left: $spacing-xs;
+}
+
+// Task View Styles
+.taskHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 12px;
+}
+
+.taskTitle {
+  margin: 0;
+  color: var(--text-title-primary-color);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.tagFilter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filterLabel {
+  color: var(--text-description-color);
+  font-size: 14px;
+  font-weight: 500;
+}

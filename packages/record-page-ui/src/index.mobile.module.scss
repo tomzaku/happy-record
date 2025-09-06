@@ -5,44 +5,10 @@
   padding-bottom: 80px;
 }
 
-.desktopContainer {
-  height: 100vh;
-  display: flex;
-  position: relative;
-}
-
-.desktopBody {
-  display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: $spacing-lg;
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  margin-left: 20px;
-}
-
-.centerContent {
-  display: flex;
-  margin-top: $spacing-lg;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.rightCalendar {
-  .calendarCard {
-    height: 100%;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    border-radius: 0;
-  }
-}
-
 .row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 13px;
-
   padding: 0 12px;
 }
 
@@ -246,4 +212,3 @@
   font-size: 14px;
   font-weight: 500;
 }
-

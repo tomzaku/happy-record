@@ -1,6 +1,14 @@
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/color' as *;
 
+.modalContainer {
+  display: flex;
+  width: 100%;
+  max-width: 900px;
+  max-height: 80vh;
+  gap: $spacing-md;
+}
+
 .modalContent {
   background: var(--card-background);
   border-radius: 12px;
@@ -10,6 +18,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .header {
@@ -65,9 +74,16 @@
   width: 100%;
 }
 
-.selectAllButton {
+.addFieldButton {
   font-size: 12px;
   padding: $spacing-xs $spacing-sm;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.addFieldIcon {
+  color: var(--icon-primary);
 }
 
 .fieldsList {
@@ -143,4 +159,30 @@
 
 .saveButton {
   padding: $spacing-sm $spacing-lg;
+}
+
+.addFieldPanel {
+  background: var(--card-background);
+  border-radius: 12px;
+  width: 400px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 12px var(--card-shadow);
+}
+
+.addFieldPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg $spacing-lg $spacing-md;
+  border-bottom: 1px solid var(--division-color);
+}
+
+.addFieldPanelContent {
+  flex: 1;
+  padding: $spacing-lg;
+  overflow-y: auto;
 }

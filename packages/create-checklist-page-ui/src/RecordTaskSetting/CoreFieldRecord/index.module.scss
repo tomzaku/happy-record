@@ -13,6 +13,13 @@
 
 .addFieldButtonContainer {
   margin-top: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.cancelButton {
+  margin-bottom: $spacing-xs;
 }
 
 .customeFieldInput {

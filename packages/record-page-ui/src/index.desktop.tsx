@@ -5,7 +5,7 @@ import ChecklistTodayDesktop from './components/checklist-today/ChecklistToday.d
 import WeeklyCalendarVertical from './components/weekly-calendar/WeeklyCalendarVertical';
 // import MusicAudioPlayer from '@pregnant/music-audio-player';
 import { DesktopDrawer } from '@dreamer/header';
-import styles from './index.module.scss';
+import styles from './index.desktop.module.scss';
 import Card from '@moon-ui/card';
 import cx from 'classnames';
 import Select from '@moon-ui/select';

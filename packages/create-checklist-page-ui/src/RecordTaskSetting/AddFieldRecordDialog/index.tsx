@@ -1,6 +1,6 @@
 import Drawer from '@moon-ui/drawer';
 import { Icon } from '@moon-ui/icon/Icon';
-import AddFieldRecord from '../AddFieldRecord';
+import AddFieldRecordUi from '../AddFieldRecordUi';
 import styles from './index.module.scss';
 import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
@@ -31,7 +31,7 @@ const AddFieldRecordDialog = ({
           onClick={onClose}
         />
       </div>
-      <AddFieldRecord className={styles.container} onSubmit={onSubmit} />
+      <AddFieldRecordUi className={styles.container} onSubmit={onSubmit} onCancel={onClose} />
     </Drawer>
   );
 };

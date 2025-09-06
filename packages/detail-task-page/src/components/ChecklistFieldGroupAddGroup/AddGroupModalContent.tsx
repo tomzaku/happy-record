@@ -2,10 +2,11 @@ import React from 'react';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button';
-import Input from '@moon-ui/input';
 import Checkbox from '@moon-ui/checkbox';
+import Input from '@moon-ui/input';
 import { useIntl } from '@dreamer/translation';
 import { RecordField } from '@dreamer/global';
+import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
 import styles from './AddGroupModalContent.module.scss';
 
 interface AddGroupModalContentProps {
@@ -17,6 +18,7 @@ interface AddGroupModalContentProps {
   allRecordFields: RecordField[];
   onSave: () => void;
   onCancel: () => void;
+  onFieldAdded?: (newField: RecordField) => void;
 }
 
 const AddGroupModalContent = ({
@@ -28,8 +30,10 @@ const AddGroupModalContent = ({
   allRecordFields,
   onSave,
   onCancel,
+  onFieldAdded,
 }: AddGroupModalContentProps) => {
   const intl = useIntl();
+  const [isAddFieldPanelVisible, setIsAddFieldPanelVisible] = React.useState(false);
   
   // Debug: Log when selectedFields changes
   React.useEffect(() => {
@@ -51,18 +55,24 @@ const AddGroupModalContent = ({
     return field ? { title: field.title, icon: field.icon } : { title: fieldId, icon: 'solar:document-linear' };
   };
 
-  const handleSelectAll = () => {
-    if (selectedFields.length === availableFields.length) {
-      setSelectedFields([]);
-    } else {
-      setSelectedFields([...availableFields]);
-    }
+  const handleAddField = () => {
+    setIsAddFieldPanelVisible(true);
+  };
+
+  const handleFieldPanelClose = () => {
+    setIsAddFieldPanelVisible(false);
+  };
+
+  const handleFieldPanelSubmit = (newField: RecordField) => {
+    onFieldAdded?.(newField);
+    setIsAddFieldPanelVisible(false);
   };
 
   const isFormValid = groupName.trim().length > 0 && selectedFields.length > 0;
 
   return (
-    <div className={styles.modalContent}>
+    <div className={styles.modalContainer}>
+      <div className={styles.modalContent}>
       <div className={styles.header}>
         <Typography.Title level={4} noMargin>
           {intl.formatMessage({
@@ -106,19 +116,15 @@ const AddGroupModalContent = ({
               })}
             </Typography.Text>
             <Button
-              onClick={handleSelectAll}
-              className={styles.selectAllButton}
+              onClick={handleAddField}
+              className={styles.addFieldButton}
               type="ghost"
             >
-              {selectedFields.length === availableFields.length
-                ? intl.formatMessage({
-                    defaultMessage: 'Deselect All',
-                    id: 'label-deselect-all',
-                  })
-                : intl.formatMessage({
-                    defaultMessage: 'Select All',
-                    id: 'label-select-all',
-                  })}
+              <Icon width={16} icon="fe:plus"  />
+              {intl.formatMessage({
+                defaultMessage: 'Add Field',
+                id: 'label-add-field',
+              })}
             </Button>
           </div>
 
@@ -184,6 +190,32 @@ const AddGroupModalContent = ({
           })}
         </Button>
       </div>
+      </div>
+
+      {isAddFieldPanelVisible && (
+        <div className={styles.addFieldPanel}>
+          <div className={styles.addFieldPanelHeader}>
+            <Typography.Title level={4} noMargin>
+              {intl.formatMessage({
+                defaultMessage: 'Add New Field',
+                id: 'label-add-new-field',
+              })}
+            </Typography.Title>
+            <Icon
+              onClick={handleFieldPanelClose}
+              width={20}
+              icon="basil:close-outline"
+              className={styles.closeIcon}
+            />
+          </div>
+          <div className={styles.addFieldPanelContent}>
+            <AddFieldRecordUi
+              onSubmit={handleFieldPanelSubmit}
+              onCancel={handleFieldPanelClose}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

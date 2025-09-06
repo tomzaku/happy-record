@@ -4,7 +4,7 @@ import { Motion, spring } from 'react-motion';
 import ChecklistToday from './components/checklist-today';
 import WeeklyCalendar from './components/weekly-calendar';
 // import MusicAudioPlayer from '@pregnant/music-audio-player';
-import styles from './index.module.scss';
+import styles from './index.mobile.module.scss';
 import AppHeader from '@dreamer/header';
 import Card from '@moon-ui/card';
 import cx from 'classnames';
