@@ -12,7 +12,6 @@ import {
 } from '@dreamer/global/src/store/record-field';
 import { DesktopDrawer } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
-import FocusZoneModal from '@dreamer/focus-zone-modal-ui';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import styles from './index.desktop.module.scss';

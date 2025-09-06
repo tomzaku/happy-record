@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { Icon } from '@moon-ui/icon/Icon';
 import styles from './index.desktop.module.scss';
 import Typography from '@moon-ui/typography';
+import MusicControllerDropdown from './MusicControllerDropdown';
 
 interface FocusZoneFABProps {
   timerMode: 'stopwatch' | 'pomodoro';
@@ -33,7 +34,8 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
 }) => {
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [musicVolume, setMusicVolume] = useState(50);
+  const [isMusicDropdownVisible, setIsMusicDropdownVisible] = useState(false);
+  const fabRef = useRef<HTMLDivElement>(null);
 
   // Format time functions
   const formatStopwatchTime = (time: number): string => {
@@ -76,17 +78,26 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
 
   const handleMusicToggle = () => {
     setIsMusicPlaying(!isMusicPlaying);
-    onOpenMusicPlayer();
+    setIsMusicDropdownVisible(!isMusicDropdownVisible);
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMusicVolume(Number(e.target.value));
+  const getFabPosition = () => {
+    if (fabRef.current) {
+      const rect = fabRef.current.getBoundingClientRect();
+      return {
+        top: rect.top,
+        right: window.innerWidth - rect.right,
+      };
+    }
+    return { top: 0, right: 0 };
   };
+
 
   return (
     <div className={styles.fabContainer}>
       {/* Main FAB with enhanced controls */}
       <motion.div
+        ref={fabRef}
         className={styles.focusZoneFAB}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -166,10 +177,14 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
         </motion.button>
       </motion.div>
 
-      {/* Enhanced Expanded Menu */}
-      
-    </div>
-  );
-};
+      {/* Music Controller Dropdown */}
+      <MusicControllerDropdown
+        visible={isMusicDropdownVisible}
+        onClose={() => setIsMusicDropdownVisible(false)}
+        position={getFabPosition()}
+      />
+      </div>
+    );
+  };
 
 export default FocusZoneFAB;
