@@ -124,8 +124,7 @@
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  background: var(--surface-secondary);
-  color: var(--icon-color-inactive-invert);
+  color: var(--icon-color-inactive);
   transition: all 0.2s ease;
   flex-shrink: 0;
 
@@ -136,12 +135,11 @@
 }
 
 .navigationItem:hover .navigationIcon {
-  background: var(--icon-primary);
-  color: var(--icon-color-revert);
+  color: var(--icon-primary);
 }
 
 .activeNavigationIcon {
-  color: var(--icon-color-revert) !important;
+  color: var(--icon-primary) !important;
 }
 
 .navigationContent {
