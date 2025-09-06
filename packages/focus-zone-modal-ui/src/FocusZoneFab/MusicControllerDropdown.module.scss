@@ -4,8 +4,10 @@
 
 /* Icon States */
 .iconActive {
-  color: var(--focus-zone-header-title-gradient);
-  fill: var(--focus-zone-header-title-gradient);
+  // color: var(--focus-zone-header-title-gradient);
+  // fill: var(--focus-zone-header-title-gradient);
+  color: var(--focus-zone-text-tertiary);
+  fill: var(--focus-zone-text-tertiary);
 }
 
 .iconInactive {
@@ -34,6 +36,12 @@
   padding: $spacing-sm $spacing-md;
   border-bottom: 1px solid var(--focus-zone-sound-card-border);
   background: var(--focus-zone-sound-option-background);
+}
+
+.musicDropdownHeaderButtons {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
 }
 
 .musicDropdownTitle {
@@ -129,7 +137,6 @@
   width: $spacing-lg;
   height: $spacing-lg;
   border-radius: $spacing-xs;
-  background: var(--focus-zone-sound-card-background);
   display: flex;
   align-items: center;
   justify-content: center;

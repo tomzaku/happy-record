@@ -189,6 +189,23 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
     setSoundVolume(typeSound, volume);
   };
 
+  const handleTurnOffAllMusic = () => {
+    // Turn off all currently active sounds
+    Object.keys(soundActiveId).forEach((typeSound) => {
+      if (soundActiveId[typeSound as TypeSound]) {
+        toggleSound(typeSound as TypeSound, false, { loop: true });
+      }
+    });
+    
+    // Update state to reflect all sounds are off
+    const allOffState = Object.keys(soundActiveId).reduce((acc, key) => {
+      acc[key as TypeSound] = false;
+      return acc;
+    }, {} as Record<TypeSound, boolean>);
+    
+    setSoundActiveId(allOffState);
+  };
+
   if (!visible) return null;
 
   return (
@@ -211,14 +228,25 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
           <Typography.Text className={styles.musicDropdownTitle}>
             Music Controls
           </Typography.Text>
-          <motion.button
-            className={styles.musicDropdownClose}
-            onClick={onClose}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Icon icon="material-symbols:close-rounded"/>
-          </motion.button>
+          <div className={styles.musicDropdownHeaderButtons}>
+            <motion.button
+              className={styles.musicDropdownClose}
+              onClick={handleTurnOffAllMusic}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              title="Turn off all music"
+            >
+              <Icon icon="solar:muted-linear"/>
+            </motion.button>
+            <motion.button
+              className={styles.musicDropdownClose}
+              onClick={onClose}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Icon icon="material-symbols:close-rounded"/>
+            </motion.button>
+          </div>
         </div>
 
         {/* Category Filter */}
