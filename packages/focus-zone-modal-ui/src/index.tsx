@@ -8,7 +8,7 @@ import Typography, { Title, Text } from '@moon-ui/typography';
 
 import MusicControllerMobile from '@dreamer/music-controller-mobile';
 import NotificationPermissionModal from './NotificationPermissionModal';
-import FocusZoneFAB from './FocusZoneFAB';
+import FocusZoneFAB from './FocusZoneFab';
 
 // Hooks and utilities
 import { usePomodoroGlobalConfig, Theme } from '@dreamer/pomodoro-common';

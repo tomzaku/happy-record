@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@moon-ui/icon/Icon';
-import styles from './index.module.scss';
+import styles from '../index.module.scss';
 import Typography from '@moon-ui/typography';
 
 interface FocusZoneFABProps {
@@ -86,7 +86,7 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
             onOpenModal();
           }}
           className={styles.fabTime}>
-            {getCurrentTimeDisplay()}
+          {getCurrentTimeDisplay()}
         </Typography.Text>
 
         <motion.button
