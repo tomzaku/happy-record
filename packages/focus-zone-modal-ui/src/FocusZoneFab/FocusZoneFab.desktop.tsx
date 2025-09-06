@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@moon-ui/icon/Icon';
-import styles from '../index.module.scss';
+import styles from './index.desktop.module.scss';
 import Typography from '@moon-ui/typography';
 
 interface FocusZoneFABProps {
@@ -93,9 +93,7 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
         exit={{ scale: 0, opacity: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         style={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           padding: '12px 16px',
-          minWidth: '200px'
         }}
       >
         {/* Timer Display */}
@@ -120,9 +118,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           style={{
-            background: isAnyTimerRunning() 
-              ? 'rgba(255, 255, 255, 0.3)' 
-              : 'rgba(255, 255, 255, 0.2)',
             width: '32px',
             height: '32px'
           }}
@@ -141,9 +136,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           style={{
-            background: isMusicPlaying 
-              ? 'rgba(255, 255, 255, 0.3)' 
-              : 'rgba(255, 255, 255, 0.2)',
             width: '32px',
             height: '32px'
           }}

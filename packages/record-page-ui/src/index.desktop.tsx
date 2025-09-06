@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import ChecklistTodayDesktop from './components/checklist-today/ChecklistToday.desktop';
 import WeeklyCalendarVertical from './components/weekly-calendar/WeeklyCalendarVertical';
-import MusicAudioPlayer from '@pregnant/music-audio-player';
+// import MusicAudioPlayer from '@pregnant/music-audio-player';
 import { DesktopDrawer } from '@dreamer/header';
 import styles from './index.module.scss';
 import Card from '@moon-ui/card';
@@ -106,7 +106,7 @@ const TaskListPage = () => {
         </div>
       </div>
       
-      <MusicAudioPlayer className={styles.player} />
+      {/* <MusicAudioPlayer className={styles.player} /> */}
     </div>
   );
 };

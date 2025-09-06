@@ -3,7 +3,7 @@ import { Motion, spring } from 'react-motion';
 
 import ChecklistToday from './components/checklist-today';
 import WeeklyCalendar from './components/weekly-calendar';
-import MusicAudioPlayer from '@pregnant/music-audio-player';
+// import MusicAudioPlayer from '@pregnant/music-audio-player';
 import styles from './index.module.scss';
 import AppHeader from '@dreamer/header';
 import Card from '@moon-ui/card';
@@ -118,7 +118,7 @@ const TaskListPage = () => {
           </Motion>
         </div>
       </div>
-      <MusicAudioPlayer className={styles.player} />
+      {/* <MusicAudioPlayer className={styles.player} /> */}
     </div>
   );
 };

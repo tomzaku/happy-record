@@ -1,6 +1,7 @@
 // Components
 import AppRouter from '@dreamer/route';
 import PwaInstallation from '@dreamer/pwa';
+import FocusZoneModal from '@dreamer/focus-zone-modal-ui';
 
 // Hooks
 import {
@@ -50,10 +51,18 @@ class ErrorBoundary extends React.Component<
 
 function App() {
   const { theme } = usePomodoroGlobalConfig();
+  // Focus Zone Modal state
+  const [isFocusZoneOpen, setIsFocusZoneOpen] = React.useState(false);
   return (
     <ErrorBoundary>
       <div className={styles.container} data-theme={theme}>
         <div className={styles.body}>
+          <FocusZoneModal
+
+            visible={isFocusZoneOpen}
+            onDismiss={() => setIsFocusZoneOpen(false)}
+            onOpenModal={() => setIsFocusZoneOpen(true)}
+          />
           <AppRouter />
           <PwaInstallation />
         </div>

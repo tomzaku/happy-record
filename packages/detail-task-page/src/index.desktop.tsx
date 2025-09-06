@@ -34,8 +34,6 @@ const DetailTaskPageDesktop = () => {
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [fields, setFields] = React.useState<RecordField[]>([]);
 
-  // Focus Zone Modal state
-  const [isFocusZoneOpen, setIsFocusZoneOpen] = useState(false);
 
   if (!id || !currentDay) {
     return;
@@ -151,13 +149,13 @@ const DetailTaskPageDesktop = () => {
         </div>
       </div>
 
-      <FocusZoneModal
-        visible={isFocusZoneOpen}
-        taskId={id}
-        taskTitle={checklistTemplate?.title}
-        onDismiss={() => setIsFocusZoneOpen(false)}
-        onOpenModal={() => setIsFocusZoneOpen(true)}
-      />
+      {/* <FocusZoneModal */}
+      {/*   visible={isFocusZoneOpen} */}
+      {/*   taskId={id} */}
+      {/*   taskTitle={checklistTemplate?.title} */}
+      {/*   onDismiss={() => setIsFocusZoneOpen(false)} */}
+      {/*   onOpenModal={() => setIsFocusZoneOpen(true)} */}
+      {/* /> */}
     </div>
   );
 };

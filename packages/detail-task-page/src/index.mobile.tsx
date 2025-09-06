@@ -119,13 +119,13 @@ const DetailTaskPageMobile = () => {
         }}
       />
 
-      <FocusZoneModal
-        visible={isFocusZoneOpen}
-        taskId={id}
-        taskTitle={checklistTemplate?.title}
-        onDismiss={() => setIsFocusZoneOpen(false)}
-        onOpenModal={() => setIsFocusZoneOpen(true)}
-      />
+      {/* <FocusZoneModal */}
+      {/*   visible={isFocusZoneOpen} */}
+      {/*   taskId={id} */}
+      {/*   taskTitle={checklistTemplate?.title} */}
+      {/*   onDismiss={() => setIsFocusZoneOpen(false)} */}
+      {/*   onOpenModal={() => setIsFocusZoneOpen(true)} */}
+      {/* /> */}
     </>
   );
 };
