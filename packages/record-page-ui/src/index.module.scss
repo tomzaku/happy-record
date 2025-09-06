@@ -19,12 +19,12 @@
   flex: 1;
   overflow: hidden;
   position: relative;
-  margin-top: $spacing-lg;
   margin-left: 20px;
 }
 
 .centerContent {
   display: flex;
+  margin-top: $spacing-lg;
   flex-direction: column;
   overflow: hidden;
 }
@@ -35,6 +35,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    border-radius: 0;
   }
 }
 

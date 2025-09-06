@@ -1,7 +1,7 @@
 @use './common-color' as *;
 
 [data-theme='light'] {
-  --background: #{$white};
+  --background: #FFF5FF;
 
   // Surface colors
   --surface-primary: #ffffff;
