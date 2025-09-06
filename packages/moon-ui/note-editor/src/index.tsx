@@ -1,7 +1,8 @@
 // import BlockNote from './BlockNote'
 import React, { ReactNode, ErrorInfo } from 'react';
 
-const BlockNote = React.lazy(() => import('./BlockNote'));
+// const BlockNote = React.lazy(() => import('./BlockNote'));
+const EditorJs = React.lazy(() => import('./EditorJs'));
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -63,7 +64,7 @@ class ErrorBoundary extends React.Component<
 const NoteEditor = (props: unknown) => {
   return (
     <ErrorBoundary {...props}>
-      <BlockNote {...props} />
+      <EditorJs {...props} />
     </ErrorBoundary>
   );
 };
