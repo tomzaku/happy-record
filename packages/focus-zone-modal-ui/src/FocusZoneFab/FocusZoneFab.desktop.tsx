@@ -152,29 +152,12 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
           }}
         >
           <Icon
-            icon={isMusicPlaying ? "material-symbols:music-note" : "material-symbols:music-off"}
+            icon={"material-symbols:music-note"}
             width={18}
             height={18}
           />
         </motion.button>
 
-        {/* Menu Button */}
-        <motion.button
-          className={styles.fabHamburgerButton}
-          onClick={toggleMenu}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          style={{
-            width: '32px',
-            height: '32px'
-          }}
-        >
-          <Icon
-            icon="material-symbols:menu"
-            width={18}
-            height={18}
-          />
-        </motion.button>
       </motion.div>
 
       {/* Music Controller Dropdown */}

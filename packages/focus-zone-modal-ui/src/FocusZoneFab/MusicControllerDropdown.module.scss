@@ -1,0 +1,244 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+/* Icon States */
+.iconActive {
+  color: var(--focus-zone-header-title-gradient);
+  fill: var(--focus-zone-header-title-gradient);
+}
+
+.iconInactive {
+  color: var(--focus-zone-text-tertiary);
+  fill: var(--focus-zone-text-tertiary);
+}
+
+/* Music Dropdown */
+.musicDropdown {
+  background: var(--focus-zone-sound-card-background);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid var(--focus-zone-sound-card-border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  width: 290px;
+  max-height: 400px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.musicDropdownHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-sm $spacing-md;
+  border-bottom: 1px solid var(--focus-zone-sound-card-border);
+  background: var(--focus-zone-sound-option-background);
+}
+
+.musicDropdownTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--focus-zone-text-primary);
+  margin: 0;
+}
+
+.musicDropdownClose {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.2s ease;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+
+  &:hover {
+    // background: var(--focus-zone-sound-option-hover-background);
+    color: var(--focus-zone-text-primary);
+  }
+}
+
+.musicDropdownCategories {
+  display: flex;
+  padding: $spacing-xs $spacing-md;
+  gap: $spacing-xs;
+  border-bottom: 1px solid var(--focus-zone-sound-card-border);
+  background: var(--focus-zone-sound-option-background);
+}
+
+.musicDropdownCategory {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: 10px;
+  border: 1px solid var(--focus-zone-sound-card-border);
+  background: transparent;
+  color: var(--focus-zone-text-tertiary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:hover {
+    background: var(--focus-zone-sound-option-hover-background);
+    color: var(--focus-zone-text-primary);
+  }
+}
+
+.musicDropdownCategoryActive {
+  background: var(--focus-zone-header-title-gradient);
+  color: var(--text-color-invert);
+  border-color: transparent;
+}
+
+.musicDropdownContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-xs 0;
+  max-height: 280px;
+}
+
+.musicDropdownItem {
+  margin: $spacing-xs $spacing-sm;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: 12px;
+  background: var(--focus-zone-sound-option-background);
+  border: 1px solid var(--focus-zone-sound-option-border);
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--focus-zone-sound-option-hover-background);
+    border-color: var(--focus-zone-sound-option-hover-border);
+    transform: translateX($spacing-xs);
+  }
+}
+
+.musicDropdownItemActive {
+  background: var(--focus-zone-sound-card-active-background);
+  border-color: var(--focus-zone-sound-card-active-border);
+  box-shadow: 0 4px 16px var(--focus-zone-sound-card-active-shadow);
+}
+
+.musicDropdownItemHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.musicDropdownItemIcon {
+  width: $spacing-lg;
+  height: $spacing-lg;
+  border-radius: $spacing-xs;
+  background: var(--focus-zone-sound-card-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.musicDropdownItemName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--focus-zone-text-primary);
+  margin: 0;
+}
+
+.musicDropdownItemToggle {
+  border: 0;
+  background: transparent;
+  color: var(--focus-zone-text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--focus-zone-sound-option-hover-background);
+  }
+}
+
+.musicDropdownItemToggleActive {
+  color: var(--text-color-invert);
+}
+
+.musicDropdownItemVolume {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-top: $spacing-xs;
+  padding-top: $spacing-xs;
+  border-top: 1px solid var(--focus-zone-sound-card-border);
+}
+
+.musicDropdownVolumeIcon {
+  color: var(--focus-zone-text-tertiary);
+  flex-shrink: 0;
+}
+
+.musicDropdownVolumeSlider {
+  flex: 1;
+  height: 4px;
+  background: var(--focus-zone-sound-card-border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: $spacing-sm;
+    height: $spacing-sm;
+    border-radius: 50%;
+    background: var(--focus-zone-header-title-gradient);
+    cursor: pointer;
+    box-shadow: 0 2px 8px var(--focus-zone-sound-card-active-shadow);
+  }
+
+  &::-moz-range-thumb {
+    width: $spacing-sm;
+    height: $spacing-sm;
+    border-radius: 50%;
+    background: var(--focus-zone-header-title-gradient);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 8px var(--focus-zone-sound-card-active-shadow);
+  }
+}
+
+.musicDropdownVolumeText {
+  font-size: 11px;
+  color: var(--focus-zone-text-tertiary);
+  font-weight: 500;
+  min-width: $spacing-lg;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Scrollbar Styling */
+.musicDropdownContent::-webkit-scrollbar {
+  width: 4px;
+}
+
+.musicDropdownContent::-webkit-scrollbar-track {
+  background: var(--focus-zone-sound-option-background);
+  border-radius: 2px;
+}
+
+.musicDropdownContent::-webkit-scrollbar-thumb {
+  background: var(--focus-zone-text-tertiary);
+  border-radius: 2px;
+}
+
+.musicDropdownContent::-webkit-scrollbar-thumb:hover {
+  background: var(--focus-zone-text-secondary);
+}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
-import styles from './index.desktop.module.scss';
+import styles from './MusicControllerDropdown.module.scss';
 import {
   setSoundVolume,
   toggleSound,
@@ -195,13 +195,13 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
     <AnimatePresence>
       <motion.div
         className={styles.musicDropdown}
-        initial={{ opacity: 0, scale: 0.8, y: 10 }}
+        initial={{ opacity: 0, scale: 0.8, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.8, y: 10 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
+        exit={{ opacity: 0, scale: 0.8, y: 20 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
         style={{
           position: 'fixed',
-          top: position.top - 300, // Position above the FAB
+          bottom: 90,
           right: position.right,
           zIndex: 1000,
         }}
@@ -217,7 +217,7 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
-            <Icon icon="material-symbols:close" width={16} height={16} />
+            <Icon icon="material-symbols:close-rounded"/>
           </motion.button>
         </div>
 
@@ -269,7 +269,7 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
                     whileTap={{ scale: 0.9 }}
                   >
                     <Icon
-                      icon={isActive ? "solar:play-circle-outline" : "solar:pause-circle-outline"}
+                      icon={isActive ? "solar:pause-circle-outline" : "solar:play-circle-outline"}
                       width={16}
                       height={16}
                     />

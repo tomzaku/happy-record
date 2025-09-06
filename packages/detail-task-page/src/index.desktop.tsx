@@ -99,16 +99,6 @@ const DetailTaskPageDesktop = () => {
               <Button
                 type="ghost"
                 onClick={() => {
-                  setIsFocusZoneOpen(true);
-                }}
-                className={styles.actionButton}
-              >
-                <Icon icon="material-symbols:psychology" width={20} />
-                Focus Zone
-              </Button>
-              <Button
-                type="ghost"
-                onClick={() => {
                   navigate(`/edit-checklist/${id}`);
                 }}
                 className={styles.actionButton}
