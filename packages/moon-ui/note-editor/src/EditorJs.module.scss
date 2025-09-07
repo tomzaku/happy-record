@@ -1,0 +1,231 @@
+@use '@moon-ui/app-scss/theme/light.scss' as *;
+@use '@moon-ui/app-scss/theme/dark.scss' as *;
+
+.editorContainer {
+  background: var(--card-background);
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+}
+
+.editorHeader {
+  border-bottom: 1px solid var(--division-color);
+  padding-bottom: 1rem;
+}
+
+.editorIcon {
+  background: linear-gradient(135deg, var(--icon-primary) 0%, var(--primary) 100%);
+  box-shadow: 0 4px 12px var(--card-shadow);
+}
+
+.editorTitle {
+  color: var(--text-title-primary-color);
+  margin: 0;
+}
+
+.editorSubtitle {
+  color: var(--text-description-color);
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.themeToggle,
+.modeToggle {
+  background: var(--surface-secondary);
+  border: 1px solid var(--card-border);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: var(--card-selected-background);
+    border-color: var(--card-border-hover);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.editorContent {
+  color: var(--text-color);
+  
+  // Override prose styles for dark theme
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-title-primary-color);
+  }
+  
+  p {
+    color: var(--text-color);
+  }
+  
+  blockquote {
+    border-left-color: var(--icon-primary);
+    background: var(--surface-secondary);
+    color: var(--text-color);
+  }
+  
+  table {
+    border-color: var(--card-border);
+    
+    td, th {
+      border-color: var(--card-border);
+      color: var(--text-color);
+    }
+  }
+  
+  hr {
+    border-color: var(--division-color);
+  }
+}
+
+.emptyContent {
+  color: var(--text-description-color);
+  text-align: center;
+  font-style: italic;
+}
+
+.embedContainer {
+  border: 1px solid var(--card-border);
+  background: var(--surface-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--surface-secondary);
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  &:hover::before {
+    opacity: 0.05;
+  }
+}
+
+.embedIframe {
+  border: none;
+  border-radius: 8px;
+  background: var(--surface-secondary);
+}
+
+.embedLink {
+  color: var(--text-link);
+  text-decoration: none;
+  display: block;
+  padding: 2rem;
+  text-align: center;
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: var(--icon-primary);
+  }
+}
+
+// Code block styling
+.editorContent {
+  :global(.ce-code),
+  :global(.ce-code-block) {
+    background: var(--surface-secondary);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    
+    pre {
+      background: transparent;
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+    
+    code {
+      background: transparent;
+      color: var(--text-color);
+      padding: 0;
+      font-family: inherit;
+    }
+    
+    textarea {
+      background: transparent;
+      color: var(--text-color);
+      border: none;
+      outline: none;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      resize: vertical;
+      width: 100%;
+      min-height: 100px;
+      
+      &::placeholder {
+        color: var(--text-description-color);
+      }
+    }
+  }
+  
+  // Inline code styling
+  :global(code:not(.ce-code code):not(.ce-code-block code)) {
+    background: var(--surface-secondary);
+    color: var(--text-color);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9em;
+  }
+}
+
+// Dark theme specific overrides
+[data-theme='dark'] {
+  .editorContainer {
+    background: var(--card-background);
+    border-color: var(--card-border);
+  }
+  
+  .editorContent {
+    // Ensure YouTube embeds respect dark theme
+    iframe[src*="youtube.com"] {
+      filter: invert(0.1) hue-rotate(180deg);
+    }
+    
+    // Code block dark theme
+    :global(.ce-code) {
+      background: var(--surface-secondary);
+      border-color: var(--card-border);
+      
+      pre {
+        color: var(--text-color);
+      }
+    }
+  }
+  
+  .embedContainer {
+    background: var(--surface-secondary);
+    border-color: var(--card-border);
+  }
+}
+
+// Light theme specific overrides
+[data-theme='light'] {
+  .editorContainer {
+    background: var(--card-background);
+    border-color: var(--card-border);
+  }
+  
+  .embedContainer {
+    background: var(--surface-secondary);
+    border-color: var(--card-border);
+  }
+}
