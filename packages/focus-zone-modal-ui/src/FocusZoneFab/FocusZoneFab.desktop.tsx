@@ -98,7 +98,7 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
       {/* Main FAB with enhanced controls */}
       <motion.div
         ref={fabRef}
-        className={styles.focusZoneFAB}
+        className={`${styles.focusZoneFAB} ${isAnyTimerRunning() ? styles.running : ''}`}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0, opacity: 0 }}
@@ -112,7 +112,7 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
           onClick={() => {
             onOpenModal();
           }}
-          className={styles.fabTime}
+          className={`${styles.fabTime} ${isAnyTimerRunning() ? styles.running : ''}`}
           style={{ 
             fontSize: '20px',
             fontWeight: '700',

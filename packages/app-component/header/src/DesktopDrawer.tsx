@@ -39,7 +39,8 @@ const DesktopDrawer = () => {
 
   const isActivePath = (path: string) => {
     if (path === '/') {
-      return location.pathname === '/';
+      // For the root path, check if it's exactly '/' or matches the task pattern '/task/<id>'
+      return location.pathname === '/' || location.pathname.match(/^\/task\/[^\/]+$/);
     }
     return location.pathname.startsWith(path);
   };
