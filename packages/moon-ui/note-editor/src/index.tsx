@@ -7,6 +7,7 @@ const EditorJs = React.lazy(() => import('./EditorJs'));
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
+  setValue?: (value: any) => void;
 }
 
 interface ErrorBoundaryState {
@@ -50,7 +51,7 @@ class ErrorBoundary extends React.Component<
           {this.state.errorInfo && (
             <pre>{this.state.errorInfo.componentStack}</pre>
           )}
-          <button onClick={() => this.props.setValue(undefined)}>
+          <button onClick={() => this.props.setValue?.(null)}>
             clear value
           </button>
         </div>
@@ -61,7 +62,13 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-const NoteEditor = (props: unknown) => {
+interface NoteEditorProps {
+  initialData?: any;
+  setValue?: (value: any) => void;
+  value?: any;
+}
+
+const NoteEditor = (props: NoteEditorProps) => {
   return (
     <ErrorBoundary {...props}>
       <EditorJs {...props} />

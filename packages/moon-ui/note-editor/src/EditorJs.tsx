@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import EditorJS from "@editorjs/editorjs";
 import Header from "@editorjs/header";
 import List from "@editorjs/list";
@@ -11,15 +11,28 @@ import Embed from "@editorjs/embed";
 // import Code from "@editorjs/code";
 import styles from './EditorJs.module.scss';
 import editorjsCodecup from '@calumk/editorjs-codecup';
+import cx from 'classnames';
 
 
 interface NoteEditorProps {
-  initialData?: Record<string, unknown>;
+  initialData?: any;
+  setValue?: (value: any) => void;
+  value?: any;
+  classes?: {
+    container?: string;
+  };
 }
 
-const EditorJs = ({ initialData, setValue, value }: NoteEditorProps) => {
+const EditorJs = ({ initialData, setValue, value, classes }: NoteEditorProps) => {
   const editorRef = useRef<EditorJS | null>(null);
   const holderRef = useRef<HTMLDivElement>(null);
+
+  // Handle external value changes
+  useEffect(() => {
+    if (editorRef.current && value) {
+      editorRef.current.render(value);
+    }
+  }, [value]);
 
   useEffect(() => {
     if (!holderRef.current) return;
@@ -28,26 +41,14 @@ const EditorJs = ({ initialData, setValue, value }: NoteEditorProps) => {
     const editor = new EditorJS({
       holder: holderRef.current,
       placeholder: "Start writing your note...",
-      onChange(api, event) {
-        set
+      onChange(api) {
+        if (setValue) {
+          api.saver.save().then((outputData) => {
+            setValue(outputData);
+          });
+        }
       },
-      data: (initialData as any) || {
-        blocks: [
-          {
-            type: "header",
-            data: {
-              text: "Welcome to Your Note Editor",
-              level: 1
-            }
-          },
-          {
-            type: "paragraph",
-            data: {
-              text: "This is a powerful note editor with rich formatting options. Click the eye icon to preview your content."
-            }
-          }
-        ]
-      },
+      data: (value || initialData as any),
       tools: {
         header: {
           class: Header,
@@ -56,7 +57,7 @@ const EditorJs = ({ initialData, setValue, value }: NoteEditorProps) => {
             levels: [1, 2, 3, 4, 5, 6],
             defaultLevel: 2
           }
-        },
+        } as any,
         list: {
           class: List,
           inlineToolbar: true,
@@ -78,11 +79,11 @@ const EditorJs = ({ initialData, setValue, value }: NoteEditorProps) => {
         },
         delimiter: Delimiter,
         table: {
-          class: Table as any,
+          class: Table,
           inlineToolbar: true
-        },
+        } as any,
         simpleImage: {
-          class: SimpleImage as any
+          class: SimpleImage
         },
         code: {
           class: editorjsCodecup
@@ -98,7 +99,7 @@ const EditorJs = ({ initialData, setValue, value }: NoteEditorProps) => {
               vimeo: true
             }
           }
-        }
+        } as any
       },
     });
 
@@ -114,7 +115,7 @@ const EditorJs = ({ initialData, setValue, value }: NoteEditorProps) => {
   return (
     <div
       ref={holderRef}
-      className={`${styles.editorContent}`}
+      className={cx(styles.editorContent, classes?.container)}
     />
   );
 };
