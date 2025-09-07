@@ -7,8 +7,9 @@ import PomodoroPip from '@dreamer/pomodoro-pip';
 import Button from '@moon-ui/button';
 
 // Hooks
-import { usePomodoroGlobalConfig, usePomodoroTimer } from '@dreamer/pomodoro-common';
+import { usePomodoroGlobalConfig, usePomodoroTimer, usePomodoroTitleFromContext } from '@dreamer/pomodoro-common';
 import { useGlobalTool } from '@dreamer/global-tool-common';
+import React from 'react';
 
 // Enums
 import { PomodoroPhase } from '@dreamer/pomodoro-common';
@@ -125,6 +126,9 @@ const PomodoroPlayer = ({ className }: Props) => {
       }
     }
   };
+
+  // Update HTML title when pomodoro is running
+  usePomodoroTitleFromContext('Happy Record');
   return (
     <div
       className={cx(

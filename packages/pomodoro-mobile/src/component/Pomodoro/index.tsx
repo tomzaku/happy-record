@@ -4,7 +4,7 @@ import React from 'react';
 import Timer from '../Timer';
 
 // Hooks
-import { usePomodoroTimer } from '@dreamer/pomodoro-common';
+import { usePomodoroTimer, usePomodoroTitleFromContext } from '@dreamer/pomodoro-common';
 
 import styles from './index.module.scss';
 import SelectTask from '../SelectTask';
@@ -12,6 +12,10 @@ import Button3D from '../Button3D';
 
 export default function Pomodoro() {
   const { pomodoroTimer } = usePomodoroTimer();
+
+  // Update HTML title when pomodoro is running
+  usePomodoroTitleFromContext('Dreamer');
+
   return (
     <>
       <div className={styles.body}>

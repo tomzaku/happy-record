@@ -5,3 +5,8 @@ export {
 export {
   usePomodoroTimer
 } from './usePomodoroTimer'
+
+export {
+  usePomodoroTitle,
+  usePomodoroTitleFromContext
+} from './usePomodoroTitle'

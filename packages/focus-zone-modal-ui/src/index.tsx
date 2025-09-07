@@ -11,7 +11,7 @@ import NotificationPermissionModal from './NotificationPermissionModal';
 import FocusZoneFAB from './FocusZoneFab';
 
 // Hooks and utilities
-import { usePomodoroGlobalConfig, Theme } from '@dreamer/pomodoro-common';
+import { usePomodoroGlobalConfig, Theme, usePomodoroTitle } from '@dreamer/pomodoro-common';
 import { notify } from '@dreamer/notification';
 import { useChecklistTemplates } from '@dreamer/global';
 
@@ -41,14 +41,7 @@ interface FocusZoneModalProps {
   onOpenModal: () => void;
 }
 
-const POMODORO_PHASES: PomodoroPhase[] = [
-  { type: 'work', duration: 25 * 60, label: 'Work Session' },
-  { type: 'break', duration: 5 * 60, label: 'Short Break' },
-  { type: 'work', duration: 25 * 60, label: 'Work Session' },
-  { type: 'break', duration: 5 * 60, label: 'Short Break' },
-  { type: 'work', duration: 25 * 60, label: 'Work Session' },
-  { type: 'break', duration: 15 * 60, label: 'Long Break' },
-];
+// This will be created dynamically using global config
 
 const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
   visible,
@@ -57,8 +50,18 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
   onDismiss,
   onOpenModal
 }) => {
-  const { theme, setTheme } = usePomodoroGlobalConfig();
+  const { theme, setTheme, pomodoro, shortBreak, longBreak } = usePomodoroGlobalConfig();
   const { getChecklistTemplate } = useChecklistTemplates();
+
+  // Create POMODORO_PHASES dynamically using global config
+  const POMODORO_PHASES: PomodoroPhase[] = [
+    { type: 'work', duration: pomodoro / 1000, label: 'Work Session' },
+    { type: 'break', duration: shortBreak / 1000, label: 'Short Break' },
+    { type: 'work', duration: pomodoro / 1000, label: 'Work Session' },
+    { type: 'break', duration: shortBreak / 1000, label: 'Short Break' },
+    { type: 'work', duration: pomodoro / 1000, label: 'Work Session' },
+    { type: 'break', duration: longBreak / 1000, label: 'Long Break' },
+  ];
 
   // Get task information
   const [taskTitle, setTaskTitle] = useState<string>(propTaskTitle || '');
@@ -142,6 +145,16 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
     }
     return () => clearInterval(interval);
   }, [isPomodoroRunning, pomodoroTime, pomodoroPhase]);
+
+  // Update HTML title when pomodoro is running
+  const currentPhase = POMODORO_PHASES[pomodoroPhase];
+  usePomodoroTitle({
+    time: pomodoroTime * 1000, // Convert seconds to milliseconds
+    isPlaying: isPomodoroRunning && pomodoroTime > 0,
+    phaseType: currentPhase.type,
+    phaseLabel: currentPhase.label,
+    defaultTitle: 'Dreamer'
+  });
 
   // Format time functions
   const formatStopwatchTime = (time: number): string => {
