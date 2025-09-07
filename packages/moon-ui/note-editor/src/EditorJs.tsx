@@ -18,12 +18,13 @@ interface NoteEditorProps {
   initialData?: any;
   setValue?: (value: any) => void;
   value?: any;
+  readOnly: boolean;
   classes?: {
     container?: string;
   };
 }
 
-const EditorJs = ({ initialData, setValue, value, classes }: NoteEditorProps) => {
+const EditorJs = ({ initialData, setValue, value, classes, readOnly }: NoteEditorProps) => {
   const editorRef = useRef<EditorJS | null>(null);
   const holderRef = useRef<HTMLDivElement>(null);
 
@@ -40,9 +41,9 @@ const EditorJs = ({ initialData, setValue, value, classes }: NoteEditorProps) =>
 
     const editor = new EditorJS({
       holder: holderRef.current,
+      readOnly,
       placeholder: "Start writing your note...",
       onChange(api) {
-        console.log("ON CHANGE????")
         if (setValue) {
           api.saver.save().then((outputData) => {
             setValue(outputData);

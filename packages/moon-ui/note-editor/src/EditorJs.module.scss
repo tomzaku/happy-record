@@ -97,11 +97,6 @@
   }
   
   .editorContent {
-    // Ensure YouTube embeds respect dark theme
-    iframe[src*="youtube.com"] {
-      filter: invert(0.1) hue-rotate(180deg);
-    }
-    
     // Code block dark theme
     :global(.ce-code) {
       background: var(--surface-secondary);
@@ -124,5 +119,25 @@
   .editorContainer {
     background: var(--card-background);
     border-color: var(--card-border);
+  }
+}
+
+// Override EditorJS default styles
+.editorContent {
+  :global(.codex-editor__redactor) {
+    padding-bottom: 0 !important;
+  }
+}
+
+[data-theme='dark'] {
+  .editorContainer {
+    background: var(--card-background);
+    border-color: var(--card-border);
+  }
+  :global(.ce-toolbar__plus) {
+    color: #949393;
+  }
+  :global(.ce-toolbar__settings-btn) {
+    color: #949393;
   }
 }
