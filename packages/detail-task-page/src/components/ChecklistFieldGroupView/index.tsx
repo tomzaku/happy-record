@@ -7,18 +7,15 @@ import NoteEditor from '@moon-ui/note-editor';
 import type { YooptaContentValue } from '@yoopta/editor';
 
 type Props = {
-  checklistTemplate: ChecklistTemplate;
-  checklist: Checklist;
-  fields: RecordField[];
+  // checklistTemplate: ChecklistTemplate;
+  // checklist: Checklist;
+  // fields: RecordField[];
   fieldGroup: FieldGroup;
-  currentDay: string;
+  // currentDay: string;
   onUpdateNote: (value: unknown) => void;
 };
 
 const ChecklistFieldGroupView = ({
-  checklistTemplate,
-  fields,
-  currentDay,
   fieldGroup,
   onUpdateNote,
 }: Props) => {

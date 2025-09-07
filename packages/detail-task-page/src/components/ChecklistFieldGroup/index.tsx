@@ -4,7 +4,6 @@ import {
   ChecklistTemplate,
   FieldGroup,
   useChecklist,
-  useChecklistTemplates,
 } from '@dreamer/global';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
@@ -14,7 +13,6 @@ import ChecklistFieldGroupHeader, {
 import { AnimatePresence, motion } from 'motion/react';
 
 import styles from './index.module.scss';
-import { isToday } from 'date-fns/isToday';
 import ChecklistFieldGroupAdd from '../ChecklistFieldGroupAdd';
 import ChecklistFieldGroupHistory from '../ChecklistFieldGroupHistory';
 import ChecklistFieldGroupView from '../ChecklistFieldGroupView';
@@ -28,7 +26,7 @@ type Props = {
   checklistTemplate: ChecklistTemplate;
   fields: RecordField[];
   currentDay: string;
-  onUpdateChecklistTemplate?: (updatedTemplate: ChecklistTemplate) => void;
+  onUpdateChecklistTemplate: (updatedTemplate: ChecklistTemplate) => void;
 };
 
 const ChecklistFieldGroup = ({
@@ -38,9 +36,7 @@ const ChecklistFieldGroup = ({
   currentDay,
   onUpdateChecklistTemplate,
 }: Props) => {
-  const today = isToday(currentDay);
   const { updateChecklist } = useChecklist();
-  const { updateChecklistTemplate } = useChecklistTemplates();
   const [activeTab, setActiveTab] = React.useState<
     Record<string, ChecklistFieldGroupTab>
   >(
@@ -70,14 +66,6 @@ const ChecklistFieldGroup = ({
   };
 
   const renderTitle = (fieldGroup: FieldGroup) => {
-    // const tabToTitle = {
-    //   [ChecklistFieldGroupTab.Home]: `${today ? 'Today' : new Date(currentDay).toLocaleDateString()}`,
-    //   [ChecklistFieldGroupTab.History]: 'Record History',
-    //   [ChecklistFieldGroupTab.Add]: 'Add Record',
-    //   [ChecklistFieldGroupTab.Metric]: 'Metric',
-    //   [ChecklistFieldGroupTab.Config]: 'Group Settings',
-    // };
-    // return tabToTitle[activeTab[fieldGroup.id]];
     return fieldGroup.title;
   };
   const renderTab = ({
@@ -95,13 +83,9 @@ const ChecklistFieldGroup = ({
       case ChecklistFieldGroupTab.Home: {
         tabContent = (
           <ChecklistFieldGroupView
-            fields={fieldDetails}
-            checklistTemplate={checklistTemplate}
-            checklist={checklist}
-            currentDay={currentDay}
             fieldGroup={fieldGroup}
             onUpdateNote={value => {
-              updateChecklistTemplate({
+              onUpdateChecklistTemplate({
                 ...checklistTemplate,
                 fieldGroups: [
                   ...checklistTemplate.fieldGroups.slice(0, index),
@@ -161,7 +145,7 @@ const ChecklistFieldGroup = ({
           <ChecklistFieldGroupConfig
             fieldGroup={fieldGroup}
             onUpdateFieldGroup={updatedGroup => {
-              updateChecklistTemplate({
+              onUpdateChecklistTemplate({
                 ...checklistTemplate,
                 fieldGroups: [
                   ...checklistTemplate.fieldGroups.slice(0, index),
@@ -169,20 +153,6 @@ const ChecklistFieldGroup = ({
                   ...checklistTemplate.fieldGroups.slice(index + 1),
                 ],
               });
-              // Update local state immediately for better UX
-              if (updatedGroup.defaultTab !== undefined) {
-                setActiveTab(prev => ({
-                  ...prev,
-                  [fieldGroup.id]:
-                    updatedGroup.defaultTab as ChecklistFieldGroupTab,
-                }));
-              }
-              if (updatedGroup.collapseDefault !== undefined) {
-                setCollapsedGroups(prev => ({
-                  ...prev,
-                  [fieldGroup.id]: updatedGroup.collapseDefault as boolean,
-                }));
-              }
             }}
           />
         );
@@ -191,13 +161,9 @@ const ChecklistFieldGroup = ({
       default: {
         tabContent = (
           <ChecklistFieldGroupView
-            fields={fieldDetails}
-            checklistTemplate={checklistTemplate}
-            checklist={checklist}
-            currentDay={currentDay}
             fieldGroup={fieldGroup}
             onUpdateNote={value => {
-              updateChecklistTemplate({
+              onUpdateChecklistTemplate({
                 ...checklistTemplate,
                 fieldGroups: [
                   ...checklistTemplate.fieldGroups.slice(0, index),
@@ -217,7 +183,6 @@ const ChecklistFieldGroup = ({
 
     return (
       <AnimatePresence mode="wait">
-        {/* @ts-expect-error - React type compatibility issue with motion library */}
         <motion.div
           key={activeTab[fieldGroup.id]}
           initial={{ opacity: 0, x: 20 }}
@@ -316,12 +281,7 @@ const ChecklistFieldGroup = ({
       ...checklistTemplate,
       fieldGroups: [...checklistTemplate.fieldGroups, newGroup],
     };
-    updateChecklistTemplate(updatedTemplate);
-    
-    // Update local state immediately for better UX
-    if (onUpdateChecklistTemplate) {
-      onUpdateChecklistTemplate(updatedTemplate);
-    }
+    onUpdateChecklistTemplate(updatedTemplate);
   };
 
   return (

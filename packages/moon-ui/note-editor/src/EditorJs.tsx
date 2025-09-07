@@ -28,11 +28,11 @@ const EditorJs = ({ initialData, setValue, value, classes }: NoteEditorProps) =>
   const holderRef = useRef<HTMLDivElement>(null);
 
   // Handle external value changes
-  useEffect(() => {
-    if (editorRef.current && value) {
-      editorRef.current.render(value);
-    }
-  }, [value]);
+  // useEffect(() => {
+  //   if (editorRef.current && value) {
+  //     editorRef.current.render(value);
+  //   }
+  // }, [value]);
 
   useEffect(() => {
     if (!holderRef.current) return;
@@ -42,6 +42,7 @@ const EditorJs = ({ initialData, setValue, value, classes }: NoteEditorProps) =>
       holder: holderRef.current,
       placeholder: "Start writing your note...",
       onChange(api) {
+        console.log("ON CHANGE????")
         if (setValue) {
           api.saver.save().then((outputData) => {
             setValue(outputData);
