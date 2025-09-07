@@ -134,10 +134,49 @@
     background: var(--card-background);
     border-color: var(--card-border);
   }
+  
+  // EditorJS toolbar dark theme
   :global(.ce-toolbar__plus) {
     color: #949393;
   }
   :global(.ce-toolbar__settings-btn) {
     color: #949393;
+  }
+  
+  // EditorJS popover dark theme
+  :global(.ce-popover) {
+    --color-background: var(--card-background);
+    --color-text-primary: var(--text-color);
+    --color-text-secondary: var(--text-description-color);
+    --color-border: var(--card-border);
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    --color-background-item-hover: var(--surface-secondary);
+    --color-background-item-focus: rgba(100, 255, 218, 0.1);
+    --color-text-icon-active: #64ffda;
+    --color-background-icon-active: rgba(100, 255, 218, 0.1);
+  }
+  
+  // EditorJS popover items dark theme
+  :global(.ce-popover-item) {
+    color: var(--text-color);
+    
+    &:hover {
+      background-color: var(--surface-secondary);
+    }
+    
+    &:focus {
+      background-color: rgba(100, 255, 218, 0.1);
+    }
+  }
+  
+  // EditorJS popover input dark theme
+  :global(.ce-popover__search) {
+    background-color: var(--surface-secondary);
+    border-color: var(--card-border);
+    color: var(--text-color);
+    
+    &::placeholder {
+      color: var(--text-description-color);
+    }
   }
 }
