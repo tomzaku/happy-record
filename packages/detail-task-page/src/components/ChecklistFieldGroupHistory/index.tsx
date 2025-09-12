@@ -39,7 +39,7 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
   return (
     <div className={styles.recordSection}>
       {Object.entries(records).map(([key, checklistRecords], index) => (
-        <div>
+        <div className={styles.recordContainer}>
           <div className={styles.hrContainer}>
             <div className={cx(styles.hrSide, index === 0 && styles.noHr)} />
 

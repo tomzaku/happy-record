@@ -103,65 +103,74 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
           <List.ItemMeta
             logo={<Icon width={24} icon={field.icon} />}
             title={field.title}
-            rightComponent={
-              activeRecord?.id !== record.id ? (
-                <></>
-              ) : (
-                <>
-                  <Button
-                    type="dash"
-                    size="sm"
-                    className={styles.editButton}
-                    onClick={() => {
-                      setActiveRecord(undefined);
-                      setResetKey('reset-key');
-                    }}
-                  >
-                    <Icon
-                      width={12}
-                      className={styles.icon}
-                      icon="proicons:cancel"
-                    />
-                    Cancel
-                  </Button>
-                  <Button
-                    type="dash"
-                    size="sm"
-                    className={cx(styles.editButton, styles.highlight)}
-                    onClick={() => {
-                      updateChecklistRecord(record.id, {
-                        checklistTemplateId: record.checklistTemplateId,
-                        value: activeRecord.value,
-                      });
-                      setRecord({
-                        ...record,
-                        value: activeRecord.value,
-                      });
-                      setActiveRecord(undefined);
-                      setResetKey('save-key');
-                    }}
-                  >
-                    <Icon
-                      width={12}
-                      className={styles.successIcon}
-                      icon="material-symbols:check"
-                    />
-                    Save
-                  </Button>
-                </>
-              )
-            }
+            // rightComponent={
+            //   activeRecord?.id !== record.id ? (
+            //     <></>
+            //   ) : (
+            //     <>
+            //       <Button
+            //         type="dash"
+            //         size="sm"
+            //         className={styles.editButton}
+            //         onClick={() => {
+            //           setActiveRecord(undefined);
+            //           setResetKey('reset-key');
+            //         }}
+            //       >
+            //         <Icon
+            //           width={12}
+            //           className={styles.icon}
+            //           icon="proicons:cancel"
+            //         />
+            //         Cancel
+            //       </Button>
+            //       <Button
+            //         type="dash"
+            //         size="sm"
+            //         className={cx(styles.editButton, styles.highlight)}
+            //         onClick={() => {
+            //           updateChecklistRecord(record.id, {
+            //             checklistTemplateId: record.checklistTemplateId,
+            //             value: activeRecord.value,
+            //           });
+            //           setRecord({
+            //             ...record,
+            //             value: activeRecord.value,
+            //           });
+            //           setActiveRecord(undefined);
+            //           setResetKey('save-key');
+            //         }}
+            //       >
+            //         <Icon
+            //           width={12}
+            //           className={styles.successIcon}
+            //           icon="material-symbols:check"
+            //         />
+            //         Save
+            //       </Button>
+            //     </>
+            //   )
+            // }
           />
           <NoteEditor
             key={resetKey}
-            withoutBorder
+            // withoutBorder
             value={
-              activeRecord?.id !== record.id ? record.value : activeRecord.value
+              // blocknote -> activeRecord?.id !== record.id ? record.value : activeRecord.value
+              record.value
             }
             setValue={(value: unknown) => {
               setActiveRecord({
                 ...record,
                 value: value as string | number,
+              });
+              updateChecklistRecord(record.id, {
+                checklistTemplateId: record.checklistTemplateId,
+                value,
+              });
+              setRecord({
+                ...record,
+                value,
               });
             }}
           />

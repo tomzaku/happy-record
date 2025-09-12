@@ -24,6 +24,7 @@ import {
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import { useIntl } from '@dreamer/translation';
 import WeeklyRow from '../WeeklyRow';
+import ChecklistFieldGroupHistory from '../ChecklistFieldGroupHistory';
 
 type Props = {
   fields: RecordField[];
@@ -66,6 +67,9 @@ const ChecklistFieldGroupAdd = ({
 
   // State for shake animation
   const [isShaking, setIsShaking] = React.useState(false);
+  
+  // State for showing history
+  const [showHistory, setShowHistory] = React.useState(false);
 
   // Trigger shake animation when records change
   React.useEffect(() => {
@@ -100,6 +104,13 @@ const ChecklistFieldGroupAdd = ({
   React.useEffect(() => {
     reloadChecklistRecord();
   }, [currentDay]);
+
+  // Set default to show history when no current records
+  React.useEffect(() => {
+    if (currentChecklistRecords.length === 0) {
+      setShowHistory(true);
+    }
+  }, [currentChecklistRecords.length]);
   const renderEmpty = () => {
     return (
       <div>
@@ -315,14 +326,41 @@ const ChecklistFieldGroupAdd = ({
           Submit
         </Button>
       </div>
-      {currentChecklistRecords.length > 0 && (
-        <>
-
-          <Hr classes={{ hr: styles.hr }} />
-          {renderCurrentDay()}
-        </>
-
-      )}
+        {currentChecklistRecords.length > 0 ? (
+          <>
+            <Hr classes={{ hr: styles.hr }} />
+            {renderCurrentDay()}
+          </>
+        ) : (
+          <>
+            <Hr classes={{ hr: styles.hr }} />
+            {renderEmpty()}
+          </>
+        )}
+        
+        {/* History Section Header */}
+        <div className={styles.historyHeader} onClick={() => setShowHistory(!showHistory)}>
+          <div className={styles.historyHeaderContent}>
+            <Icon icon="solar:history-3-outline" width={20} />
+            <Typography.Title level={5} noMargin>
+              History
+            </Typography.Title>
+          </div>
+          <Icon 
+            icon="solar:alt-arrow-down-outline" 
+            width={16} 
+            className={`${styles.arrowIcon} ${showHistory ? styles.arrowExpanded : ''}`}
+          />
+        </div>
+        
+        {showHistory && (
+          <div className={styles.historyContent}>
+            <ChecklistFieldGroupHistory
+              checklistTemplate={checklistTemplate}
+              fields={fields}
+            />
+          </div>
+        )}
     </>
   );
 };

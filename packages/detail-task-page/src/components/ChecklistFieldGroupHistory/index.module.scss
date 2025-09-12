@@ -1,6 +1,7 @@
 @use '@moon-ui/app-scss/metric' as *;
 
 .recordSection {
+  padding-top: $spacing-lg;
   margin-bottom: $spacing-lg;
 }
 
@@ -17,6 +18,10 @@
   width: 20px;
 }
 
+.recordContainer {
+  margin-bottom: 40px;
+}
+
 .noHr {
   // border-bottom: 0;
 }
@@ -26,10 +31,7 @@
   // width: 100%;
   justify-content: center;
   align-items: center;
-  margin-top: 8px;
   margin-bottom: 8px;
-  margin-left: -12px;
-  margin-right: -12px;
 }
 
 .dateText {

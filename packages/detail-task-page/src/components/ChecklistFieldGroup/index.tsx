@@ -212,7 +212,6 @@ const ChecklistFieldGroup = ({
             activeTabs={
               fieldGroup.activeTabs ?? [
                 ChecklistFieldGroupTab.Home,
-                ChecklistFieldGroupTab.History,
                 ChecklistFieldGroupTab.Metric,
                 ChecklistFieldGroupTab.Config,
                 ChecklistFieldGroupTab.Add,
