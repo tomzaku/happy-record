@@ -2,6 +2,10 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Typography from '@moon-ui/typography';
 import Icon from '@moon-ui/icon/Icon';
+import IconSunny from '@moon-ui/icon/IconSunny';
+import IconMoon from '@moon-ui/icon/IconMoon';
+import { usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
+import { Theme } from '@dreamer/pomodoro-common';
 import cx from 'classnames';
 import styles from './DesktopDrawer.module.scss';
 
@@ -9,6 +13,7 @@ const DesktopDrawer = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMinimized, setIsMinimized] = React.useState(true);
+  const { theme, setTheme } = usePomodoroGlobalConfig();
 
   const navigationItems = [
     {
@@ -56,6 +61,10 @@ const DesktopDrawer = () => {
     setIsMinimized(!isMinimized);
   };
 
+  const handleToggleTheme = () => {
+    setTheme(theme === Theme.Light ? Theme.Dark : Theme.Light);
+  };
+
   return (
     <div className={cx(styles.leftDrawer, isMinimized && styles.minimized)}>
       <div className={styles.drawerHeader}>
@@ -77,6 +86,17 @@ const DesktopDrawer = () => {
             </Typography.Title>
           )}
         </div>
+        <button
+          className={styles.themeToggleButton}
+          onClick={handleToggleTheme}
+          aria-label={`Switch to ${theme === Theme.Light ? 'dark' : 'light'} theme`}
+        >
+          {theme === Theme.Light ? (
+            <IconMoon className={styles.themeIcon} />
+          ) : (
+            <IconSunny className={styles.themeIcon} />
+          )}
+        </button>
       </div>
       <nav className={styles.navigationMenu}>
         {navigationItems.map((item) => (
