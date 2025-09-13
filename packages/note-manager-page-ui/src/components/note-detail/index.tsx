@@ -52,12 +52,14 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
               </Typography.Text>
               <Button
                 className={styles.deleteButton}
+                type="dash"
                 onClick={() => {
                   deleteNote(note);
                 }}
               >
                 <Icon
                   icon="solar:trash-bin-trash-outline"
+                  className={styles.deleteIcon}
                   width={14}
                   height={14}
                 />
