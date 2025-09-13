@@ -37,8 +37,7 @@ export const NoteManagerPage = () => {
             type="dash"
             onClick={() => navigate('/notes/add')}
           >
-            <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add
-            Note
+            <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add Note
           </Button>
         )}
       />

@@ -11,6 +11,8 @@ import { RecordField } from '@dreamer/global/src/store/record-field';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';
 
+type Block = any; // NoteEditor block type
+
 type Props = {
   allNotes: ChecklistRecord[];
   allNoteFields: RecordField[];
@@ -40,38 +42,36 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
     <div className={styles.container}>
       {allNotes.map(note => {
         return (
-          <>
+          <div key={note.id} className={styles.noteItem}>
             <div className={styles.itemHeader}>
               <Typography.Text className={styles.itemHeaderDate}>
                 {new Date(note.createdAt).toLocaleString()}
               </Typography.Text>
-              <Typography.Text>{`${noteFieldMap[note.fieldId]?.title}`}</Typography.Text>
+              <Typography.Text className={styles.itemHeaderLabel}>
+                {noteFieldMap[note.fieldId]?.title || 'Note'}
+              </Typography.Text>
               <Button
-                type="dash"
-                size="sm"
+                className={styles.deleteButton}
                 onClick={() => {
                   deleteNote(note);
                 }}
               >
                 <Icon
                   icon="solar:trash-bin-trash-outline"
-                  // className={styles.deleteIcon}
+                  width={14}
+                  height={14}
                 />
                 Delete
               </Button>
             </div>
-            <Card className={styles.noteItem}>
-              {(() => {
-                return (
-                  <NoteEditor 
-                    value={note.value} 
-                    setValue={(value: Block[]) => handleNoteValueChange(note, value)}
-                    withoutBorder 
-                  />
-                );
-              })()}
-            </Card>
-          </>
+            <div className={styles.noteContent}>
+              <NoteEditor 
+                value={note.value} 
+                setValue={(value: Block[]) => handleNoteValueChange(note, value)}
+                withoutBorder 
+              />
+            </div>
+          </div>
         );
       })}
     </div>

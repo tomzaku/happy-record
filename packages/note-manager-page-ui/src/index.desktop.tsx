@@ -30,7 +30,7 @@ export const NoteManagerPageDesktop = () => {
         <div className={styles.centerContent}>
           <div className={styles.pageHeader}>
             <div className={styles.pageTitle}>
-              <Typography.Title level={2}>Notes</Typography.Title>
+              <Typography.Title level={3} noMargin >Notes</Typography.Title>
             </div>
             <Button
               className={styles.addNoteButton}

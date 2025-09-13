@@ -1,46 +1,75 @@
 @use '@moon-ui/app-scss/color' as *;
 @use 'include-media/dist/include-media' as media;
 @use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
 
 .container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px;
-  transition: all 0.3s ease;
+  gap: $spacing-xs;
+  padding: $spacing-sm;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   margin-bottom: $spacing-sm;
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px var(--card-shadow);
+  max-width: 300px;
 }
 
 .containerMinimal {
-  padding: 0;
+  padding: $spacing-sm;
+  min-width: 60px;
+  max-width: 60px;
 }
 
 .item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
+  font-size: toRem(13px);
+  font-weight: 500;
 
   &:hover {
     background: var(--card-group-background);
+    transform: translateX(2px);
   }
 }
 
 .itemActive {
-  background: var(--card-group-background);
-  color: var(--text-title-primary-color);
+  background: var(--button-action-background);
+  color: var(--button-action-color);
+  font-weight: 600;
+  box-shadow: 0 2px 8px var(--card-shadow);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -$spacing-sm;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 20px;
+    background: var(--button-action-background);
+    border-radius: 2px;
+  }
 }
 
 .icon {
   transition: all 0.2s ease;
+  font-size: toRem(18px);
+  min-width: 18px;
 }
 
 .iconActive {
-  color: var(--text-title-primary-color);
+  color: var(--button-action-color);
+  transform: scale(1.1);
 }
 
 .tabContainer {
@@ -57,10 +86,12 @@
 
 .menuButtonRotate {
   transform: rotate(180deg);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .textContainer {
   white-space: nowrap;
   overflow: hidden;
+  font-size: toRem(14px);
+  color: var(--text-color);
 }

@@ -1,5 +1,7 @@
 @use '@moon-ui/app-scss/theme/light.scss' as *;
 @use '@moon-ui/app-scss/theme/dark.scss' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
 
 // Desktop-specific styles
 .desktopContainer {
@@ -14,6 +16,7 @@
   flex: 1;
   overflow: hidden;
   position: relative;
+  padding: $spacing-sm $spacing-md;
 }
 
 .centerContent {
@@ -21,47 +24,68 @@
   flex-direction: column;
   overflow: hidden;
   width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .pageHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
-  padding: 0 12px;
+  margin-bottom: $spacing-lg;
+  padding: $spacing-sm $spacing-md;
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 4px var(--card-shadow);
 }
 
 .pageTitle {
   margin: 0;
+  color: var(--text-title-primary-color);
+  font-size: toRem(20px);
+  font-weight: 600;
+  letter-spacing: -0.3px;
 }
 
 .addNoteButton {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
   background: var(--button-default-background);
   color: var(--button-ghost-color-invert, white);
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: toRem(14px);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px var(--card-shadow);
 
   &:hover {
     background: var(--button-action-background);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--card-shadow);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
 .addIcon {
   color: var(--button-ghost-color-invert, white);
+  transition: transform 0.2s ease;
+}
+
+.addNoteButton:hover .addIcon {
+  transform: rotate(90deg);
 }
 
 .notesContainer {
   display: flex;
-  gap: 24px;
-  height: calc(100vh - 200px);
+  gap: $spacing-lg;
   overflow: hidden;
+  min-height: 500px;
 }
