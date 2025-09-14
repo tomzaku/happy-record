@@ -7,9 +7,9 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  margin-left: $spacing-sm;
   overflow-y: auto;
-  padding-right: $spacing-xs;
+  height: 100%;
+  padding: $spacing-md;
   
   &::-webkit-scrollbar {
     width: 6px;
