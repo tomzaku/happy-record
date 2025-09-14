@@ -45,7 +45,7 @@ const DesktopDrawer = () => {
   const isActivePath = (path: string) => {
     if (path === '/') {
       // For the root path, check if it's exactly '/' or matches the task pattern '/task/<id>'
-      return location.pathname === '/' || location.pathname.match(/^\/task\/[^\/]+$/);
+      return location.pathname === '/' || location.pathname.match(/^\/task\/[^/]+$/);
     }
     return location.pathname.startsWith(path);
   };
@@ -114,7 +114,7 @@ const DesktopDrawer = () => {
               styles.navigationIcon,
               isActivePath(item.path) && styles.activeNavigationIcon
             )}>
-              <Icon className={isActivePath(item.path) ? styles.activeNavigationIcon : ''} icon={item.icon} width={20} />
+              <Icon className={isActivePath(item.path) ? styles.activeNavigationIcon : ''} icon={item.icon} width={isMinimized ? 24 : 20} />
             </div>
             {!isMinimized && (
               <div className={styles.navigationContent}>
@@ -125,11 +125,6 @@ const DesktopDrawer = () => {
                   {item.description}
                 </Typography.Text>
               </div>
-            )}
-            {isMinimized && (
-              <Typography.Text className={styles.minimizedLabel}>
-                {item.label}
-              </Typography.Text>
             )}
           </button>
         ))}

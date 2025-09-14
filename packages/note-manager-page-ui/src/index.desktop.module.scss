@@ -16,7 +16,7 @@
   flex: 1;
   overflow: hidden;
   position: relative;
-  padding: $spacing-sm $spacing-md;
+  padding: $spacing-sm $spacing-md $spacing-sm 0;
 }
 
 .centerContent {
@@ -30,14 +30,10 @@
 
 .pageHeader {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: $spacing-lg;
   padding: $spacing-sm $spacing-md;
-  background: var(--card-background);
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  box-shadow: 0 1px 4px var(--card-shadow);
 }
 
 .pageTitle {
@@ -85,7 +81,6 @@
 
 .notesContainer {
   display: flex;
-  gap: $spacing-lg;
   overflow: hidden;
   min-height: 500px;
 }
