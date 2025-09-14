@@ -49,7 +49,8 @@
     bottom: 0;
     z-index: -1;
     border-radius: 25px;
-    filter: blur(20px);
+    background: white !important;
+    filter: blur(10px);
     transform: scale(1.2);
     background: linear-gradient(90deg, #667eea, #764ba2);
     background-size: 200% 200%;

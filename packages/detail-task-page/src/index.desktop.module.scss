@@ -77,8 +77,7 @@
 
 .mainContent {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 12px;
+  grid-template-columns: 2.5fr 1fr;
   align-items: start;
 }
 
@@ -91,7 +90,6 @@
 .main {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 .fieldsCard {
