@@ -8,12 +8,14 @@ interface ChecklistFieldGroupAddGroupProps {
   fieldGroups?: FieldGroup[];
   onAddFieldGroup: (newGroup: FieldGroup) => void;
   availableFields?: string[];
+  onFieldAdded?: (newField: RecordField) => void;
 }
 
 const ChecklistFieldGroupAddGroup = ({
   fieldGroups = [],
   onAddFieldGroup,
   availableFields,
+  onFieldAdded,
 }: ChecklistFieldGroupAddGroupProps) => {
   const isMobile = useIsMobile();
   const { getAllRecordFields } = useRecordField();
@@ -38,6 +40,7 @@ const ChecklistFieldGroupAddGroup = ({
         onAddFieldGroup={onAddFieldGroup}
         availableFields={actualAvailableFields}
         allRecordFields={allRecordFields}
+        onFieldAdded={onFieldAdded}
       />
     );
   }
@@ -48,6 +51,7 @@ const ChecklistFieldGroupAddGroup = ({
       onAddFieldGroup={onAddFieldGroup}
       availableFields={actualAvailableFields}
       allRecordFields={allRecordFields}
+      onFieldAdded={onFieldAdded}
     />
   );
 };

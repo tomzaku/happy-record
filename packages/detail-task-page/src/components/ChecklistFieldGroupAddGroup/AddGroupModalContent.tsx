@@ -35,17 +35,10 @@ const AddGroupModalContent = ({
   const intl = useIntl();
   const [isAddFieldPanelVisible, setIsAddFieldPanelVisible] = React.useState(false);
   
-  // Debug: Log when selectedFields changes
-  React.useEffect(() => {
-    console.log('selectedFields changed:', selectedFields);
-  }, [selectedFields]);
-
   const handleFieldToggle = (fieldId: string) => {
-    console.log('Toggling field:', fieldId, 'Current selectedFields:', selectedFields);
     const newSelectedFields = selectedFields.includes(fieldId)
       ? selectedFields.filter(id => id !== fieldId)
       : [...selectedFields, fieldId];
-    console.log('New selectedFields:', newSelectedFields);
     setSelectedFields(newSelectedFields);
   };
 

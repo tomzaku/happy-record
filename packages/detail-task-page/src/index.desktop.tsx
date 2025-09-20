@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Checklist,
@@ -33,6 +33,18 @@ const DetailTaskPageDesktop = () => {
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [fields, setFields] = React.useState<RecordField[]>([]);
 
+  // Function to update fields based on current checklistTemplate
+  const updateFields = React.useCallback(() => {
+    if (!checklistTemplate) return;
+    
+    const fieldResult = getRecordFields(
+      checklistTemplate.fieldGroups
+        ?.map(fieldGroup => fieldGroup.fields)
+        .flat() || [],
+    );
+    setFields(fieldResult);
+  }, [checklistTemplate, getRecordFields]);
+
 
   if (!id || !currentDay) {
     return;
@@ -45,13 +57,6 @@ const DetailTaskPageDesktop = () => {
 
     if (!checklistTemplate) return;
 
-    const fieldResult = getRecordFields(
-      checklistTemplate.fieldGroups
-        ?.map(fieldGroup => fieldGroup.fields)
-        .flat(),
-    );
-
-    setFields(fieldResult);
     if (checklistId) {
       const checklist = getChecklistDetail(checklistId);
       setChecklist(checklist);
@@ -70,6 +75,17 @@ const DetailTaskPageDesktop = () => {
       setChecklist(checklist);
     }
   }, [checklistId]);
+
+  // Update fields when checklistTemplate changes
+  React.useEffect(() => {
+    updateFields();
+  }, [updateFields]);
+
+  // Callback for when new fields are added
+  const handleFieldAdded = React.useCallback(() => {
+    // Refresh fields to include the new field
+    updateFields();
+  }, [updateFields]);
 
   const navigate = useNavigate();
   if (!checklistId || !checklist || !checklistTemplate) {
@@ -121,7 +137,9 @@ const DetailTaskPageDesktop = () => {
                   onUpdateChecklistTemplate={(updatedTemplate) => {
                     updateChecklistTemplate(updatedTemplate);
                     setChecklistTemplate(updatedTemplate);
+                    // Fields will be updated automatically via useEffect
                   }}
+                  onFieldAdded={handleFieldAdded}
                 />
             </div>
             <div className={styles.side}>

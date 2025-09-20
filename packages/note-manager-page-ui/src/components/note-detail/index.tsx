@@ -10,6 +10,7 @@ import Typography from '@moon-ui/typography';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';
+import { useNavigate } from 'react-router-dom';
 
 type Block = any; // NoteEditor block type
 
@@ -40,6 +41,13 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
 
   return (
     <div className={styles.container}>
+            <Button
+              className={styles.addNoteButton}
+              type="dash"
+              onClick={() => navigate('/notes/add')}
+            >
+              <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add Note
+            </Button>
       {allNotes.map(note => {
         return (
           <div key={note.id} className={styles.noteItem}>

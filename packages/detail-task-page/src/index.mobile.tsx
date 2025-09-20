@@ -34,6 +34,18 @@ const DetailTaskPageMobile = () => {
   // Focus Zone Modal state
   const [isFocusZoneOpen, setIsFocusZoneOpen] = useState(false);
 
+  // Function to update fields based on current checklistTemplate
+  const updateFields = React.useCallback(() => {
+    if (!checklistTemplate) return;
+    
+    const fieldResult = getRecordFields(
+      checklistTemplate.fieldGroups
+        ?.map(fieldGroup => fieldGroup.fields)
+        .flat() || [],
+    );
+    setFields(fieldResult);
+  }, [checklistTemplate, getRecordFields]);
+
   if (!id || !currentDay) {
     return;
   }
@@ -44,13 +56,6 @@ const DetailTaskPageMobile = () => {
 
     if (!checklistTemplate) return;
 
-    const fieldResult = getRecordFields(
-      checklistTemplate.fieldGroups
-        ?.map(fieldGroup => fieldGroup.fields)
-        .flat(),
-    );
-
-    setFields(fieldResult);
     if (checklistId) {
       const checklist = getChecklistDetail(checklistId);
       setChecklist(checklist);
@@ -69,6 +74,17 @@ const DetailTaskPageMobile = () => {
       setChecklist(checklist);
     }
   }, [checklistId]);
+
+  // Update fields when checklistTemplate changes
+  React.useEffect(() => {
+    updateFields();
+  }, [updateFields]);
+
+  // Callback for when new fields are added
+  const handleFieldAdded = React.useCallback(() => {
+    // Refresh fields to include the new field
+    updateFields();
+  }, [updateFields]);
 
 
   const navigate = useNavigate();
@@ -116,7 +132,9 @@ const DetailTaskPageMobile = () => {
         onUpdateChecklistTemplate={(updatedTemplate) => {
           updateChecklistTemplate(updatedTemplate);
           setChecklistTemplate(updatedTemplate);
+          // Fields will be updated automatically via useEffect
         }}
+        onFieldAdded={handleFieldAdded}
       />
 
       {/* <FocusZoneModal */}

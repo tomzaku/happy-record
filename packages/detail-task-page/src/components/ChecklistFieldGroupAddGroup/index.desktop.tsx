@@ -7,12 +7,14 @@ import { useIntl } from '@dreamer/translation';
 import { FieldGroup, RecordField } from '@dreamer/global';
 import styles from './index.desktop.module.scss';
 import AddGroupModalContent from './AddGroupModalContent';
+import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
 
 interface ChecklistFieldGroupAddGroupDesktopProps {
   fieldGroups?: FieldGroup[];
   onAddFieldGroup: (newGroup: FieldGroup) => void;
   availableFields?: string[];
   allRecordFields: RecordField[];
+  onFieldAdded?: (newField: RecordField) => void;
 }
 
 const ChecklistFieldGroupAddGroupDesktop = ({
@@ -20,6 +22,7 @@ const ChecklistFieldGroupAddGroupDesktop = ({
   onAddFieldGroup,
   availableFields = [],
   allRecordFields,
+  onFieldAdded,
 }: ChecklistFieldGroupAddGroupDesktopProps) => {
   const intl = useIntl();
   const [isModalVisible, setIsModalVisible] = React.useState(false);
@@ -47,8 +50,8 @@ const ChecklistFieldGroupAddGroupDesktop = ({
         title: tempGroupName.trim(),
         fields: tempSelectedFields,
         note: null,
-        defaultTab: 0,
-        activeTabs: [0, 1, 2, 3, 4],
+        defaultTab: ChecklistFieldGroupTab.Add,
+        activeTabs: [ChecklistFieldGroupTab.Add, ChecklistFieldGroupTab.Config],
         collapseDefault: false,
       };
       onAddFieldGroup(newGroup);
@@ -66,6 +69,7 @@ const ChecklistFieldGroupAddGroupDesktop = ({
       allRecordFields={allRecordFields}
       onSave={handleSave}
       onCancel={handleModalClose}
+      onFieldAdded={onFieldAdded}
     />
   );
 

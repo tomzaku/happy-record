@@ -13,6 +13,7 @@ interface ChecklistFieldGroupAddGroupMobileProps {
   onAddFieldGroup: (newGroup: FieldGroup) => void;
   availableFields?: string[];
   allRecordFields: RecordField[];
+  onFieldAdded?: (newField: RecordField) => void;
 }
 
 const ChecklistFieldGroupAddGroupMobile = ({
@@ -20,6 +21,7 @@ const ChecklistFieldGroupAddGroupMobile = ({
   onAddFieldGroup,
   availableFields = [],
   allRecordFields,
+  onFieldAdded,
 }: ChecklistFieldGroupAddGroupMobileProps) => {
   const intl = useIntl();
   const [isModalVisible, setIsModalVisible] = React.useState(false);
@@ -66,6 +68,7 @@ const ChecklistFieldGroupAddGroupMobile = ({
       allRecordFields={allRecordFields}
       onSave={handleSave}
       onCancel={handleModalClose}
+      onFieldAdded={onFieldAdded}
     />
   );
 

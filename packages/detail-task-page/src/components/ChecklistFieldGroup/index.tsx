@@ -27,6 +27,7 @@ type Props = {
   fields: RecordField[];
   currentDay: string;
   onUpdateChecklistTemplate: (updatedTemplate: ChecklistTemplate) => void;
+  onFieldAdded?: (newField: RecordField) => void;
 };
 
 const ChecklistFieldGroup = ({
@@ -35,6 +36,7 @@ const ChecklistFieldGroup = ({
   fields,
   currentDay,
   onUpdateChecklistTemplate,
+  onFieldAdded,
 }: Props) => {
   const { updateChecklist } = useChecklist();
   const [activeTab, setActiveTab] = React.useState<
@@ -280,6 +282,19 @@ const ChecklistFieldGroup = ({
       ...checklistTemplate,
       fieldGroups: [...checklistTemplate.fieldGroups, newGroup],
     };
+    
+    // Update activeTab state to include the new field group
+    setActiveTab(prev => ({
+      ...prev,
+      [newGroup.id]: newGroup.defaultTab ?? ChecklistFieldGroupTab.Home,
+    }));
+    
+    // Update collapsedGroups state to include the new field group
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [newGroup.id]: newGroup.collapseDefault ?? false,
+    }));
+    
     onUpdateChecklistTemplate(updatedTemplate);
   };
 
@@ -289,6 +304,7 @@ const ChecklistFieldGroup = ({
       <ChecklistFieldGroupAddGroup
         fieldGroups={checklistTemplate.fieldGroups}
         onAddFieldGroup={handleAddFieldGroup}
+        onFieldAdded={onFieldAdded}
       />
     </>
   )
