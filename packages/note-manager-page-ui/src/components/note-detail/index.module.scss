@@ -134,3 +134,61 @@
   margin-bottom: $spacing-md;
   gap: 4px;
 }
+
+.newNoteEditor {
+  margin-bottom: $spacing-md;
+  background: var(--card-background);
+  border: 2px solid var(--button-action-background);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px var(--card-shadow);
+  overflow: hidden;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.newNoteHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-sm $spacing-md;
+  border-bottom: 1px solid var(--card-border);
+  background: var(--card-group-background);
+}
+
+.newNoteTitle {
+  font-size: toRem(14px);
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.newNoteActions {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.cancelButton {
+  padding: $spacing-xs $spacing-sm;
+  font-size: toRem(12px);
+  font-weight: 500;
+}
+
+.saveButton {
+  padding: $spacing-xs $spacing-sm;
+  font-size: toRem(12px);
+  font-weight: 500;
+}
+
+.newNoteContent {
+  padding: $spacing-md;
+  min-height: 80px;
+}

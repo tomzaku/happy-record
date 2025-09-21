@@ -3,25 +3,27 @@ import {
   ChecklistRecord,
   useChecklistRecord,
 } from '@dreamer/global/src/store/checklist-record';
-import Card from '@moon-ui/card';
 
 import styles from './index.module.scss';
 import Typography from '@moon-ui/typography';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';
-import { useNavigate } from 'react-router-dom';
-
-type Block = any; // NoteEditor block type
+import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
+import React from 'react';
 
 type Props = {
   allNotes: ChecklistRecord[];
   allNoteFields: RecordField[];
   deleteNote: (note: ChecklistRecord) => void;
+  defaultFieldId: string;
 };
 
-const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
-  const { updateChecklistRecord, deleteChecklistRecord } = useChecklistRecord();
+const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, defaultFieldId }: Props) => {
+  const { updateChecklistRecord } = useChecklistRecord();
+  const { addNote } = useNoteRecords();
+  const [isCreatingNote, setIsCreatingNote] = React.useState(false);
+  const [newNoteValue, setNewNoteValue] = React.useState<string | number>('');
   
   const noteFieldMap = allNoteFields.reduce<Record<string, RecordField>>(
     (acc, field) => ({
@@ -31,7 +33,7 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
     {},
   );
 
-  const handleNoteValueChange = (note: ChecklistRecord, value: any) => {
+  const handleNoteValueChange = (note: ChecklistRecord, value: string | number) => {
     updateChecklistRecord(note.id, {
       value,
       checklistTemplateId: note.checklistTemplateId,
@@ -39,15 +41,64 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
     });
   };
 
+  const handleCreateNewNote = () => {
+    setIsCreatingNote(true);
+  };
+
+  const handleSaveNewNote = () => {
+    
+    if (newNoteValue) {
+      addNote(defaultFieldId, newNoteValue);
+      setNewNoteValue('');
+      setIsCreatingNote(false);
+    }
+  };
+
+  const handleCancelNewNote = () => {
+    setNewNoteValue('');
+    setIsCreatingNote(false);
+  };
+
   return (
     <div className={styles.container}>
-            <Button
-              className={styles.addNoteButton}
-              type="dash"
-              onClick={() => navigate('/notes/add')}
-            >
-              <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add Note
-            </Button>
+      {!isCreatingNote ? (
+        <Button
+          className={styles.addNoteButton}
+          type="dash"
+          onClick={handleCreateNewNote}
+        >
+          <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add Note
+        </Button>
+      ) : (
+        <div className={styles.newNoteEditor}>
+          <div className={styles.newNoteHeader}>
+            <Typography.Text className={styles.newNoteTitle}>New Note</Typography.Text>
+            <div className={styles.newNoteActions}>
+              <Button
+                className={styles.cancelButton}
+                type="dash"
+                onClick={handleCancelNewNote}
+              >
+                Cancel
+              </Button>
+              <Button
+                className={styles.saveButton}
+                type="primary"
+                onClick={handleSaveNewNote}
+                disabled={!newNoteValue}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+          <div className={styles.newNoteContent}>
+            <NoteEditor 
+              value={newNoteValue} 
+              setValue={setNewNoteValue}
+            />
+          </div>
+        </div>
+      )}
       {allNotes.map(note => {
         return (
           <div key={note.id} className={styles.noteItem}>
@@ -77,8 +128,7 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote }: Props) => {
             <div className={styles.noteContent}>
               <NoteEditor 
                 value={note.value} 
-                setValue={(value: Block[]) => handleNoteValueChange(note, value)}
-                withoutBorder 
+                setValue={(value: string | number) => handleNoteValueChange(note, value)}
               />
             </div>
           </div>

@@ -6,8 +6,12 @@ import styles from './index.desktop.module.scss';
 import NoteDetail from './components/note-detail';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
+import { useSearchParams } from 'react-router-dom';
 
 export const NoteManagerPageDesktop = () => {
+  const [search] = useSearchParams();
+  const fieldId = search.get('fieldId');
+
   const [allNoteFields, setAllNoteFields] = React.useState<RecordField[]>([]);
   const [allNotes, setAllNotes] = React.useState<ChecklistRecord[]>([]);
   const { getNotes, getAllNoteFields, deleteNote } = useNoteRecords();
@@ -15,7 +19,7 @@ export const NoteManagerPageDesktop = () => {
   React.useEffect(() => {
     const fields = getAllNoteFields();
     setAllNoteFields(fields);
-    setAllNotes(getNotes(fields.map(f => f.id)));
+    setAllNotes(getNotes(fieldId ? [fieldId] : fields.map(f => f.id)));
   }, []);
 
 
@@ -36,6 +40,7 @@ export const NoteManagerPageDesktop = () => {
           <div className={styles.notesContainer}>
             <NoteDetail
               allNotes={allNotes}
+              defaultFieldId={fieldId || allNoteFields[0].id}
               allNoteFields={allNoteFields}
               deleteNote={note => {
                 deleteNote(note);

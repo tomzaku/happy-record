@@ -9,7 +9,6 @@
   flex-direction: column;
   overflow: hidden;
   width: 280px;
-  border: 1px solid var(--card-border);
   transition: width 0.3s ease;
 
   &.minimized {
