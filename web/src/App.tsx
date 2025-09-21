@@ -67,6 +67,7 @@ function App() {
           <PwaInstallation />
         </div>
         <div id="drawer-global-root" />
+        <div id="modal-global-root" />
       </div>
     </ErrorBoundary>
   );

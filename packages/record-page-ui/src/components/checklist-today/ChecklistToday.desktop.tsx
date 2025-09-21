@@ -14,6 +14,7 @@ import { useIntl } from '@dreamer/translation';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Card from '@moon-ui/card';
 import { format } from 'date-fns';
+import CreateTaskModal from '../create-task-modal';
 
 // Temporary local utility function - will be moved to global utils later
 const formatSchedule = (repeat?: { hour: string; minute: string; dayOfWeek: string }): string => {
@@ -60,10 +61,12 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
   const [checklist, setChecklist] = React.useState<Record<string, Checklist>>(
     {},
   );
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = React.useState(false);
   const intl = useIntl();
 
   React.useEffect(() => {
     const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
+    console.log(">>>>>>>>>>>>>checklist", {checklist, checklistIds})
     setChecklist(checklist);
     setChecklistByGivingDateIds(checklistIds);
   }, [date, selectedTag]);
@@ -88,7 +91,7 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
         <Button
           type="ghost"
           onClick={() => {
-            navigate('/create-checklist');
+            setIsCreateTaskModalOpen(true);
           }}
           className={styles.addTaskButton}
         >
@@ -110,7 +113,7 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
       </div>
 
       <div className={styles.tasksList}>
-        {checklistByGivingDateIds.map((id, index) => {
+        {checklistByGivingDateIds.map((id) => {
           const currentChecklist = checklist[id];
           const currentChecklistTemplate =
             checklistTemplate[currentChecklist.checklistTemplateId];
@@ -142,7 +145,7 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
                     level={5}
                     className={styles.taskTitle}
                   >
-                    {currentChecklistTemplate?.title}
+                    {currentChecklist?.title || currentChecklistTemplate?.title}
                   </Typography.Title>
                   <div className={styles.taskMeta}>
                     <div className={styles.schedule}>
@@ -194,13 +197,24 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
         type="dash"
         size="lg"
         onClick={() => {
-          navigate('/create-checklist');
+          setIsCreateTaskModalOpen(true);
         }}
         className={styles.addTaskButtonBottom}
       >
         <Icon icon="material-symbols:add" className={styles.addIcon} />
         Add Task
       </Button>
+
+      <CreateTaskModal
+        visible={isCreateTaskModalOpen}
+        onDismiss={() => setIsCreateTaskModalOpen(false)}
+        onTaskCreated={() => {
+          // Refresh the checklist data when a new task is created
+          const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
+          setChecklist(checklist);
+          setChecklistByGivingDateIds(checklistIds);
+        }}
+      />
     </div>
   );
 };

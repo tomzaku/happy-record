@@ -183,6 +183,11 @@ export const useChecklistTemplates = () => {
     delete newChecklistTemplate[id];
     setChecklistTemplate(newChecklistTemplate);
     // Also remove from selected templates if it was selected
+    console.log("selectedChecklistTemplates", {
+      selectedChecklistTemplates,
+      id,
+      newChecklistTemplate,
+    })
     if (selectedChecklistTemplates.includes(id)) {
       updateSelectedChecklistTemplate(
         selectedChecklistTemplates.filter(templateId => templateId !== id),

@@ -83,6 +83,10 @@ export const useChecklist = () => {
           return !hasSchedule;
         },
       );
+      console.log({
+        nonScheduledChecklists,
+        scheduledChecklists
+      })
 
       // Combine scheduled and non-scheduled checklists
       const allChecklists = [...scheduledChecklists, ...nonScheduledChecklists];

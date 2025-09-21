@@ -7,6 +7,7 @@ import IconPicker from './IconPicker';
 import Hr from './hr';
 import RecordTaskSetting, { FieldGroup } from './RecordTaskSetting';
 import TagInput from './TagInput';
+import cx from 'classnames';
 
 // Hooks
 import { useIntl } from '@dreamer/translation';
@@ -28,10 +29,18 @@ const CoreChecklistForm = ({
   initialValues,
   onSubmit,
   onClickDeleteButton,
+  classes,
 }: {
   initialValues: FormState;
   onSubmit: (form: FormState) => void;
   onClickDeleteButton?: () => void;
+  classes?: {
+    container?: string;
+    footer?: string;
+    footerCenter?: string;
+    submitButton?: string;
+    deleteButton?: string;
+  };
 }) => {
   const [form, setForm] = React.useState<FormState>(initialValues);
   const {
@@ -86,15 +95,16 @@ const CoreChecklistForm = ({
   const intl = useIntl();
 
   return (
-    <div className={styles.container}>
-      <div className={styles.container}>
+    <div className={cx(styles.container, classes?.container)}>
+      <div className={cx(styles.container, classes?.container)}>
         <TextareaAutosize
           placeholder={intl.formatMessage({
             id: 'CreateChecklist.label-create-checklist-input-placeholder',
             defaultMessage: 'Write your task here',
           })}
           className={styles.input}
-          maxRows={3}
+          minRows={2}
+          maxRows={4}
           autoFocus
           onChange={e => {
             setChecklistText(e.currentTarget.value);
@@ -121,19 +131,19 @@ const CoreChecklistForm = ({
           setSelectedColor={setSelectedColor}
         />
         <Hr />
-        <RecordTaskSetting
-          selectedRecords={selectedRecords}
-          setSelectedRecords={setSelectedRecords}
-          fieldGroups={fieldGroups}
-          setFieldGroups={setFieldGroups}
-        />
+        {/* <RecordTaskSetting */}
+        {/*   selectedRecords={selectedRecords} */}
+        {/*   setSelectedRecords={setSelectedRecords} */}
+        {/*   fieldGroups={fieldGroups} */}
+        {/*   setFieldGroups={setFieldGroups} */}
+        {/* /> */}
       </div>
-      <div className={styles.footer}>
-        <div className={styles.footerCenter}>
+      <div className={cx(styles.footer, classes?.footer)}>
+        <div className={cx(styles.footerCenter, classes?.footerCenter)}>
           {onClickDeleteButton && (
             <Button
               onClick={onClickDeleteButton}
-              className={styles.deleteButton}
+              className={cx(styles.deleteButton, classes?.deleteButton)}
             >
               {intl.formatMessage({
                 id: 'CreateChecklist.label-delete',
@@ -143,7 +153,7 @@ const CoreChecklistForm = ({
           )}
           <Button
             type="primary"
-            className={styles.submitButton}
+            className={cx(styles.submitButton, classes?.submitButton)}
             onClick={() => {
               const validGroups = fieldGroups.filter(
                 group => group.fields.length > 0,
