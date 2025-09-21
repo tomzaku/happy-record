@@ -105,13 +105,8 @@ const ChecklistFieldGroupAdd = ({
     reloadChecklistRecord();
   }, [currentDay]);
 
-  // Set default to show history when no current records
-  React.useEffect(() => {
-    if (currentChecklistRecords.length === 0) {
-      setShowHistory(true);
-    }
-  }, [currentChecklistRecords.length]);
   const renderEmpty = () => {
+    return null;
     return (
       <div>
         <div className={styles.emptyContainer}>
@@ -333,7 +328,6 @@ const ChecklistFieldGroupAdd = ({
           </>
         ) : (
           <>
-            <Hr classes={{ hr: styles.hr }} />
             {renderEmpty()}
           </>
         )}

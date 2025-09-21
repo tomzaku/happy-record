@@ -66,7 +66,6 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
 
   React.useEffect(() => {
     const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
-    console.log(">>>>>>>>>>>>>checklist", {checklist, checklistIds})
     setChecklist(checklist);
     setChecklistByGivingDateIds(checklistIds);
   }, [date, selectedTag]);
@@ -97,6 +96,17 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
         >
           Create Task
         </Button>
+
+        <CreateTaskModal
+          visible={isCreateTaskModalOpen}
+          onDismiss={() => setIsCreateTaskModalOpen(false)}
+          onTaskCreated={() => {
+            // Refresh the checklist data when a new task is created
+            const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
+            setChecklist(checklist);
+            setChecklistByGivingDateIds(checklistIds);
+          }}
+        />
       </div>
     );
   }

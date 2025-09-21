@@ -3,9 +3,14 @@
 
 .cardContainer {
   margin: $spacing-sm;
+  overflow: hidden;
+}
+
+.hrContainer {
+  margin-bottom: $spacing-sm !important;
+  margin-top: 0px !important;
 }
 
 .hr {
-  margin-bottom: $spacing-sm;
   height: 2px !important;
 }

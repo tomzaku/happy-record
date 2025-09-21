@@ -270,7 +270,7 @@ const ChecklistFieldGroup = ({
               },
             }}
           >
-            <Hr classes={{ hr: styles.hr }} />
+            <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
             {renderTab({ fieldGroup, fieldDetails, index })}
           </motion.div>
         </Card>

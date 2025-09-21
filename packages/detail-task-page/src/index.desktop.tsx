@@ -33,28 +33,18 @@ const DetailTaskPageDesktop = () => {
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [fields, setFields] = React.useState<RecordField[]>([]);
 
-  // Function to update fields based on current checklistTemplate
-  const updateFields = React.useCallback(() => {
-    if (!checklistTemplate) return;
-    
-    const fieldResult = getRecordFields(
-      checklistTemplate.fieldGroups
-        ?.map(fieldGroup => fieldGroup.fields)
-        .flat() || [],
-    );
-    setFields(fieldResult);
-  }, [checklistTemplate, getRecordFields]);
-
-
   if (!id || !currentDay) {
     return;
   }
-  
-  // Update checklistId Params
+
+  // Load checklist template
   React.useEffect(() => {
     const checklistTemplate = getChecklistTemplate(id);
     setChecklistTemplate(checklistTemplate);
+  }, [id]);
 
+  // Load or create checklist
+  React.useEffect(() => {
     if (!checklistTemplate) return;
 
     if (checklistId) {
@@ -68,24 +58,39 @@ const DetailTaskPageDesktop = () => {
         startedAt: new Date(currentDay).toISOString(),
         endedAt: new Date(currentDay).toISOString(),
       });
-      setSearchParams({
-        ...Object.fromEntries(search),
-        checklistId: checklist.id,
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set('checklistId', checklist.id);
+        return newParams;
       });
       setChecklist(checklist);
     }
-  }, [checklistId]);
+  }, [checklistTemplate, checklistId, id, currentDay]);
 
   // Update fields when checklistTemplate changes
   React.useEffect(() => {
-    updateFields();
-  }, [updateFields]);
+    if (!checklistTemplate) return;
+
+    const fieldResult = getRecordFields(
+      checklistTemplate.fieldGroups
+        ?.map(fieldGroup => fieldGroup.fields)
+        .flat() || [],
+    );
+    setFields(fieldResult);
+  }, [checklistTemplate]);
 
   // Callback for when new fields are added
   const handleFieldAdded = React.useCallback(() => {
     // Refresh fields to include the new field
-    updateFields();
-  }, [updateFields]);
+    if (!checklistTemplate) return;
+
+    const fieldResult = getRecordFields(
+      checklistTemplate.fieldGroups
+        ?.map(fieldGroup => fieldGroup.fields)
+        .flat() || [],
+    );
+    setFields(fieldResult);
+  }, [checklistTemplate]);
 
   const navigate = useNavigate();
   if (!checklistId || !checklist || !checklistTemplate) {
@@ -127,30 +132,29 @@ const DetailTaskPageDesktop = () => {
 
           {/* Main Content */}
           <div className={styles.mainContent}>
-            
             <div className={styles.main}>
-                <ChecklistFieldGroup
-                  checklist={checklist}
-                  checklistTemplate={checklistTemplate}
-                  fields={fields}
-                  currentDay={currentDay}
-                  onUpdateChecklistTemplate={(updatedTemplate) => {
-                    updateChecklistTemplate(updatedTemplate);
-                    setChecklistTemplate(updatedTemplate);
-                    // Fields will be updated automatically via useEffect
-                  }}
-                  onFieldAdded={handleFieldAdded}
-                />
+              <ChecklistFieldGroup
+                checklist={checklist}
+                checklistTemplate={checklistTemplate}
+                fields={fields}
+                currentDay={currentDay}
+                onUpdateChecklistTemplate={updatedTemplate => {
+                  updateChecklistTemplate(updatedTemplate);
+                  setChecklistTemplate(updatedTemplate);
+                  // Fields will be updated automatically via useEffect
+                }}
+                onFieldAdded={handleFieldAdded}
+              />
             </div>
             <div className={styles.side}>
-                <ChecklistGenericInfo
-                  isDefaultCollapsed={false}
-                  checklistTemplate={checklistTemplate}
-                  onUpdate={(updatedTemplate) => {
-                    updateChecklistTemplate(updatedTemplate);
-                    setChecklistTemplate(updatedTemplate);
-                  }}
-                />
+              <ChecklistGenericInfo
+                isDefaultCollapsed={false}
+                checklistTemplate={checklistTemplate}
+                onUpdate={updatedTemplate => {
+                  updateChecklistTemplate(updatedTemplate);
+                  setChecklistTemplate(updatedTemplate);
+                }}
+              />
             </div>
           </div>
         </div>
