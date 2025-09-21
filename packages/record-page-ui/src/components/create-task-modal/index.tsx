@@ -55,7 +55,6 @@ const CreateTaskModal = ({
       fieldGroups,
       tags,
     });
-    console.log(">>>>>>>>>>>>REPEAT???", repeat)
     
     // If not repeat we need to create a checklist onetime.
     if (!repeat) {

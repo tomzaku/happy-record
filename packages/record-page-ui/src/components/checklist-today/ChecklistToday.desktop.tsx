@@ -68,7 +68,7 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
     const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
     setChecklist(checklist);
     setChecklistByGivingDateIds(checklistIds);
-  }, [date, selectedTag]);
+  }, [date, selectedTag, checklistTemplate]);
 
   if (checklistByGivingDateIds.length === 0) {
     return (
@@ -100,12 +100,6 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
         <CreateTaskModal
           visible={isCreateTaskModalOpen}
           onDismiss={() => setIsCreateTaskModalOpen(false)}
-          onTaskCreated={() => {
-            // Refresh the checklist data when a new task is created
-            const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
-            setChecklist(checklist);
-            setChecklistByGivingDateIds(checklistIds);
-          }}
         />
       </div>
     );
