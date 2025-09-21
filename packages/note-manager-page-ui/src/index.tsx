@@ -16,7 +16,7 @@ export const NoteManagerPage = () => {
   const [allNoteFields, setAllNoteFields] = React.useState<RecordField[]>([]);
   const [allNotes, setAllNotes] = React.useState<ChecklistRecord[]>([]);
   const [isExtended, setIsExtended] = React.useState(false);
-  const { getNotes, getAllNoteFields, deleteNote } = useNoteRecords();
+  const { getNotes, getAllNoteFields, deleteNote, addNote } = useNoteRecords();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -37,7 +37,8 @@ export const NoteManagerPage = () => {
             type="dash"
             onClick={() => navigate('/notes/add')}
           >
-            <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add Note
+            <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add
+            Note
           </Button>
         )}
       />
@@ -63,9 +64,16 @@ export const NoteManagerPage = () => {
         <NoteDetail
           allNotes={allNotes}
           allNoteFields={allNoteFields}
+          defaultFieldId={allNoteFields[0]?.id || ''}
           deleteNote={note => {
             deleteNote(note);
             setAllNotes(allNotes.filter(n => n.id !== note.id));
+          }}
+          addNote={(fieldId, value) => {
+            const result = addNote(fieldId, value);
+            if (result?.length) {
+              setAllNotes([...result, ...allNotes]);
+            }
           }}
         />
       </div>

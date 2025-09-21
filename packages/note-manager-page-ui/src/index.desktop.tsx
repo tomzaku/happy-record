@@ -14,7 +14,7 @@ export const NoteManagerPageDesktop = () => {
 
   const [allNoteFields, setAllNoteFields] = React.useState<RecordField[]>([]);
   const [allNotes, setAllNotes] = React.useState<ChecklistRecord[]>([]);
-  const { getNotes, getAllNoteFields, deleteNote } = useNoteRecords();
+  const { getNotes, getAllNoteFields, deleteNote, addNote } = useNoteRecords();
 
   React.useEffect(() => {
     const fields = getAllNoteFields();
@@ -22,29 +22,25 @@ export const NoteManagerPageDesktop = () => {
     setAllNotes(getNotes(fieldId ? [fieldId] : fields.map(f => f.id)));
   }, []);
 
-
   return (
     <div className={styles.desktopContainer}>
       <DesktopDrawer />
       <div className={styles.desktopBody}>
         <div className={styles.centerContent}>
-          {/* <div className={styles.pageHeader}>
-            <Button
-              className={styles.addNoteButton}
-              type="dash"
-              onClick={() => navigate('/notes/add')}
-            >
-              <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add Note
-            </Button>
-          </div> */}
           <div className={styles.notesContainer}>
             <NoteDetail
               allNotes={allNotes}
-              defaultFieldId={fieldId || allNoteFields[0].id}
+              defaultFieldId={fieldId || allNoteFields[0]?.id || ''}
               allNoteFields={allNoteFields}
               deleteNote={note => {
                 deleteNote(note);
                 setAllNotes(allNotes.filter(n => n.id !== note.id));
+              }}
+              addNote={(fieldId, value) => {
+                const result = addNote(fieldId, value);
+                if(result?.length) {
+                  setAllNotes([...result, ...allNotes]);
+                }
               }}
             />
             <NoteGroupDesktop

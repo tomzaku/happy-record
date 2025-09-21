@@ -9,19 +9,18 @@ import Typography from '@moon-ui/typography';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';
-import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
 import React from 'react';
 
 type Props = {
   allNotes: ChecklistRecord[];
   allNoteFields: RecordField[];
   deleteNote: (note: ChecklistRecord) => void;
+  addNote: (fieldId: string, value: any) => void;
   defaultFieldId: string;
 };
 
-const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, defaultFieldId }: Props) => {
+const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, defaultFieldId }: Props) => {
   const { updateChecklistRecord } = useChecklistRecord();
-  const { addNote } = useNoteRecords();
   const [isCreatingNote, setIsCreatingNote] = React.useState(false);
   const [newNoteValue, setNewNoteValue] = React.useState<string | number>('');
   
@@ -46,7 +45,6 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, defaultFieldId }
   };
 
   const handleSaveNewNote = () => {
-    
     if (newNoteValue) {
       addNote(defaultFieldId, newNoteValue);
       setNewNoteValue('');
