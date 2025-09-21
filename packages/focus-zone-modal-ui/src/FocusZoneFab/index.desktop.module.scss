@@ -40,33 +40,10 @@
   overflow: visible;
 
   /* Animated glow effect - only when timer is running */
-  &.running::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: -1;
-    border-radius: 25px;
-    background: white !important;
-    filter: blur(10px);
-    transform: scale(1.2);
-    background: linear-gradient(90deg, #667eea, #764ba2);
-    background-size: 200% 200%;
-    animation: fabGlow 3s ease infinite;
-    opacity: 0.6;
-  }
 
   &:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 24px rgba(102, 126, 234, 0.4);
-    
-    &.running::after {
-      opacity: 0.8;
-      filter: blur(25px);
-      transform: scale(1.3);
-    }
   }
 }
 
@@ -376,20 +353,6 @@
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* FAB Glow Animation */
-@keyframes fabGlow {
-  0% {
-    background-position: 0% 50%;
-  }
-  
-  50% {
-    background-position: 100% 50%;
-  }
-  
-  100% {
-    background-position: 0% 50%;
-  }
-}
 
 /* Time Pulse Animation */
 @keyframes timePulse {
