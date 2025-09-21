@@ -1,7 +1,4 @@
-// import BlockNote from './BlockNote'
-import React, { ReactNode, ErrorInfo } from 'react';
-
-// const BlockNote = React.lazy(() => import('./BlockNote'));
+import React, { ReactNode, ErrorInfo, Suspense } from 'react';
 const EditorJs = React.lazy(() => import('./EditorJs'));
 
 interface ErrorBoundaryProps {
@@ -71,7 +68,9 @@ interface NoteEditorProps {
 const NoteEditor = (props: NoteEditorProps) => {
   return (
     <ErrorBoundary {...props}>
-      <EditorJs {...props} />
+      <Suspense fallback={<div>Loading editor...</div>}>
+        <EditorJs {...props} />
+      </Suspense>
     </ErrorBoundary>
   );
 };

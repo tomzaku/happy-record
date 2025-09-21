@@ -9,20 +9,20 @@ import Typography from '@moon-ui/typography';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';
-import React from 'react';
+import React, { startTransition } from 'react';
 
 type Props = {
   allNotes: ChecklistRecord[];
   allNoteFields: RecordField[];
   deleteNote: (note: ChecklistRecord) => void;
-  addNote: (fieldId: string, value: any) => void;
+  addNote: (fieldId: string, value: string | number) => void;
   defaultFieldId: string;
 };
 
 const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, defaultFieldId }: Props) => {
   const { updateChecklistRecord } = useChecklistRecord();
   const [isCreatingNote, setIsCreatingNote] = React.useState(false);
-  const [newNoteValue, setNewNoteValue] = React.useState<string | number>('');
+  const [newNoteValue, setNewNoteValue] = React.useState<string | number | undefined>();
   
   const noteFieldMap = allNoteFields.reduce<Record<string, RecordField>>(
     (acc, field) => ({
@@ -41,20 +41,26 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
   };
 
   const handleCreateNewNote = () => {
-    setIsCreatingNote(true);
+    startTransition(() => {
+      setIsCreatingNote(true);
+    });
   };
 
   const handleSaveNewNote = () => {
     if (newNoteValue) {
       addNote(defaultFieldId, newNoteValue);
-      setNewNoteValue('');
-      setIsCreatingNote(false);
+      startTransition(() => {
+        setNewNoteValue('');
+        setIsCreatingNote(false);
+      });
     }
   };
 
   const handleCancelNewNote = () => {
-    setNewNoteValue('');
-    setIsCreatingNote(false);
+    startTransition(() => {
+      setNewNoteValue('');
+      setIsCreatingNote(false);
+    });
   };
 
   return (
@@ -92,7 +98,7 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
           <div className={styles.newNoteContent}>
             <NoteEditor 
               value={newNoteValue} 
-              setValue={setNewNoteValue}
+              setValue={(value) => startTransition(() => setNewNoteValue(value))}
             />
           </div>
         </div>
@@ -126,7 +132,7 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
             <div className={styles.noteContent}>
               <NoteEditor 
                 value={note.value} 
-                setValue={(value: string | number) => handleNoteValueChange(note, value)}
+                setValue={(value: string | number) => startTransition(() => handleNoteValueChange(note, value))}
               />
             </div>
           </div>
