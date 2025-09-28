@@ -148,19 +148,20 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
                   <Typography.Title
                     level={5}
                     className={styles.taskTitle}
+                    noMargin
                   >
                     {currentChecklist?.title || currentChecklistTemplate?.title}
                   </Typography.Title>
                   <div className={styles.taskMeta}>
                     <div className={styles.schedule}>
-                      <Icon icon="solar:clock-circle" width={16} className={styles.metaIcon} />
+                      <Icon icon="solar:calendar-date-line-duotone" width={16} className={styles.metaIcon} />
                       <Typography.Text className={styles.metaText}>
                         {formatSchedule(currentChecklistTemplate?.repeat)}
                       </Typography.Text>
                     </div>
                     {currentChecklistTemplate?.tags && currentChecklistTemplate.tags.length > 0 && (
                       <div className={styles.tags}>
-                        <Icon icon="solar:tag-price" width={16} className={styles.metaIcon} />
+                        <Icon icon="solar:tag-outline" width={16} className={styles.metaIcon} />
                         <div className={styles.tagsContainer}>
                           {currentChecklistTemplate.tags.map((tag, index) => (
                             <span key={index} className={styles.tag}>

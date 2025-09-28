@@ -91,7 +91,7 @@ const TagInput = ({ tags, setTags, className }: TagInputProps) => {
   return (
     <div className={cx(styles.container, className)}>
       <List.ItemMeta
-        logo={<Icon width={24} icon="solar:tag-broken" />}
+        logo={<Icon width={24} icon="solar:tag-outline" />}
         noPaddingHorizontal
         title={intl.formatMessage({
           defaultMessage: 'Tag',

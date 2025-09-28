@@ -24,7 +24,7 @@ const DetailTaskPageDesktop = () => {
   const { getChecklistTemplate, updateChecklistTemplate } =
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
-  const { getRecordFields } = useRecordField();
+  const { getAllRecordFields } = useRecordField();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
 
@@ -71,26 +71,15 @@ const DetailTaskPageDesktop = () => {
   React.useEffect(() => {
     if (!checklistTemplate) return;
 
-    const fieldResult = getRecordFields(
-      checklistTemplate.fieldGroups
-        ?.map(fieldGroup => fieldGroup.fields)
-        .flat() || [],
-    );
-    setFields(fieldResult);
+    // Get all available fields, not just the ones already assigned to groups
+    const allFields = getAllRecordFields();
+    setFields(allFields);
   }, [checklistTemplate]);
 
   // Callback for when new fields are added
-  const handleFieldAdded = React.useCallback(() => {
-    // Refresh fields to include the new field
-    if (!checklistTemplate) return;
-
-    const fieldResult = getRecordFields(
-      checklistTemplate.fieldGroups
-        ?.map(fieldGroup => fieldGroup.fields)
-        .flat() || [],
-    );
-    setFields(fieldResult);
-  }, [checklistTemplate]);
+  const handleFieldAdded = (newField: RecordField) => {
+    setFields([...fields, newField]);
+  };
 
   const navigate = useNavigate();
   if (!checklistId || !checklist || !checklistTemplate) {

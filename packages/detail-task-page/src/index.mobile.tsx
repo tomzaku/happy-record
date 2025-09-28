@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Checklist,
@@ -12,7 +12,6 @@ import {
 } from '@dreamer/global/src/store/record-field';
 import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
-import FocusZoneModal from '@dreamer/focus-zone-modal-ui';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 
@@ -22,7 +21,7 @@ const DetailTaskPageMobile = () => {
   const { getChecklistTemplate, updateChecklistTemplate } =
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
-  const { getRecordFields } = useRecordField();
+  const { getAllRecordFields } = useRecordField();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
 
@@ -31,20 +30,15 @@ const DetailTaskPageMobile = () => {
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [fields, setFields] = React.useState<RecordField[]>([]);
 
-  // Focus Zone Modal state
-  const [isFocusZoneOpen, setIsFocusZoneOpen] = useState(false);
 
   // Function to update fields based on current checklistTemplate
   const updateFields = React.useCallback(() => {
     if (!checklistTemplate) return;
     
-    const fieldResult = getRecordFields(
-      checklistTemplate.fieldGroups
-        ?.map(fieldGroup => fieldGroup.fields)
-        .flat() || [],
-    );
-    setFields(fieldResult);
-  }, [checklistTemplate, getRecordFields]);
+    // Get all available fields, not just the ones already assigned to groups
+    const allFields = getAllRecordFields();
+    setFields(allFields);
+  }, [checklistTemplate]);
 
   if (!id || !currentDay) {
     return;

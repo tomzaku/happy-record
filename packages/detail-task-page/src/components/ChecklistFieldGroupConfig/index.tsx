@@ -6,18 +6,29 @@ import Input from '@moon-ui/input';
 import Checkbox from '@moon-ui/checkbox';
 import Typography from '@moon-ui/typography';
 import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
-import { FieldGroup } from '@dreamer/global';
+import { FieldGroup, RecordField } from '@dreamer/global';
+import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
 
 import styles from './index.module.scss';
 
 interface ChecklistFieldGroupConfigProps {
   fieldGroup: FieldGroup;
   onUpdateFieldGroup: (updatedGroup: FieldGroup) => void;
+  selectedFields?: string[];
+  onSelectedFieldsChange?: (fields: string[]) => void;
+  availableFields?: string[];
+  allRecordFields?: RecordField[];
+  onFieldAdded?: (newField: RecordField) => void;
 }
 
 const ChecklistFieldGroupConfig = ({
   fieldGroup,
   onUpdateFieldGroup,
+  selectedFields = [],
+  onSelectedFieldsChange,
+  availableFields = [],
+  allRecordFields = [],
+  onFieldAdded,
 }: ChecklistFieldGroupConfigProps) => {
   const intl = useIntl();
   const [groupName, setGroupName] = React.useState(fieldGroup.title);
@@ -36,6 +47,7 @@ const ChecklistFieldGroupConfig = ({
   const [collapseDefault, setCollapseDefault] = React.useState<boolean>(
     fieldGroup.collapseDefault ?? false,
   );
+  const [isAddFieldPanelVisible, setIsAddFieldPanelVisible] = React.useState(false);
 
   const handleTabToggle = (tab: ChecklistFieldGroupTab) => {
     const newActiveTabs = activeTabs.includes(tab)
@@ -61,6 +73,34 @@ const ChecklistFieldGroupConfig = ({
       activeTabs,
       collapseDefault,
     });
+  };
+
+  const handleFieldToggle = (fieldId: string) => {
+    if (!onSelectedFieldsChange) return;
+    
+    const newSelectedFields = selectedFields.includes(fieldId)
+      ? selectedFields.filter(id => id !== fieldId)
+      : [...selectedFields, fieldId];
+    onSelectedFieldsChange(newSelectedFields);
+  };
+
+  const handleAddField = () => {
+    setIsAddFieldPanelVisible(true);
+  };
+
+  const handleFieldPanelClose = () => {
+    setIsAddFieldPanelVisible(false);
+  };
+
+  const handleFieldPanelSubmit = (newField: RecordField) => {
+    onFieldAdded?.(newField);
+    setIsAddFieldPanelVisible(false);
+  };
+
+  // Get field display info
+  const getFieldDisplayInfo = (fieldId: string) => {
+    const field = allRecordFields.find(f => f.id === fieldId);
+    return field ? { title: field.title, icon: field.icon } : { title: fieldId, icon: 'solar:document-linear' };
   };
 
   const tabOptions = [
@@ -98,12 +138,12 @@ const ChecklistFieldGroupConfig = ({
         <div className={styles.inputGroup}>
           <Input
             value={groupName}
-            onChange={e => setGroupName(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGroupName(e.target.value)}
             placeholder={intl.formatMessage({
               id: 'checklist-field-group-config.group-name-placeholder',
               defaultMessage: 'Enter group name',
             })}
-            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleSubmit()}
             renderRightInput={() => <></>}
           />
         </div>
@@ -175,6 +215,68 @@ const ChecklistFieldGroupConfig = ({
         </div>
       </div>
 
+      {onSelectedFieldsChange && (
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <Typography.Title level={5} noMargin className={styles.sectionTitle}>
+              {intl.formatMessage({
+                id: 'checklist-field-group-config.select-fields',
+                defaultMessage: 'Select Fields',
+              })}
+            </Typography.Title>
+            <Button
+              onClick={handleAddField}
+              className={styles.addFieldButton}
+              type="ghost"
+              size="sm"
+            >
+              <Icon width={16} icon="fe:plus" />
+              {intl.formatMessage({
+                id: 'checklist-field-group-config.add-field',
+                defaultMessage: 'Add Field',
+              })}
+            </Button>
+          </div>
+
+          <div className={styles.fieldsList}>
+            {availableFields.length === 0 ? (
+              <div className={styles.emptyState}>
+                <Icon
+                  width={48}
+                  icon="solar:folder-open-line-duotone"
+                  className={styles.emptyIcon}
+                />
+                <Typography.Text className={styles.emptyText}>
+                  {intl.formatMessage({
+                    id: 'checklist-field-group-config.no-fields-available',
+                    defaultMessage: 'No fields available',
+                  })}
+                </Typography.Text>
+              </div>
+            ) : (
+              availableFields.map(fieldId => {
+                const { title, icon } = getFieldDisplayInfo(fieldId);
+                const isChecked = selectedFields.includes(fieldId);
+                return (
+                  <div key={fieldId} className={styles.fieldItem}>
+                    <Checkbox
+                      key={`${fieldId}-${isChecked}`}
+                      checked={isChecked}
+                      onChange={() => handleFieldToggle(fieldId)}
+                      className={styles.fieldCheckbox}
+                    />
+                    <Icon width={16} icon={icon} className={styles.fieldIcon} />
+                    <Typography.Text className={styles.fieldLabel}>
+                      {title}
+                    </Typography.Text>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
       <div className={styles.section}>
         <Button
           type="primary"
@@ -188,6 +290,31 @@ const ChecklistFieldGroupConfig = ({
           })}
         </Button>
       </div>
+
+      {isAddFieldPanelVisible && (
+        <div className={styles.addFieldPanel}>
+          <div className={styles.addFieldPanelHeader}>
+            <Typography.Title level={4} noMargin>
+              {intl.formatMessage({
+                defaultMessage: 'Add New Field',
+                id: 'label-add-new-field',
+              })}
+            </Typography.Title>
+            <Icon
+              onClick={handleFieldPanelClose}
+              width={20}
+              icon="basil:close-outline"
+              className={styles.closeIcon}
+            />
+          </div>
+          <div className={styles.addFieldPanelContent}>
+            <AddFieldRecordUi
+              onSubmit={handleFieldPanelSubmit}
+              onCancel={handleFieldPanelClose}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -280,6 +280,7 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
                 }`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                onClick={() => handleSoundToggle(typeSound as TypeSound)}
               >
                 <div className={styles.musicDropdownItemHeader}>
                   <div className={styles.musicDropdownItemIcon}>
@@ -292,7 +293,6 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
                     className={`${styles.musicDropdownItemToggle} ${
                       isActive ? styles.musicDropdownItemToggleActive : ''
                     }`}
-                    onClick={() => handleSoundToggle(typeSound as TypeSound)}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                   >

@@ -38,6 +38,9 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
   }, []);
   return (
     <div className={styles.recordSection}>
+      {Object.entries(records).length === 0 && (
+        <Typography.Text className={styles.noRecordText}>No record found</Typography.Text>
+      )}
       {Object.entries(records).map(([key, checklistRecords], index) => (
         <div className={styles.recordContainer}>
           <div className={styles.hrContainer}>

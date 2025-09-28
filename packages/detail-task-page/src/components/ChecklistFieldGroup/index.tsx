@@ -156,6 +156,20 @@ const ChecklistFieldGroup = ({
                 ],
               });
             }}
+            selectedFields={fieldGroup.fields}
+            onSelectedFieldsChange={selectedFields => {
+              onUpdateChecklistTemplate({
+                ...checklistTemplate,
+                fieldGroups: [
+                  ...checklistTemplate.fieldGroups.slice(0, index),
+                  { ...fieldGroup, fields: selectedFields },
+                  ...checklistTemplate.fieldGroups.slice(index + 1),
+                ],
+              });
+            }}
+            availableFields={fields.map(f => f.id)}
+            allRecordFields={fields}
+            onFieldAdded={onFieldAdded}
           />
         );
         break;

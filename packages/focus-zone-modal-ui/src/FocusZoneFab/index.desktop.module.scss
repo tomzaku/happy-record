@@ -52,7 +52,6 @@
   height: 32px;
   border-radius: 50%;
   border: 0;
-  background: rgba(255, 255, 255, 0.2);
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -61,6 +60,7 @@
   transition: all 0.2s ease;
   backdrop-filter: blur(5px);
   flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.05);
 
   &:hover {
     background: rgba(255, 255, 255, 0.3);
@@ -69,6 +69,11 @@
 
   &:active {
     transform: scale(0.95);
+  }
+}
+[data-theme='dark'] {
+  .fabPlayPauseButton {
+    background: rgba(255, 255, 255, 0.2);
   }
 }
 

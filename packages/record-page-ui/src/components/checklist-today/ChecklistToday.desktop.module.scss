@@ -40,10 +40,10 @@
 .taskCard {
   border: 1px solid var(--card-border);
   border-radius: 12px;
-  padding: 20px;
+  padding: 12px;
   transition: all 0.2s ease;
   cursor: pointer;
-  
+  box-shadow: none;
   &:hover {
     border-color: var(--card-border-hover);
     box-shadow: 0 4px 12px var(--card-shadow);
@@ -60,7 +60,6 @@
 
 .taskHeader {
   display: flex;
-  align-items: flex-start;
   gap: 16px;
 }
 
@@ -81,7 +80,6 @@
 }
 
 .taskTitle {
-  margin: 0 0 12px 0;
   color: var(--text-color);
   font-size: 16px;
   font-weight: 600;

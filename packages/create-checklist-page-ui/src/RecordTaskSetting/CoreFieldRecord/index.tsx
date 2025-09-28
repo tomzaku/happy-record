@@ -46,15 +46,8 @@ const CoreFieldRecord = ({
     ...initialValues,
   });
 
-  // Update form when initialValues change (for edit mode)
-  React.useEffect(() => {
-    if (initialValues) {
-      setForm(prev => ({
-        ...prev,
-        ...initialValues,
-      }));
-    }
-  }, [initialValues]);
+  // Form is already initialized with initialValues in useState above
+  // No need for useEffect to sync since it's already handled in the initial state
 
   const handleSubmit = () => {
     onSubmit?.(form);

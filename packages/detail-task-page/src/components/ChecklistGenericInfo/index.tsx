@@ -266,7 +266,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
 
             {/* Tags */}
             <List.ItemMeta
-              logo={<Icon width={24} icon="solar:tag-broken" />}
+              logo={<Icon width={24} icon="solar:tag-outline" />}
               title="Tags"
               description={formatDisplayTags()}
               rightComponent={
