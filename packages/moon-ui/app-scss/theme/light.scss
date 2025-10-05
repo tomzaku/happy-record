@@ -1,7 +1,7 @@
 @use './common-color' as *;
 
 [data-theme='light'] {
-  --background: #fff5ff6e;
+  --background: #fffef56e;
 
   // Surface colors
   --surface-primary: #ffffff;
@@ -29,7 +29,7 @@
   // Card
   --card-background: #{$white};
   --card-shadow: #{$black6};
-  --card-border: #{$black6};
+  --card-border: #{$black24};
   --card-selected-background: #f5f5f5;
   --card-border-hover: #{$primary};
   --card-border-open: #{$primary};
