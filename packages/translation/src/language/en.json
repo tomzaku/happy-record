@@ -117,7 +117,7 @@
   "pregnant-weight-record.label-pregnant-weight": "What's your weight {{day}}? And how's your belly growing, mama?",
   "pregnant-weight-record.label-recorded": "You've already recorded your weight and belly's size.",
   "record-header.add-record": "Add",
-  "schedule-disabled": "Off",
+  "schedule-forever": "Forever (until done)",
   "setting-page.description-theme": "Config theme for whole page",
   "setting-page.label-dark": "Dark",
   "setting-page.label-light": "Light",

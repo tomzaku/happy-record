@@ -15,9 +15,14 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import Card from '@moon-ui/card';
 import { format } from 'date-fns';
 import CreateTaskModal from '../create-task-modal';
+import AddInlineTask from '../AddInlineTask';
 
 // Temporary local utility function - will be moved to global utils later
-const formatSchedule = (repeat?: { hour: string; minute: string; dayOfWeek: string }): string => {
+const formatSchedule = (repeat?: {
+  hour: string;
+  minute: string;
+  dayOfWeek: string;
+}): string => {
   if (!repeat || !repeat.dayOfWeek) {
     return 'No schedule';
   }
@@ -45,14 +50,22 @@ const formatDaysOfWeek = (dayOfWeek: string): string => {
     '3': 'Wed',
     '4': 'Thu',
     '5': 'Fri',
-    '6': 'Sat'
+    '6': 'Sat',
   };
 
-  const formattedDays = dayNumbers.map(day => dayNames[day as keyof typeof dayNames] || day);
+  const formattedDays = dayNumbers.map(
+    day => dayNames[day as keyof typeof dayNames] || day,
+  );
   return formattedDays.join(', ');
 };
 
-const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?: string }) => {
+const ChecklistTodayDesktop = ({
+  date,
+  selectedTag,
+}: {
+  date: Date;
+  selectedTag?: string;
+}) => {
   const { getChecklistByGivingDate, updateChecklist } = useChecklist();
   const [checklistByGivingDateIds, setChecklistByGivingDateIds] =
     React.useState<string[]>([]);
@@ -61,11 +74,15 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
   const [checklist, setChecklist] = React.useState<Record<string, Checklist>>(
     {},
   );
-  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = React.useState(false);
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] =
+    React.useState(false);
   const intl = useIntl();
 
   React.useEffect(() => {
-    const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
+    const { checklist, checklistIds } = getChecklistByGivingDate({
+      date,
+      selectedTag,
+    });
     setChecklist(checklist);
     setChecklistByGivingDateIds(checklistIds);
   }, [date, selectedTag, checklistTemplate]);
@@ -112,12 +129,13 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
           {format(date, 'EEEE, MMMM d')}
         </Typography.Title>
         <Typography.Text className={styles.taskCount}>
-          {checklistByGivingDateIds.length} task{checklistByGivingDateIds.length !== 1 ? 's' : ''}
+          {checklistByGivingDateIds.length} task
+          {checklistByGivingDateIds.length !== 1 ? 's' : ''}
         </Typography.Text>
       </div>
 
       <div className={styles.tasksList}>
-        {checklistByGivingDateIds.map((id) => {
+        {checklistByGivingDateIds.map(id => {
           const currentChecklist = checklist[id];
           const currentChecklistTemplate =
             checklistTemplate[currentChecklist.checklistTemplateId];
@@ -127,7 +145,7 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
               key={id}
               className={cx(
                 styles.taskCard,
-                currentChecklist?.completedAt && styles.completedTask
+                currentChecklist?.completedAt && styles.completedTask,
               )}
               onClick={() =>
                 navigate(
@@ -154,51 +172,67 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
                   </Typography.Title>
                   <div className={styles.taskMeta}>
                     <div className={styles.schedule}>
-                      <Icon icon="solar:calendar-date-line-duotone" width={16} className={styles.metaIcon} />
+                      <Icon
+                        icon="solar:calendar-date-line-duotone"
+                        width={16}
+                        className={styles.metaIcon}
+                      />
                       <Typography.Text className={styles.metaText}>
                         {formatSchedule(currentChecklistTemplate?.repeat)}
                       </Typography.Text>
                     </div>
-                    {currentChecklistTemplate?.tags && currentChecklistTemplate.tags.length > 0 && (
-                      <div className={styles.tags}>
-                        <Icon icon="solar:tag-outline" width={16} className={styles.metaIcon} />
-                        <div className={styles.tagsContainer}>
-                          {currentChecklistTemplate.tags.map((tag, index) => (
-                            <span key={index} className={styles.tag}>
-                              {tag}
-                            </span>
-                          ))}
+                    {currentChecklistTemplate?.tags &&
+                      currentChecklistTemplate.tags.length > 0 && (
+                        <div className={styles.tags}>
+                          <Icon
+                            icon="solar:tag-outline"
+                            width={16}
+                            className={styles.metaIcon}
+                          />
+                          <div className={styles.tagsContainer}>
+                            {currentChecklistTemplate.tags.map(tag => (
+                              <span key={tag} className={styles.tag}>
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
-                <div 
-                  className={styles.taskActions}
-                  onClick={event => {
-                    event.stopPropagation();
+                <Checkbox
+                  defaultChecked={Boolean(currentChecklist?.completedAt)}
+                  className={styles.checkbox}
+                  onChange={event => {
+                    updateChecklist({
+                      ...currentChecklist,
+                      completedAt: event.target.checked
+                        ? new Date().toISOString()
+                        : undefined,
+                    });
                   }}
-                >
-                  <Checkbox
-                    defaultChecked={Boolean(currentChecklist?.completedAt)}
-                    className={styles.checkbox}
-                    onChange={event => {
-                      updateChecklist({
-                        ...currentChecklist,
-                        completedAt: event.target.checked
-                          ? new Date().toISOString()
-                          : undefined,
-                      });
-                    }}
-                  />
-                </div>
+                />
               </div>
             </Card>
           );
         })}
       </div>
 
-      <Button
+      {/* Quick Add Task */}
+      <AddInlineTask
+        onTaskCreated={() => {
+          // Refresh the checklist data when a new task is created
+          const { checklist, checklistIds } = getChecklistByGivingDate({
+            date,
+            selectedTag,
+          });
+          setChecklist(checklist);
+          setChecklistByGivingDateIds(checklistIds);
+        }}
+        className={styles.quickAddTask}
+      />
+
+      {/* <Button
         type="dash"
         size="lg"
         onClick={() => {
@@ -215,11 +249,14 @@ const ChecklistTodayDesktop = ({ date, selectedTag }: { date: Date; selectedTag?
         onDismiss={() => setIsCreateTaskModalOpen(false)}
         onTaskCreated={() => {
           // Refresh the checklist data when a new task is created
-          const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
+          const { checklist, checklistIds } = getChecklistByGivingDate({
+            date,
+            selectedTag,
+          });
           setChecklist(checklist);
           setChecklistByGivingDateIds(checklistIds);
         }}
-      />
+      /> */}
     </div>
   );
 };

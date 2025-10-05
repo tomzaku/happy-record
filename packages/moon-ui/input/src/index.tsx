@@ -10,7 +10,7 @@ type Props = React.DetailedHTMLProps<
 > & {
   border?: 'dash' | 'solid';
   placeholder?: React.ReactNode;
-  classes?: { input: string };
+  classes?: { input?: string, wrapper?: string, placeholder?: string };
   showClear?: boolean;
   renderRightInput: () => JSX.Element;
   renderLeftInput?: () => JSX.Element;
@@ -80,7 +80,7 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
     const hasSuffix = !!suffix;
 
     return (
-      <div className={cx(styles.inputWrapper, className)}>
+      <div className={cx(styles.inputWrapper, className, classes?.wrapper)}>
         {renderLeftInput && (
           <div className={styles.left}>{renderLeftInput()}</div>
         )}
@@ -103,7 +103,7 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
         />
         {placeholder && showPlaceholder && (
           <div
-            className={styles.placeholder}
+            className={cx(styles.placeholder, classes?.placeholder)}
             onClick={() => inputRef.current?.focus()}
           >
             {placeholder}
