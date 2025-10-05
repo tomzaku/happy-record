@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocalStorage } from '../../hook';
 import { useChecklistTemplates } from './useChecklistTemplates';
 import { v4 } from 'uuid';
+import { startOfDay, endOfDay } from 'date-fns';
 
 const CHECKLIST_KEY = 'checklist';
 
@@ -66,24 +67,29 @@ export const useChecklist = () => {
           }
         });
 
-      // Get checklists without schedule (created for specific dates)
-      const nonScheduledChecklists = checklistsByGivingDate.filter(
+      const nonScheduledChecklists = Object.values(checklist).filter(
         existingChecklist => {
-          // Check if this checklist template has a repeat schedule
           const template =
-            checklistTemplate[existingChecklist.checklistTemplateId];
+          checklistTemplate[existingChecklist.checklistTemplateId];
 
-          // A checklist is considered non-scheduled if the template has no repeat schedule
-          const hasSchedule =
-            template?.repeat &&
-            template.repeat.dayOfWeek &&
-            template.repeat.dayOfWeek.trim() !== '';
+        // A checklist is considered forever if the template has no repeat schedule
+        const hasSchedule =
+          template?.repeat?.dayOfWeek &&
+          template.repeat.dayOfWeek.trim() !== '';
+          console.log(">nonScheduledChecklists hasSchedule", hasSchedule, existingChecklist)
+        if(hasSchedule) return false;
+        if (existingChecklist.completedAt) {
+          const completedAtDate = new Date(existingChecklist.completedAt);
+          return completedAtDate >= startOfDay(date);
+        }
 
-          // Include if it doesn't have a schedule (was created for a specific date)
-          return !hasSchedule;
+          // Must be on or after the startedAt date
+          const startedAtDate = new Date(existingChecklist.startedAt);
+          return startedAtDate <= endOfDay(date);
         },
       );
-      // Combine scheduled and non-scheduled checklists
+      console.log("nonScheduledChecklists", nonScheduledChecklists)
+      // Combine scheduled, non-scheduled, and forever checklists
       const allChecklists = [...scheduledChecklists, ...nonScheduledChecklists];
 
       // Filter by selected tag if provided

@@ -115,11 +115,11 @@ export const SchedulingGroup = ({
 
   // Create summary text for current schedule
   const getScheduleSummary = () => {
-    // If no days are selected, show "Off" status
+    // If no days are selected, show "Off" status (which means forever)
     if (!weeklyHobbies || weeklyHobbies.length === 0) {
       return intl.formatMessage({
-        defaultMessage: 'Off',
-        id: 'schedule-disabled',
+        defaultMessage: 'Forever (until done)',
+        id: 'schedule-forever',
       });
     }
 
@@ -164,7 +164,7 @@ export const SchedulingGroup = ({
         Day.Sat,
         Day.Sun,
       ];
-      const sortedDays = weeklyHobbies.sort(
+      const sortedDays = [...weeklyHobbies].sort(
         (a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b),
       );
 
@@ -255,7 +255,16 @@ export const SchedulingGroup = ({
         <>
           {/* Simple overlay */}
           {isModalVisible && (
-            <div className={styles.simpleOverlay} onClick={handleModalClose} />
+            <button 
+              className={styles.simpleOverlay} 
+              onClick={handleModalClose}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  handleModalClose();
+                }
+              }}
+              type="button"
+            />
           )}
           {/* Simple bottom sheet */}
           <div

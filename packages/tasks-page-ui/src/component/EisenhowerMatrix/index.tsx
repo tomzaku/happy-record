@@ -5,7 +5,7 @@ import Radio from '@moon-ui/radio';
 
 // Hooks
 import { useIntl } from '@dreamer/translation';
-import { a, useSpring, config } from '@react-spring/web';
+import { a, useSpring } from '@react-spring/web';
 
 // Enums
 import { EisenhowerMatrix } from '@dreamer/tasks-page-common';
@@ -39,7 +39,7 @@ const EisenhowerMatrixComponent = ({ value, setValue, className }: Props) => {
         rightComponent={
           <Toggle
             checked={Boolean(value)}
-            onChange={checked => {
+            onCheckedChange={checked => {
               if (checked) {
                 setValue(EisenhowerMatrix.Do);
               } else {

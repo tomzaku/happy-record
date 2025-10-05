@@ -5,7 +5,7 @@ import SchedulingGroup from './SchedulingGroup';
 import { Day } from '@dreamer/tasks-page-common';
 import IconPicker from './IconPicker';
 import Hr from './hr';
-import RecordTaskSetting, { FieldGroup } from './RecordTaskSetting';
+import { FieldGroup } from './RecordTaskSetting';
 import TagInput from './TagInput';
 import cx from 'classnames';
 
@@ -15,14 +15,14 @@ import { useIntl } from '@dreamer/translation';
 import styles from './index.module.scss';
 
 export type FormState = {
-  selectedRecords: string[];
+  selectedRecords?: string[];
   checklistText: string;
   weeklyHobbies: Day[];
   startedAt: string;
   selectedTime: string;
   selectedIcon: string;
   selectedColor: string;
-  fieldGroups: FieldGroup[];
+  fieldGroups?: FieldGroup[];
   tags: string[];
 };
 const CoreChecklistForm = ({
@@ -44,21 +44,15 @@ const CoreChecklistForm = ({
 }) => {
   const [form, setForm] = React.useState<FormState>(initialValues);
   const {
-    selectedRecords,
     checklistText,
     weeklyHobbies,
     startedAt,
     selectedTime,
     selectedIcon,
     selectedColor,
-    fieldGroups,
+    fieldGroups, // Used in form submission
     tags,
   } = form;
-
-  // Utility functions for updating form fields
-  const setSelectedRecords = (records: string[]) => {
-    setForm(prevForm => ({ ...prevForm, selectedRecords: records }));
-  };
 
   const setChecklistText = (text: string) => {
     setForm(prevForm => ({ ...prevForm, checklistText: text }));
@@ -84,13 +78,11 @@ const CoreChecklistForm = ({
     setForm(prevForm => ({ ...prevForm, selectedColor: color }));
   };
 
-  const setFieldGroups = (fieldGroups: FieldGroup[]) => {
-    setForm(prevForm => ({ ...prevForm, fieldGroups }));
-  };
 
   const setTags = (tags: string[]) => {
     setForm(prevForm => ({ ...prevForm, tags }));
   };
+
 
   const intl = useIntl();
 

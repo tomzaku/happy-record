@@ -2,8 +2,7 @@ import React from 'react';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 import { Modal } from '@moon-ui/modal';
 import CoreChecklistForm, { FormState } from '@pregnant/create-checklist-page-ui/src/CoreChecklistForm';
-import { calculateRepeat } from '@pregnant/create-checklist-page-ui/src/calculateRepeat';
-import { getDay } from '@pregnant/create-checklist-page-ui/src/getDay';
+import { createTask } from '@pregnant/create-checklist-page-ui/src/createTaskUtil';
 import Button from '@moon-ui/button';
 import { motion } from 'framer-motion';
 import styles from './index.module.scss';
@@ -31,43 +30,8 @@ const CreateTaskModal = ({
     setActiveTab(newTab);
   };
 
-  const onSubmit = ({
-    startedAt,
-    selectedTime,
-    selectedRecords,
-    selectedColor,
-    selectedIcon,
-    checklistText,
-    weeklyHobbies,
-    fieldGroups,
-    tags,
-  }: FormState) => {
-    const repeat = calculateRepeat({ weeklyHobbies, selectedTime, startedAt });
-    const { id } = addChecklistTemplate({
-      title: checklistText,
-      repeat,
-      avatar: {
-        type: 'icon',
-        name: selectedIcon,
-        color: selectedColor,
-      },
-      records: selectedRecords,
-      fieldGroups,
-      tags,
-    });
-    
-    // If not repeat we need to create a checklist onetime.
-    if (!repeat) {
-      addChecklist({
-        title: checklistText,
-        checklistTemplateId: id,
-        startedAt,
-        endedAt: new Date(
-          new Date(startedAt).setHours(23, 59, 59, 999),
-        ).toISOString(),
-      });
-    }
-    
+  const onSubmit = (formData: FormState) => {
+    createTask(formData, addChecklistTemplate, addChecklist);
     onDismiss();
     onTaskCreated?.();
   };
@@ -127,7 +91,7 @@ const CreateTaskModal = ({
                   {
                     selectedRecords: [],
                     checklistText: '',
-                    weeklyHobbies: [getDay()],
+                    weeklyHobbies: [], // Start with no schedule (forever by default)
                     startedAt: new Date().toISOString().split('T')[0],
                     selectedTime: '',
                     selectedIcon: 'material-symbols:checklist',
@@ -148,10 +112,11 @@ const CreateTaskModal = ({
                 <div className={styles.invitationCard}>
                   <div className={styles.invitationContent}>
                     <div className={styles.inputGroup}>
-                      <label className={styles.inputLabel}>
+                      <label htmlFor="invitation-template-id" className={styles.inputLabel}>
                         Your invitation template id
                       </label>
                       <input
+                        id="invitation-template-id"
                         type="text"
                         value={invitationTemplateId}
                         onChange={e => setInvitationTemplateId(e.target.value)}
