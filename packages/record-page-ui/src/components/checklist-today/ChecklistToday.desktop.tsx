@@ -200,18 +200,21 @@ const ChecklistTodayDesktop = ({
                       )}
                   </div>
                 </div>
-                <Checkbox
-                  defaultChecked={Boolean(currentChecklist?.completedAt)}
-                  className={styles.checkbox}
-                  onChange={event => {
-                    updateChecklist({
-                      ...currentChecklist,
-                      completedAt: event.target.checked
-                        ? new Date().toISOString()
-                        : undefined,
-                    });
-                  }}
-                />
+                <div onClick={e => e.stopPropagation()}>
+                  <Checkbox
+                    defaultChecked={Boolean(currentChecklist?.completedAt)}
+                    className={styles.checkbox}
+                    onChange={event => {
+                      event.stopPropagation();
+                      updateChecklist({
+                        ...currentChecklist,
+                        completedAt: event.target.checked
+                          ? new Date().toISOString()
+                          : undefined,
+                      });
+                    }}
+                  />
+                </div>
               </div>
             </Card>
           );

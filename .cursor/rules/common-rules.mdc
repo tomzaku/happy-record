@@ -1,3 +1,254 @@
+---
+alwaysApply: true
+---
+
+# Happy Record Project Cursor Rules
+
+## Project Overview
+This is a React TypeScript monorepo for a pregnancy tracking app with desktop and mobile support. The project uses Lerna for package management and follows specific patterns for styling, theming, and internationalization.
+
+## Styling Guidelines
+
+### Theme Support
+- **Always use CSS variables for colors** to support both light and dark themes
+- Light theme variables are defined in: `packages/moon-ui/app-scss/theme/light.scss`
+- Dark theme variables are defined in: `packages/moon-ui/app-scss/theme/dark.scss`
+- Use `var(--variable-name)` syntax for all color values
+- Example: `color: var(--text-color);` instead of `color: #000;`
+
+### Spacing
+- **Always use spacing utilities** from `packages/moon-ui/app-scss/metric.scss`
+- Available spacing variables: `$spacing-xl`, `$spacing-lg`, `$spacing-md`, `$spacing-sm`, `$spacing-xs`, `$spacing-xxs`
+- Use these for margin and padding only
+- Example: `margin: $spacing-md;` instead of `margin: 12px;`
+
+### Font Sizes
+- **Always use the `toRem()` function** from `packages/moon-ui/app-scss/function.scss`
+- Import: `@use '@moon-ui/app-scss/function' as *;`
+- Example: `font-size: toRem(16px);` instead of `font-size: 16px;`
+
+### SCSS Imports
+Always include these imports at the top of SCSS files:
+```scss
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+```
+
+## TypeScript Guidelines
+
+### Type vs Interface
+- **Prefer `type` over `interface`** for all type definitions
+- Use `type` for object shapes, unions, intersections, and computed types
+- Only use `interface` when you need declaration merging or extending
+
+Example:
+```typescript
+// ✅ Good
+type UserProps = {
+  name: string;
+  age: number;
+};
+
+// ❌ Avoid
+interface UserProps {
+  name: string;
+  age: number;
+}
+```
+
+## Component Structure
+
+### Desktop and Mobile Support
+- **Always create separate files** for desktop and mobile components
+- File naming convention:
+  - `component.desktop.tsx` - Desktop version
+  - `component.mobile.tsx` - Mobile version
+  - `component.desktop.module.scss` - Desktop styles
+  - `component.mobile.module.scss` - Mobile styles
+- Both versions should export the same component with the same props type
+
+### Component Example Structure
+```
+src/
+├── MyComponent.desktop.tsx
+├── MyComponent.mobile.tsx
+├── MyComponent.desktop.module.scss
+├── MyComponent.mobile.module.scss
+└── index.tsx (re-exports both versions)
+```
+
+### UIKit Components
+- **All UI components must be under `packages/moon-ui/`**
+- Follow the existing structure with separate folders for each component
+- Each component should have its own `package.json`, TypeScript files, and SCSS files
+
+## Internationalization
+
+### Translation Hook
+- **Always use `useIntl` hook** from `@dreamer/translation`
+- Import: `import { useIntl } from '@dreamer/translation';`
+- Usage: `const intl = useIntl();`
+- Access translations: `intl.formatMessage({ id: 'translation.key' })`
+
+### Translation Files
+- **Always update both language files** when adding new translations:
+  - `packages/translation/src/language/en.json` - English translations
+  - `packages/translation/src/language/vi.json` - Vietnamese translations
+- Use descriptive keys with dot notation: `ComponentName.actionName`
+- Example: `"Button.submit": "Submit"`
+
+### Translation Key Naming Convention
+- Use PascalCase for component names
+- Use camelCase for action descriptions
+- Use descriptive, hierarchical keys
+- Examples:
+  - `"ChecklistTemplate.delete-confirm-title"`
+  - `"CreateTask.label-submit"`
+  - `"Button.primary"`
+
+## Code Examples
+
+### Component with Theme Support
+```tsx
+import React from 'react';
+import { useIntl } from '@dreamer/translation';
+import styles from './MyComponent.desktop.module.scss';
+
+type MyComponentProps = {
+  title: string;
+  onAction: () => void;
+};
+
+const MyComponentDesktop = ({ title, onAction }: MyComponentProps) => {
+  const intl = useIntl();
+  
+  return (
+    <div className={styles.container}>
+      <h2 className={styles.title}>{title}</h2>
+      <button 
+        className={styles.button}
+        onClick={onAction}
+      >
+        {intl.formatMessage({ id: 'MyComponent.action' })}
+      </button>
+    </div>
+  );
+};
+
+export default MyComponentDesktop;
+```
+
+### SCSS with Theme Variables
+```scss
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+.container {
+  padding: $spacing-md;
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+}
+
+.title {
+  color: var(--text-title-primary-color);
+  font-size: toRem(18px);
+  font-weight: 600;
+  margin-bottom: $spacing-sm;
+}
+
+.button {
+  background: var(--button-default-background);
+  color: var(--text-color-invert);
+  border: none;
+  padding: $spacing-sm $spacing-md;
+  border-radius: 6px;
+  font-size: toRem(14px);
+  cursor: pointer;
+  
+  &:hover {
+    background: var(--button-action-background);
+    color: var(--button-action-color);
+  }
+}
+```
+
+### Translation Files Update
+```json
+// packages/translation/src/language/en.json
+{
+  "MyComponent.action": "Click Me",
+  "MyComponent.title": "My Component"
+}
+
+// packages/translation/src/language/vi.json
+{
+  "MyComponent.action": "Nhấn Tôi",
+  "MyComponent.title": "Thành Phần Của Tôi"
+}
+```
+
+## File Organization
+
+### Package Structure
+```
+packages/
+├── moon-ui/                    # UI Kit components
+│   └── component-name/
+│       ├── package.json
+│       ├── src/
+│       │   ├── ComponentName.tsx
+│       │   ├── ComponentName.module.scss
+│       │   └── index.ts
+├── page-ui/                    # Page components
+│   └── page-name/
+│       ├── package.json
+│       └── src/
+│           ├── index.desktop.tsx
+│           ├── index.mobile.tsx
+│           ├── index.desktop.module.scss
+│           ├── index.mobile.module.scss
+│           └── index.tsx
+└── translation/                # Translation package
+    └── src/
+        └── language/
+            ├── en.json
+            └── vi.json
+```
+
+## Code Quality
+
+### ESLint and Prettier
+- **Always follow ESLint and Prettier rules** configured in the project
+- Run `npm run lint` to check for ESLint errors before committing
+- Run `npm run format` to format code with Prettier
+- Fix all linting errors and warnings before submitting code
+- The project uses pre-commit hooks to enforce code quality
+
+## Best Practices
+
+1. **Code Quality**: Always follow ESLint and Prettier rules
+2. **Consistency**: Always follow the established patterns in the codebase
+3. **Theme Support**: Never hardcode colors, always use CSS variables
+4. **Responsive Design**: Create separate desktop and mobile versions
+5. **Internationalization**: Always add translations for new text content
+6. **Type Safety**: Use TypeScript types instead of interfaces
+7. **Spacing**: Use the spacing utility variables for consistent spacing
+8. **Font Sizes**: Use the `toRem()` function for responsive font sizing
+9. **Component Organization**: Keep UI components in the moon-ui package
+10. **Translation Keys**: Use descriptive, hierarchical key naming
+11. **File Naming**: Follow the `.desktop.tsx` and `.mobile.tsx` convention
+
+## Common Mistakes to Avoid
+
+- ❌ Hardcoding colors instead of using CSS variables
+- ❌ Using `interface` instead of `type`
+- ❌ Not creating separate desktop/mobile files
+- ❌ Forgetting to update translation files
+- ❌ Using pixel values for spacing instead of spacing utilities
+- ❌ Not using `toRem()` for font sizes
+- ❌ Creating UI components outside of `packages/moon-ui/`
+- ❌ Not using the `useIntl` hook for text content
 # Happy Record Project Cursor Rules
 
 ## Project Overview

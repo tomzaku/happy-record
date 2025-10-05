@@ -1,6 +1,5 @@
 import React from 'react';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
-import { Icon } from '@moon-ui/icon/Icon';
 import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
 import { createTask } from '@pregnant/create-checklist-page-ui/src/createTaskUtil';
@@ -76,26 +75,22 @@ const AddInlineTask = ({
         classes={{wrapper: styles.inputWrapper, input: styles.input, placeholder: styles.placeholder}}
         disabled={isSubmitting}
         border="dash"
-        renderRightInput={() => (
-          taskName.trim() ? (
-            <Button
-              type="primary"
-              size="sm"
-              disabled={isSubmitting}
-              className={styles.submitButton}
-              aria-label="Add task"
-            >
-              <Icon 
-                icon="material-symbols:check" 
-                width={16} 
-                height={16}
-                className={styles.submitIcon}
-              />
-            </Button>
-          ) : (
-            <></>
-          )
-        )}
+        renderRightInput={() => {
+          if (taskName.trim()) {
+            return (
+              <Button
+                type="primary"
+                size="sm"
+                disabled={isSubmitting}
+                className={styles.submitButton}
+                aria-label="Add task"
+              >
+                Submit
+              </Button>
+            );
+          }
+          return <></>;
+        }}
         renderLeftInput={() => <></>}
       />
     </form>
