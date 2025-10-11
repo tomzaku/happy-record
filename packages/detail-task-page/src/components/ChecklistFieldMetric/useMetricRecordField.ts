@@ -90,9 +90,11 @@ export const useMetricRecordField = ({
       return {
         ...acc,
         [recordField.id]: seriesValue,
-      };
+      }
     }, {});
-    setPeak(Math.max(...Object.values(seriesValues).flat()));
+    if(Object.values(seriesValues).flat().length > 0) {
+      setPeak(Math.max(...Object.values(seriesValues).flat()));
+    }  
     setData({
       categories,
       seriesValues,

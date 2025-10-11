@@ -25,7 +25,7 @@
   display: flex;
   margin-top: $spacing-lg;
   flex-direction: column;
-  overflow: hidden;
+  overflow: scroll;
 }
 
 .rightCalendar {
@@ -186,7 +186,6 @@
 }
 
 .taskListContainer {
-  overflow: hidden;
   padding-bottom: 20px;
   width: 100%;
 }

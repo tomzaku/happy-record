@@ -74,8 +74,6 @@ const ChecklistTodayDesktop = ({
   const [checklist, setChecklist] = React.useState<Record<string, Checklist>>(
     {},
   );
-  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] =
-    React.useState(false);
   const intl = useIntl();
 
   React.useEffect(() => {
@@ -163,13 +161,25 @@ const ChecklistTodayDesktop = ({
                   />
                 </div>
                 <div className={styles.taskInfo}>
-                  <Typography.Title
-                    level={5}
-                    className={styles.taskTitle}
-                    noMargin
-                  >
-                    {currentChecklist?.title || currentChecklistTemplate?.title}
-                  </Typography.Title>
+                  <div className={styles.taskTitleContainer}>
+                    <Typography.Title
+                      level={5}
+                      className={styles.taskTitle}
+                      noMargin
+                    >
+                      {currentChecklist?.title || currentChecklistTemplate?.title}
+                    </Typography.Title>
+                    {currentChecklistTemplate?.tags &&
+                      currentChecklistTemplate.tags.length > 0 && (
+                        <div className={styles.tagsContainer}>
+                          {currentChecklistTemplate.tags.map(tag => (
+                            <span key={tag} className={styles.tag}>
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                  </div>
                   <div className={styles.taskMeta}>
                     <div className={styles.schedule}>
                       <Icon
@@ -181,23 +191,6 @@ const ChecklistTodayDesktop = ({
                         {formatSchedule(currentChecklistTemplate?.repeat)}
                       </Typography.Text>
                     </div>
-                    {currentChecklistTemplate?.tags &&
-                      currentChecklistTemplate.tags.length > 0 && (
-                        <div className={styles.tags}>
-                          <Icon
-                            icon="solar:tag-outline"
-                            width={16}
-                            className={styles.metaIcon}
-                          />
-                          <div className={styles.tagsContainer}>
-                            {currentChecklistTemplate.tags.map(tag => (
-                              <span key={tag} className={styles.tag}>
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                   </div>
                 </div>
                 <div onClick={e => e.stopPropagation()}>
@@ -235,31 +228,6 @@ const ChecklistTodayDesktop = ({
         className={styles.quickAddTask}
       />
 
-      {/* <Button
-        type="dash"
-        size="lg"
-        onClick={() => {
-          setIsCreateTaskModalOpen(true);
-        }}
-        className={styles.addTaskButtonBottom}
-      >
-        <Icon icon="material-symbols:add" className={styles.addIcon} />
-        Add Task
-      </Button>
-
-      <CreateTaskModal
-        visible={isCreateTaskModalOpen}
-        onDismiss={() => setIsCreateTaskModalOpen(false)}
-        onTaskCreated={() => {
-          // Refresh the checklist data when a new task is created
-          const { checklist, checklistIds } = getChecklistByGivingDate({
-            date,
-            selectedTag,
-          });
-          setChecklist(checklist);
-          setChecklistByGivingDateIds(checklistIds);
-        }}
-      /> */}
     </div>
   );
 };

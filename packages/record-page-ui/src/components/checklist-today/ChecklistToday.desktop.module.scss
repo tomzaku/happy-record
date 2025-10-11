@@ -79,6 +79,13 @@
   min-width: 0;
 }
 
+.taskTitleContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .taskTitle {
   color: var(--text-color);
   font-size: 16px;
@@ -97,7 +104,7 @@
   gap: 8px;
 }
 
-.schedule, .tags {
+.schedule {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -121,13 +128,12 @@
 }
 
 .tag {
-  background: var(--button-action-background);
-  color: var(--button-action-color);
-  padding: 4px 8px;
-  border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
-  border: 1px solid var(--button-action-color);
+  background: var(--button-action-background);
+  color: var(--button-action-color);
+  padding: $spacing-xs;
+  border-radius: 4px;
 }
 
 .taskActions {

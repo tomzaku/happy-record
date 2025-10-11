@@ -46,6 +46,9 @@ const AddInlineTask = ({
       
       // Reset form
       setTaskName('');
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
       onTaskCreated?.();
     } catch (error) {
       console.error('Failed to create task:', error);

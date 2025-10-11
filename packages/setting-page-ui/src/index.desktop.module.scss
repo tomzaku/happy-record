@@ -3,7 +3,6 @@
 
 // Desktop-specific styles
 .desktopContainer {
-  padding-bottom: 80px;
   height: 100vh;
   display: flex;
   position: relative;
@@ -13,14 +12,14 @@
 .desktopBody {
   display: flex;
   flex: 1;
-  overflow: hidden;
   position: relative;
+  height: 100vh;
+  overflow: scroll;
 }
 
 .centerContent {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   width: 100%;
 }
 
