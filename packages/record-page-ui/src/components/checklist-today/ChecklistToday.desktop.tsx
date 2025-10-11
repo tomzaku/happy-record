@@ -90,33 +90,33 @@ const ChecklistTodayDesktop = ({
   if (checklistByGivingDateIds.length === 0) {
     return (
       <div className={styles.emptyContainer}>
-        <Icon
-          width={80}
-          icon="clarity:sad-face-line"
-          className={styles.iconEmpty}
-        />
-        <Typography.Title level={3} noMargin>
-          {intl.formatMessage({
-            id: 'ChecklistToday.no-record',
-            defaultMessage: 'No tasks found!',
-          })}
-        </Typography.Title>
-        <Typography.Text className={styles.emptyDescription}>
-          Create your first task to get started with your daily routine.
-        </Typography.Text>
-        <Button
-          type="ghost"
-          onClick={() => {
-            setIsCreateTaskModalOpen(true);
+        <div className={styles.emptyBody}>
+          <Icon
+            width={80}
+            icon="clarity:sad-face-line"
+            className={styles.iconEmpty}
+          />
+          <Typography.Title level={3} noMargin>
+            {intl.formatMessage({
+              id: 'ChecklistToday.no-record',
+              defaultMessage: 'No tasks found!',
+            })}
+          </Typography.Title>
+          <Typography.Text className={styles.emptyDescription}>
+            Create your first task to get started with your daily routine.
+          </Typography.Text>
+        </div>
+        <AddInlineTask
+          onTaskCreated={() => {
+            // Refresh the checklist data when a new task is created
+            const { checklist, checklistIds } = getChecklistByGivingDate({
+              date,
+              selectedTag,
+            });
+            setChecklist(checklist);
+            setChecklistByGivingDateIds(checklistIds);
           }}
-          className={styles.addTaskButton}
-        >
-          Create Task
-        </Button>
-
-        <CreateTaskModal
-          visible={isCreateTaskModalOpen}
-          onDismiss={() => setIsCreateTaskModalOpen(false)}
+          className={styles.quickAddTask}
         />
       </div>
     );
