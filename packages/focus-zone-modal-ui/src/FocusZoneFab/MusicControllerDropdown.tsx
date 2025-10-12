@@ -184,22 +184,31 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
 
   // Sync state with audio system when component becomes visible
   useEffect(() => {
-    if (visible) {
-      setSoundActiveId(getActiveSounds());
-      setVolumeSound(getSoundVolumes());
-      
-      // Auto-play random songs from each category when dropdown becomes visible
-      // Only if no music is currently playing
-      if (!isAnySoundActive()) {
-        const randomSongs = getRandomSongsFromCategories();
+    const initializeAudio = async () => {
+      if (visible) {
+        setSoundActiveId(getActiveSounds());
         
-        // Play the random songs directly
-        randomSongs.forEach((typeSound) => {
-          toggleSound(typeSound, true, { loop: true });
-          updateSoundActive(typeSound, true);
-        });
+        // Auto-play random songs from each category when dropdown becomes visible
+        // Only if no music is currently playing
+        if (!isAnySoundActive()) {
+          const randomSongs = getRandomSongsFromCategories();
+          
+          // Play the random songs directly and await all of them
+          await Promise.all(
+            randomSongs.map(async (typeSound) => {
+              await toggleSound(typeSound, true, { loop: true });
+              updateSoundActive(typeSound, true);
+            })
+          );
+        }
+        
+        // Now that all sounds are initialized, get the volumes
+        console.log('getSoundVolumes', getSoundVolumes());
+        setVolumeSound(getSoundVolumes());
       }
-    }
+    };
+
+    initializeAudio();
   }, [visible, setSoundActiveId, setVolumeSound, isAnySoundActive, updateSoundActive]);
 
   // Handle click outside to close dropdown

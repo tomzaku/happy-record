@@ -136,8 +136,8 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
         >
           <Icon
             icon={isAnyTimerRunning() ? "solar:pause-circle-outline" : "solar:play-circle-outline"}
-            width={18}
-            height={18}
+            width={24}
+            height={24}
           />
         </motion.button>
 
@@ -157,8 +157,8 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
             >
               <Icon
                 icon={isAnySoundMuted() ? "solar:volume-cross-outline" : "solar:volume-loud-linear"}
-                width={16}
-                height={16}
+                width={24}
+                height={24}
               />
             </motion.button>
 
@@ -186,8 +186,8 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
               >
                 <Icon
                   icon={"material-symbols:music-note"}
-                  width={16}
-                  height={16}
+                  width={24}
+                  height={24}
                 />
               </motion.div>
             </motion.button>
@@ -208,8 +208,8 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
           >
             <Icon
               icon={"material-symbols:music-note"}
-              width={18}
-              height={18}
+              width={24}
+              height={24}
             />
           </motion.button>
         )}
