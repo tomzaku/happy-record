@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
@@ -166,6 +166,7 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
   position = { top: 0, right: 0 },
 }) => {
   const intl = useIntl();
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const {
     soundActiveId,
     volumeSound,
@@ -200,6 +201,23 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
       }
     }
   }, [visible, setSoundActiveId, setVolumeSound, isAnySoundActive, updateSoundActive]);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (visible) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [visible, onClose]);
 
   // Group sounds by category
   const groupedSounds = Object.entries(soundInfo).reduce(
@@ -246,6 +264,7 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
   return (
     <AnimatePresence>
       <motion.div
+        ref={dropdownRef}
         className={styles.musicDropdown}
         initial={{ opacity: 0, scale: 0.8, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

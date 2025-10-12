@@ -30,7 +30,12 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
   const [isMusicDropdownVisible, setIsMusicDropdownVisible] = useState(false);
   const fabRef = useRef<HTMLDivElement>(null);
   
-  const { isAnySoundActive } = useAudioStore();
+  const { 
+    isAnySoundActive, 
+    isAnySoundMuted, 
+    muteAllActiveSounds, 
+    unmuteAllActiveSounds 
+  } = useAudioStore();
 
   // Format time functions
   const formatStopwatchTime = (time: number): string => {
@@ -72,6 +77,14 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
     setIsMusicDropdownVisible(!isMusicDropdownVisible);
   };
 
+  const handleMuteToggle = () => {
+    if (isAnySoundMuted()) {
+      unmuteAllActiveSounds();
+    } else {
+      muteAllActiveSounds();
+    }
+  };
+
   const getFabPosition = () => {
     if (fabRef.current) {
       const rect = fabRef.current.getBoundingClientRect();
@@ -94,9 +107,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0, opacity: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        style={{ 
-          padding: '12px 16px',
-        }}
       >
         {/* Timer Display */}
         <Typography.Text
@@ -131,26 +141,69 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
           />
         </motion.button>
 
-        {/* Music Control Button */}
-        <motion.button
-          className={`${styles.fabPlayPauseButton} ${isAnySoundActive() ? styles.musicPlaying : ''}`}
-          onClick={handleMusicToggle}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          style={{
-            width: '32px',
-            height: '32px'
-          }}
-        >
-          <motion.div
-            animate={isAnySoundActive() ? {
-              rotate: [0, 5, -5, 5, -5, 0],
-              scale: [1, 1.1, 1, 1.1, 1],
-            } : {}}
-            transition={{
-              duration: 2,
-              repeat: isAnySoundActive() ? Infinity : 0,
-              ease: "easeInOut"
+        {/* Music Control Group */}
+        {isAnySoundActive() && (
+          <div className={styles.musicControlGroup}>
+            {/* Mute Button */}
+            <motion.button
+              className={`${styles.fabMusicButton} ${isAnySoundMuted() ? styles.musicMuted : ''}`}
+              onClick={handleMuteToggle}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              style={{
+                width: '28px',
+                height: '28px'
+              }}
+            >
+              <Icon
+                icon={isAnySoundMuted() ? "solar:volume-cross-outline" : "solar:volume-loud-linear"}
+                width={16}
+                height={16}
+              />
+            </motion.button>
+
+            {/* Music Control Button */}
+            <motion.button
+              className={`${styles.fabMusicButton} ${isAnySoundActive() ? styles.musicPlaying : ''}`}
+              onClick={handleMusicToggle}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              style={{
+                width: '28px',
+                height: '28px'
+              }}
+            >
+              <motion.div
+                animate={isAnySoundActive() ? {
+                  rotate: [0, 5, -5, 5, -5, 0],
+                  scale: [1, 1.1, 1, 1.1, 1],
+                } : {}}
+                transition={{
+                  duration: 2,
+                  repeat: isAnySoundActive() ? Infinity : 0,
+                  ease: "easeInOut"
+                }}
+              >
+                <Icon
+                  icon={"material-symbols:music-note"}
+                  width={16}
+                  height={16}
+                />
+              </motion.div>
+            </motion.button>
+          </div>
+        )}
+
+        {/* Music Control Button (when no music is active) */}
+        {!isAnySoundActive() && (
+          <motion.button
+            className={styles.fabPlayPauseButton}
+            onClick={handleMusicToggle}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            style={{
+              width: '32px',
+              height: '32px'
             }}
           >
             <Icon
@@ -158,8 +211,8 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
               width={18}
               height={18}
             />
-          </motion.div>
-        </motion.button>
+          </motion.button>
+        )}
 
       </motion.div>
 
