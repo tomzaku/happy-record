@@ -4,6 +4,7 @@ import { Icon } from '@moon-ui/icon/Icon';
 import styles from './index.desktop.module.scss';
 import Typography from '@moon-ui/typography';
 import MusicControllerDropdown from './MusicControllerDropdown';
+import { useAudioStore } from '@dreamer/global';
 
 interface FocusZoneFABProps {
   timerMode: 'stopwatch' | 'pomodoro';
@@ -13,10 +14,7 @@ interface FocusZoneFABProps {
   isPomodoroRunning: boolean;
   onToggleStopwatch: () => void;
   onTogglePomodoro: () => void;
-  onResetStopwatch: () => void;
-  onResetPomodoro: () => void;
   onOpenModal: () => void;
-  onOpenMusicPlayer: () => void;
 }
 
 const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
@@ -29,10 +27,10 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
   onTogglePomodoro,
   onOpenModal,
 }) => {
-  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [isMusicDropdownVisible, setIsMusicDropdownVisible] = useState(false);
   const fabRef = useRef<HTMLDivElement>(null);
+  
+  const { isAnySoundActive } = useAudioStore();
 
   // Format time functions
   const formatStopwatchTime = (time: number): string => {
@@ -61,9 +59,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
     return isStopwatchRunning || isPomodoroRunning;
   };
 
-  const toggleMenu = () => {
-    setIsMenuExpanded(!isMenuExpanded);
-  };
 
   const handlePlayPause = () => {
     if (timerMode === 'stopwatch') {
@@ -74,7 +69,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
   };
 
   const handleMusicToggle = () => {
-    setIsMusicPlaying(!isMusicPlaying);
     setIsMusicDropdownVisible(!isMusicDropdownVisible);
   };
 
@@ -139,7 +133,7 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
 
         {/* Music Control Button */}
         <motion.button
-          className={styles.fabPlayPauseButton}
+          className={`${styles.fabPlayPauseButton} ${isAnySoundActive() ? styles.musicPlaying : ''}`}
           onClick={handleMusicToggle}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
@@ -148,11 +142,23 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
             height: '32px'
           }}
         >
-          <Icon
-            icon={"material-symbols:music-note"}
-            width={18}
-            height={18}
-          />
+          <motion.div
+            animate={isAnySoundActive() ? {
+              rotate: [0, 5, -5, 5, -5, 0],
+              scale: [1, 1.1, 1, 1.1, 1],
+            } : {}}
+            transition={{
+              duration: 2,
+              repeat: isAnySoundActive() ? Infinity : 0,
+              ease: "easeInOut"
+            }}
+          >
+            <Icon
+              icon={"material-symbols:music-note"}
+              width={18}
+              height={18}
+            />
+          </motion.div>
         </motion.button>
 
       </motion.div>

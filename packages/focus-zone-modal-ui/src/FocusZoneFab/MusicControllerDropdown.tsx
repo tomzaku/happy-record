@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
+import { useIntl } from '@dreamer/translation';
 import styles from './MusicControllerDropdown.module.scss';
 import {
   setSoundVolume,
@@ -10,6 +11,7 @@ import {
   getActiveSounds,
   getSoundVolumes,
 } from '@dreamer/music-controller-common';
+import { useAudioStore } from '@dreamer/global';
 
 // Import sound icons
 import IconBird from '@moon-ui/icon/IconBird';
@@ -33,7 +35,7 @@ type SoundInfo = Record<
   {
     logo: React.ReactNode;
     logoActive: React.ReactNode;
-    name: string;
+    nameKey: string;
     category: 'nature' | 'ambient' | 'lofi';
   }
 >;
@@ -42,49 +44,49 @@ const soundInfo: SoundInfo = {
   [TypeSound.Rain]: {
     logo: <IconRainy className={styles.iconInactive} />,
     logoActive: <IconRainy className={styles.iconActive} />,
-    name: 'Rain',
+    nameKey: 'MusicController.sound-rain',
     category: 'nature',
   },
   [TypeSound.RainAndThunder]: {
     logo: <IconThunder className={styles.iconInactive} />,
     logoActive: <IconThunder className={styles.iconActive} />,
-    name: 'Thunder',
+    nameKey: 'MusicController.sound-thunder',
     category: 'nature',
   },
   [TypeSound.InterviewInACafe]: {
     logo: <IconCafe className={styles.iconInactive} />,
     logoActive: <IconCafe className={styles.iconActive} />,
-    name: 'Cafe',
+    nameKey: 'MusicController.sound-cafe',
     category: 'ambient',
   },
   [TypeSound.Fireplace]: {
     logo: <IconFire className={styles.iconInactive} />,
     logoActive: <IconFire className={styles.iconActive} />,
-    name: 'Fire',
+    nameKey: 'MusicController.sound-fire',
     category: 'ambient',
   },
   [TypeSound.Cricket]: {
     logo: <IconMoon className={styles.iconInactive} />,
     logoActive: <IconMoon className={styles.iconActive} />,
-    name: 'Cricket',
+    nameKey: 'MusicController.sound-cricket',
     category: 'nature',
   },
   [TypeSound.Bird]: {
     logo: <IconBird className={styles.iconInactive} />,
     logoActive: <IconBird className={styles.iconActive} />,
-    name: 'Bird',
+    nameKey: 'MusicController.sound-bird',
     category: 'nature',
   },
   [TypeSound.Wave]: {
     logo: <IconWave className={styles.iconInactive} />,
     logoActive: <IconWave className={styles.iconActive} />,
-    name: 'Wave',
+    nameKey: 'MusicController.sound-wave',
     category: 'nature',
   },
   [TypeSound.BusyCoffee]: {
     logo: <IconCoffeeShop className={styles.iconInactive} />,
     logoActive: <IconCoffeeShop className={styles.iconActive} />,
-    name: 'Coffee Lofi',
+    nameKey: 'MusicController.sound-coffee-lofi',
     category: 'lofi',
   },
   [TypeSound.LofiHiphop]: {
@@ -94,7 +96,7 @@ const soundInfo: SoundInfo = {
     logoActive: (
       <Icon icon="solar:music-notes-linear" className={styles.iconActive} />
     ),
-    name: 'Lofi Hip Hop',
+    nameKey: 'MusicController.sound-lofi-hiphop',
     category: 'lofi',
   },
   [TypeSound.LofiSideBySide]: {
@@ -104,7 +106,7 @@ const soundInfo: SoundInfo = {
     logoActive: (
       <Icon icon="solar:music-notes-linear" className={styles.iconActive} />
     ),
-    name: 'Lofi Side by Side',
+    nameKey: 'MusicController.sound-lofi-side-by-side',
     category: 'lofi',
   },
   [TypeSound.LofiAfrobeatBurna]: {
@@ -114,22 +116,17 @@ const soundInfo: SoundInfo = {
     logoActive: (
       <Icon icon="solar:music-notes-linear" className={styles.iconActive} />
     ),
-    name: 'Afrobeat Lofi',
+    nameKey: 'MusicController.sound-lofi-afrobeat',
     category: 'lofi',
   },
   [TypeSound.StreamRiver]: {
     logo: <IconWaterfall className={styles.iconInactive} />,
     logoActive: <IconWaterfall className={styles.iconActive} />,
-    name: 'Stream River',
+    nameKey: 'MusicController.sound-stream-river',
     category: 'nature',
   },
 };
 
-const categoryLabels = {
-  nature: 'Nature',
-  ambient: 'Ambient',
-  lofi: 'Lo-Fi',
-};
 
 // Utility function to get random songs from each category
 const getRandomSongsFromCategories = (): TypeSound[] => {
@@ -168,12 +165,18 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
   onClose,
   position = { top: 0, right: 0 },
 }) => {
-  const [soundActiveId, setSoundActiveId] = useState<Record<TypeSound, boolean>>(
-    () => getActiveSounds()
-  );
-  const [volumeSound, setVolumeSound] = useState<Record<TypeSound, number>>(
-    () => getSoundVolumes()
-  );
+  const intl = useIntl();
+  const {
+    soundActiveId,
+    volumeSound,
+    setSoundActiveId,
+    setVolumeSound,
+    updateSoundActive,
+    updateSoundVolume,
+    isAnySoundActive,
+    muteAllActiveSounds,
+  } = useAudioStore();
+  
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'nature' | 'ambient' | 'lofi'>('all');
 
   // Sync state with audio system when component becomes visible
@@ -184,25 +187,17 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
       
       // Auto-play random songs from each category when dropdown becomes visible
       // Only if no music is currently playing
-      const isAnyMusicPlaying = Object.values(soundActiveId).some(isActive => isActive);
-      
-      if (!isAnyMusicPlaying) {
+      if (!isAnySoundActive()) {
         const randomSongs = getRandomSongsFromCategories();
         
         // Play the random songs directly
         randomSongs.forEach((typeSound) => {
           toggleSound(typeSound, true, { loop: true });
+          updateSoundActive(typeSound, true);
         });
-        
-        // Update the state to reflect the new active sounds
-        const newActiveState = { ...soundActiveId };
-        randomSongs.forEach(typeSound => {
-          newActiveState[typeSound] = true;
-        });
-        setSoundActiveId(newActiveState);
       }
     }
-  }, [visible]);
+  }, [visible, setSoundActiveId, setVolumeSound, isAnySoundActive, updateSoundActive]);
 
   // Group sounds by category
   const groupedSounds = Object.entries(soundInfo).reduce(
@@ -226,36 +221,18 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
 
   const handleSoundToggle = (typeSound: TypeSound) => {
     const newActiveState = !soundActiveId[typeSound];
-    setSoundActiveId({
-      ...soundActiveId,
-      [typeSound]: newActiveState,
-    });
+    updateSoundActive(typeSound, newActiveState);
     toggleSound(typeSound, newActiveState, { loop: true });
   };
 
   const handleVolumeChange = (typeSound: TypeSound, volume: number) => {
-    setVolumeSound({
-      ...volumeSound,
-      [typeSound]: volume,
-    });
+    updateSoundVolume(typeSound, volume);
     setSoundVolume(typeSound, volume);
   };
 
   const handleTurnOffAllMusic = () => {
-    // Turn off all currently active sounds
-    Object.keys(soundActiveId).forEach((typeSound) => {
-      if (soundActiveId[typeSound as TypeSound]) {
-        toggleSound(typeSound as TypeSound, false, { loop: true });
-      }
-    });
-    
-    // Update state to reflect all sounds are off
-    const allOffState = Object.keys(soundActiveId).reduce((acc, key) => {
-      acc[key as TypeSound] = false;
-      return acc;
-    }, {} as Record<TypeSound, boolean>);
-    
-    setSoundActiveId(allOffState);
+    // Mute all active sounds (handles both audio system and store state)
+    muteAllActiveSounds();
   };
 
   if (!visible) return null;
@@ -278,15 +255,15 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
         {/* Header */}
         <div className={styles.musicDropdownHeader}>
           <Typography.Title noMargin level={3} className={styles.musicDropdownTitle}>
-            Music Controls
+            {intl.formatMessage({ id: 'MusicController.title', defaultMessage: 'Music Controls' })}
           </Typography.Title>
           <div className={styles.musicDropdownHeaderButtons}>
             <motion.button
-              className={styles.musicDropdownClose}
+              className={styles.musicDropdownMute}
               onClick={handleTurnOffAllMusic}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              title="Turn off all music"
+              title={intl.formatMessage({ id: 'MusicController.mute-all', defaultMessage: 'Mute all music' })}
             >
               <Icon className={styles.actionIcon} icon="solar:muted-linear"/>
             </motion.button>
@@ -313,14 +290,17 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              {category === 'all' ? 'All' : categoryLabels[category]}
+              {category === 'all' 
+                ? intl.formatMessage({ id: 'MusicController.category-all', defaultMessage: 'All' })
+                : intl.formatMessage({ id: `MusicController.category-${category}`, defaultMessage: category })
+              }
             </motion.button>
           ))}
         </div>
 
         {/* Sound List */}
         <div className={styles.musicDropdownContent}>
-          {filteredSounds.map(({ typeSound, logo, logoActive, name }) => {
+          {filteredSounds.map(({ typeSound, logo, logoActive, nameKey }) => {
             const isActive = soundActiveId[typeSound as TypeSound];
             const volume = volumeSound[typeSound as TypeSound] ?? 1;
             return (
@@ -338,7 +318,7 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
                     {isActive ? logoActive : logo}
                   </div>
                   <Typography.Text className={styles.musicDropdownItemName}>
-                    {name}
+                    {intl.formatMessage({ id: nameKey, defaultMessage: nameKey })}
                   </Typography.Text>
                   <motion.button
                     className={`${styles.musicDropdownItemToggle} ${

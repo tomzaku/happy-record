@@ -88,7 +88,7 @@ src/
 - **Always use `useIntl` hook** from `@dreamer/translation`
 - Import: `import { useIntl } from '@dreamer/translation';`
 - Usage: `const intl = useIntl();`
-- Access translations: `intl.formatMessage({ id: 'translation.key' })`
+- Access translations: `intl.formatMessage({ id: 'translation.key', defaultMessage: 'value' })`
 
 ### Translation Files
 - **Always update both language files** when adding new translations:
@@ -129,7 +129,7 @@ const MyComponentDesktop = ({ title, onAction }: MyComponentProps) => {
         className={styles.button}
         onClick={onAction}
       >
-        {intl.formatMessage({ id: 'MyComponent.action' })}
+        {intl.formatMessage({ id: 'MyComponent.action', defaultMessage: 'action' })}
       </button>
     </div>
   );

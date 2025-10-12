@@ -70,6 +70,12 @@
   &:active {
     transform: scale(0.95);
   }
+
+  &.musicPlaying {
+    background: rgba(102, 126, 234, 0.3);
+    color: #667eea;
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+  }
 }
 [data-theme='dark'] {
   .fabPlayPauseButton {

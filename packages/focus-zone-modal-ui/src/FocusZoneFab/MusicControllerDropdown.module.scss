@@ -4,8 +4,6 @@
 
 /* Icon States */
 .iconActive {
-  // color: var(--focus-zone-header-title-gradient);
-  // fill: var(--focus-zone-header-title-gradient);
   color: var(--focus-zone-text-tertiary);
   fill: var(--focus-zone-text-tertiary);
 }
@@ -63,8 +61,23 @@
   display: flex;
 
   &:hover {
-    // background: var(--focus-zone-sound-option-hover-background);
     color: var(--focus-zone-text-primary);
+  }
+}
+
+.musicDropdownMute {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.2s ease;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  color: #ff4444;
+
+  &:hover {
+    color: #ff6666;
+    transform: scale(1.1);
   }
 }
 
