@@ -76,6 +76,7 @@
   "MusicController.title": "Điều Khiển Nhạc",
   "MusicController.turn-off-all": "Tắt tất cả nhạc",
   "MusicController.mute-all": "Tắt tiếng tất cả nhạc",
+  "MusicController.unmute-all": "Bật tiếng tất cả nhạc",
   "MusicController.category-all": "Tất Cả",
   "MusicController.category-nature": "Thiên Nhiên",
   "MusicController.category-ambient": "Môi Trường",

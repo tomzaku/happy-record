@@ -174,7 +174,9 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
     updateSoundActive,
     updateSoundVolume,
     isAnySoundActive,
+    isAnySoundMuted,
     muteAllActiveSounds,
+    unmuteAllActiveSounds,
   } = useAudioStore();
   
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'nature' | 'ambient' | 'lofi'>('all');
@@ -230,9 +232,13 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
     setSoundVolume(typeSound, volume);
   };
 
-  const handleTurnOffAllMusic = () => {
-    // Mute all active sounds (handles both audio system and store state)
-    muteAllActiveSounds();
+  const handleToggleMuteAllMusic = () => {
+    // Toggle between mute and unmute all active sounds
+    if (isAnySoundMuted()) {
+      unmuteAllActiveSounds();
+    } else {
+      muteAllActiveSounds();
+    }
   };
 
   if (!visible) return null;
@@ -260,12 +266,15 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
           <div className={styles.musicDropdownHeaderButtons}>
             <motion.button
               className={styles.musicDropdownMute}
-              onClick={handleTurnOffAllMusic}
+              onClick={handleToggleMuteAllMusic}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              title={intl.formatMessage({ id: 'MusicController.mute-all', defaultMessage: 'Mute all music' })}
+              title={intl.formatMessage({ 
+                id: isAnySoundMuted() ? 'MusicController.unmute-all' : 'MusicController.mute-all', 
+                defaultMessage: isAnySoundMuted() ? 'Unmute all music' : 'Mute all music' 
+              })}
             >
-              <Icon className={styles.actionIcon} icon="solar:muted-linear"/>
+              <Icon className={styles.actionIcon} icon={isAnySoundMuted() ? "solar:volume-loud-linear" : "solar:volume-cross-outline"}/>
             </motion.button>
             <motion.button
               className={styles.musicDropdownClose}
