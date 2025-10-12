@@ -27,10 +27,7 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
   isPomodoroRunning,
   onToggleStopwatch,
   onTogglePomodoro,
-  onResetStopwatch,
-  onResetPomodoro,
   onOpenModal,
-  onOpenMusicPlayer,
 }) => {
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);

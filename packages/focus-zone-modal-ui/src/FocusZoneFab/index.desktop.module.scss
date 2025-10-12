@@ -147,15 +147,14 @@
 }
 
 .musicDropdownTitle {
-  font-size: 16px;
-  font-weight: 600;
   color: #fff;
-  margin: 0;
+}
+
+.actionIcon {
+  font-size: toRem(20px);
 }
 
 .musicDropdownClose {
-  width: 24px;
-  height: 24px;
   border-radius: 50%;
   border: 0;
   background: rgba(255, 255, 255, 0.1);
@@ -222,8 +221,6 @@
   cursor: pointer;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
     transform: translateX(2px);
   }
 }

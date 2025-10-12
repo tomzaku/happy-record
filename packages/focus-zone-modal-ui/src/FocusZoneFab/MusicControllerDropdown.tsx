@@ -131,6 +131,38 @@ const categoryLabels = {
   lofi: 'Lo-Fi',
 };
 
+// Utility function to get random songs from each category
+const getRandomSongsFromCategories = (): TypeSound[] => {
+  const natureSounds = Object.entries(soundInfo)
+    .filter(([, sound]) => sound.category === 'nature')
+    .map(([typeSound]) => typeSound as TypeSound);
+  
+  const ambientSounds = Object.entries(soundInfo)
+    .filter(([, sound]) => sound.category === 'ambient')
+    .map(([typeSound]) => typeSound as TypeSound);
+  
+  const lofiSounds = Object.entries(soundInfo)
+    .filter(([, sound]) => sound.category === 'lofi')
+    .map(([typeSound]) => typeSound as TypeSound);
+
+  const randomSongs: TypeSound[] = [];
+  
+  // Get 1 random song from each category
+  if (natureSounds.length > 0) {
+    randomSongs.push(natureSounds[Math.floor(Math.random() * natureSounds.length)]);
+  }
+  
+  if (ambientSounds.length > 0) {
+    randomSongs.push(ambientSounds[Math.floor(Math.random() * ambientSounds.length)]);
+  }
+  
+  if (lofiSounds.length > 0) {
+    randomSongs.push(lofiSounds[Math.floor(Math.random() * lofiSounds.length)]);
+  }
+  
+  return randomSongs;
+};
+
 const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
   visible,
   onClose,
@@ -149,6 +181,26 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
     if (visible) {
       setSoundActiveId(getActiveSounds());
       setVolumeSound(getSoundVolumes());
+      
+      // Auto-play random songs from each category when dropdown becomes visible
+      // Only if no music is currently playing
+      const isAnyMusicPlaying = Object.values(soundActiveId).some(isActive => isActive);
+      
+      if (!isAnyMusicPlaying) {
+        const randomSongs = getRandomSongsFromCategories();
+        
+        // Play the random songs directly
+        randomSongs.forEach((typeSound) => {
+          toggleSound(typeSound, true, { loop: true });
+        });
+        
+        // Update the state to reflect the new active sounds
+        const newActiveState = { ...soundActiveId };
+        randomSongs.forEach(typeSound => {
+          newActiveState[typeSound] = true;
+        });
+        setSoundActiveId(newActiveState);
+      }
     }
   }, [visible]);
 
@@ -225,9 +277,9 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
       >
         {/* Header */}
         <div className={styles.musicDropdownHeader}>
-          <Typography.Text className={styles.musicDropdownTitle}>
+          <Typography.Title noMargin level={3} className={styles.musicDropdownTitle}>
             Music Controls
-          </Typography.Text>
+          </Typography.Title>
           <div className={styles.musicDropdownHeaderButtons}>
             <motion.button
               className={styles.musicDropdownClose}
@@ -236,7 +288,7 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
               whileTap={{ scale: 0.9 }}
               title="Turn off all music"
             >
-              <Icon icon="solar:muted-linear"/>
+              <Icon className={styles.actionIcon} icon="solar:muted-linear"/>
             </motion.button>
             <motion.button
               className={styles.musicDropdownClose}
@@ -244,7 +296,7 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              <Icon icon="material-symbols:close-rounded"/>
+              <Icon className={styles.actionIcon} icon="material-symbols:close-rounded"/>
             </motion.button>
           </div>
         </div>
@@ -270,8 +322,7 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
         <div className={styles.musicDropdownContent}>
           {filteredSounds.map(({ typeSound, logo, logoActive, name }) => {
             const isActive = soundActiveId[typeSound as TypeSound];
-            const volume = volumeSound[typeSound as TypeSound];
-
+            const volume = volumeSound[typeSound as TypeSound] ?? 1;
             return (
               <motion.div
                 key={typeSound}
@@ -324,6 +375,11 @@ const MusicControllerDropdown: React.FC<MusicControllerDropdownProps> = ({
                       max="100"
                       value={volume * 100}
                       onChange={(e) => handleVolumeChange(typeSound as TypeSound, Number(e.target.value) / 100)}
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onMouseUp={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onTouchEnd={(e) => e.stopPropagation()}
                       className={styles.musicDropdownVolumeSlider}
                     />
                     <span className={styles.musicDropdownVolumeText}>

@@ -23,10 +23,14 @@
   border: 1px solid var(--focus-zone-sound-card-border);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
   width: 290px;
-  max-height: 400px;
+  max-height: 800px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.actionIcon {
+  font-size: toRem(20px);
 }
 
 .musicDropdownHeader {
@@ -45,8 +49,6 @@
 }
 
 .musicDropdownTitle {
-  font-size: 16px;
-  font-weight: 600;
   color: var(--focus-zone-text-primary);
   margin: 0;
 }
@@ -102,7 +104,6 @@
   flex: 1;
   overflow-y: auto;
   padding: $spacing-xs 0;
-  max-height: 280px;
 }
 
 .musicDropdownItem {
@@ -115,8 +116,6 @@
   cursor: pointer;
 
   &:hover {
-    background: var(--focus-zone-sound-option-hover-background);
-    border-color: var(--focus-zone-sound-option-hover-border);
     transform: translateX($spacing-xs);
   }
 }
