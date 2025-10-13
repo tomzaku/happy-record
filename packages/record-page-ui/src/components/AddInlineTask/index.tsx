@@ -4,6 +4,7 @@ import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
 import { createTask } from '@pregnant/create-checklist-page-ui/src/createTaskUtil';
 import { FormState } from '@pregnant/create-checklist-page-ui/src/CoreChecklistForm';
+import cx from 'classnames';
 import styles from './index.module.scss';
 
 interface AddInlineTaskProps {
@@ -66,7 +67,7 @@ const AddInlineTask = ({
   return (
     <form 
       onSubmit={handleSubmit} 
-      className={`${styles.container} ${className || ''}`}
+      className={cx(styles.container, className)}
     >
       <Input
         ref={inputRef}

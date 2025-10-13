@@ -11,7 +11,7 @@ import cx from 'classnames';
 import Typography from '@moon-ui/typography';
 import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
-import Button from '@moon-ui/button/src/DefaultButton';
+import AddInlineTask from '../AddInlineTask';
 
 const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: string }) => {
   const { getChecklistByGivingDate, updateChecklist } = useChecklist();
@@ -46,15 +46,15 @@ const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: strin
               defaultMessage: 'No tasks found!',
             })}
           </Typography.Title>
-          <Button
-            type="ghost"
-            onClick={() => {
-              navigate('/create-checklist');
+          <AddInlineTask
+            onTaskCreated={() => {
+              // Refresh the checklist data when a new task is created
+              const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
+              setChecklist(checklist);
+              setChecklistByGivingDateIds(checklistIds);
             }}
             className={styles.addTaskButton}
-          >
-            Create Task
-          </Button>
+          />
         </div>
       </div>
     );
@@ -82,11 +82,11 @@ const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: strin
               icon={currentChecklistTemplate?.avatar.name}
             />
             <Typography.Text
-              onClick={() =>
-                navigate(
-                  `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
-                )
-              }
+              onClick={() => {
+                const baseUrl = `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}`;
+                const checklistIdParam = currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`;
+                navigate(baseUrl + checklistIdParam);
+              }}
               className={styles.title}
             >
               {currentChecklistTemplate?.title}
@@ -107,17 +107,15 @@ const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: strin
           </div>
         );
       })}
-      <Button
-        type="dash"
-        size="lg"
-        onClick={() => {
-          navigate('/create-checklist');
+      <AddInlineTask
+        onTaskCreated={() => {
+          // Refresh the checklist data when a new task is created
+          const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
+          setChecklist(checklist);
+          setChecklistByGivingDateIds(checklistIds);
         }}
         className={styles.addTaskButtonBottom}
-      >
-        <Icon icon="material-symbols:add" className={styles.addIcon} />
-        Add Task
-      </Button>
+      />
     </div>
   );
 };

@@ -97,6 +97,9 @@ const ChecklistFieldGroupAdd = ({
     // Flatten the records object into an array
     const flattenedRecords = Object.values(records).flat();
     setCurrentChecklistRecords(flattenedRecords);
+    if (flattenedRecords.length === 0) {
+      setShowHistory(true)
+    }
     return records;
   };
   const today = isToday(currentDay);
