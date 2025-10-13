@@ -13,7 +13,13 @@ import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 import AddInlineTask from '../AddInlineTask';
 
-const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: string }) => {
+const ChecklistToday = ({
+  date,
+  selectedTag,
+}: {
+  date: Date;
+  selectedTag?: string;
+}) => {
   const { getChecklistByGivingDate, updateChecklist } = useChecklist();
   const [checklistByGivingDateIds, setChecklistByGivingDateIds] =
     React.useState<string[]>([]);
@@ -25,10 +31,13 @@ const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: strin
   const intl = useIntl();
 
   React.useEffect(() => {
-    const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
+    const { checklist, checklistIds } = getChecklistByGivingDate({
+      date,
+      selectedTag,
+    });
     setChecklist(checklist);
     setChecklistByGivingDateIds(checklistIds);
-  }, [date, selectedTag]);
+  }, [date, selectedTag, checklistTemplate]);
 
   if (checklistByGivingDateIds.length === 0) {
     return (
@@ -46,16 +55,21 @@ const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: strin
               defaultMessage: 'No tasks found!',
             })}
           </Typography.Title>
-          <AddInlineTask
-            onTaskCreated={() => {
-              // Refresh the checklist data when a new task is created
-              const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
-              setChecklist(checklist);
-              setChecklistByGivingDateIds(checklistIds);
-            }}
-            className={styles.addTaskButton}
-          />
         </div>
+        <AddInlineTask
+          onTaskCreated={() => {
+            // Refresh the checklist data when a new task is created
+            const { checklist, checklistIds } = getChecklistByGivingDate({
+              date,
+              selectedTag,
+            });
+            console.log('checklist', checklist);
+            console.log('checklistIds', checklistIds);
+            setChecklist(checklist);
+            setChecklistByGivingDateIds(checklistIds);
+          }}
+          className={styles.addTaskButton}
+        />
       </div>
     );
   }
@@ -84,7 +98,9 @@ const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: strin
             <Typography.Text
               onClick={() => {
                 const baseUrl = `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}`;
-                const checklistIdParam = currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`;
+                const checklistIdParam = currentChecklist.clientOnly
+                  ? ''
+                  : `&checklistId=${currentChecklist.id}`;
                 navigate(baseUrl + checklistIdParam);
               }}
               className={styles.title}
@@ -110,7 +126,10 @@ const ChecklistToday = ({ date, selectedTag }: { date: Date; selectedTag?: strin
       <AddInlineTask
         onTaskCreated={() => {
           // Refresh the checklist data when a new task is created
-          const { checklist, checklistIds } = getChecklistByGivingDate({ date, selectedTag });
+          const { checklist, checklistIds } = getChecklistByGivingDate({
+            date,
+            selectedTag,
+          });
           setChecklist(checklist);
           setChecklistByGivingDateIds(checklistIds);
         }}

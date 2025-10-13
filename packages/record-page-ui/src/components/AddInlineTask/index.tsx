@@ -20,6 +20,7 @@ const AddInlineTask = ({
   const { addChecklist } = useChecklist();
   const [taskName, setTaskName] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [inputKey, setInputKey] = React.useState(0);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,9 +48,8 @@ const AddInlineTask = ({
       
       // Reset form
       setTaskName('');
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
+      // Force re-render of Input component to clear its internal state
+      setInputKey(prev => prev + 1);
       onTaskCreated?.();
     } catch (error) {
       console.error('Failed to create task:', error);
@@ -70,6 +70,7 @@ const AddInlineTask = ({
       className={cx(styles.container, className)}
     >
       <Input
+        key={inputKey}
         ref={inputRef}
         type="text"
         value={taskName}

@@ -76,7 +76,6 @@ export const useChecklist = () => {
         const hasSchedule =
           template?.repeat?.dayOfWeek &&
           template.repeat.dayOfWeek.trim() !== '';
-          console.log(">nonScheduledChecklists hasSchedule", hasSchedule, existingChecklist)
         if(hasSchedule) return false;
         if (existingChecklist.completedAt) {
           const completedAtDate = new Date(existingChecklist.completedAt);
@@ -88,7 +87,6 @@ export const useChecklist = () => {
           return startedAtDate <= endOfDay(date);
         },
       );
-      console.log("nonScheduledChecklists", nonScheduledChecklists)
       // Combine scheduled, non-scheduled, and forever checklists
       const allChecklists = [...scheduledChecklists, ...nonScheduledChecklists];
 
