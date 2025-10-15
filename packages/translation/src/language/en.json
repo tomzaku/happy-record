@@ -23,6 +23,7 @@
   "CreateTask.label-recommendations": "Recommendations",
   "CreateTask.label-submit": "Submit",
   "CreateTask.msg-morning-greeting-description": "What is your goal today?",
+  "DetailTaskPage.edit-title": "Edit Title",
   "EditChecklistTemplate..delete-confirm-cancel": "Cancel",
   "EditChecklistTemplate..delete-confirm-ok": "Delete",
   "EditChecklistTemplate.delete-confirm-title": "Delete Checklist Template",

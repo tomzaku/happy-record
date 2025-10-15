@@ -1,4 +1,5 @@
 @use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
 
 .desktopContainer {
   display: flex;
@@ -19,12 +20,8 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: $spacing-md;;
+  margin-bottom: $spacing-md;
   padding: $spacing-md;
-  // background: var(--card-background);
-  // border-radius: 8px;
-  // border: 1px solid var(--card-border);
-  // box-shadow: 0 2px 8px var(--card-shadow);
 }
 
 .titleSection {
@@ -37,13 +34,60 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+}
+
+.titleDisplayContainer {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
 }
 
 .pageTitle {
   margin: 0;
   color: var(--text-title-primary-color);
-  font-size: 28px;
+  font-size: toRem(28px);
   font-weight: 700;
+  flex: 1;
+}
+
+.editTitleButton {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: $spacing-xs;
+  border-radius: 6px;
+  
+  &:hover {
+    background: var(--button-action-background);
+    color: var(--button-action-color);
+  }
+}
+
+.titleDisplayContainer:hover .editTitleButton {
+  opacity: 1;
+}
+
+.titleEditContainer {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  width: 100%;
+}
+
+.titleInput {
+  font-size: toRem(28px);
+  font-weight: 700;
+  color: var(--text-title-primary-color);
+  border: 2px solid var(--button-action-color);
+  border-radius: 8px;
+  padding: $spacing-sm;
+  background: var(--card-background);
+  
+  &:focus {
+    outline: none;
+    border-color: var(--button-action-color);
+    box-shadow: 0 0 0 3px var(--button-action-background);
+  }
 }
 
 .subtitle {

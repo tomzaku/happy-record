@@ -92,5 +92,8 @@
   "MusicController.sound-lofi-hiphop": "Lofi Hip Hop",
   "MusicController.sound-lofi-side-by-side": "Lofi Bên Cạnh",
   "MusicController.sound-lofi-afrobeat": "Afrobeat Lofi",
-  "MusicController.sound-stream-river": "Suối Sông"
+  "MusicController.sound-stream-river": "Suối Sông",
+  "DetailTaskPage.edit-title": "Chỉnh Sửa Tiêu Đề",
+  "DetailTaskPage.save-title": "Lưu",
+  "DetailTaskPage.cancel-edit": "Hủy"
 }

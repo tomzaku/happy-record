@@ -12,6 +12,7 @@ import {
 } from '@dreamer/global/src/store/record-field';
 import { DesktopDrawer } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
+import { useIntl } from '@dreamer/translation';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import styles from './index.desktop.module.scss';
@@ -25,6 +26,7 @@ const DetailTaskPageDesktop = () => {
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
   const { getAllRecordFields } = useRecordField();
+  const intl = useIntl();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
 
@@ -32,6 +34,8 @@ const DetailTaskPageDesktop = () => {
     React.useState<ChecklistTemplate>();
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [fields, setFields] = React.useState<RecordField[]>([]);
+  const [isEditingTitle, setIsEditingTitle] = React.useState(false);
+  const [editedTitle, setEditedTitle] = React.useState('');
 
   if (!id || !currentDay) {
     return;
@@ -81,6 +85,39 @@ const DetailTaskPageDesktop = () => {
     setFields([...fields, newField]);
   };
 
+  // Handle title editing
+  const handleEditTitle = () => {
+    if (checklistTemplate) {
+      setEditedTitle(checklistTemplate.title);
+      setIsEditingTitle(true);
+    }
+  };
+
+  const handleSaveTitle = () => {
+    if (checklistTemplate && editedTitle.trim()) {
+      const updatedTemplate = {
+        ...checklistTemplate,
+        title: editedTitle.trim(),
+      };
+      updateChecklistTemplate(updatedTemplate);
+      setChecklistTemplate(updatedTemplate);
+      setIsEditingTitle(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingTitle(false);
+    setEditedTitle('');
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveTitle();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
+
   const navigate = useNavigate();
   if (!checklistId || !checklist || !checklistTemplate) {
     return null;
@@ -100,9 +137,33 @@ const DetailTaskPageDesktop = () => {
                 color={checklistTemplate.avatar?.color || '#607d8b'}
               />
               <div className={styles.titleInfo}>
-                <Typography.Title level={2} className={styles.pageTitle}>
-                  {checklistTemplate.title}
-                </Typography.Title>
+                {isEditingTitle ? (
+                  <div className={styles.titleEditContainer}>
+                    <input
+                      type="text"
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      className={styles.titleInput}
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <div className={styles.titleDisplayContainer}>
+                    <Typography.Title level={2} className={styles.pageTitle}>
+                      {checklistTemplate.title}
+                    </Typography.Title>
+                    <Button
+                      type="ghost"
+                      size="sm"
+                      onClick={handleEditTitle}
+                      className={styles.editTitleButton}
+                      title={intl.formatMessage({ id: 'DetailTaskPage.edit-title', defaultMessage: 'Edit Title' })}
+                    >
+                      <Icon icon="solar:pen-new-square-linear" width={16} />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
             <div className={styles.headerActions}>
