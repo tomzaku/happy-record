@@ -15,6 +15,7 @@ import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
+import CardShare from './components/CardShare';
 import styles from './index.desktop.module.scss';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button/src/DefaultButton';
@@ -205,6 +206,11 @@ const DetailTaskPageDesktop = () => {
                   setChecklistTemplate(updatedTemplate);
                 }}
               />
+              
+              <CardShare
+                checklistTemplate={checklistTemplate}
+              />
+              
             </div>
           </div>
         </div>

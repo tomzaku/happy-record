@@ -35,6 +35,7 @@ export type ChecklistTemplate = {
   records: string[];
   fieldGroups: FieldGroup[];
   tags: string[];
+  visibility?: 'public' | 'private';
 };
 
 const common = {

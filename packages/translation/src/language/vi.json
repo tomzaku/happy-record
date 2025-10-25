@@ -95,5 +95,11 @@
   "MusicController.sound-stream-river": "Suối Sông",
   "DetailTaskPage.edit-title": "Chỉnh Sửa Tiêu Đề",
   "DetailTaskPage.save-title": "Lưu",
-  "DetailTaskPage.cancel-edit": "Hủy"
+  "DetailTaskPage.cancel-edit": "Hủy",
+  "CardShare.share-button": "Chia Sẻ",
+  "CardShare.share-url-label": "URL Chia Sẻ:",
+  "CardShare.copy-link": "Sao Chép Liên Kết",
+  "CardShare.copied": "Đã Sao Chép!",
+  "CardShare.share-description": "Tạo liên kết có thể chia sẻ",
+  "CardShare.generate-url": "Tạo URL"
 }

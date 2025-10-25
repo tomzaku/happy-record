@@ -125,5 +125,11 @@
   "setting-page.label-dark": "Dark",
   "setting-page.label-light": "Light",
   "setting-page.label-theme": "Theme",
-  "setting-page.title": "Setting"
+  "setting-page.title": "Setting",
+  "CardShare.share-button": "Share",
+  "CardShare.share-url-label": "Share URL:",
+  "CardShare.copy-link": "Copy Link",
+  "CardShare.copied": "Copied!",
+  "CardShare.share-description": "Generate a shareable link",
+  "CardShare.generate-url": "Generate URL"
 }

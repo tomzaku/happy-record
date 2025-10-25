@@ -70,9 +70,37 @@ export const useFirebase = () => {
     const localStorageList = localStorageSnapshot.docs.map(doc => doc.data());
   };
   const upload = async (data: unknown, key: string) => {
+    const removeUndefinedData = (obj: unknown): unknown => {
+      if (obj === null || obj === undefined) {
+        return obj;
+      }
+      
+      if (Array.isArray(obj)) {
+        return obj
+          .map(item => removeUndefinedData(item))
+          .filter(item => item !== undefined);
+      }
+      
+      if (typeof obj === 'object') {
+        const cleaned: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(obj)) {
+          if (value !== undefined) {
+            const cleanedValue = removeUndefinedData(value);
+            if (cleanedValue !== undefined) {
+              cleaned[key] = cleanedValue;
+            }
+          }
+        }
+        return cleaned;
+      }
+      
+      return obj;
+    };
+    
+    const cleanedData = removeUndefinedData(data);
     const colRef = collection(db, key);
     const newDocRef = await addDoc(colRef, {
-      content: data,
+      content: cleanedData,
       userId: user.id,
       createdAt: new Date().toISOString(),
     });

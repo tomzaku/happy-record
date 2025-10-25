@@ -21,7 +21,7 @@ const TasksSharedPage = () => {
   const { getChecklistTemplate } = useChecklistTemplates();
   const { getAllRecordFields } = useRecordField();
   const [copied, setCopied] = React.useState(false);
-  const [targetName, setTargetName] = React.useState('dude');
+  const [targetName, setTargetName] = React.useState('you');
   const [message, setMessage] = React.useState('');
   const [userName, setUserName] = React.useState('');
   const { updateChecklistTemplate } = useCreateChecklistTemplate();

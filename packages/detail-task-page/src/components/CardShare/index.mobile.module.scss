@@ -1,0 +1,56 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  overflow: hidden;
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.background {
+  top: -32px;
+  width: 120px;
+  height: 120px;
+  right: -80px;
+  opacity: 0.12;
+  border-radius: 8px;
+  position: absolute;
+  transform: rotate(40deg);
+  background: linear-gradient(135deg, #00aaff, #0088cc);
+}
+
+.urlContainer {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  margin-top: $spacing-xs;
+}
+
+.url {
+  color: var(--text-color);
+  font-size: toRem(10px);
+  font-family: monospace;
+  word-break: break-all;
+  background: var(--input-background);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  padding: $spacing-xs;
+  line-height: 1.3;
+}
+
+.copyButton {
+  align-self: flex-start;
+  font-size: toRem(10px);
+  padding: $spacing-xs $spacing-sm;
+  min-width: auto;
+}
+
+.generateButton {
+  flex-shrink: 0;
+  min-width: 80px;
+  font-size: toRem(11px);
+}
