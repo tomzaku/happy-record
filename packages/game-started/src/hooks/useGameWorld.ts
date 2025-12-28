@@ -6,6 +6,11 @@ import { createField } from '../entities/Field';
 import { createBall, resetBall } from '../entities/Ball';
 import { createPlayerRow } from '../entities/Player';
 
+type InitialPosition = {
+  position: Cannon.Vec3;
+  quaternion: Cannon.Quaternion;
+};
+
 type GameWorld = {
   world: Cannon.World;
   ball: GameEntity | null;
@@ -53,6 +58,7 @@ export function useGameWorld(
     const greenHandlers: GameEntity[] = [];
     const greenMen: GameEntity[] = [];
     const greenConstraints: Cannon.LockConstraint[] = [];
+    const greenInitialPositions = new Map<Cannon.Body, InitialPosition>();
 
     config.greenTeam.forEach(({ numberOfMan, z }) => {
       const row = createPlayerRow({
@@ -65,12 +71,20 @@ export function useGameWorld(
         world.addBody(handler.body);
         scene.add(handler.mesh);
         greenHandlers.push(handler);
+        greenInitialPositions.set(handler.body, {
+          position: handler.body.position.clone(),
+          quaternion: handler.body.quaternion.clone(),
+        });
       });
 
       row.men.forEach(man => {
         world.addBody(man.body);
         scene.add(man.mesh);
         greenMen.push(man);
+        greenInitialPositions.set(man.body, {
+          position: man.body.position.clone(),
+          quaternion: man.body.quaternion.clone(),
+        });
       });
 
       row.constraints.forEach(constraint => {
@@ -83,6 +97,7 @@ export function useGameWorld(
     const redHandlers: GameEntity[] = [];
     const redMen: GameEntity[] = [];
     const redConstraints: Cannon.LockConstraint[] = [];
+    const redInitialPositions = new Map<Cannon.Body, InitialPosition>();
 
     config.redTeam.forEach(({ numberOfMan, z }) => {
       const row = createPlayerRow({
@@ -95,12 +110,20 @@ export function useGameWorld(
         world.addBody(handler.body);
         scene.add(handler.mesh);
         redHandlers.push(handler);
+        redInitialPositions.set(handler.body, {
+          position: handler.body.position.clone(),
+          quaternion: handler.body.quaternion.clone(),
+        });
       });
 
       row.men.forEach(man => {
         world.addBody(man.body);
         scene.add(man.mesh);
         redMen.push(man);
+        redInitialPositions.set(man.body, {
+          position: man.body.position.clone(),
+          quaternion: man.body.quaternion.clone(),
+        });
       });
 
       row.constraints.forEach(constraint => {
@@ -110,9 +133,50 @@ export function useGameWorld(
     });
 
     const reset = () => {
+      // Reset ball
       if (ball) {
         resetBall(ball, config.ballInitialPosition);
       }
+
+      // Reset green team positions
+      greenHandlers.forEach(handler => {
+        const initial = greenInitialPositions.get(handler.body);
+        if (initial) {
+          handler.body.position.copy(initial.position);
+          handler.body.quaternion.copy(initial.quaternion);
+          handler.body.velocity.set(0, 0, 0);
+          handler.body.angularVelocity.set(0, 0, 0);
+        }
+      });
+      greenMen.forEach(man => {
+        const initial = greenInitialPositions.get(man.body);
+        if (initial) {
+          man.body.position.copy(initial.position);
+          man.body.quaternion.copy(initial.quaternion);
+          man.body.velocity.set(0, 0, 0);
+          man.body.angularVelocity.set(0, 0, 0);
+        }
+      });
+
+      // Reset red team positions
+      redHandlers.forEach(handler => {
+        const initial = redInitialPositions.get(handler.body);
+        if (initial) {
+          handler.body.position.copy(initial.position);
+          handler.body.quaternion.copy(initial.quaternion);
+          handler.body.velocity.set(0, 0, 0);
+          handler.body.angularVelocity.set(0, 0, 0);
+        }
+      });
+      redMen.forEach(man => {
+        const initial = redInitialPositions.get(man.body);
+        if (initial) {
+          man.body.position.copy(initial.position);
+          man.body.quaternion.copy(initial.quaternion);
+          man.body.velocity.set(0, 0, 0);
+          man.body.angularVelocity.set(0, 0, 0);
+        }
+      });
     };
 
     setGameWorld({

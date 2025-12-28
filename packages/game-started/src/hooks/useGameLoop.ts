@@ -19,6 +19,7 @@ type GameLoopOptions = {
   redHandlers: GameEntity[];
   redMen: GameEntity[];
   onGoal?: (team: 'green' | 'red') => void;
+  gameState?: 'idle' | 'countdown' | 'playing' | 'paused' | 'gameOver';
 };
 
 export function useGameLoop({
@@ -32,9 +33,23 @@ export function useGameLoop({
   redHandlers,
   redMen,
   onGoal,
+  gameState,
 }: GameLoopOptions) {
   const animationFrameId = useRef<number | null>(null);
   const isRunning = useRef(true);
+  const goalScored = useRef(false);
+  const gameStateRef = useRef(gameState);
+
+  // Update gameState ref when it changes
+  useEffect(() => {
+    const previousState = gameStateRef.current;
+    gameStateRef.current = gameState;
+    
+    // Reset goal flag when transitioning to countdown (new round starting)
+    if (gameState === 'countdown' && previousState !== 'countdown') {
+      goalScored.current = false;
+    }
+  }, [gameState]);
 
   useEffect(() => {
     if (!ball || !world || !scene || !camera || !renderer) return;
@@ -42,11 +57,16 @@ export function useGameLoop({
     function animate() {
       if (!isRunning.current) return;
 
-      // Check for goals
-      if (ball.body.position.z > GROUND_LENGTH / 2) {
-        onGoal?.('red');
-      } else if (ball.body.position.z < -GROUND_LENGTH / 2) {
-        onGoal?.('green');
+      // Check for goals (only once per goal and only when playing)
+      if (!goalScored.current && gameStateRef.current === 'playing') {
+        const ballZ = ball.body.position.z;
+        if (ballZ > GROUND_LENGTH / 2) {
+          goalScored.current = true;
+          onGoal?.('red');
+        } else if (ballZ < -GROUND_LENGTH / 2) {
+          goalScored.current = true;
+          onGoal?.('green');
+        }
       }
 
       // Update ball position
