@@ -1,31 +1,9 @@
 import React from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
-import Header from '@dreamer/header';
 import SettingPage from '@dreamer/setting-page-ui';
 import SettingPageDesktop from '@dreamer/setting-page-ui/src/index.desktop';
-import DetailTaskPage from '@dreamer/detail-task-page';
-import DetailTaskPageDesktop from '@dreamer/detail-task-page/src/index.desktop';
-
-import PregnantIntro from '@pregnant/pregnant-intro';
-import PregnantPage from '@pregnant/pregnant-page-ui';
-import {
-  EditChecklistForm,
-  CreateChecklistForm,
-} from '@pregnant/create-checklist-page-ui';
-import PregnantWeightRecord from '@pregnant/pregnant-weight-record';
-import ChecklistTemplatePageUi from '@pregnant/checklist-template-page-ui';
-import StoryPageUi from '@pregnant/story-page-ui';
-import Audio from '@pregnant/pregnant-audio-player';
-import { AnimatePresence, motion } from 'motion/react';
-import { NoteManagerPage } from '@happy-record/note-manager-page-ui';
-import { NoteManagerPageDesktop } from '@happy-record/note-manager-page-ui/src/index.desktop';
-import { AddNotePage } from '@happy-record/add-note-page-ui';
-
-// Hocs
-import RecordPage from '@dreamer/record-page-ui';
 import LocalStorageEditor from './local-storage-editor';
-import TasksSharedPage from '@happy-record/tasks-shared-page-ui';
-import ChecklistTemplateSharedPageUi from '@happy-record/checklist-template-shared-page-ui';
+import { AnimatePresence, motion } from 'motion/react';
 import { useIsMobile } from '@dreamer/global';
 
 const AnimationRoute = ({ children }: { children: React.ReactNode }) => {
@@ -52,80 +30,9 @@ const AppRouter = () => {
           path="/"
           element={
             <AnimationRoute>
-              <RecordPage />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/task/:id"
-          element={
-            <AnimationRoute>
-              {isMobile ? <DetailTaskPage /> : <DetailTaskPageDesktop />}
-            </AnimationRoute>
-          }
-        />
-
-        <Route
-          path="/task/:id/share"
-          element={
-            <AnimationRoute>
-              <TasksSharedPage />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/checklist-template/shared"
-          element={
-            <AnimationRoute>
-              <ChecklistTemplateSharedPageUi />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/checklist-template/shared/:id"
-          element={
-            <AnimationRoute>
-              <ChecklistTemplateSharedPageUi />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/create-checklist"
-          element={
-            <AnimationRoute>
-              <CreateChecklistForm />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/edit-checklist/:id"
-          element={
-            <AnimationRoute>
-              <EditChecklistForm />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/weight-record"
-          element={
-            <AnimationRoute>
-              <PregnantWeightRecord />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/intro"
-          element={
-            <AnimationRoute>
-              <PregnantIntro />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/checklist-template"
-          element={
-            <AnimationRoute>
-              <ChecklistTemplatePageUi />
+              <div>
+                Hello
+              </div>
             </AnimationRoute>
           }
         />
@@ -138,42 +45,10 @@ const AppRouter = () => {
           }
         />
         <Route
-          path="/story"
-          element={
-            <AnimationRoute>
-              <StoryPageUi />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/audio"
-          element={
-            <AnimationRoute>
-              <Audio />
-            </AnimationRoute>
-          }
-        />
-        <Route
           path="/setting/local-storage-editor"
           element={
             <AnimationRoute>
               <LocalStorageEditor />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/notes"
-          element={
-            <AnimationRoute>
-              {isMobile ? <NoteManagerPage /> : <NoteManagerPageDesktop />}
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/notes/add"
-          element={
-            <AnimationRoute>
-              <AddNotePage />
             </AnimationRoute>
           }
         />

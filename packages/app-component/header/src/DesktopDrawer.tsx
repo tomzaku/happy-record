@@ -17,22 +17,6 @@ const DesktopDrawer = () => {
 
   const navigationItems = [
     {
-      id: 'task',
-      label: 'Tasks',
-      icon: 'material-symbols:checklist',
-      description: 'Manage your daily tasks',
-      path: '/',
-      action: () => navigate('/')
-    },
-    {
-      id: 'note',
-      label: 'Notes',
-      icon: 'solar:notes-line-duotone',
-      description: 'View and create notes',
-      path: '/notes',
-      action: () => navigate('/notes')
-    },
-    {
       id: 'setting',
       label: 'Settings',
       icon: 'solar:settings-linear',
@@ -43,10 +27,6 @@ const DesktopDrawer = () => {
   ];
 
   const isActivePath = (path: string) => {
-    if (path === '/') {
-      // For the root path, check if it's exactly '/' or matches the task pattern '/task/<id>'
-      return location.pathname === '/' || location.pathname.match(/^\/task\/[^/]+$/);
-    }
     return location.pathname.startsWith(path);
   };
 

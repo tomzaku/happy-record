@@ -17,14 +17,6 @@ const Header = () => {
         <Icon
           className={styles.rightIcon}
           width={24}
-          icon="solar:notes-line-duotone"
-          onClick={() => {
-            navigate('/notes');
-          }}
-        />
-        <Icon
-          className={styles.rightIcon}
-          width={24}
           icon="solar:settings-linear"
           onClick={() => {
             navigate('/setting');

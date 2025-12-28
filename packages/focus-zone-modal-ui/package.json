@@ -11,8 +11,6 @@
     "@dreamer/pomodoro-common": "^1.0.0",
     "@dreamer/pomodoro-mobile": "^1.0.0",
     "@dreamer/pomodoro-pip": "^1.0.0",
-    "@dreamer/tasks-page-common": "^1.0.0",
-    "@dreamer/tasks-page-ui": "^1.0.0",
     "@moon-ui/button": "^1.0.0",
     "@moon-ui/card": "^1.0.0",
     "@moon-ui/icon": "^1.0.0",
