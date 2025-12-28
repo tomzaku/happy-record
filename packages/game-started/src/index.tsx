@@ -5,12 +5,15 @@ import { useGameLoop } from './hooks/useGameLoop';
 import { useKeyboardControls } from './hooks/useKeyboardControls';
 import { defaultGameConfig, defaultKeyboardControls } from './config/gameConfig';
 import HelpMenu from './components/HelpMenu';
+import Countdown from './components/Countdown';
+import { startBall } from './entities/Ball';
 import styles from './index.module.scss';
 
 const GameStarted = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = React.useState<'idle' | 'playing' | 'paused' | 'gameOver'>('idle');
+  const [gameState, setGameState] = React.useState<'idle' | 'countdown' | 'playing' | 'paused' | 'gameOver'>('idle');
   const [isHelpOpen, setIsHelpOpen] = React.useState(false);
+  const [countdown, setCountdown] = React.useState(3);
 
   // Initialize Three.js scene
   const sceneSetup = useThreeScene(canvasRef);
@@ -23,6 +26,21 @@ const GameStarted = () => {
     console.log(`${team.toUpperCase()} WIN`);
     setGameState('gameOver');
   }, []);
+
+  // Handle countdown complete
+  const handleCountdownComplete = React.useCallback(() => {
+    if (gameWorld?.ball) {
+      startBall(gameWorld.ball);
+    }
+    setGameState('playing');
+  }, [gameWorld?.ball]);
+
+  // Restart game
+  const handleRestart = React.useCallback(() => {
+    gameWorld?.reset();
+    setCountdown(3);
+    setGameState('countdown');
+  }, [gameWorld]);
 
   // Start game loop (only when everything is ready)
   useGameLoop({
@@ -45,14 +63,27 @@ const GameStarted = () => {
     redHandlers: gameWorld?.redHandlers ?? [],
     redMen: gameWorld?.redMen ?? [],
     controls: defaultKeyboardControls,
+    onRestart: handleRestart,
   });
 
-  // Start game when everything is ready
+  // Start countdown when everything is ready
   React.useEffect(() => {
     if (sceneSetup && gameWorld && gameState === 'idle') {
-      setGameState('playing');
+      setGameState('countdown');
     }
   }, [sceneSetup, gameWorld, gameState]);
+
+  // Countdown timer
+  React.useEffect(() => {
+    if (gameState !== 'countdown') return;
+
+    if (countdown > 0) {
+      const timer = window.setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => window.clearTimeout(timer);
+    }
+  }, [countdown, gameState]);
 
   return (
     <div className={styles.container}>
@@ -61,6 +92,9 @@ const GameStarted = () => {
         className={styles.canvas}
       />
       <HelpMenu isOpen={isHelpOpen} onToggle={() => setIsHelpOpen(!isHelpOpen)} />
+      {gameState === 'countdown' && (
+        <Countdown count={countdown} onComplete={handleCountdownComplete} />
+      )}
     </div>
   );
 };

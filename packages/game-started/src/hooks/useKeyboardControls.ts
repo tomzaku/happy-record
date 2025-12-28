@@ -8,6 +8,7 @@ type KeyboardControlsOptions = {
   redHandlers: GameEntity[];
   redMen: GameEntity[];
   controls: KeyboardControls;
+  onRestart?: () => void;
 };
 
 export function useKeyboardControls({
@@ -16,9 +17,16 @@ export function useKeyboardControls({
   redHandlers,
   redMen,
   controls,
+  onRestart,
 }: KeyboardControlsOptions) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      // Handle restart
+      if (event.key.toLowerCase() === 'r') {
+        onRestart?.();
+        return;
+      }
+
       switch (event.key) {
         case controls.greenLeft: {
           const delta = new Cannon.Vec3(-0.01, 0, 0);
@@ -108,6 +116,6 @@ export function useKeyboardControls({
     return () => {
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [greenHandlers, greenMen, redHandlers, redMen, controls]);
+  }, [greenHandlers, greenMen, redHandlers, redMen, controls, onRestart]);
 }
 

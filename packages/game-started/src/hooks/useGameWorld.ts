@@ -3,7 +3,7 @@ import * as Cannon from 'cannon-es';
 import * as Three from 'three';
 import type { GameEntity, PlayerRow, GameConfig } from '../types';
 import { createField } from '../entities/Field';
-import { createBall } from '../entities/Ball';
+import { createBall, resetBall } from '../entities/Ball';
 import { createPlayerRow } from '../entities/Player';
 
 type GameWorld = {
@@ -14,6 +14,7 @@ type GameWorld = {
   redHandlers: GameEntity[];
   redMen: GameEntity[];
   field: ReturnType<typeof createField>;
+  reset: () => void;
 };
 
 export function useGameWorld(
@@ -43,8 +44,8 @@ export function useGameWorld(
       world.addBody(wall.body);
     });
 
-    // Create ball
-    const ball = createBall(config.ballInitialPosition, true);
+    // Create ball (without initial velocity - will start after countdown)
+    const ball = createBall(config.ballInitialPosition, false);
     scene.add(ball.mesh);
     world.addBody(ball.body);
 
@@ -108,6 +109,12 @@ export function useGameWorld(
       });
     });
 
+    const reset = () => {
+      if (ball) {
+        resetBall(ball, config.ballInitialPosition);
+      }
+    };
+
     setGameWorld({
       world,
       ball,
@@ -116,6 +123,7 @@ export function useGameWorld(
       redHandlers,
       redMen,
       field,
+      reset,
     });
 
     return () => {

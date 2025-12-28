@@ -30,8 +30,29 @@ export function createBall(
       random({ min: -1, max: 1 })
     );
     body.velocity.copy(initialVelocity);
+  } else {
+    // Keep ball stationary initially
+    body.velocity.set(0, 0, 0);
+    body.type = Cannon.Body.KINEMATIC; // Make it kinematic so it doesn't fall
   }
 
   return { mesh, body };
+}
+
+export function startBall(ball: GameEntity): void {
+  ball.body.type = Cannon.Body.DYNAMIC;
+  const initialVelocity = new Cannon.Vec3(
+    random({ min: -1, max: 1 }),
+    0,
+    random({ min: -1, max: 1 })
+  );
+  ball.body.velocity.copy(initialVelocity);
+}
+
+export function resetBall(ball: GameEntity, position: [number, number, number] = [0, 0.2, 0]): void {
+  ball.body.position.set(...position);
+  ball.body.velocity.set(0, 0, 0);
+  ball.body.angularVelocity.set(0, 0, 0);
+  ball.body.type = Cannon.Body.KINEMATIC;
 }
 
