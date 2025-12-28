@@ -37,13 +37,14 @@ export function groupOfItems<T>({
   numberItemOfGroup: number;
   arr: T[];
 }) {
-  let result: T[][] = [];
+  const result: T[][] = [];
   for (let i = 0; i < arr.length - step; i = i + step) {
     result.push(arr.slice(i, i + numberItemOfGroup));
   }
-  return result
+  return result;
 }
 
-export function random({min, max}: {min: number, max: number}) {
+export function random({ min, max }: { min: number; max: number }) {
   return Math.random() * (max - min) + min;
 }
+
