@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import SettingPage from '@dreamer/setting-page-ui';
 import SettingPageDesktop from '@dreamer/setting-page-ui/src/index.desktop';
 import LocalStorageEditor from './local-storage-editor';
+import GameStarted from '@table-soccer/game-started';
 import { AnimatePresence, motion } from 'motion/react';
 import { useIsMobile } from '@dreamer/global';
 
@@ -27,16 +28,6 @@ const AppRouter = () => {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route
-          path="/"
-          element={
-            <AnimationRoute>
-              <div>
-                Hello
-              </div>
-            </AnimationRoute>
-          }
-        />
-        <Route
           path="/setting"
           element={
             <AnimationRoute>
@@ -49,6 +40,14 @@ const AppRouter = () => {
           element={
             <AnimationRoute>
               <LocalStorageEditor />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <AnimationRoute>
+              <GameStarted />
             </AnimationRoute>
           }
         />

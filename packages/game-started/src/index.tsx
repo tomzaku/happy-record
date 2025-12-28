@@ -307,8 +307,6 @@ const GameStarted = () => {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = Three.PCFSoftShadowMap;
 
-    document.body.appendChild(renderer.domElement);
-
     // Lights
     const ambientLight = new Three.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
@@ -639,7 +637,7 @@ const GameStarted = () => {
     <div>
       <canvas
         ref={canvas}
-        style={{ position: 'absolute', width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%' }}
       />
     </div>
   );

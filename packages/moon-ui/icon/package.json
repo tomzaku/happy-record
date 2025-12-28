@@ -8,6 +8,9 @@
   },
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "@iconify/react": "^4.1.0"
+  },
   "devDependencies": {
     "@types/react-motion": "^0.0.40"
   }
