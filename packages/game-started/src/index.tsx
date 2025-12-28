@@ -4,11 +4,13 @@ import { useGameWorld } from './hooks/useGameWorld';
 import { useGameLoop } from './hooks/useGameLoop';
 import { useKeyboardControls } from './hooks/useKeyboardControls';
 import { defaultGameConfig, defaultKeyboardControls } from './config/gameConfig';
+import HelpMenu from './components/HelpMenu';
 import styles from './index.module.scss';
 
 const GameStarted = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = React.useState<'idle' | 'playing' | 'paused' | 'gameOver'>('idle');
+  const [isHelpOpen, setIsHelpOpen] = React.useState(false);
 
   // Initialize Three.js scene
   const sceneSetup = useThreeScene(canvasRef);
@@ -58,6 +60,7 @@ const GameStarted = () => {
         ref={canvasRef}
         className={styles.canvas}
       />
+      <HelpMenu isOpen={isHelpOpen} onToggle={() => setIsHelpOpen(!isHelpOpen)} />
     </div>
   );
 };
