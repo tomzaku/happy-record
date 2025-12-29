@@ -67,7 +67,7 @@ export function createPlayerRow({
     handlers.push({ mesh, body });
   }
 
-  // Create players (men)
+  // Create players (men) with two legs
   for (let i = 0; i < numberOfMan; i++) {
     const x =
       -GROUND_WIDTH / 2 -
@@ -81,16 +81,99 @@ export function createPlayerRow({
       position: [x, GROUND_HEIGHT + SOCCER_MAN_HEIGHT / 2 + BALL_SIZE / 2, z],
     };
 
-    const geometry = new Three.BoxGeometry(...manConfig.size);
-    const mesh = new Three.Mesh(
-      geometry,
-      new Three.MeshPhongMaterial({
-        shininess: 10,
-        map: basicTexture(teamColor),
-        name: 'box',
-      })
-    );
+    // Create a group for the player (body + legs + feet)
+    const playerGroup = new Three.Group();
 
+    // Calculate positions relative to group center
+    // Group center is at: GROUND_HEIGHT + SOCCER_MAN_HEIGHT / 2 + BALL_SIZE / 2
+    const groupCenterY = GROUND_HEIGHT + SOCCER_MAN_HEIGHT / 2 + BALL_SIZE / 2;
+    const groundSurfaceY = GROUND_HEIGHT;
+    const distanceFromGroupCenterToGround = groupCenterY - groundSurfaceY;
+
+    // Body/torso (upper part)
+    const bodyHeight = SOCCER_MAN_HEIGHT * 0.5;
+    const bodyGeometry = new Three.BoxGeometry(
+      SOCCER_MAN_WIDTH * 0.7,
+      bodyHeight,
+      SOCCER_MAN_WIDTH * 0.6
+    );
+    const bodyMaterial = new Three.MeshPhongMaterial({
+      shininess: 10,
+      map: basicTexture(teamColor),
+      name: 'body',
+    });
+    const bodyMesh = new Three.Mesh(bodyGeometry, bodyMaterial);
+    bodyMesh.position.y = bodyHeight / 2 + SOCCER_MAN_HEIGHT * 0.15;
+    bodyMesh.castShadow = true;
+    playerGroup.add(bodyMesh);
+
+    // Leg dimensions
+    const legWidth = SOCCER_MAN_WIDTH * 0.2;
+    const legHeight = distanceFromGroupCenterToGround + SOCCER_MAN_HEIGHT * 0.1;
+    const legDepth = SOCCER_MAN_WIDTH * 0.4;
+    const legMaterial = new Three.MeshPhongMaterial({
+      shininess: 10,
+      map: basicTexture(teamColor),
+      name: 'leg',
+    });
+
+    // Left leg
+    const leftLegGeometry = new Three.BoxGeometry(legWidth, legHeight, legDepth);
+    const leftLegMesh = new Three.Mesh(leftLegGeometry, legMaterial);
+    // Position leg so bottom touches ground: legCenterY = -distanceFromGroupCenterToGround + legHeight/2
+    leftLegMesh.position.set(
+      -SOCCER_MAN_WIDTH * 0.15,
+      -distanceFromGroupCenterToGround + legHeight / 2,
+      0
+    );
+    leftLegMesh.castShadow = true;
+    playerGroup.add(leftLegMesh);
+
+    // Right leg
+    const rightLegMesh = new Three.Mesh(leftLegGeometry.clone(), legMaterial);
+    rightLegMesh.position.set(
+      SOCCER_MAN_WIDTH * 0.15,
+      -distanceFromGroupCenterToGround + legHeight / 2,
+      0
+    );
+    rightLegMesh.castShadow = true;
+    playerGroup.add(rightLegMesh);
+
+    // Feet (wider for easier ball contact)
+    const footWidth = SOCCER_MAN_WIDTH * 0.6; // Much wider than leg
+    const footHeight = SOCCER_MAN_HEIGHT * 0.08;
+    const footDepth = SOCCER_MAN_WIDTH * 0.7; // Wider than leg for better ball contact
+    const footMaterial = new Three.MeshPhongMaterial({
+      shininess: 10,
+      map: basicTexture(teamColor),
+      name: 'foot',
+    });
+
+    // Left foot
+    const leftFootGeometry = new Three.BoxGeometry(footWidth, footHeight, footDepth);
+    const leftFootMesh = new Three.Mesh(leftFootGeometry, footMaterial);
+    leftFootMesh.position.set(
+      -SOCCER_MAN_WIDTH * 0.15,
+      -distanceFromGroupCenterToGround - footHeight / 2,
+      0
+    );
+    leftFootMesh.castShadow = true;
+    playerGroup.add(leftFootMesh);
+
+    // Right foot
+    const rightFootMesh = new Three.Mesh(leftFootGeometry.clone(), footMaterial);
+    rightFootMesh.position.set(
+      SOCCER_MAN_WIDTH * 0.15,
+      -distanceFromGroupCenterToGround - footHeight / 2,
+      0
+    );
+    rightFootMesh.castShadow = true;
+    playerGroup.add(rightFootMesh);
+
+    // Position the entire group
+    playerGroup.position.set(...manConfig.position);
+
+    // Physics body (single box for simplicity, matches overall player size)
     const body = new Cannon.Body({
       shape: new Cannon.Box(
         new Cannon.Vec3(...convertThreeBoxUnitToCannon(manConfig.size))
@@ -103,8 +186,8 @@ export function createPlayerRow({
       position: new Cannon.Vec3(...manConfig.position),
     });
 
-    mesh.userData.body = body;
-    men.push({ mesh, body });
+    playerGroup.userData.body = body;
+    men.push({ mesh: playerGroup, body });
   }
 
   // Create constraints between handlers and men
