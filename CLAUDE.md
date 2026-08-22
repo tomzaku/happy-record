@@ -93,6 +93,15 @@ doesn't change, so their existing rows don't need migrating. Needs `[auth.extern
 configured at all (`hasBackend`), but without those credentials clicking it just fails quietly
 (a console warning, no error screen — same "degrade, don't break" rule as everything else here).
 
+`useSession().signOut` (settings page's "Sign Out" row, shown once linked) ends the device's
+session and calls `supabase.ts`'s `resetSessionCache()` so the next request doesn't keep sending
+the revoked token — the device just re-anonymizes right away, same as a fresh install, since
+nothing here gates on being signed in. **Signing back into that same account isn't wired up
+yet**: `signInWithGoogle` only ever sees the fresh anonymous session afterward and calls
+`linkIdentity`, which Supabase rejects since that Google identity is already linked elsewhere.
+Untested against real Google OAuth either way — this project has no credentials configured to
+verify against (see above).
+
 The anonymous sign-in is a network round trip, so on a cold load (nothing in `localStorage` yet)
 it's racing every `request.*` call already firing from mounted components. `supabase.ts`'s
 `ensureSession()` — a single memoized promise `api.ts`'s `send()` and `useSession.ts` both

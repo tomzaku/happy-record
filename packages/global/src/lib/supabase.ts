@@ -47,3 +47,14 @@ export function ensureSession(): Promise<Session | null> {
   }
   return sessionPromise;
 }
+
+/**
+ * Drops the memoized session so the next `ensureSession()` call re-checks
+ * from scratch instead of replaying a now-stale one. Needed after
+ * `supabase.auth.signOut()` — without this, every request would keep
+ * sending the just-revoked session's token until something else happened to
+ * call `ensureSession()` again from a clean slate.
+ */
+export function resetSessionCache() {
+  sessionPromise = null;
+}

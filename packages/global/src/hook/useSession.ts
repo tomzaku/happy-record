@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ensureSession, supabase } from '../lib/supabase';
+import { ensureSession, resetSessionCache, supabase } from '../lib/supabase';
 
 /**
  * Signs the device in anonymously on first load so it has a Supabase session
@@ -79,6 +79,29 @@ export const useSession = () => {
     return error?.message ?? null;
   };
 
+  /**
+   * Ends this device's session. `resetSessionCache()` is what makes that
+   * stick — otherwise `ensureSession()` would keep handing out the
+   * just-revoked session to the next request. The very next request (or the
+   * `onAuthStateChange` handler above) re-anonymizes the device straight
+   * away, same as a brand new install — this app never gates on being
+   * signed in, so there's no "signed out" screen to land on in between.
+   *
+   * Signing back into the *same* Google-linked account afterward isn't
+   * wired up yet: `signInWithGoogle` above only ever sees this fresh
+   * anonymous session and calls `linkIdentity`, which Supabase will reject
+   * since that Google identity is already linked to the account this device
+   * just left. Fine as "forget this device", not yet a working "log back
+   * in" — flagging rather than guessing at a fix here, since verifying one
+   * needs real Google OAuth credentials this environment doesn't have.
+   */
+  const signOut = async (): Promise<string | null> => {
+    if (!supabase) return 'Not connected.';
+    const { error } = await supabase.auth.signOut();
+    resetSessionCache();
+    return error?.message ?? null;
+  };
+
   return {
     /** True once the initial session check (and anonymous sign-in) has settled. */
     ready,
@@ -88,6 +111,7 @@ export const useSession = () => {
     /** Set once a real identity (Google, email, ...) is linked. */
     email: session?.user.email,
     signInWithGoogle,
+    signOut,
     /** Whether a backend is configured at all — independent of `session`. */
     hasBackend: supabase !== null,
   };

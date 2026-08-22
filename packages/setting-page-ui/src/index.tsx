@@ -6,6 +6,7 @@ import Input from '@moon-ui/input';
 import IconTimer from '@moon-ui/icon/IconTimer';
 import Typography from '@moon-ui/typography';
 import IconTheme from '@moon-ui/icon/IconTheme';
+import Button from '@moon-ui/button';
 
 // Enum
 import { Language, useSession } from '@dreamer/global';
@@ -37,10 +38,14 @@ export default function SettingPage() {
   } = usePomodoroGlobalConfig();
   const navigate = useNavigate();
   const { language, changeLanguage, formatMessage } = useIntl();
-  const { isAnonymous, email, hasBackend, signInWithGoogle } = useSession();
+  const { isAnonymous, email, hasBackend, signInWithGoogle, signOut } = useSession();
   const handleGoogleSignIn = async () => {
     const error = await signInWithGoogle();
     if (error) console.warn('[dreamer] Google sign-in failed:', error);
+  };
+  const handleSignOut = async () => {
+    const error = await signOut();
+    if (error) console.warn('[dreamer] Sign out failed:', error);
   };
   return (
     <div className={styles.container}>
@@ -64,7 +69,17 @@ export default function SettingPage() {
                 ? 'Back up your data and use it on another device'
                 : 'Synced to your Google account'
             }
-            onClick={isAnonymous ? handleGoogleSignIn : undefined}
+            rightComponent={
+              isAnonymous ? (
+                <Button size="sm" onClick={handleGoogleSignIn}>
+                  Sign In
+                </Button>
+              ) : (
+                <Button size="sm" onClick={handleSignOut}>
+                  Sign Out
+                </Button>
+              )
+            }
           />
         )}
         <List.ItemMeta
