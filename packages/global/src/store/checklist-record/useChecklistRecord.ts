@@ -29,6 +29,7 @@ export type ChecklistRecord = {
    * always sets it.
    */
   submissionId?: string;
+  updatedAt: string;
 };
 
 // Since we store in FE we might need nest the data to queries faster
@@ -75,6 +76,7 @@ export const useChecklistRecord = () => {
         checklistTemplateId: data.checklistTemplateId,
         createdAt: data.createdAt,
         submissionId,
+        updatedAt: data.createdAt,
       }));
 
       setChecklistRecordList(prev => ({
@@ -135,8 +137,21 @@ export const useChecklistRecord = () => {
           let changed = false;
           for (const record of result.records) {
             const bucket = merged[record.checklistTemplateId] ?? [];
-            if (!bucket.some(r => r.id === record.id)) {
+            const existingIndex = bucket.findIndex(r => r.id === record.id);
+            if (existingIndex === -1) {
               merged[record.checklistTemplateId] = [...bucket, record];
+              changed = true;
+            } else if (
+              new Date(record.updatedAt) > new Date(bucket[existingIndex].updatedAt)
+            ) {
+              // Last-write-wins by `updatedAt` — see useSyncedCollection's
+              // comment on why this can't just be "add if missing": an edit
+              // to a record's value on another device needs to actually
+              // arrive here, not be silently ignored because this device
+              // already has *an* entry for that id.
+              const nextBucket = [...bucket];
+              nextBucket[existingIndex] = record;
+              merged[record.checklistTemplateId] = nextBucket;
               changed = true;
             }
           }
@@ -248,6 +263,7 @@ export const useChecklistRecord = () => {
             ...record,
             value,
             ...(folderId !== undefined && { folderId }),
+            updatedAt: new Date().toISOString(),
           };
         }
         return record;

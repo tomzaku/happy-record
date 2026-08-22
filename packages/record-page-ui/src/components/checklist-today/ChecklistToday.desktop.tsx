@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  Checklist,
-  useChecklist,
-  useChecklistTemplates,
-} from '@dreamer/global';
+import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
 import styles from './ChecklistToday.desktop.module.scss';
@@ -67,23 +63,29 @@ const ChecklistTodayDesktop = ({
   selectedTag?: string;
 }) => {
   const { getChecklistByGivingDate, updateChecklist } = useChecklist();
-  const [checklistByGivingDateIds, setChecklistByGivingDateIds] =
-    React.useState<string[]>([]);
   const { checklistTemplate } = useChecklistTemplates();
   const navigate = useNavigate();
-  const [checklist, setChecklist] = React.useState<Record<string, Checklist>>(
-    {},
-  );
   const intl = useIntl();
 
-  React.useEffect(() => {
-    const { checklist, checklistIds } = getChecklistByGivingDate({
-      date,
-      selectedTag,
-    });
-    setChecklist(checklist);
-    setChecklistByGivingDateIds(checklistIds);
-  }, [date, selectedTag, checklistTemplate]);
+  // `getChecklistByGivingDate` is itself a `useCallback` chain rooted in
+  // `checklist`/`checklistTemplate`/`selectedChecklistTemplates` (see
+  // useChecklists.tsx), so depending on the function directly here — not
+  // hand-picking which underlying pieces "should" matter — is what makes
+  // this recompute on every relevant change, `selectedChecklistTemplates`
+  // included. The previous version snapshotted this into local state from
+  // a `useEffect` keyed on `[date, selectedTag, checklistTemplate]`, which
+  // never mentioned `selectedChecklistTemplates` at all: a template synced
+  // in for the first time updates that list a beat after `checklistTemplate`
+  // itself (see useChecklistTemplates.tsx), a change this component had no
+  // way to notice — it would show "No tasks found!" while the weekly
+  // calendar right next to it (already `useMemo`'d the same way this now
+  // is) correctly showed the same task. `AddInlineTask`'s manual re-fetch
+  // after creating a task is gone too — creating one already updates the
+  // same underlying state, so this recomputes on its own.
+  const { checklist, checklistIds: checklistByGivingDateIds } = React.useMemo(
+    () => getChecklistByGivingDate({ date, selectedTag }),
+    [getChecklistByGivingDate, date, selectedTag],
+  );
 
   if (checklistByGivingDateIds.length === 0) {
     return (
@@ -104,18 +106,7 @@ const ChecklistTodayDesktop = ({
             Create your first task to get started with your daily routine.
           </Typography.Text>
         </div>
-        <AddInlineTask
-          onTaskCreated={() => {
-            // Refresh the checklist data when a new task is created
-            const { checklist, checklistIds } = getChecklistByGivingDate({
-              date,
-              selectedTag,
-            });
-            setChecklist(checklist);
-            setChecklistByGivingDateIds(checklistIds);
-          }}
-          className={styles.quickAddTask}
-        />
+        <AddInlineTask className={styles.quickAddTask} />
       </div>
     );
   }
@@ -215,19 +206,7 @@ const ChecklistTodayDesktop = ({
       </div>
 
       {/* Quick Add Task */}
-      <AddInlineTask
-        onTaskCreated={() => {
-          // Refresh the checklist data when a new task is created
-          const { checklist, checklistIds } = getChecklistByGivingDate({
-            date,
-            selectedTag,
-          });
-          setChecklist(checklist);
-          setChecklistByGivingDateIds(checklistIds);
-        }}
-        className={styles.quickAddTask}
-      />
-
+      <AddInlineTask className={styles.quickAddTask} />
     </div>
   );
 };

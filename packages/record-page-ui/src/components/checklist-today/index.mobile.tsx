@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  Checklist,
-  useChecklist,
-  useChecklistTemplates,
-} from '@dreamer/global';
+import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
 import styles from './index.module.scss';
@@ -21,23 +17,22 @@ const ChecklistToday = ({
   selectedTag?: string;
 }) => {
   const { getChecklistByGivingDate, updateChecklist } = useChecklist();
-  const [checklistByGivingDateIds, setChecklistByGivingDateIds] =
-    React.useState<string[]>([]);
   const { checklistTemplate } = useChecklistTemplates();
   const navigate = useNavigate();
-  const [checklist, setChecklist] = React.useState<Record<string, Checklist>>(
-    {},
-  );
   const intl = useIntl();
 
-  React.useEffect(() => {
-    const { checklist, checklistIds } = getChecklistByGivingDate({
-      date,
-      selectedTag,
-    });
-    setChecklist(checklist);
-    setChecklistByGivingDateIds(checklistIds);
-  }, [date, selectedTag, checklistTemplate]);
+  // See ChecklistToday.desktop.tsx's comment on the equivalent fix: this
+  // used to snapshot into local state from a `useEffect` keyed on
+  // `[date, selectedTag, checklistTemplate]`, which never noticed
+  // `selectedChecklistTemplates` changing — a template synced in for the
+  // first time updates that list a beat after `checklistTemplate` itself
+  // (useChecklistTemplates.tsx), and this component had no way to react to
+  // it. Depending on `getChecklistByGivingDate` directly instead threads
+  // through its whole underlying dependency chain correctly.
+  const { checklist, checklistIds: checklistByGivingDateIds } = React.useMemo(
+    () => getChecklistByGivingDate({ date, selectedTag }),
+    [getChecklistByGivingDate, date, selectedTag],
+  );
 
   if (checklistByGivingDateIds.length === 0) {
     return (
@@ -56,20 +51,7 @@ const ChecklistToday = ({
             })}
           </Typography.Title>
         </div>
-        <AddInlineTask
-          onTaskCreated={() => {
-            // Refresh the checklist data when a new task is created
-            const { checklist, checklistIds } = getChecklistByGivingDate({
-              date,
-              selectedTag,
-            });
-            console.log('checklist', checklist);
-            console.log('checklistIds', checklistIds);
-            setChecklist(checklist);
-            setChecklistByGivingDateIds(checklistIds);
-          }}
-          className={styles.addTaskButton}
-        />
+        <AddInlineTask className={styles.addTaskButton} />
       </div>
     );
   }
@@ -123,18 +105,7 @@ const ChecklistToday = ({
           </div>
         );
       })}
-      <AddInlineTask
-        onTaskCreated={() => {
-          // Refresh the checklist data when a new task is created
-          const { checklist, checklistIds } = getChecklistByGivingDate({
-            date,
-            selectedTag,
-          });
-          setChecklist(checklist);
-          setChecklistByGivingDateIds(checklistIds);
-        }}
-        className={styles.addTaskButtonBottom}
-      />
+      <AddInlineTask className={styles.addTaskButtonBottom} />
     </div>
   );
 };

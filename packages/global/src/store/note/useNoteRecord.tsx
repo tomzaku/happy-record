@@ -17,6 +17,7 @@ const toChecklistRecordShape = (note: Note): ChecklistRecord => ({
   fieldId: note.fieldId,
   value: note.value,
   createdAt: note.createdAt,
+  updatedAt: note.updatedAt,
   ...(note.folderId ? { folderId: note.folderId } : {}),
 });
 

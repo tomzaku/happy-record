@@ -1,4 +1,4 @@
-import { useLocalStorage, useSyncOncePerIdentity, type SyncState } from '../../hook';
+import { useSyncedCollection, type SyncState } from '../../hook';
 import { v4 } from 'uuid';
 
 // Backend — see CLAUDE.md. Every call is quiet: a failure (offline, signed
@@ -23,8 +23,15 @@ export type RecordField = {
    * treated the same as 'private'.
    */
   visibility?: 'public' | 'private';
+  updatedAt: string;
 };
 
+// `updatedAt: epoch` on purpose — these three are a bootstrap fallback only
+// (never written to storage until something actually persists them; see
+// useSyncedCollection's `initialValue`), so anything the sync fetches for
+// real, even the system rows' own genuine timestamps, is unconditionally
+// newer and correctly replaces this placeholder.
+const NEVER_SYNCED = new Date(0).toISOString();
 const defaultRecordField: Record<string, RecordField> = {
   duration: {
     id: 'duration',
@@ -33,6 +40,7 @@ const defaultRecordField: Record<string, RecordField> = {
     description: 'Record duration for tracking purpose',
     type: 'metric',
     unit: 'minutes',
+    updatedAt: NEVER_SYNCED,
   },
   'push-ups': {
     id: 'push-ups',
@@ -41,6 +49,7 @@ const defaultRecordField: Record<string, RecordField> = {
     description: 'Push-ups for tracking purpose',
     type: 'metric',
     unit: 'reps',
+    updatedAt: NEVER_SYNCED,
   },
   note: {
     id: 'note',
@@ -49,42 +58,22 @@ const defaultRecordField: Record<string, RecordField> = {
     description: 'Write anything',
     type: 'note',
     unit: 'words',
+    updatedAt: NEVER_SYNCED,
   },
 };
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
-// This hook is called from many components sharing the same
-// useLocalStorage-backed store (see useLocalStorage.ts's cache-by-key), so
-// without a guard every one of them would fire its own sync-down request on
-// mount. Shared across every mounted instance — see useSyncOncePerIdentity,
-// which also re-syncs when the signed-in identity itself changes, not just
-// once per page load.
+// Shared across every mounted instance of this store — see useSyncedCollection.
 const recordFieldsSyncState: SyncState = { current: null };
 
 export const useRecordField = () => {
-  const [recordFieldList, setRecordFieldList] = useLocalStorage<
-    Record<string, RecordField>
-  >(RECORD_KEY, defaultRecordField);
-
-  useSyncOncePerIdentity(recordFieldsSyncState, async () => {
-    const result = await fetchRecordFields();
-    if (!result) return false;
-    // Only fills in fields this device doesn't already have — an
-    // unsynced local edit always wins over a stale server copy.
-    setRecordFieldList(prev => {
-      const merged = { ...prev };
-      let changed = false;
-      for (const field of result.fields) {
-        if (!merged[field.id]) {
-          merged[field.id] = field;
-          changed = true;
-        }
-      }
-      return changed ? merged : prev;
-    });
-    return true;
-  });
+  const [recordFieldList, setRecordFieldList] = useSyncedCollection(
+    RECORD_KEY,
+    recordFieldsSyncState,
+    async () => (await fetchRecordFields())?.fields ?? null,
+    defaultRecordField,
+  );
 
   const getAllRecordFields = () => {
     return Object.values(recordFieldList);
@@ -104,7 +93,8 @@ export const useRecordField = () => {
       const merged = { ...prev };
       let changed = false;
       for (const field of fields) {
-        if (!merged[field.id]) {
+        const existing = merged[field.id];
+        if (!existing || new Date(field.updatedAt) > new Date(existing.updatedAt)) {
           merged[field.id] = field;
           changed = true;
         }
@@ -114,13 +104,14 @@ export const useRecordField = () => {
   };
 
   const addRecordField = (
-    checklistRecord: PartialBy<RecordField, 'id'>,
+    checklistRecord: PartialBy<RecordField, 'id' | 'updatedAt'>,
     keepId = false,
   ) => {
     const newId = keepId && checklistRecord.id ? checklistRecord.id : v4();
     const field: RecordField = {
-      id: newId,
       ...checklistRecord,
+      id: newId,
+      updatedAt: new Date().toISOString(),
     };
     setRecordFieldList(prev => ({
       ...prev,
@@ -148,6 +139,7 @@ export const useRecordField = () => {
       const newRecord = {
         ...prev[id],
         ...updates,
+        updatedAt: new Date().toISOString(),
       };
       updatedRecord = newRecord;
       return {

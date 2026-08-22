@@ -1,4 +1,4 @@
-import { useLocalStorage, useSyncOncePerIdentity, type SyncState } from '../../hook';
+import { useSyncedCollection, type SyncState } from '../../hook';
 import { v4 } from 'uuid';
 
 // Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
@@ -16,9 +16,7 @@ export type Note = {
   updatedAt: string;
 };
 
-type NoteStore = Record<string, Note>;
-
-// Shared across every mounted instance of this store — see useSyncOncePerIdentity.
+// Shared across every mounted instance of this store — see useSyncedCollection.
 const notesSyncState: SyncState = { current: null };
 
 /**
@@ -29,26 +27,11 @@ const notesSyncState: SyncState = { current: null };
  * have synced against that schema's foreign keys.
  */
 export const useNote = () => {
-  const [notes, setNotes] = useLocalStorage<NoteStore>(NOTE_KEY, {});
-
-  useSyncOncePerIdentity(notesSyncState, async () => {
-    const result = await fetchNotes();
-    if (!result) return false;
-    // Only fills in notes this device doesn't already have — an
-    // unsynced local edit always wins over a stale server copy.
-    setNotes(prev => {
-      const merged = { ...prev };
-      let changed = false;
-      for (const note of result.notes) {
-        if (!merged[note.id]) {
-          merged[note.id] = note;
-          changed = true;
-        }
-      }
-      return changed ? merged : prev;
-    });
-    return true;
-  });
+  const [notes, setNotes] = useSyncedCollection<Note>(
+    NOTE_KEY,
+    notesSyncState,
+    async () => (await fetchNotes())?.notes ?? null,
+  );
 
   const addNote = (data: { fieldId: string; value: string; folderId?: string }) => {
     const id = v4();

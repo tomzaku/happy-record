@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocalStorage, useSyncOncePerIdentity, type SyncState } from '../../hook';
+import { useSyncedCollection, type SyncState } from '../../hook';
 import { useChecklistTemplates } from './useChecklistTemplates';
 import { v4 } from 'uuid';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -18,35 +18,20 @@ export type Checklist = {
   startedAt: string;
   endedAt: string;
   clientOnly?: boolean;
+  updatedAt: string;
 };
 
-// Shared across every mounted instance of this store — see useSyncOncePerIdentity.
+// Shared across every mounted instance of this store — see useSyncedCollection.
 const checklistsSyncState: SyncState = { current: null };
 
 export const useChecklist = () => {
-  const [checklist, setChecklist] = useLocalStorage<Record<string, Checklist>>(
+  const [checklist, setChecklist] = useSyncedCollection<Checklist>(
     CHECKLIST_KEY,
-    {},
+    checklistsSyncState,
+    async () => (await fetchChecklists())?.checklists ?? null,
   );
   const { getChecklistTemplateIdsByGivingDate, checklistTemplate } =
     useChecklistTemplates();
-
-  useSyncOncePerIdentity(checklistsSyncState, async () => {
-    const result = await fetchChecklists();
-    if (!result) return false;
-    setChecklist(prev => {
-      const merged = { ...prev };
-      let changed = false;
-      for (const c of result.checklists) {
-        if (!merged[c.id]) {
-          merged[c.id] = c;
-          changed = true;
-        }
-      }
-      return changed ? merged : prev;
-    });
-    return true;
-  });
 
   const getRepeatChecklistByGivingDate = React.useCallback(
     (
@@ -87,6 +72,10 @@ export const useChecklist = () => {
                 endDate.setHours(23, 59, 59, 999);
                 return endDate.toISOString();
               })(),
+              // Never synced or reconciled against — this is a throwaway
+              // view, not yet a row this device has decided to persist
+              // (see updateChecklist's comment on that first-edit moment).
+              updatedAt: new Date(date).toISOString(),
             };
           }
         });
@@ -142,6 +131,11 @@ export const useChecklist = () => {
       const merged: Checklist = {
         ...checklist[checklistToUpdate.id],
         ...checklistToUpdate,
+        // Every write bumps this — it's what a future sync compares to
+        // decide whether this device's copy or another device's is newer
+        // (see useSyncedCollection). Set here, not left to the caller, so
+        // it can never be forgotten at a call site.
+        updatedAt: new Date().toISOString(),
       };
       setChecklist({
         ...checklist,
@@ -157,11 +151,12 @@ export const useChecklist = () => {
   );
 
   const addChecklist = React.useCallback(
-    (checklistToAdd: Omit<Checklist, 'id'>) => {
+    (checklistToAdd: Omit<Checklist, 'id' | 'updatedAt'>) => {
       const id = v4();
-      const newChecklist = {
+      const newChecklist: Checklist = {
         ...checklistToAdd,
         id,
+        updatedAt: new Date().toISOString(),
       };
       setChecklist({
         ...checklist,

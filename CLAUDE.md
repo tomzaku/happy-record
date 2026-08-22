@@ -93,64 +93,125 @@ doesn't change, so their existing rows don't need migrating. Needs `[auth.extern
 configured at all (`hasBackend`), but without those credentials clicking it just fails quietly
 (a console warning, no error screen — same "degrade, don't break" rule as everything else here).
 
+Session/sign-out/sync-on-identity-change details (`ensureSession`, `signOut`, the
+`identity_already_exists` self-heal) live in "Syncing local storage with the backend" below,
+alongside the equivalent guarantees for local domain data.
+
+## Syncing local storage with the backend
+
+One pattern, implemented once — not re-derived per store, which is exactly how the last several
+sync bugs got introduced (each store's own hand-rolled version of "fetch once and merge" had a
+subtly different gap).
+
+**`useSyncedCollection`** (`packages/global/src/hook/useSyncedCollection.ts`) is that pattern for
+any store shaped like "one `Record<string, T>` keyed by id, fetched from one edge function route"
+— `fields`, `notes`, `note-folders`, `flags`, and `checklists` all just call it with their own
+storage key and fetch function (see `useRecordField.tsx` for the shape). The contract:
+
+- **Local `useLocalStorage` state is the source of truth for rendering, always.** Every screen
+  renders from it instantly, online or offline; nothing blocks on the network.
+- **Sync happens once per signed-in identity, not once per page load.** The lower-level
+  `useSyncOncePerIdentity` keys on `useSession()`'s `userId`, so signing in or out re-triggers a
+  fresh sync instead of a store staying stuck on whatever the *first* identity's fetch returned
+  — a plain `let xSynced = false` (every store's own copy of this, before) fires once ever, by
+  whichever identity exists at that exact moment.
+- **Waits for the session to be `ready`** before syncing at all, so the first fetch can't land
+  against a transient session before the real one settles (see `ensureSession()` below for the
+  matching guarantee on the request side).
+- **Merges last-write-wins by `updatedAt`, per id**: an id this device has never seen is always
+  added; an id it already has is only replaced by the fetched copy if the fetched copy's
+  `updatedAt` is strictly newer. Every `addX`/`updateX` on the client sets `updatedAt` to the
+  moment it happened, same as every server-side write already did (CLAUDE.md's "every table gets
+  `updated_at`" convention) — comparing two real timestamps, not guessing. This is what makes an
+  edit made on one device actually show up on another the next time that device syncs; a plain
+  "fill in what's missing" merge (this hook's first version) never revisits an id once it has one,
+  so an edit elsewhere would never arrive no matter how many times you reloaded. It still protects
+  an in-flight local edit from being clobbered by a slightly-stale fetch landing around the same
+  time, for the same reason — older loses, regardless of which side it's on.
+- **Shares one fetch across every mounted instance** of a store via a module-level `SyncState`
+  cell (not component state) — several components rendering the same store don't each start
+  their own redundant fetch.
+- **A quiet `null`** (offline, no backend, a failed request) **changes nothing and is retried on
+  the next identity check** — never an error screen, never a wipe.
+
+Two stores don't fit the shape and intentionally don't use it, though both still follow the same
+last-write-wins-by-`updatedAt` merge rule by hand:
+
+- **`checklist-templates`** needs two things on top, so it calls `useSyncOncePerIdentity`
+  directly: seeding the seven built-in starter templates only once a sync has *confirmed* (empty
+  local state **and** either an empty or unreachable fetch) this is genuinely a first run — never
+  eagerly on mount, which raced the real fetch and could leave demo tasks merged in permanently
+  alongside a real account's own templates — and keeping the separate, genuinely local-only
+  `selectedChecklistTemplates` list (`selected_checklist_templates`, never itself synced) in sync:
+  a template landing in `checklistTemplate` isn't the same as it showing up on the calendar
+  (`getChecklistTemplateIdsByGivingDate` filters by this list, not by the templates themselves),
+  so any id new to this device gets added to it the same way `addChecklistTemplate` already does
+  for a locally-created one.
+- **`checklist-records`** has no single "fetch on mount" at all — `getChecklistRecords` syncs
+  whatever date range it's asked for — so it folds `userId` into its own per-range cache key in
+  `useChecklistRecord.ts` instead.
+
+**A component consuming a store must depend on the store's own function, never hand-pick its own
+dependency list.** `getChecklistByGivingDate`/`getChecklistTemplateIdsByGivingDate` are
+`useCallback` chains that already recompute correctly when their underlying state changes —
+`React.useMemo(() => getChecklistByGivingDate(...), [getChecklistByGivingDate, ...])`, passing the
+function itself, is what makes a consumer track that automatically. Re-deriving "what should this
+depend on" by hand is how a component ends up silently stale even once the store itself is
+correct: `ChecklistToday.desktop.tsx` and its mobile twin used to snapshot the result into local
+`useState` from a `useEffect` keyed on `[date, selectedTag, checklistTemplate]` — missing
+`selectedChecklistTemplates` entirely — while `WeeklyCalendarVertical.tsx` right next to it,
+already depending on the function itself, stayed correct on the exact same data.
+
+**What this still doesn't solve**, in priority order for whenever it's tackled next: a sync only
+ever runs once per identity per page load (see `useSyncOncePerIdentity`) — a tab left open won't
+notice another device's edit until something triggers a re-sync (a reload today; refetch-on-focus/
+reconnect, or Supabase Realtime, would be the real fix and isn't built); and a deletion on one
+device doesn't remove anything on another — this merge only ever adds or replaces, never deletes,
+which needs a tombstone (a `deleted_at` the sync can see) that no table has yet.
+
+On the auth/session side, the equivalent guarantee is `supabase.ts`'s **`ensureSession()`**:
+`api.ts`'s `send()` and `useSession.ts` both await it instead of calling
+`supabase.auth.getSession()` directly, so every request waits out the initial anonymous sign-in
+on a cold load rather than racing it and seeing "no session yet." Only the anonymous-sign-in
+*attempt* is memoized, never the resulting session — re-checking `getSession()` fresh on every
+call means a request that happened to race ahead of a real session settling elsewhere (finishing
+an OAuth redirect a beat later, say) self-corrects on its very next call instead of staying
+authenticated as a throwaway anonymous user for the rest of the page's life.
+
+Testing any of this by clearing `localStorage` and reloading doesn't simulate "this account's
+cache is cold" the way it might seem to — Supabase persists its own session token in `localStorage`
+too, so wiping everything also signs the device out to a *brand new* anonymous identity, not a
+blank slate for the account that was signed in. To test a real account's data reloading: use the
+settings page's own Sign Out (which reconnects to the same account through `signInWithGoogle`), or
+open the app in a second browser/profile already signed into the same Google account.
+
 `useSession().signOut` (settings page's "Sign Out" row, shown once linked) ends the device's
-session and calls `supabase.ts`'s `resetSessionCache()` so the next request doesn't keep sending
-the revoked token, then clears every domain store's `useLocalStorage` key
-(`SYNCED_DATA_KEYS` in `useSession.ts`) and reloads the page — without that, the fresh anonymous
-identity that replaces the old session kept showing the previous account's checklists/fields/
-notes/etc. (confusing on its own), and any edit to that leftover data would silently fail to sync
-anyway, since those rows' primary keys already belong to the `user_id` that just left (the
-`fields.id` problem above, one level up). The reload also resets each domain's own "synced once
-per page load" guard (`checklistsSynced` and friends) — without it a next real sign-in would
-think it had already synced when it hasn't. **Adding a new domain store's `useLocalStorage` key
-means adding it to `SYNCED_DATA_KEYS` too** — nothing derives that list automatically.
+session, calls `resetSessionCache()` so the next request doesn't keep sending the revoked token,
+clears every domain store's `useLocalStorage` key (`SYNCED_DATA_KEYS` in `useSession.ts`), and
+reloads the page — the reload is what resets each store's `SyncState` cell back to "never synced,"
+without which a next real sign-in would think it had already synced when it hadn't.
+**Adding a new domain store's `useLocalStorage` key means adding it to `SYNCED_DATA_KEYS` too** —
+nothing derives that list automatically.
 
 Signing back into that same account afterward needs `signInWithGoogle` to call `signInWithOAuth`
 (a real login) instead of `linkIdentity` (attach-to-this-anonymous-session) — but the *current*
 session is anonymous in both the "first-ever cold load" and "just signed out" cases, so
 `is_anonymous` alone can't tell them apart. `useSession.ts` tracks that separately in
 `HAS_EXISTING_ACCOUNT_KEY` (a `localStorage` flag deliberately excluded from `SYNCED_DATA_KEYS`,
-since `signOut` must not clear it): set the moment a session is ever seen non-anonymous, and —
-the self-healing part — set just as well by *catching the failure itself*. A `linkIdentity` that
-fails because the identity's already linked elsewhere doesn't throw; GoTrue redirects back with
+since `signOut` must not clear it): set the moment a session is ever seen non-anonymous, and — the
+self-healing part — set just as well by *catching the failure itself*. A `linkIdentity` that fails
+because the identity's already linked elsewhere doesn't throw; GoTrue redirects back with
 `?error_code=identity_already_exists` (query and/or hash, depending on flow), which
 `useSession.ts`'s mount effect watches for. So a device that hits this once self-corrects: the
 failed attempt is itself proof this device belongs to an existing account, and the very next
 "Sign in with Google" click uses `signInWithOAuth` and succeeds. Untested against real Google
 OAuth either way — this project has no credentials configured to verify against (see above).
-
-The anonymous sign-in is a network round trip, so on a cold load (nothing in `localStorage` yet)
-it's racing every `request.*` call already firing from mounted components. `supabase.ts`'s
-`ensureSession()` is what makes every call wait out that one sign-in instead of each seeing "no
-session yet" and failing 401 — `api.ts`'s `send()` and `useSession.ts` both await it rather than
-calling `supabase.auth.getSession()` directly, for the same reason anything else that needs the
-session itself should too. **Only the anonymous-sign-in *attempt* is memoized, never the
-resulting session** — `ensureSession()` re-checks `getSession()` fresh on every call. An earlier
-version cached the resolved session itself, which meant a request that happened to race ahead of
-a real session settling (finishing an OAuth redirect a beat later, say) and fell through to
-`signInAnonymously()` kept using that wrong anonymous session for the rest of the page's life even
-after the real one showed up — every request silently authenticated as a throwaway anonymous user
-nobody ever saw, which is why signing back in with Google looked successful (the UI's own
-`session` state updates live off `onAuthStateChange` regardless) while every checklist/field/etc.
-came back empty. Re-checking fresh means the very next call after the real session lands picks it
-up immediately, no matter what got there first.
-
-That race showing up even once, though, exposed a second, independent bug: every domain store's
-initial fetch (`useChecklistTemplates.tsx` and the same pattern in `useChecklists.tsx`,
-`useRecordField.tsx`, `useNote.tsx`, `useNoteFolder.tsx`, `useFlag.tsx`) used to guard on a plain
-`let xSynced = false` — fired once per page load, by whichever identity happened to exist at that
-exact moment, and never again. A fetch that landed on a transient anonymous session before the
-real one settled left that flag permanently `true`, so the store never found out the real,
-signed-in identity actually had data waiting — checklist templates staying empty after signing in
-even once `ensureSession()` itself had self-corrected. `useSyncOncePerIdentity` (`packages/global/
-src/hook/useSyncOncePerIdentity.ts`) replaces the boolean: it keys on `useSession()`'s `userId`
-instead of a fire-once flag, so switching identity re-triggers the fetch, and it waits for
-`ready` so the first fetch doesn't fire before a real session has had the chance to settle at all.
-Each store still holds its own module-level `SyncState` cell (not component state) so every
-mounted instance of that store shares one fetch rather than each racing to start its own — same
-property the old boolean flags had. `checklist-records` doesn't fit this shape (there's no single
-"fetch on mount," `getChecklistRecords` syncs whatever range it's asked for) — it gets the same
-fix by folding `userId` into the per-range cache key in `useChecklistRecord.ts` directly instead.
+Cleaning that error out of the URL after has to treat the query string and the hash differently —
+this app is a `HashRouter`, so the hash *is* the route, and GoTrue's redirect lands the raw error
+params there with no leading `/` (`#error=...`, not `#/error=...`), which HashRouter reads as an
+unmatched path and logs "No routes matched" for. The query half is fine to rewrite silently with
+`history.replaceState`; the hash half needs a real hash change (`window.location.hash = '/'`)
+because `replaceState` doesn't fire the `hashchange` event HashRouter listens for.
 
 ### `supabase` is for auth only, in one place
 
@@ -197,13 +258,6 @@ templates — one flag groups many templates (`checklist_templates.flag_id`, a r
 `on delete set null`), not the many free-text labels `checklist_templates.tags` already is. Same
 shape as `note_folders`: name, description, timestamps, owner-only. Don't conflate the two —
 `tags` stays as loose multi-label filtering, `flag_id` is the "these are the same category" one.
-
-`notes` and `note-folders` (client: `useNote`/`packages/global/src/store/note/useNote.tsx`,
-`useNoteFolder`) are a separate domain from all of the above, despite `note-manager-page-ui` and
-`add-note-page-ui` looking like they use `ChecklistRecord` — `useNoteRecords`
-(`useNoteRecord.tsx`) is a thin adapter that talks to `useNote` and maps its `Note` rows into
-`ChecklistRecord`-shaped objects so those two page packages didn't need to change.
-**A note is not a checklist record and never was really** — the client used to fake it with
 
 `notes` and `note-folders` (client: `useNote`/`packages/global/src/store/note/useNote.tsx`,
 `useNoteFolder`) are a separate domain from all of the above, despite `note-manager-page-ui` and

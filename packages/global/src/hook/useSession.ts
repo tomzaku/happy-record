@@ -93,17 +93,35 @@ export const useSession = () => {
     // GoTrue redirects back here with the error instead, in the query
     // string, the hash, or both depending on flow. That redirect is itself
     // proof this device should sign into that existing account next time,
-    // not keep trying to link — see `rememberExistingAccount`. Cleaning it
-    // out of the URL after just avoids it lingering across a refresh.
+    // not keep trying to link — see `rememberExistingAccount`.
     if (typeof window !== 'undefined') {
       const query = new URLSearchParams(window.location.search);
-      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const rawHash = window.location.hash.replace(/^#/, '');
+      const hash = new URLSearchParams(rawHash);
       if (query.get('error_code') === 'identity_already_exists' || hash.get('error_code') === 'identity_already_exists') {
         rememberExistingAccount();
-        const url = new URL(window.location.href);
-        url.search = '';
-        url.hash = '';
-        window.history.replaceState({}, '', url.toString());
+
+        // The query string isn't part of this app's routing (HashRouter
+        // only reads the hash) — safe to rewrite silently.
+        if (window.location.search) {
+          const url = new URL(window.location.href);
+          url.search = '';
+          window.history.replaceState({}, '', url.toString());
+        }
+
+        // The hash IS this app's route. GoTrue's error redirect lands the
+        // raw error params there with no leading `/` (`#error=...`, not
+        // `#/error=...`), which HashRouter reads as the path `/error=...`
+        // and can't match — the "No routes matched" console error. Fixing
+        // it needs a *real* hash change, not `history.replaceState`: that
+        // API doesn't fire `hashchange`, which is what HashRouter listens
+        // for, so it would never notice and the app would stay stuck on
+        // that unmatched route even after the URL looked clean underneath.
+        // Assigning `location.hash` directly is a same-document navigation
+        // that does fire it, landing HashRouter back on `/`.
+        if (rawHash.includes('error_code=identity_already_exists')) {
+          window.location.hash = '/';
+        }
       }
     }
 

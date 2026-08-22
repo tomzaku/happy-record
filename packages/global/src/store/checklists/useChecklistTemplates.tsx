@@ -50,6 +50,7 @@ export type ChecklistTemplate = {
   visibility?: 'public' | 'private';
   /** One flag groups many templates ("Gym" for Push-ups + Pull-ups) — see packages/global/src/store/flag. */
   flagId?: string;
+  updatedAt: string;
 };
 
 const common = {
@@ -62,6 +63,7 @@ const common = {
     startedAt: new Date().toISOString(),
   },
   createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
   records: [],
   fieldGroups: [],
   tags: [],
@@ -137,12 +139,12 @@ const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
     },
   },
 ];
-const CHECKLIST_OBJECT = CHECKLIST_TEMPLATES.reduce(
+const CHECKLIST_OBJECT: Record<string, ChecklistTemplate> = CHECKLIST_TEMPLATES.reduce(
   (acc, checklist) => ({
     ...acc,
     [checklist.id]: checklist,
   }),
-  {},
+  {} as Record<string, ChecklistTemplate>,
 );
 // Shared across every mounted instance of this store — see useSyncOncePerIdentity.
 const checklistTemplatesSyncState: SyncState = { current: null };
@@ -186,34 +188,85 @@ function diffFieldGroups(
 }
 
 export const useChecklistTemplates = () => {
+  // No eager `storeOnMount` seed of the built-in starter templates here —
+  // see the sync callback below for why: writing them in immediately, before
+  // the fetch even starts, raced the real sync for a signed-in account with
+  // its own templates, and since the merge below is additive-only, a demo
+  // template that won that race never went away again.
   const [checklistTemplate, setChecklistTemplate] = useLocalStorage<
     Record<string, ChecklistTemplate>
-  >(CHECKLIST_TEMPLATE_KEY, CHECKLIST_OBJECT, {
-    storeOnMount: true,
-  });
+  >(CHECKLIST_TEMPLATE_KEY, {});
   const [selectedChecklistTemplates, setSelectedChecklist] = useLocalStorage<
     string[]
   >(SELECTED_CHECKLISTS_TEMPLATE_KEY, []);
 
   useSyncOncePerIdentity(checklistTemplatesSyncState, async () => {
     const result = await fetchChecklistTemplates();
-    if (!result) return false;
+
+    const newIds: string[] = [];
     setChecklistTemplate(prev => {
       const merged = { ...prev };
       let changed = false;
-      for (const template of result.templates) {
-        if (!merged[template.id]) {
+      for (const template of result?.templates ?? []) {
+        const existing = merged[template.id];
+        // Last-write-wins by `updatedAt`, not "add if this device has never
+        // seen it" — see useSyncedCollection's comment for why the latter
+        // means an edit made on another device would never arrive here.
+        // (`checklist-templates` doesn't use useSyncedCollection itself, but
+        // follows the exact same rule.) `newIds` tracks only the genuinely
+        // new ones — an LWW update to an id this device already knows about
+        // still needs `changed = true` to actually stick, but it's not a
+        // "first time seen" for the selectedChecklistTemplates step below.
+        if (!existing || new Date(template.updatedAt) > new Date(existing.updatedAt)) {
           merged[template.id] = template;
           changed = true;
+          if (!existing) newIds.push(template.id);
         }
+      }
+      // Seed the built-in starter templates only once we're actually
+      // confident this is a first run: nothing was here before this sync
+      // *and* the server (when reachable) confirms this account has none
+      // either — covers both "no backend configured at all" (`result` is
+      // null the same way any other quiet failure is) and "a real account
+      // that's genuinely empty." A non-empty `prev` means this device
+      // already has local-only or previously-synced templates, and a
+      // temporary fetch failure on an otherwise-populated account is not
+      // "first run" — don't paper over either with the demo set.
+      const confirmedEmpty =
+        Object.keys(prev).length === 0 && (!result || result.templates.length === 0);
+      if (confirmedEmpty) {
+        for (const [id, template] of Object.entries(CHECKLIST_OBJECT)) {
+          merged[id] = template;
+          newIds.push(id);
+        }
+        changed = true;
       }
       return changed ? merged : prev;
     });
-    return true;
+
+    // `selectedChecklistTemplates` is local-only and never itself synced
+    // (see CLAUDE.md) — a template landing here for the first time on this
+    // device has never had a chance to be selected or deselected, so it
+    // defaults in the same way creating one locally already does
+    // (addChecklistTemplate). Without this, a synced-down template exists
+    // in `checklistTemplate` but never actually shows up on the calendar:
+    // getChecklistTemplateIdsByGivingDate filters by this list, not by
+    // `checklistTemplate` itself.
+    if (newIds.length) {
+      setSelectedChecklist(prev => {
+        const additions = newIds.filter(id => !prev.includes(id));
+        return additions.length ? [...prev, ...additions] : prev;
+      });
+    }
+
+    // Only a genuine fetch failure asks useSyncOncePerIdentity for a retry
+    // — an empty-but-successful response (and the demo seed it triggered
+    // above) is a settled, correct state, not something to keep retrying.
+    return !!result;
   });
 
   const addChecklistTemplate = (
-    currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt'> & {
+    currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt' | 'updatedAt'> & {
       id?: string;
     },
     keepId = false,
@@ -226,6 +279,7 @@ export const useChecklistTemplates = () => {
       ...currentChecklistTemplate,
       id,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     setChecklistTemplate({
       ...checklistTemplate,
@@ -239,13 +293,14 @@ export const useChecklistTemplates = () => {
   };
 
   const updateChecklistTemplate = (
-    currentChecklistTemplate: Omit<ChecklistTemplate, 'createdAt'>,
+    currentChecklistTemplate: Omit<ChecklistTemplate, 'createdAt' | 'updatedAt'>,
   ) => {
     const existing = checklistTemplate[currentChecklistTemplate.id];
     const template: ChecklistTemplate = {
       ...existing,
       ...currentChecklistTemplate,
       createdAt: existing?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     setChecklistTemplate({
       ...checklistTemplate,

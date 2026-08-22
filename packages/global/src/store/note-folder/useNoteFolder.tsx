@@ -1,4 +1,4 @@
-import { useLocalStorage, useSyncOncePerIdentity, type SyncState } from '../../hook';
+import { useSyncedCollection, type SyncState } from '../../hook';
 import { v4 } from 'uuid';
 
 // Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
@@ -15,32 +15,15 @@ export type NoteFolder = {
   updatedAt: string;
 };
 
-// Shared across every mounted instance of this store — see useSyncOncePerIdentity.
+// Shared across every mounted instance of this store — see useSyncedCollection.
 const noteFoldersSyncState: SyncState = { current: null };
 
 export const useNoteFolder = () => {
-  const [noteFolders, setNoteFolders] = useLocalStorage<
-    Record<string, NoteFolder>
-  >(NOTE_FOLDER_KEY, {});
-
-  useSyncOncePerIdentity(noteFoldersSyncState, async () => {
-    const result = await fetchNoteFolders();
-    if (!result) return false;
-    // Only fills in folders this device doesn't already have — an
-    // unsynced local edit always wins over a stale server copy.
-    setNoteFolders(prev => {
-      const merged = { ...prev };
-      let changed = false;
-      for (const folder of result.folders) {
-        if (!merged[folder.id]) {
-          merged[folder.id] = folder;
-          changed = true;
-        }
-      }
-      return changed ? merged : prev;
-    });
-    return true;
-  });
+  const [noteFolders, setNoteFolders] = useSyncedCollection<NoteFolder>(
+    NOTE_FOLDER_KEY,
+    noteFoldersSyncState,
+    async () => (await fetchNoteFolders())?.folders ?? null,
+  );
 
   const addNoteFolder = (
     folder: Omit<NoteFolder, 'id' | 'createdAt' | 'updatedAt'>,
