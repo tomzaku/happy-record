@@ -53,99 +53,6 @@ export type ChecklistTemplate = {
   updatedAt: string;
 };
 
-const common = {
-  repeat: {
-    minute: '0',
-    hour: '8',
-    dayOfMonth: '*',
-    month: '*',
-    dayOfWeek: '*',
-    startedAt: new Date().toISOString(),
-  },
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  records: [],
-  fieldGroups: [],
-  tags: [],
-};
-
-const CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
-  {
-    id: v4(),
-    title: 'Drink water',
-    ...common,
-    avatar: {
-      type: 'icon',
-      name: 'mdi:water',
-      color: '#00aaff',
-    },
-  },
-  {
-    id: v4(),
-    title: 'Drink Orange juice',
-    ...common,
-    avatar: {
-      type: 'icon',
-      name: 'noto-v1:tropical-drink',
-      color: '#ff9900',
-    },
-  },
-  {
-    id: v4(),
-    title: 'Take vitamin supplement',
-    ...common,
-    avatar: {
-      type: 'icon',
-      name: 'game-icons:medicines',
-      color: '#00ff00',
-    },
-  },
-  {
-    id: v4(),
-    title: 'Eat fruits(banana, seeds) and vegetables',
-    ...common,
-    avatar: {
-      type: 'icon',
-      name: 'twemoji:pot-of-food',
-      color: '#00aaff',
-    },
-  },
-  {
-    id: v4(),
-    title: 'Exercise',
-    ...common,
-    avatar: {
-      type: 'icon',
-      name: 'healthicons:exercise-yoga-outline',
-    },
-  },
-  {
-    id: v4(),
-    title: 'Sleep early',
-    ...common,
-    avatar: {
-      type: 'icon',
-      name: 'fxemoji:sleeping',
-    },
-  },
-  {
-    id: v4(),
-    title: 'Drink milk',
-    ...common,
-    avatar: {
-      type: 'icon',
-      name: 'icon-park-outline:milk',
-      color: '#ff9900',
-    },
-  },
-];
-const CHECKLIST_OBJECT: Record<string, ChecklistTemplate> = CHECKLIST_TEMPLATES.reduce(
-  (acc, checklist) => ({
-    ...acc,
-    [checklist.id]: checklist,
-  }),
-  {} as Record<string, ChecklistTemplate>,
-);
 // Shared across every mounted instance of this store — see useSyncOncePerIdentity.
 const checklistTemplatesSyncState: SyncState = { current: null };
 
@@ -188,11 +95,6 @@ function diffFieldGroups(
 }
 
 export const useChecklistTemplates = () => {
-  // No eager `storeOnMount` seed of the built-in starter templates here —
-  // see the sync callback below for why: writing them in immediately, before
-  // the fetch even starts, raced the real sync for a signed-in account with
-  // its own templates, and since the merge below is additive-only, a demo
-  // template that won that race never went away again.
   const [checklistTemplate, setChecklistTemplate] = useLocalStorage<
     Record<string, ChecklistTemplate>
   >(CHECKLIST_TEMPLATE_KEY, {});
@@ -223,24 +125,8 @@ export const useChecklistTemplates = () => {
           if (!existing) newIds.push(template.id);
         }
       }
-      // Seed the built-in starter templates only once we're actually
-      // confident this is a first run: nothing was here before this sync
-      // *and* the server (when reachable) confirms this account has none
-      // either — covers both "no backend configured at all" (`result` is
-      // null the same way any other quiet failure is) and "a real account
-      // that's genuinely empty." A non-empty `prev` means this device
-      // already has local-only or previously-synced templates, and a
-      // temporary fetch failure on an otherwise-populated account is not
-      // "first run" — don't paper over either with the demo set.
-      const confirmedEmpty =
-        Object.keys(prev).length === 0 && (!result || result.templates.length === 0);
-      if (confirmedEmpty) {
-        for (const [id, template] of Object.entries(CHECKLIST_OBJECT)) {
-          merged[id] = template;
-          newIds.push(id);
-        }
-        changed = true;
-      }
+      // No built-in starter templates are seeded here — a first-time
+      // account/device just starts with zero templates and adds its own.
       return changed ? merged : prev;
     });
 
@@ -260,8 +146,8 @@ export const useChecklistTemplates = () => {
     }
 
     // Only a genuine fetch failure asks useSyncOncePerIdentity for a retry
-    // — an empty-but-successful response (and the demo seed it triggered
-    // above) is a settled, correct state, not something to keep retrying.
+    // — an empty-but-successful response is a settled, correct state, not
+    // something to keep retrying.
     return !!result;
   });
 
