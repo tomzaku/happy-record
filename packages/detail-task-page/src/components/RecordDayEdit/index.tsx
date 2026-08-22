@@ -34,17 +34,23 @@ const RecordDayEdit = ({
   const [currentChecklistTemplate, setCurrentChecklistTemplate] =
     React.useState<ChecklistTemplate>();
   const { addChecklistRecord } = useChecklistRecord();
-  const [fieldRecord, setFieldRecord] = React.useState<
-    Record<string, number | undefined>
-  >(
+  const getEmptyFieldRecord = () =>
     fields.reduce(
       (acc, { id }) => ({
         ...acc,
         [id]: undefined,
       }),
       {},
-    ),
-  );
+    );
+  const [fieldRecord, setFieldRecord] = React.useState<
+    Record<string, number | undefined>
+  >(getEmptyFieldRecord());
+  // `Input` only reads its `value` prop once, at mount (see @moon-ui/input) —
+  // it's uncontrolled after that, so resetting `fieldRecord` alone leaves
+  // whatever's already typed sitting in the DOM. Bumping this and keying
+  // each Input on it forces a real remount, the same trick AddInlineTask
+  // and ChecklistFieldGroupAdd already use for the same reason.
+  const [resetKey, setResetKey] = React.useState(0);
 
   React.useEffect(() => {
     const checklistTemplate = getChecklistTemplate(checklistTemplateId);
@@ -61,6 +67,7 @@ const RecordDayEdit = ({
             rightComponent={
               <>
                 <Input
+                  key={`${record.id}-${resetKey}`}
                   onChange={e => {
                     setFieldRecord({
                       ...fieldRecord,
@@ -94,6 +101,8 @@ const RecordDayEdit = ({
                   value: value,
                 })),
               });
+              setFieldRecord(getEmptyFieldRecord());
+              setResetKey(prev => prev + 1);
               onSubmit?.();
             }
           }}

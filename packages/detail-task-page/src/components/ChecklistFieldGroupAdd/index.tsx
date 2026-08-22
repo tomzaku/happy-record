@@ -59,7 +59,9 @@ const ChecklistFieldGroupAdd = ({
   const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
     ChecklistRecord[]
   >([]);
-  // For force rerender of note editor after submit
+  // Forces a remount after submit — both Input and NoteEditor only read
+  // their `value` prop once, at mount (see @moon-ui/input, @moon-ui/note-editor),
+  // so resetting `fieldRecord` alone doesn't clear what's already on screen.
   const [newNoteKey, setNewNoteKey] = React.useState(v4());
 
   // Add ref to track previous records for shake animation
@@ -237,8 +239,9 @@ const ChecklistFieldGroupAdd = ({
                 rightComponent={
                   <>
                     <Input
+                      key={`${field.id}-${newNoteKey}`}
                       suffix={<Typography.Text>{field.unit}</Typography.Text>}
-                      value={`${fieldRecord[field.id]}`}
+                      value={fieldRecord[field.id] === undefined ? '' : String(fieldRecord[field.id])}
                       onChange={e => {
                         setFieldRecord({
                           ...fieldRecord,
