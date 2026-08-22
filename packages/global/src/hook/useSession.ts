@@ -6,7 +6,8 @@ import { ensureSession, resetSessionCache, supabase } from '../lib/supabase';
  * Every `useLocalStorage` key a domain store keeps — see each store's own
  * `_KEY`/`*_KEY` constant (`useChecklistTemplates.tsx`, `useChecklists.tsx`,
  * `useChecklistRecord.ts`, `useRecordField.tsx`, `useNote.tsx`,
- * `useNoteFolder.tsx`, `useFlag.tsx`, `useTags.tsx`). `signOut` clears these:
+ * `useNoteFolder.tsx`, `useFlag.tsx`, `useTags.tsx`, `useProStatus.tsx`).
+ * `signOut` clears these:
  * without it, this device kept showing the account that just signed out's
  * checklists/fields/notes/etc. under the fresh anonymous identity that
  * replaces it — confusing on its own, and any further edit to that leftover
@@ -26,6 +27,7 @@ const SYNCED_DATA_KEYS = [
   'note_folder',
   'flag',
   'tags',
+  'pro_status',
 ];
 
 /**

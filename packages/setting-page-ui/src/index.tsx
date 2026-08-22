@@ -9,7 +9,7 @@ import IconTheme from '@moon-ui/icon/IconTheme';
 import Button from '@moon-ui/button';
 
 // Enum
-import { Language, useSession } from '@dreamer/global';
+import { Language, useSession, useIsPro } from '@dreamer/global';
 import { Theme } from '@dreamer/pomodoro-common';
 
 // Hooks
@@ -39,6 +39,7 @@ export default function SettingPage() {
   const navigate = useNavigate();
   const { language, changeLanguage, formatMessage } = useIntl();
   const { isAnonymous, email, hasBackend, signInWithGoogle, signOut } = useSession();
+  const { isPro, isTrial, proExpiresAt } = useIsPro();
   const handleGoogleSignIn = async () => {
     const error = await signInWithGoogle();
     if (error) console.warn('[dreamer] Google sign-in failed:', error);
@@ -79,6 +80,19 @@ export default function SettingPage() {
                   Sign Out
                 </Button>
               )
+            }
+          />
+        )}
+        {hasBackend && (
+          <List.ItemMeta
+            logo={<Icon width={24} icon="mdi:crown" />}
+            title={isTrial ? 'Pro trial' : isPro ? 'Pro' : 'Free plan'}
+            description={
+              isTrial && proExpiresAt
+                ? `Ends ${new Date(proExpiresAt).toLocaleDateString()}`
+                : isPro
+                  ? 'You have full access'
+                  : 'No self-serve upgrade yet'
             }
           />
         )}

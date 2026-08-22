@@ -257,6 +257,16 @@ templates — one flag groups many templates (`checklist_templates.flag_id`, a r
 shape as `note_folders`: name, description, timestamps, owner-only. Don't conflate the two —
 `tags` stays as loose multi-label filtering, `flag_id` is the "these are the same category" one.
 
+`pro_users` (client: `useIsPro`/`packages/global/src/store/pro/useProStatus.tsx`, edge function
+`me` — `GET /me` only) is Pro entitlement, and it's read-only end to end: no payment integration
+exists anywhere in this app, so a row is only ever inserted by hand from the SQL editor/service
+role, or by a `security definer` trigger (`supabase/migrations/20260822010000_pro_trial.sql`)
+that grants every newly created `auth.users` row a 5-day trial — including an anonymous sign-in,
+since that's a real insert too, so every device gets one on its first load, not only a real
+signup. `pro_users` has no insert/update/delete RLS policy on purpose, matching that there's no
+client-writable path to it at all. Nothing in the app is actually gated on `isPro` yet — this is
+just the entitlement plumbing, the same shape voca uses for the same thing.
+
 `notes` and `note-folders` (client: `useNote`/`packages/global/src/store/note/useNote.tsx`,
 `useNoteFolder`) are a separate domain from all of the above, despite `note-manager-page-ui` and
 `add-note-page-ui` looking like they use `ChecklistRecord` — `useNoteRecords`
