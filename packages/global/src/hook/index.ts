@@ -7,3 +7,4 @@ export { useIsMobile } from './useIsMobile';
 export { useSession } from './useSession';
 export { useSyncOncePerIdentity, type SyncState } from './useSyncOncePerIdentity';
 export { useSyncedCollection } from './useSyncedCollection';
+export { useApplyAiChecklistTemplate } from './useApplyAiChecklistTemplate';

@@ -93,6 +93,22 @@ export const formatTime = (hour?: string, minute?: string): string => {
 };
 
 /**
+ * Whether a field group's own schedule (see FieldGroup.repeat in
+ * ../store/checklists/useChecklistTemplates) is due on the given date. No `repeat`, or
+ * `dayOfWeek === '*'`, means "every day" — same convention as the template-level `repeat`
+ * this mirrors. Only the day matters here (not the hour/minute) since a group's schedule
+ * gates which groups show for a given calendar day, not a specific time of day.
+ */
+export const isFieldGroupActiveOnDay = (
+  repeat: { dayOfWeek: string } | undefined,
+  date: Date,
+): boolean => {
+  if (!repeat?.dayOfWeek || repeat.dayOfWeek === '*') return true;
+  const days = repeat.dayOfWeek.split(',').map(d => d.trim());
+  return days.includes(String(date.getDay()));
+};
+
+/**
  * Formats tags array into a readable string
  * @param tags - Array of tag strings
  * @returns Formatted tags string or 'No tags'

@@ -1,8 +1,10 @@
 import React from 'react';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 import { Modal } from '@moon-ui/modal';
+import { Icon } from '@moon-ui/icon/Icon';
 import CoreChecklistForm, { FormState } from '@pregnant/create-checklist-page-ui/src/CoreChecklistForm';
 import { createTask } from '@pregnant/create-checklist-page-ui/src/createTaskUtil';
+import AiChecklistGenerate from '@dreamer/detail-task-page/src/components/AiChecklistGenerate';
 import Button from '@moon-ui/button';
 import { motion } from 'framer-motion';
 import styles from './index.module.scss';
@@ -24,6 +26,7 @@ const CreateTaskModal = ({
     'create',
   );
   const [invitationTemplateId, setInvitationTemplateId] = React.useState('');
+  const [isAiModalVisible, setIsAiModalVisible] = React.useState(false);
 
   const handleTabChange = (newTab: 'create' | 'invitation') => {
     if (newTab === activeTab) return;
@@ -50,6 +53,7 @@ const CreateTaskModal = ({
   };
 
   return (
+    <>
     <Modal
       visible={visible}
       onDismiss={onDismiss}
@@ -70,6 +74,13 @@ const CreateTaskModal = ({
               onClick={() => handleTabChange('invitation')}
             >
               Use Template
+            </button>
+            <button
+              className={styles.tabButton}
+              onClick={() => setIsAiModalVisible(true)}
+            >
+              <Icon icon="solar:magic-stick-3-bold-duotone" width={16} style={{ marginRight: 4 }} />
+              Generate with AI
             </button>
           </div>
         </div>
@@ -145,6 +156,17 @@ const CreateTaskModal = ({
       </div>
       }
     />
+    <AiChecklistGenerate
+      visible={isAiModalVisible}
+      onDismiss={() => setIsAiModalVisible(false)}
+      mode="new"
+      onApplied={() => {
+        setIsAiModalVisible(false);
+        onDismiss();
+        onTaskCreated?.();
+      }}
+    />
+    </>
   );
 };
 

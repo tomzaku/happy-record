@@ -3,6 +3,7 @@ import {
   Checklist,
   ChecklistTemplate,
   FieldGroup,
+  isFieldGroupActiveOnDay,
   useChecklist,
 } from '@dreamer/global';
 import { RecordField } from '@dreamer/global/src/store/record-field';
@@ -68,7 +69,17 @@ const ChecklistFieldGroup = ({
   };
 
   const renderTitle = (fieldGroup: FieldGroup) => {
-    return fieldGroup.title;
+    if (isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay))) {
+      return fieldGroup.title;
+    }
+    // Not hidden outright — just marked, so Config/Add stay reachable regardless of the day
+    // being viewed. See scheduleUtils.ts's isFieldGroupActiveOnDay.
+    return (
+      <span className={styles.notScheduledTitle}>
+        {fieldGroup.title}
+        <span className={styles.notScheduledBadge}>Not scheduled today</span>
+      </span>
+    );
   };
   const renderTab = ({
     fieldGroup,
@@ -220,9 +231,15 @@ const ChecklistFieldGroup = ({
         .map(fieldId => fields.find(field => field.id === fieldId))
         .filter((field): field is RecordField => field !== undefined);
       const isCollapsed = collapsedGroups[fieldGroup.id] || false;
+      const isActiveToday = isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay));
 
       return (
-        <Card key={fieldGroup.id} className={styles.cardContainer}>
+        <Card
+          key={fieldGroup.id}
+          className={[styles.cardContainer, !isActiveToday && styles.cardNotScheduled]
+            .filter(Boolean)
+            .join(' ')}
+        >
           <ChecklistFieldGroupHeader
             activeTab={activeTab[fieldGroup.id]}
             activeTabs={

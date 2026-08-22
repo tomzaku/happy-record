@@ -24,6 +24,19 @@ export type FieldGroup = {
   defaultTab?: number;
   activeTabs?: number[];
   collapseDefault?: boolean;
+  /**
+   * Which day(s)/time this group is actually due, independent of the template's own `repeat` —
+   * a "Gym" template can show a Push group Mon/Thu and a Pull group Tue/Fri. Day/time only (no
+   * `dayOfMonth`/`month`/`startedAt` — those live at the template level, where they're actually
+   * used). Absent, or `dayOfWeek: '*'`, means "every day" — see scheduleUtils.ts's
+   * `isFieldGroupActiveOnDay`. `fieldGroups` is jsonb end to end (see
+   * supabase/functions/_shared/checklistTemplates.ts), so this needed no migration.
+   */
+  repeat?: {
+    hour: string;
+    minute: string;
+    dayOfWeek: string;
+  };
 };
 export type ChecklistTemplate = {
   id: string;

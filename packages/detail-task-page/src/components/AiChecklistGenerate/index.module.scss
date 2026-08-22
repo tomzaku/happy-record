@@ -1,0 +1,197 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/color' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-background);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg $spacing-lg $spacing-md;
+  border-bottom: 1px solid var(--division-color);
+}
+
+.closeIcon {
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  color: var(--text-description-color);
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.body {
+  flex: 1;
+  padding: $spacing-lg;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.description {
+  font-size: 13px;
+  color: var(--text-description-color);
+}
+
+.promptInput {
+  width: 100%;
+  resize: vertical;
+  min-height: 90px;
+  padding: $spacing-sm $spacing-md;
+  border-radius: 8px;
+  border: 1px solid var(--division-color);
+  background: var(--background);
+  color: var(--text-color);
+  font-size: 14px;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--icon-primary);
+  }
+}
+
+.errorText {
+  color: var(--error-color, #e5484d);
+  font-size: 13px;
+}
+
+.upsellIcon {
+  color: var(--icon-primary);
+  align-self: center;
+}
+
+.upsellText {
+  font-size: 14px;
+  color: var(--text-description-color);
+  text-align: center;
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.avatarPreview {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.avatarIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatarTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-color);
+  flex: 1;
+}
+
+.avatarToggle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  width: 100%;
+}
+
+.avatarToggleLabel {
+  font-size: 12px;
+  color: var(--text-description-color);
+}
+
+.groupCard {
+  border: 1px solid var(--division-color);
+  border-radius: 10px;
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.groupTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  flex: 1;
+}
+
+.groupSchedule {
+  font-size: 12px;
+  color: var(--text-description-color);
+}
+
+.groupNote {
+  font-size: 12px;
+  color: var(--text-description-color);
+  padding-left: 26px;
+}
+
+.fieldsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  padding-left: 26px;
+}
+
+.fieldItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px $spacing-sm;
+  border-radius: 999px;
+  background: var(--surface-secondary);
+}
+
+.fieldIcon {
+  color: var(--text-description-color);
+}
+
+.fieldLabel {
+  font-size: 12px;
+  color: var(--text-color);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg $spacing-lg;
+  border-top: 1px solid var(--division-color);
+}
+
+.secondaryButton {
+  padding: $spacing-sm $spacing-lg;
+}
+
+.primaryButton {
+  padding: $spacing-sm $spacing-lg;
+}

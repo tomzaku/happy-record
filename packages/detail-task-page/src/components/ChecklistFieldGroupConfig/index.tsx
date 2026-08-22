@@ -5,9 +5,13 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import Input from '@moon-ui/input';
 import Checkbox from '@moon-ui/checkbox';
 import Typography from '@moon-ui/typography';
+import MultiSelectButton from '@moon-ui/button/src/MultiSelectButton';
+import { Day } from '@dreamer/tasks-page-common';
 import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
 import { FieldGroup, RecordField } from '@dreamer/global';
 import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
+import { getDaysFromRepeat } from '../../../../create-checklist-page-ui/src/getDayFromRepeat';
+import { calculateRepeat } from '../../../../create-checklist-page-ui/src/calculateRepeat';
 
 import styles from './index.module.scss';
 
@@ -49,6 +53,20 @@ const ChecklistFieldGroupConfig = ({
   );
   const [isAddFieldPanelVisible, setIsAddFieldPanelVisible] = React.useState(false);
 
+  // This group's own schedule — independent of the template's `repeat`, so e.g. a "Push Day"
+  // group can show Mon/Thu while a "Pull Day" group in the same template shows Tue/Fri. Absent
+  // `repeat` (or every day selected) means "every day" — see scheduleUtils.ts's
+  // `isFieldGroupActiveOnDay`, which is what actually gates rendering by day.
+  const ALL_DAYS = [Day.Sun, Day.Mon, Day.Tue, Day.Wed, Day.Thu, Day.Fri, Day.Sat];
+  const [scheduleDays, setScheduleDays] = React.useState<Day[]>(
+    fieldGroup.repeat?.dayOfWeek ? getDaysFromRepeat(fieldGroup.repeat) : ALL_DAYS,
+  );
+  const [scheduleTime, setScheduleTime] = React.useState(
+    fieldGroup.repeat?.hour && fieldGroup.repeat?.minute
+      ? `${fieldGroup.repeat.hour.padStart(2, '0')}:${fieldGroup.repeat.minute.padStart(2, '0')}`
+      : '',
+  );
+
   const handleTabToggle = (tab: ChecklistFieldGroupTab) => {
     const newActiveTabs = activeTabs.includes(tab)
       ? activeTabs.filter(t => t !== tab)
@@ -66,12 +84,21 @@ const ChecklistFieldGroupConfig = ({
   };
 
   const handleSubmit = () => {
+    // All 7 days selected is "every day" — same convention as the template-level repeat —
+    // stored as no `repeat` at all rather than a redundant dayOfWeek: '0,1,2,3,4,5,6'.
+    const full = calculateRepeat({ weeklyHobbies: scheduleDays, selectedTime: scheduleTime });
+    const repeat =
+      scheduleDays.length === 0 || scheduleDays.length === 7 || !full
+        ? undefined
+        : { hour: full.hour, minute: full.minute, dayOfWeek: full.dayOfWeek };
+
     onUpdateFieldGroup({
       ...fieldGroup,
       title: groupName.trim(),
       defaultTab,
       activeTabs,
       collapseDefault,
+      repeat,
     });
   };
 
@@ -192,6 +219,41 @@ const ChecklistFieldGroupConfig = ({
             </div>
           ))}
         </div>
+      </div>
+
+      <div className={styles.section}>
+        <Typography.Title level={5} noMargin className={styles.sectionTitle}>
+          {intl.formatMessage({
+            id: 'checklist-field-group-config.schedule',
+            defaultMessage: 'Schedule',
+          })}
+        </Typography.Title>
+        <Typography.Text className={styles.sectionDescription}>
+          {intl.formatMessage({
+            id: 'checklist-field-group-config.schedule-description',
+            defaultMessage: 'When this group is due — independent of the task’s own schedule. Select every day for no restriction.',
+          })}
+        </Typography.Text>
+        <MultiSelectButton
+          values={scheduleDays}
+          setValues={setScheduleDays}
+          options={[
+            { label: 'Mon', value: Day.Mon },
+            { label: 'Tue', value: Day.Tue },
+            { label: 'Wed', value: Day.Wed },
+            { label: 'Thu', value: Day.Thu },
+            { label: 'Fri', value: Day.Fri },
+            { label: 'Sat', value: Day.Sat },
+            { label: 'Sun', value: Day.Sun },
+          ]}
+        />
+        <Input
+          type="time"
+          value={scheduleTime}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setScheduleTime(e.target.value)}
+          className={styles.scheduleTimeInput}
+          renderRightInput={() => <></>}
+        />
       </div>
 
       <div className={styles.section}>

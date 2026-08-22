@@ -14,6 +14,7 @@ import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
+import AiChecklistGenerate from './components/AiChecklistGenerate';
 
 const DetailTaskPageMobile = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +30,7 @@ const DetailTaskPageMobile = () => {
     React.useState<ChecklistTemplate>();
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [fields, setFields] = React.useState<RecordField[]>([]);
+  const [isAiModalVisible, setIsAiModalVisible] = React.useState(false);
 
 
   // Function to update fields based on current checklistTemplate
@@ -100,6 +102,12 @@ const DetailTaskPageMobile = () => {
               style={{ cursor: 'pointer' }}
             />
             <Icon
+              onClick={() => setIsAiModalVisible(true)}
+              width={24}
+              icon="solar:magic-stick-3-bold-duotone"
+              style={{ cursor: 'pointer' }}
+            />
+            <Icon
               onClick={() => {
                 navigate(`/edit-checklist/${id}`);
               }}
@@ -129,6 +137,16 @@ const DetailTaskPageMobile = () => {
           // Fields will be updated automatically via useEffect
         }}
         onFieldAdded={handleFieldAdded}
+      />
+
+      <AiChecklistGenerate
+        visible={isAiModalVisible}
+        onDismiss={() => setIsAiModalVisible(false)}
+        mode="existing"
+        existingTemplate={checklistTemplate}
+        onApplied={({ template }) => {
+          if (template) setChecklistTemplate(template);
+        }}
       />
 
       {/* <FocusZoneModal */}

@@ -16,6 +16,7 @@ import { useIntl } from '@dreamer/translation';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import CardShare from './components/CardShare';
+import AiChecklistGenerate from './components/AiChecklistGenerate';
 import styles from './index.desktop.module.scss';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button/src/DefaultButton';
@@ -37,6 +38,7 @@ const DetailTaskPageDesktop = () => {
   const [fields, setFields] = React.useState<RecordField[]>([]);
   const [isEditingTitle, setIsEditingTitle] = React.useState(false);
   const [editedTitle, setEditedTitle] = React.useState('');
+  const [isAiModalVisible, setIsAiModalVisible] = React.useState(false);
 
   if (!id || !currentDay) {
     return;
@@ -170,6 +172,14 @@ const DetailTaskPageDesktop = () => {
             <div className={styles.headerActions}>
               <Button
                 type="ghost"
+                onClick={() => setIsAiModalVisible(true)}
+                className={styles.actionButton}
+              >
+                <Icon icon="solar:magic-stick-3-bold-duotone" width={20} />
+                {intl.formatMessage({ id: 'DetailTaskPage.generate-with-ai', defaultMessage: 'Generate with AI' })}
+              </Button>
+              <Button
+                type="ghost"
                 onClick={() => {
                   navigate(`/edit-checklist/${id}`);
                 }}
@@ -210,11 +220,21 @@ const DetailTaskPageDesktop = () => {
               <CardShare
                 checklistTemplate={checklistTemplate}
               />
-              
+
             </div>
           </div>
         </div>
       </div>
+
+      <AiChecklistGenerate
+        visible={isAiModalVisible}
+        onDismiss={() => setIsAiModalVisible(false)}
+        mode="existing"
+        existingTemplate={checklistTemplate}
+        onApplied={({ template }) => {
+          if (template) setChecklistTemplate(template);
+        }}
+      />
 
       {/* <FocusZoneModal */}
       {/*   visible={isFocusZoneOpen} */}
