@@ -12,10 +12,8 @@ import { useNavigate } from 'react-router-dom';
 import cn from 'classnames';
 import styles from './index.module.scss';
 import { BackHeader } from '@dreamer/header';
-import { useFirebase } from '@dreamer/global/src/hook/useFirebase';
 
 const ChecklistTemplatePageUi = () => {
-  const { get } = useFirebase();
   const {
     getRecommendChecklistTemplates,
     selectedChecklistTemplates,

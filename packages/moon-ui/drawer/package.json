@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "src/index.tsx",
   "license": "MIT",
+  "dependencies": {
+    "@react-spring/web": "^10.1.2"
+  },
   "devDependencies": {
     "@types/react-motion": "^0.0.40"
   }

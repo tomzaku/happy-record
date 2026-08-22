@@ -1,5 +1,0 @@
-export const MARGIN_CONTAINER = 22;
-export const PADDING_SLIDER = 10;
-export const SLIDER_SIZE = 70;
-
-export const TRAY_SLIDER_WITH_SPACING = SLIDER_SIZE / 2 + PADDING_SLIDER

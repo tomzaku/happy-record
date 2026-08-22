@@ -110,6 +110,12 @@
   padding: 12px 0;
 }
 
+// flex: 1 above pushes this to the bottom of the (flex-column) drawer.
+.drawerFooter {
+  border-top: 1px solid var(--division-color);
+  padding: 8px 0;
+}
+
 .navigationItem {
   width: 100%;
   display: flex;

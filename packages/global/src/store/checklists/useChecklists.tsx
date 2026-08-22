@@ -4,6 +4,10 @@ import { useChecklistTemplates } from './useChecklistTemplates';
 import { v4 } from 'uuid';
 import { startOfDay, endOfDay } from 'date-fns';
 
+// Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
+// and this hook's own useLocalStorage state is the fallback, unchanged.
+import { fetchChecklists, saveChecklist } from './checklistsApi';
+
 const CHECKLIST_KEY = 'checklist';
 
 export type Checklist = {
@@ -16,6 +20,9 @@ export type Checklist = {
   clientOnly?: boolean;
 };
 
+// One flag for the whole page load — see the same guard in useRecordField.tsx.
+let checklistsSynced = false;
+
 export const useChecklist = () => {
   const [checklist, setChecklist] = useLocalStorage<Record<string, Checklist>>(
     CHECKLIST_KEY,
@@ -23,6 +30,28 @@ export const useChecklist = () => {
   );
   const { getChecklistTemplateIdsByGivingDate, checklistTemplate } =
     useChecklistTemplates();
+
+  React.useEffect(() => {
+    if (checklistsSynced) return;
+    checklistsSynced = true;
+    fetchChecklists().then(result => {
+      if (!result) {
+        checklistsSynced = false;
+        return;
+      }
+      setChecklist(prev => {
+        const merged = { ...prev };
+        let changed = false;
+        for (const c of result.checklists) {
+          if (!merged[c.id]) {
+            merged[c.id] = c;
+            changed = true;
+          }
+        }
+        return changed ? merged : prev;
+      });
+    });
+  }, []);
 
   const getRepeatChecklistByGivingDate = React.useCallback(
     (
@@ -72,19 +101,19 @@ export const useChecklist = () => {
           const template =
           checklistTemplate[existingChecklist.checklistTemplateId];
 
-        // A checklist is considered forever if the template has no repeat schedule
         const hasSchedule =
           template?.repeat?.dayOfWeek &&
           template.repeat.dayOfWeek.trim() !== '';
         if(hasSchedule) return false;
-        if (existingChecklist.completedAt) {
-          const completedAtDate = new Date(existingChecklist.completedAt);
-          return completedAtDate >= startOfDay(date);
-        }
 
-          // Must be on or after the startedAt date
-          const startedAtDate = new Date(existingChecklist.startedAt);
-          return startedAtDate <= endOfDay(date);
+        // A one-off (unscheduled) checklist belongs to exactly the day it
+        // was started, not a range from there onward — and completedAt
+        // being set shouldn't make it appear on every day back to the
+        // beginning of time either. `completedAt` doesn't factor into
+        // which day this shows on at all; it's just whether it's checked
+        // off when it does.
+        const startedAtDate = new Date(existingChecklist.startedAt);
+        return startedAtDate >= startOfDay(date) && startedAtDate <= endOfDay(date);
         },
       );
       // Combine scheduled, non-scheduled, and forever checklists
@@ -115,13 +144,19 @@ export const useChecklist = () => {
 
   const updateChecklist = React.useCallback(
     (checklistToUpdate: Partial<Checklist> & { id: Checklist['id'] }) => {
+      const merged: Checklist = {
+        ...checklist[checklistToUpdate.id],
+        ...checklistToUpdate,
+      };
       setChecklist({
         ...checklist,
-        [checklistToUpdate.id]: {
-          ...checklist[checklistToUpdate.id],
-          ...checklistToUpdate,
-        },
+        [checklistToUpdate.id]: merged,
       });
+      // `merged` may be a client-only instance's first real edit (see
+      // getRepeatChecklistByGivingDate — the home page's checkbox updates
+      // one of these directly) with no row on the server yet. `saveChecklist`
+      // is an upsert, so that's exactly right: this call is what creates it.
+      saveChecklist(merged);
     },
     [checklist, setChecklist],
   );
@@ -137,6 +172,7 @@ export const useChecklist = () => {
         ...checklist,
         [id]: newChecklist,
       });
+      saveChecklist(newChecklist);
       return newChecklist;
     },
     [checklist, setChecklist],

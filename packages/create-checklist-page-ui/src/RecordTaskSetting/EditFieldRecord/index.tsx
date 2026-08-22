@@ -23,6 +23,7 @@ const EditFieldRecord = ({ className, onSubmit, recordField }: Props) => {
       title: form.title,
       unit: form.unit,
       description: form.description,
+      visibility: form.visibility,
     });
 
     if (updatedRecordField) {
@@ -41,6 +42,7 @@ const EditFieldRecord = ({ className, onSubmit, recordField }: Props) => {
       title: recordField.title,
       unit: recordField.unit,
       description: recordField.description,
+      visibility: recordField.visibility ?? 'private',
     };
   };
 

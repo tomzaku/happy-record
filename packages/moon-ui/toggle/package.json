@@ -4,6 +4,7 @@
   "main": "src/index.tsx",
   "license": "MIT",
   "dependencies": {
+    "@react-spring/web": "^10.1.2",
     "framer-motion": "^12.12.1",
     "react-motion": "^0.5.2"
   },

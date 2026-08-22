@@ -9,10 +9,13 @@ import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-t
 import { ChecklistTemplate, useChecklistTemplates } from '@dreamer/global';
 import styles from './index.desktop.module.scss';
 
-const getFullUrl = (checklistTemplateId: string) => {
+// `from`/`to` ride along as query params rather than anything persisted
+// server-side — they're just greeting text for the recipient's page, not
+// data with a real owner, so there's nothing here worth a table or a column.
+const getFullUrl = (checklistTemplateId: string, from = 'You', to = 'Friend') => {
   const domain = window.location.origin;
-  const fullUrl = `${domain}/#/checklist-template/shared/${checklistTemplateId}`;
-  return fullUrl;
+  const params = new URLSearchParams({ from, to });
+  return `${domain}/#/checklist-template/shared/${checklistTemplateId}?${params}`;
 };
 
 type CardShareProps = {
@@ -61,8 +64,6 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
         fields: checklistTemplateFieldIds.map(id =>
           allFields.find(f => f.id === id),
         ),
-        userName: 'You', // Default values
-        targetName: 'Friend',
       };
       const result = await updateChecklistTemplate(data);
       updateChecklistTemplateLocal(data.checklistTemplate);

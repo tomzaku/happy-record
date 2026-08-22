@@ -12,6 +12,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@iconify/json": "^2.2.339",
+    "@react-spring/web": "^10.1.2",
     "@moon-ui/select": "^1.0.0",
     "@moon-ui/note-editor": "^1.0.0"
   }

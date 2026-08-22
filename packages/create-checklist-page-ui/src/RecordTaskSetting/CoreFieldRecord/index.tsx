@@ -10,6 +10,7 @@ import styles from './index.module.scss';
 import cx from 'classnames';
 import IconPicker from '../../IconPicker';
 import Radio from '@moon-ui/radio';
+import Checkbox from '@moon-ui/checkbox';
 
 export type FormState = {
   icon: string;
@@ -18,6 +19,7 @@ export type FormState = {
   title: string;
   unit: string;
   description: string;
+  visibility: 'public' | 'private';
 };
 
 type Props = {
@@ -43,6 +45,7 @@ const CoreFieldRecord = ({
     title: '',
     unit: '',
     description: '',
+    visibility: 'private',
     ...initialValues,
   });
 
@@ -139,6 +142,27 @@ const CoreFieldRecord = ({
           />
         </div>
       )}
+      <List.ItemMeta
+        noPaddingHorizontal
+        className={styles.marginBottom}
+        logo={<Icon width={24} icon="solar:users-group-rounded-linear" />}
+        title={intl.formatMessage({
+          defaultMessage: 'Public',
+          id: 'label-record-custom.visibility.label',
+        })}
+        description={intl.formatMessage({
+          defaultMessage: 'Other users can use this field in their own checklists',
+          id: 'label-record-custom.visibility.description',
+        })}
+        rightComponent={
+          <Checkbox
+            checked={form.visibility === 'public'}
+            onChange={e =>
+              setForm({ ...form, visibility: e.target.checked ? 'public' : 'private' })
+            }
+          />
+        }
+      />
       <IconPicker
         selectedIcon={form.icon}
         setSelectedIcon={icon => setForm({ ...form, icon })}

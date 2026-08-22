@@ -8,6 +8,7 @@ import {
   usePomodoroGlobalConfig,
   withPomodoroGlobalConfig,
 } from '@dreamer/pomodoro-common';
+import { useSession } from '@dreamer/global';
 
 // Hoc
 import { withTranslation } from '@dreamer/translation';
@@ -51,6 +52,9 @@ class ErrorBoundary extends React.Component<
 
 function App() {
   const { theme } = usePomodoroGlobalConfig();
+  // Anonymous sign-in so the device has a Supabase session to sync through —
+  // no-op when no backend is configured (VITE_SUPABASE_URL unset).
+  useSession();
   // Focus Zone Modal state
   const [isFocusZoneOpen, setIsFocusZoneOpen] = React.useState(false);
   return (

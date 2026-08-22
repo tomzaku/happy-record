@@ -67,18 +67,27 @@ const AddGroupModalContent = ({
     <div className={styles.modalContainer}>
       <div className={styles.modalContent}>
       <div className={styles.header}>
-        <Typography.Title level={4} noMargin>
+        <div className={styles.headerTop}>
+          <Typography.Title level={4} noMargin>
+            {intl.formatMessage({
+              defaultMessage: 'Create New Group',
+              id: 'label-create-new-group',
+            })}
+          </Typography.Title>
+          <Icon
+            onClick={onCancel}
+            width={20}
+            icon="basil:close-outline"
+            className={styles.closeIcon}
+          />
+        </div>
+        <Typography.Text className={styles.headerDescription}>
           {intl.formatMessage({
-            defaultMessage: 'Create New Group',
-            id: 'label-create-new-group',
+            defaultMessage:
+              "A group bundles a few fields so they're recorded together as one section — like Duration + Distance under \"Cardio\", or Push-ups + Pull-ups under \"Strength\".",
+            id: 'label-create-new-group-description',
           })}
-        </Typography.Title>
-        <Icon
-          onClick={onCancel}
-          width={20}
-          icon="basil:close-outline"
-          className={styles.closeIcon}
-        />
+        </Typography.Text>
       </div>
 
       <div className={styles.content}>
@@ -89,11 +98,17 @@ const AddGroupModalContent = ({
               id: 'label-group-name',
             })}
           </Typography.Text>
+          <Typography.Text className={styles.sectionDescription}>
+            {intl.formatMessage({
+              defaultMessage: "What these fields have in common — you'll see this as the section heading.",
+              id: 'label-group-name-description',
+            })}
+          </Typography.Text>
           <Input
             value={groupName}
             onChange={e => setGroupName(e.target.value)}
             placeholder={intl.formatMessage({
-              defaultMessage: 'Enter group name...',
+              defaultMessage: 'e.g. Cardio, Strength, Morning Routine',
               id: 'placeholder-group-name',
             })}
             className={styles.nameInput}

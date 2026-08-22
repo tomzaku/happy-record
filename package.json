@@ -3,10 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "dev": "yarn workspace @dreamer/web dev",
     "lint-staged": "lint-staged",
     "prepare": "husky install",
     "test": "jest --passWithNoTests",
-    "generate:language": "lerna run --scope=@dreamer/translation generate:language"
+    "generate:language": "lerna run --scope=@dreamer/translation generate:language",
+    "db:push": "supabase db push",
+    "db:new": "supabase migration new",
+    "deploy:functions": "supabase functions deploy",
+    "deploy:functions:fast": "supabase functions deploy --use-api --jobs 4",
+    "deploy:supabase": "yarn db:push && yarn deploy:functions"
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",

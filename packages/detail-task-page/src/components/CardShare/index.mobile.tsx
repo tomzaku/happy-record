@@ -9,6 +9,15 @@ import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-t
 import { useChecklistTemplates } from '@dreamer/global';
 import styles from './index.mobile.module.scss';
 
+// `from`/`to` ride along as query params rather than anything persisted
+// server-side — they're just greeting text for the recipient's page, not
+// data with a real owner, so there's nothing here worth a table or a column.
+const getFullUrl = (checklistTemplateId: string, from = 'You', to = 'Friend') => {
+  const domain = window.location.origin;
+  const params = new URLSearchParams({ from, to });
+  return `${domain}/#/checklist-template/shared/${checklistTemplateId}?${params}`;
+};
+
 type CardShareProps = {
   checklistTemplateId: string;
   onShare?: () => void;
@@ -53,48 +62,22 @@ const CardShareMobile = ({
       const allFields = getAllRecordFields();
       const checklistTemplate = getChecklistTemplate(checklistTemplateId);
       
-      // Check if template is already public
-      if (checklistTemplate.visibility === 'public') {
-        // If already public, still call updateChecklistTemplate to ensure it's properly updated
-        const checklistTemplateFieldIds = checklistTemplate.fieldGroups.flatMap(
-          group => group.fields,
-        );
-        const data = {
-          checklistTemplate: {
-            ...checklistTemplate,
-            visibility: 'public',
-          },
-          fields: checklistTemplateFieldIds.map(id =>
-            allFields.find(f => f.id === id),
-          ),
-          userName: 'You',
-          targetName: 'Friend',
-        };
-        const result = await updateChecklistTemplate(data);
-        const domain = window.location.origin;
-        const fullUrl = `${domain}/#/checklist-template/shared/${result.id}`;
-        setShareUrl(fullUrl);
-        handleCopyLink(fullUrl);
-        return;
-      }
-      
+      // Already public just means "make sure the server copy matches" —
+      // same call either way, so there's nothing left to branch on here.
       const checklistTemplateFieldIds = checklistTemplate.fieldGroups.flatMap(
         group => group.fields,
       );
       const data = {
         checklistTemplate: {
           ...checklistTemplate,
-          visibility: 'public', // Set visibility to public for sharing
+          visibility: 'public' as const,
         },
         fields: checklistTemplateFieldIds.map(id =>
           allFields.find(f => f.id === id),
         ),
-        userName: 'You', // Default values
-        targetName: 'Friend',
       };
       const result = await updateChecklistTemplate(data);
-      const domain = window.location.origin;
-      const fullUrl = `${domain}/#/checklist-template/shared/${result.id}`;
+      const fullUrl = getFullUrl(result.id);
       setShareUrl(fullUrl);
       handleCopyLink(fullUrl);
     } catch (err) {

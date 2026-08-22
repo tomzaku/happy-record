@@ -102,4 +102,7 @@ export default defineConfig({
       // 'react/jsx-runtime': 'preact/jsx-runtime',
     },
   },
+  server: {
+    port: 4001,
+  },
 });

@@ -1,8 +1,6 @@
 import NoteEditor from '@moon-ui/note-editor';
-import {
-  ChecklistRecord,
-  useChecklistRecord,
-} from '@dreamer/global/src/store/checklist-record';
+import { ChecklistRecord } from '@dreamer/global/src/store/checklist-record';
+import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
 
 import styles from './index.module.scss';
 import Typography from '@moon-ui/typography';
@@ -20,10 +18,10 @@ type Props = {
 };
 
 const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, defaultFieldId }: Props) => {
-  const { updateChecklistRecord } = useChecklistRecord();
+  const { updateNote } = useNoteRecords();
   const [isCreatingNote, setIsCreatingNote] = React.useState(false);
   const [newNoteValue, setNewNoteValue] = React.useState<string | number | undefined>();
-  
+
   const noteFieldMap = allNoteFields.reduce<Record<string, RecordField>>(
     (acc, field) => ({
       ...acc,
@@ -33,11 +31,7 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
   );
 
   const handleNoteValueChange = (note: ChecklistRecord, value: string | number) => {
-    updateChecklistRecord(note.id, {
-      value,
-      checklistTemplateId: note.checklistTemplateId,
-      folderId: note.folderId,
-    });
+    updateNote(note, String(value));
   };
 
   const handleCreateNewNote = () => {

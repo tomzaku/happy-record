@@ -1,12 +1,7 @@
 import React from 'react';
-import {
-  ChecklistTemplate,
-  useChecklist,
-  useChecklistTemplates,
-} from '@dreamer/global';
+import { useChecklistTemplates } from '@dreamer/global';
 import AppHeader, { BackHeader } from '@dreamer/header';
-import qs from 'qs';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import TaskSharedCard from './components/task-shared-card';
 import Card from '@moon-ui/card';
 import Button from '@moon-ui/button/src/DefaultButton';
@@ -21,28 +16,42 @@ import { useGetChecklistTemplateApi } from '@dreamer/global/src/hook/checklist-t
 
 const ChecklistTemplateSharedPageUi = () => {
   const { id } = useParams<{ id: string }>();
-  const { getAllRecordFields, addRecordField } = useRecordField();
+  const [searchParams] = useSearchParams();
+  // Just greeting text, carried in the URL rather than fetched — see
+  // CardShare's getFullUrl and useCreateChecklistTemplateApi.tsx.
+  const userName = searchParams.get('from') || 'Someone';
+  const targetName = searchParams.get('to') || 'you';
+  const { getAllRecordFields, mergeRecordFields } = useRecordField();
   const [dialogRejectOpen, setDialogRejectOpen] = React.useState(false);
   const { addChecklistTemplate, getChecklistTemplate } =
     useChecklistTemplates();
-  const { getChecklistDetail } = useChecklist();
   const navigate = useNavigate();
   const { getChecklistTemplateApi } = useGetChecklistTemplateApi();
 
-  // const queryParams = qs.parse(location.search, { ignoreQueryPrefix: true });
   const [data, setData] = React.useState();
   const handleSubmit = () => {
+    if (!data) return;
     const allFields = getAllRecordFields();
     const newFields = data.fields.filter(f => {
-      return !allFields.find(existingField => existingField.id == f.id);
+      return !allFields.find(existingField => existingField.id === f.id);
     });
-    newFields.forEach(f => {
-      addRecordField(f, true);
-    });
+    // These fields are already public, real rows owned by whoever shared
+    // this template — cache them locally for immediate use, don't re-save
+    // them as this device's own (see mergeRecordFields).
+    if (newFields.length) mergeRecordFields(newFields);
+
     if (getChecklistTemplate(data.checklistTemplate.id)) {
       alert("You've have this task!!!");
     } else {
-      addChecklistTemplate(data.checklistTemplate);
+      // A fresh copy for this device: its own id (addChecklistTemplate
+      // generates one), never public by default, and no flag — a flag id
+      // copied verbatim would point at a flag this device can't see or
+      // manage, since flags are owner-scoped same as everything else here.
+      addChecklistTemplate({
+        ...data.checklistTemplate,
+        visibility: 'private',
+        flagId: undefined,
+      });
       navigate('/');
     }
   };
@@ -70,7 +79,7 @@ const ChecklistTemplateSharedPageUi = () => {
       <Card className={styles.card}>
         <Typography.Title
           level={3}
-        >{`Hey, ${data.targetName} - ${data.userName} just challenged you!`}</Typography.Title>
+        >{`Hey, ${targetName} - ${userName} just challenged you!`}</Typography.Title>
         <TaskSharedCard
           checklistTemplate={data.checklistTemplate}
           fields={data.fields}
@@ -103,7 +112,7 @@ const ChecklistTemplateSharedPageUi = () => {
             />
           </div>
           <Typography.Title level={3}>
-            {`Don't worry, ${data.targetName}`}
+            {`Don't worry, ${targetName}`}
           </Typography.Title>
           <Typography.Text>
             I know you’re not scared of this challenge, so I’ll take it for you

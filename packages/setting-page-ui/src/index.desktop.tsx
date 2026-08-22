@@ -9,7 +9,7 @@ import IconTheme from '@moon-ui/icon/IconTheme';
 import Icon from '@moon-ui/icon/Icon';
 
 // Enum
-import { Language } from '@dreamer/global';
+import { Language, useSession } from '@dreamer/global';
 import { Theme } from '@dreamer/pomodoro-common';
 
 // Hooks
@@ -36,6 +36,11 @@ export default function SettingPageDesktop() {
   } = usePomodoroGlobalConfig();
   const navigate = useNavigate();
   const { language, changeLanguage, formatMessage } = useIntl();
+  const { isAnonymous, email, hasBackend, signInWithGoogle } = useSession();
+  const handleGoogleSignIn = async () => {
+    const error = await signInWithGoogle();
+    if (error) console.warn('[dreamer] Google sign-in failed:', error);
+  };
 
   return (
     <div className={styles.desktopContainer}>
@@ -52,6 +57,23 @@ export default function SettingPageDesktop() {
           </div>
           
           <div className={styles.settingsContainer}>
+            {hasBackend && (
+              <div className={styles.settingsSection}>
+                <Typography.Title level={4} className={styles.sectionTitle}>
+                  Account
+                </Typography.Title>
+                <List.ItemMeta
+                  logo={<Icon width={24} icon="flat-color-icons:google" />}
+                  title={isAnonymous ? 'Sign in with Google' : email || 'Signed in'}
+                  description={
+                    isAnonymous
+                      ? 'Back up your data and use it on another device'
+                      : 'Synced to your Google account'
+                  }
+                  onClick={isAnonymous ? handleGoogleSignIn : undefined}
+                />
+              </div>
+            )}
             <div className={styles.settingsSection}>
               <Typography.Title level={4} className={styles.sectionTitle}>
                 Appearance

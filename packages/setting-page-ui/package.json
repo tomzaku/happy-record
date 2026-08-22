@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@dreamer/global": "^1.0.0",
     "@dreamer/translation": "^1.0.0",
     "@moon-ui/icon": "^1.0.0",
     "@moon-ui/list": "^1.0.0",

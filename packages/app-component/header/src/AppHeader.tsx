@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import styles from './AppHeader.module.scss';
 import Icon from '@moon-ui/icon/Icon';
+import AccountStatus from './AccountStatus';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const Header = () => {
             navigate('/setting');
           }}
         />
+        <AccountStatus variant="header" className={styles.rightIcon} />
       </div>
       {/* <div className={styles.right}> */}
       {/*   <Icon */}

@@ -1,10 +1,4 @@
 import React from 'react';
-import { useNoteFolder } from '@dreamer/global/src/store/note-folder';
-import {
-  ChecklistRecord,
-  useChecklistRecord,
-} from '@dreamer/global/src/store/checklist-record';
-import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { format } from 'date-fns';
 import AppHeader, { BackHeader } from '@dreamer/header';
 import NoteEditor from '@moon-ui/note-editor';

@@ -6,13 +6,10 @@ import SettingPageDesktop from '@dreamer/setting-page-ui/src/index.desktop';
 import DetailTaskPage from '@dreamer/detail-task-page';
 import DetailTaskPageDesktop from '@dreamer/detail-task-page/src/index.desktop';
 
-import PregnantIntro from '@pregnant/pregnant-intro';
-import PregnantPage from '@pregnant/pregnant-page-ui';
 import {
   EditChecklistForm,
   CreateChecklistForm,
 } from '@pregnant/create-checklist-page-ui';
-import PregnantWeightRecord from '@pregnant/pregnant-weight-record';
 import ChecklistTemplatePageUi from '@pregnant/checklist-template-page-ui';
 import StoryPageUi from '@pregnant/story-page-ui';
 import Audio from '@pregnant/pregnant-audio-player';
@@ -102,22 +99,6 @@ const AppRouter = () => {
           element={
             <AnimationRoute>
               <EditChecklistForm />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/weight-record"
-          element={
-            <AnimationRoute>
-              <PregnantWeightRecord />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/intro"
-          element={
-            <AnimationRoute>
-              <PregnantIntro />
             </AnimationRoute>
           }
         />

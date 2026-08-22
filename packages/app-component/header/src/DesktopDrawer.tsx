@@ -7,6 +7,7 @@ import IconMoon from '@moon-ui/icon/IconMoon';
 import { usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 import { Theme } from '@dreamer/pomodoro-common';
 import cx from 'classnames';
+import AccountStatus from './AccountStatus';
 import styles from './DesktopDrawer.module.scss';
 
 const DesktopDrawer = () => {
@@ -129,6 +130,9 @@ const DesktopDrawer = () => {
           </button>
         ))}
       </nav>
+      <div className={styles.drawerFooter}>
+        <AccountStatus variant="drawer" collapsed={isMinimized} />
+      </div>
     </div>
   );
 };

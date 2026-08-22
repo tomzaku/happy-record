@@ -12,7 +12,6 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import styles from './index.module.scss';
 import Input from '@moon-ui/input';
 import List from '@moon-ui/list';
-import { useFirebase } from '@dreamer/global/src/hook/useFirebase';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
 
 const TasksSharedPage = () => {
@@ -58,16 +57,21 @@ const TasksSharedPage = () => {
       group => group.fields,
     );
     const data = {
-      checklistTemplate,
+      checklistTemplate: { ...checklistTemplate, visibility: 'public' as const },
       fields: checklistTemplateFieldIds.map(id =>
         allFields.find(f => f.id === id),
       ),
-      userName,
-      targetName,
     };
     const result = await updateChecklistTemplate(data);
     const domain = window.location.origin;
-    const fullUrl = `${domain}/#/checklist-template/shared/${result.id}`;
+    // `userName`/`targetName` are just greeting text for the recipient's
+    // page — they ride along in the query string rather than anything
+    // persisted server-side (see useCreateChecklistTemplateApi.tsx).
+    const params = new URLSearchParams({
+      from: userName || 'You',
+      to: targetName || 'Friend',
+    });
+    const fullUrl = `${domain}/#/checklist-template/shared/${result.id}?${params}`;
     setUrl(fullUrl);
     handleCopy(fullUrl);
   };

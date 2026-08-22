@@ -2,6 +2,15 @@ import { v4 } from 'uuid';
 import { format } from 'date-fns';
 import { useLocalStorage } from '../../hook';
 
+// Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
+// and this hook's own useLocalStorage state is the fallback, unchanged.
+import {
+  fetchChecklistRecords,
+  removeChecklistRecord as removeChecklistRecordApi,
+  saveChecklistRecords,
+  updateChecklistRecordValue,
+} from './checklistRecordApi';
+
 const CHECKLIST_RECORD_KEY = 'checklist_record';
 
 export type ChecklistRecord = {
@@ -12,6 +21,14 @@ export type ChecklistRecord = {
   fieldId: string;
   value: number | string;
   folderId?: string;
+  /**
+   * One id per Submit click, shared by every field submitted in that click
+   * — the real "these were committed together" relationship (see
+   * getChecklistRecords' `type: 'time'` grouping below). Optional only for
+   * back-compat with anything written before this existed; `addChecklistRecord`
+   * always sets it.
+   */
+  submissionId?: string;
 };
 
 // Since we store in FE we might need nest the data to queries faster
@@ -30,18 +47,30 @@ type AddChecklistRecordData = {
   createdAt: string;
 };
 
+// Records are unbounded (every day, forever), so unlike the other resources
+// there's no single "fetch everything on mount" — instead getChecklistRecords
+// syncs the one range it was actually asked for, keyed so the same
+// (template, range, fields) tuple isn't re-fetched every call within a page
+// load.
+const syncedRanges = new Set<string>();
+
 export const useChecklistRecord = () => {
   const [checklistRecordList, setChecklistRecordList] =
     useLocalStorage<ChecklistRecorStore>(CHECKLIST_RECORD_KEY, {});
 
   const addChecklistRecord = (data: AddChecklistRecordData) => {
     if (data.records.length) {
+      // One id for the whole click, not per field — every record below
+      // shares it, which is what makes them "one commit" rather than a
+      // coincidence of matching timestamps.
+      const submissionId = v4();
       const result = data.records.map(record => ({
         id: v4(),
         ...record,
         checklistId: data.checklistId,
         checklistTemplateId: data.checklistTemplateId,
         createdAt: data.createdAt,
+        submissionId,
       }));
 
       setChecklistRecordList(prev => ({
@@ -51,6 +80,13 @@ export const useChecklistRecord = () => {
           ...result,
         ],
       }));
+      saveChecklistRecords({
+        records: result,
+        checklistId: data.checklistId,
+        checklistTemplateId: data.checklistTemplateId,
+        createdAt: data.createdAt,
+        submissionId,
+      });
       return result;
     }
   };
@@ -70,6 +106,40 @@ export const useChecklistRecord = () => {
       sortDirection?: 'asc' | 'desc';
     },
   ) => {
+    // Background sync for this exact range — merges into the store when it
+    // lands, so it's visible next time this range is read (e.g. the next
+    // time this component mounts), not necessarily in the result returned
+    // below. See CLAUDE.md: null (offline, no backend) just means "use what
+    // this device already has", which is exactly what happens if this never
+    // resolves.
+    const rangeKey = JSON.stringify({ checklistTemplateId, rangeDate, fieldIds });
+    if (!syncedRanges.has(rangeKey)) {
+      syncedRanges.add(rangeKey);
+      fetchChecklistRecords({
+        checklistTemplateId: checklistTemplateId || undefined,
+        from: rangeDate?.from,
+        to: rangeDate?.to,
+        fieldIds,
+      }).then(result => {
+        if (!result) {
+          syncedRanges.delete(rangeKey);
+          return;
+        }
+        setChecklistRecordList(prev => {
+          const merged = { ...prev };
+          let changed = false;
+          for (const record of result.records) {
+            const bucket = merged[record.checklistTemplateId] ?? [];
+            if (!bucket.some(r => r.id === record.id)) {
+              merged[record.checklistTemplateId] = [...bucket, record];
+              changed = true;
+            }
+          }
+          return changed ? merged : prev;
+        });
+      });
+    }
+
     const records = checklistTemplateId
       ? checklistRecordList[checklistTemplateId] || []
       : Object.values(checklistRecordList).flat();
@@ -107,22 +177,45 @@ export const useChecklistRecord = () => {
       filteredRecords = filteredRecords.reverse();
     }
 
-    // Group records by day (YYYY-MM-DD format)
-    const groupsByDay = filteredRecords.reduce<
-      Record<string, ChecklistRecord[]>
-    >((acc, record) => {
-      const date = new Date(record.createdAt);
-      // Extract only the date part (YYYY-MM-DD) from the ISO string
-      const dayKey =
-        type === 'date' ? format(date, 'yyyy-MM-dd') : date.toISOString();
-      // Initialize array for this day if it doesn't exist
-      if (!acc[dayKey]) {
-        acc[dayKey] = [];
+    let groupsByDay: Record<string, ChecklistRecord[]>;
+    if (type === 'date') {
+      // Group records by day (YYYY-MM-DD format) — every submission on the
+      // same day belongs in one bucket here, so this stays keyed by the
+      // calendar day, not by submission.
+      groupsByDay = filteredRecords.reduce<Record<string, ChecklistRecord[]>>(
+        (acc, record) => {
+          const dayKey = format(new Date(record.createdAt), 'yyyy-MM-dd');
+          acc[dayKey] = [...(acc[dayKey] || []), record];
+          return acc;
+        },
+        {},
+      );
+    } else {
+      // Group by submissionId — the real "committed together" relationship
+      // — not by createdAt equality (see addChecklistRecord). Falls back to
+      // the record's own id for anything written before submissionId
+      // existed, so it becomes its own singleton group rather than
+      // colliding with something unrelated.
+      //
+      // The returned map is still keyed by a parseable date string (each
+      // group's own createdAt) because callers (ChecklistFieldGroupHistory,
+      // RecordDayHistory, NoteHistory) display the key as one — two
+      // submissions landing in the exact same millisecond would still
+      // collide at that display step, same residual edge case as before,
+      // just no longer the thing grouping (and "delete this entry")
+      // actually relies on.
+      const bySubmission = new Map<string, ChecklistRecord[]>();
+      for (const record of filteredRecords) {
+        const groupId = record.submissionId || record.id;
+        const group = bySubmission.get(groupId);
+        if (group) group.push(record);
+        else bySubmission.set(groupId, [record]);
       }
-      // Add the record to the corresponding day
-      acc[dayKey].push(record);
-      return acc;
-    }, {});
+      groupsByDay = {};
+      for (const group of bySubmission.values()) {
+        groupsByDay[new Date(group[0].createdAt).toISOString()] = group;
+      }
+    }
 
     return groupsByDay;
   };
@@ -160,6 +253,7 @@ export const useChecklistRecord = () => {
         [checklistTemplateId]: updatedRecords,
       };
     });
+    updateChecklistRecordValue(recordId, { value, folderId });
   };
 
   return {
@@ -180,6 +274,7 @@ export const useChecklistRecord = () => {
           [checklistTemplateId]: updatedRecords,
         };
       });
+      removeChecklistRecordApi(recordId);
     },
   };
 };

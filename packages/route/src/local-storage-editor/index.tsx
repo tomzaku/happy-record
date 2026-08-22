@@ -1,13 +1,10 @@
 import React from 'react';
 import { useLocalStorageAll } from './useLocalStorage';
-import { useStorageSync } from '@dreamer/global/src/hook/useStorageSync';
 import { useUser } from '@dreamer/global/src/hook/useUser';
 import Typography from '@moon-ui/typography';
 import NoteEditor from '@moon-ui/note-editor';
 
 function LocalStorageEditor() {
-  const { syncToCloud, syncFromCloud } = useStorageSync();
-
   const [storedValue, setStoredValue] = React.useState<string>('{}');
   const { storage, setAll } = useLocalStorageAll({
     onStorageChange: data => setStoredValue(JSON.stringify(data)),
@@ -48,15 +45,6 @@ function LocalStorageEditor() {
       </button>
       <button onClick={() => setAll(JSON.parse(storedValue))}>
         UPDATE LOCAL STORAGE LOCAL
-      </button>
-      <button onClick={syncToCloud}>Sync(Upload to server)</button>
-      <button
-        onClick={async () => {
-          const value = await syncFromCloud();
-          setStoredValue(value);
-        }}
-      >
-        FETCH(Download)
       </button>
       <NoteEditor />
     </div>

@@ -8,7 +8,7 @@ import Typography from '@moon-ui/typography';
 import IconTheme from '@moon-ui/icon/IconTheme';
 
 // Enum
-import { Language } from '@dreamer/global';
+import { Language, useSession } from '@dreamer/global';
 import { Theme } from '@dreamer/pomodoro-common';
 
 // Hooks
@@ -37,6 +37,11 @@ export default function SettingPage() {
   } = usePomodoroGlobalConfig();
   const navigate = useNavigate();
   const { language, changeLanguage, formatMessage } = useIntl();
+  const { isAnonymous, email, hasBackend, signInWithGoogle } = useSession();
+  const handleGoogleSignIn = async () => {
+    const error = await signInWithGoogle();
+    if (error) console.warn('[dreamer] Google sign-in failed:', error);
+  };
   return (
     <div className={styles.container}>
       <BackHeader
@@ -50,6 +55,18 @@ export default function SettingPage() {
         )}
       />
       <div className={styles.body}>
+        {hasBackend && (
+          <List.ItemMeta
+            logo={<Icon width={24} icon="flat-color-icons:google" />}
+            title={isAnonymous ? 'Sign in with Google' : email || 'Signed in'}
+            description={
+              isAnonymous
+                ? 'Back up your data and use it on another device'
+                : 'Synced to your Google account'
+            }
+            onClick={isAnonymous ? handleGoogleSignIn : undefined}
+          />
+        )}
         <List.ItemMeta
           logo={<IconTheme />}
           title={formatMessage({
