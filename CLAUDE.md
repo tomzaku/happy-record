@@ -137,16 +137,14 @@ storage key and fetch function (see `useRecordField.tsx` for the shape). The con
 Two stores don't fit the shape and intentionally don't use it, though both still follow the same
 last-write-wins-by-`updatedAt` merge rule by hand:
 
-- **`checklist-templates`** needs two things on top, so it calls `useSyncOncePerIdentity`
-  directly: seeding the seven built-in starter templates only once a sync has *confirmed* (empty
-  local state **and** either an empty or unreachable fetch) this is genuinely a first run — never
-  eagerly on mount, which raced the real fetch and could leave demo tasks merged in permanently
-  alongside a real account's own templates — and keeping the separate, genuinely local-only
-  `selectedChecklistTemplates` list (`selected_checklist_templates`, never itself synced) in sync:
-  a template landing in `checklistTemplate` isn't the same as it showing up on the calendar
+- **`checklist-templates`** calls `useSyncOncePerIdentity` directly rather than
+  `useSyncedCollection`, to keep the separate, genuinely local-only `selectedChecklistTemplates`
+  list (`selected_checklist_templates`, never itself synced) in sync: a template landing in
+  `checklistTemplate` isn't the same as it showing up on the calendar
   (`getChecklistTemplateIdsByGivingDate` filters by this list, not by the templates themselves),
   so any id new to this device gets added to it the same way `addChecklistTemplate` already does
-  for a locally-created one.
+  for a locally-created one. There's no built-in starter set seeded anymore — a first-time
+  account/device starts with zero templates.
 - **`checklist-records`** has no single "fetch on mount" at all — `getChecklistRecords` syncs
   whatever date range it's asked for — so it folds `userId` into its own per-range cache key in
   `useChecklistRecord.ts` instead.
