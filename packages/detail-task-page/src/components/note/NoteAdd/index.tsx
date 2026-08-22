@@ -1,4 +1,5 @@
 import React from 'react';
+import { v4 } from 'uuid';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import NoteEditor from '@moon-ui/note-editor';
 import Select from '@moon-ui/select';
@@ -26,6 +27,12 @@ const NoteAdd = ({
   const [selectedField, setSelectedField] = React.useState<RecordField>(
     fields[0],
   );
+  // NoteEditor only reads its `value` prop once, at mount (see
+  // @moon-ui/note-editor) — it's uncontrolled after that, so resetting
+  // `form` alone leaves whatever was typed still on screen. Bumping this
+  // and keying NoteEditor on it forces a real remount, same as
+  // ChecklistFieldGroupAdd does for the same reason.
+  const [resetKey, setResetKey] = React.useState(v4());
   const { addChecklistRecord } = useChecklistRecord();
   return (
     <div>
@@ -48,6 +55,7 @@ const NoteAdd = ({
         />
       ) : null}
       <NoteEditor
+        key={resetKey}
         value={form.value}
         setValue={value => setForm({ ...form, value })}
       />
@@ -68,6 +76,8 @@ const NoteAdd = ({
                 },
               ],
             });
+            setForm({ value: '' });
+            setResetKey(v4());
             onSubmit?.();
           }}
         >
