@@ -4,7 +4,11 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // GitHub Pages serves the app under /happy-record/, but the local dev
+  // server has no such prefix — serving dev under '/' avoids the base-path
+  // mismatch between the two.
+  base: command === 'build' ? '/happy-record/' : '/',
   plugins: [
     react(),
     VitePWA({
@@ -53,17 +57,19 @@ export default defineConfig({
         description: 'Make your dreams come true',
         icons: [
           {
-            src: '/logo/dreamer-192x192.png',
+            // No leading slash — resolved relative to the manifest so it
+            // still works served under GitHub Pages' /happy-record/ base.
+            src: 'logo/dreamer-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/logo/dreamer-512x512.png',
+            src: 'logo/dreamer-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: '/logo/dreamer-512x512.png',
+            src: 'logo/dreamer-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
@@ -105,4 +111,4 @@ export default defineConfig({
   server: {
     port: 4001,
   },
-});
+}));
