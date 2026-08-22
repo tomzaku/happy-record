@@ -1,5 +1,4 @@
-import React from 'react';
-import { useLocalStorage } from '../../hook';
+import { useLocalStorage, useSyncOncePerIdentity, type SyncState } from '../../hook';
 import { v4 } from 'uuid';
 
 // Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
@@ -19,8 +18,8 @@ export type Note = {
 
 type NoteStore = Record<string, Note>;
 
-// One flag for the whole page load — see the same guard in useRecordField.tsx.
-let notesSynced = false;
+// Shared across every mounted instance of this store — see useSyncOncePerIdentity.
+const notesSyncState: SyncState = { current: null };
 
 /**
  * The notebook's own store — not `checklist_records`. See the migration
@@ -32,29 +31,24 @@ let notesSynced = false;
 export const useNote = () => {
   const [notes, setNotes] = useLocalStorage<NoteStore>(NOTE_KEY, {});
 
-  React.useEffect(() => {
-    if (notesSynced) return;
-    notesSynced = true;
-    fetchNotes().then(result => {
-      if (!result) {
-        notesSynced = false;
-        return;
-      }
-      // Only fills in notes this device doesn't already have — an
-      // unsynced local edit always wins over a stale server copy.
-      setNotes(prev => {
-        const merged = { ...prev };
-        let changed = false;
-        for (const note of result.notes) {
-          if (!merged[note.id]) {
-            merged[note.id] = note;
-            changed = true;
-          }
+  useSyncOncePerIdentity(notesSyncState, async () => {
+    const result = await fetchNotes();
+    if (!result) return false;
+    // Only fills in notes this device doesn't already have — an
+    // unsynced local edit always wins over a stale server copy.
+    setNotes(prev => {
+      const merged = { ...prev };
+      let changed = false;
+      for (const note of result.notes) {
+        if (!merged[note.id]) {
+          merged[note.id] = note;
+          changed = true;
         }
-        return changed ? merged : prev;
-      });
+      }
+      return changed ? merged : prev;
     });
-  }, []);
+    return true;
+  });
 
   const addNote = (data: { fieldId: string; value: string; folderId?: string }) => {
     const id = v4();

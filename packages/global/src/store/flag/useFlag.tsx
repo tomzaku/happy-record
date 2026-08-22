@@ -1,5 +1,4 @@
-import React from 'react';
-import { useLocalStorage } from '../../hook';
+import { useLocalStorage, useSyncOncePerIdentity, type SyncState } from '../../hook';
 import { v4 } from 'uuid';
 
 // Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
@@ -22,35 +21,30 @@ export type Flag = {
   updatedAt: string;
 };
 
-// One flag(!) for the whole page load — see the same guard in useRecordField.tsx.
-let flagsSynced = false;
+// Shared across every mounted instance of this store — see useSyncOncePerIdentity.
+const flagsSyncState: SyncState = { current: null };
 
 export const useFlag = () => {
   const [flags, setFlags] = useLocalStorage<Record<string, Flag>>(FLAG_KEY, {});
 
-  React.useEffect(() => {
-    if (flagsSynced) return;
-    flagsSynced = true;
-    fetchFlags().then(result => {
-      if (!result) {
-        flagsSynced = false;
-        return;
-      }
-      // Only fills in flags this device doesn't already have — an
-      // unsynced local edit always wins over a stale server copy.
-      setFlags(prev => {
-        const merged = { ...prev };
-        let changed = false;
-        for (const flag of result.flags) {
-          if (!merged[flag.id]) {
-            merged[flag.id] = flag;
-            changed = true;
-          }
+  useSyncOncePerIdentity(flagsSyncState, async () => {
+    const result = await fetchFlags();
+    if (!result) return false;
+    // Only fills in flags this device doesn't already have — an
+    // unsynced local edit always wins over a stale server copy.
+    setFlags(prev => {
+      const merged = { ...prev };
+      let changed = false;
+      for (const flag of result.flags) {
+        if (!merged[flag.id]) {
+          merged[flag.id] = flag;
+          changed = true;
         }
-        return changed ? merged : prev;
-      });
+      }
+      return changed ? merged : prev;
     });
-  }, []);
+    return true;
+  });
 
   const addFlag = (data: { name: string; description?: string }) => {
     const id = v4();

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocalStorage } from '../../hook';
+import { useLocalStorage, useSyncOncePerIdentity, type SyncState } from '../../hook';
 import { useChecklistTemplates } from './useChecklistTemplates';
 import { v4 } from 'uuid';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -20,8 +20,8 @@ export type Checklist = {
   clientOnly?: boolean;
 };
 
-// One flag for the whole page load — see the same guard in useRecordField.tsx.
-let checklistsSynced = false;
+// Shared across every mounted instance of this store — see useSyncOncePerIdentity.
+const checklistsSyncState: SyncState = { current: null };
 
 export const useChecklist = () => {
   const [checklist, setChecklist] = useLocalStorage<Record<string, Checklist>>(
@@ -31,27 +31,22 @@ export const useChecklist = () => {
   const { getChecklistTemplateIdsByGivingDate, checklistTemplate } =
     useChecklistTemplates();
 
-  React.useEffect(() => {
-    if (checklistsSynced) return;
-    checklistsSynced = true;
-    fetchChecklists().then(result => {
-      if (!result) {
-        checklistsSynced = false;
-        return;
-      }
-      setChecklist(prev => {
-        const merged = { ...prev };
-        let changed = false;
-        for (const c of result.checklists) {
-          if (!merged[c.id]) {
-            merged[c.id] = c;
-            changed = true;
-          }
+  useSyncOncePerIdentity(checklistsSyncState, async () => {
+    const result = await fetchChecklists();
+    if (!result) return false;
+    setChecklist(prev => {
+      const merged = { ...prev };
+      let changed = false;
+      for (const c of result.checklists) {
+        if (!merged[c.id]) {
+          merged[c.id] = c;
+          changed = true;
         }
-        return changed ? merged : prev;
-      });
+      }
+      return changed ? merged : prev;
     });
-  }, []);
+    return true;
+  });
 
   const getRepeatChecklistByGivingDate = React.useCallback(
     (

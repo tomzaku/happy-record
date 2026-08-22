@@ -25,11 +25,14 @@
       }
     ],
     "types": [
-      "vite/client"
+      "vite/client",
+      "jest",
+      "@testing-library/jest-dom"
     ]
   },
   "include": [
     "web",
-    "packages"
+    "packages",
+    "jest.setup.ts"
   ]
 }

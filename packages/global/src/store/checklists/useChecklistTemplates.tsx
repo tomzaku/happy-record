@@ -2,6 +2,7 @@ import { v4 } from 'uuid';
 import React from 'react';
 import { startOfDay } from 'date-fns';
 import { useLocalStorage } from '../../hook/useLocalStorage';
+import { useSyncOncePerIdentity, type SyncState } from '../../hook/useSyncOncePerIdentity';
 
 // Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
 // and this hook's own useLocalStorage state is the fallback, unchanged.
@@ -143,8 +144,8 @@ const CHECKLIST_OBJECT = CHECKLIST_TEMPLATES.reduce(
   }),
   {},
 );
-// One flag for the whole page load — see the same guard in useRecordField.tsx.
-let checklistTemplatesSynced = false;
+// Shared across every mounted instance of this store — see useSyncOncePerIdentity.
+const checklistTemplatesSyncState: SyncState = { current: null };
 
 /**
  * `fieldGroups` is one jsonb column, so a plain top-level diff of it is
@@ -194,27 +195,22 @@ export const useChecklistTemplates = () => {
     string[]
   >(SELECTED_CHECKLISTS_TEMPLATE_KEY, []);
 
-  React.useEffect(() => {
-    if (checklistTemplatesSynced) return;
-    checklistTemplatesSynced = true;
-    fetchChecklistTemplates().then(result => {
-      if (!result) {
-        checklistTemplatesSynced = false;
-        return;
-      }
-      setChecklistTemplate(prev => {
-        const merged = { ...prev };
-        let changed = false;
-        for (const template of result.templates) {
-          if (!merged[template.id]) {
-            merged[template.id] = template;
-            changed = true;
-          }
+  useSyncOncePerIdentity(checklistTemplatesSyncState, async () => {
+    const result = await fetchChecklistTemplates();
+    if (!result) return false;
+    setChecklistTemplate(prev => {
+      const merged = { ...prev };
+      let changed = false;
+      for (const template of result.templates) {
+        if (!merged[template.id]) {
+          merged[template.id] = template;
+          changed = true;
         }
-        return changed ? merged : prev;
-      });
+      }
+      return changed ? merged : prev;
     });
-  }, []);
+    return true;
+  });
 
   const addChecklistTemplate = (
     currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt'> & {

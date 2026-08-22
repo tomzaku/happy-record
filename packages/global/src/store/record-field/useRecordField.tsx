@@ -1,5 +1,4 @@
-import React from 'react';
-import { useLocalStorage } from '../../hook';
+import { useLocalStorage, useSyncOncePerIdentity, type SyncState } from '../../hook';
 import { v4 } from 'uuid';
 
 // Backend — see CLAUDE.md. Every call is quiet: a failure (offline, signed
@@ -58,38 +57,34 @@ type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 // This hook is called from many components sharing the same
 // useLocalStorage-backed store (see useLocalStorage.ts's cache-by-key), so
 // without a guard every one of them would fire its own sync-down request on
-// mount. One flag, module-scoped, makes it happen once per page load; a
-// failed/offline attempt resets it so the next mount tries again.
-let recordFieldsSynced = false;
+// mount. Shared across every mounted instance — see useSyncOncePerIdentity,
+// which also re-syncs when the signed-in identity itself changes, not just
+// once per page load.
+const recordFieldsSyncState: SyncState = { current: null };
 
 export const useRecordField = () => {
   const [recordFieldList, setRecordFieldList] = useLocalStorage<
     Record<string, RecordField>
   >(RECORD_KEY, defaultRecordField);
 
-  React.useEffect(() => {
-    if (recordFieldsSynced) return;
-    recordFieldsSynced = true;
-    fetchRecordFields().then(result => {
-      if (!result) {
-        recordFieldsSynced = false;
-        return;
-      }
-      // Only fills in fields this device doesn't already have — an
-      // unsynced local edit always wins over a stale server copy.
-      setRecordFieldList(prev => {
-        const merged = { ...prev };
-        let changed = false;
-        for (const field of result.fields) {
-          if (!merged[field.id]) {
-            merged[field.id] = field;
-            changed = true;
-          }
+  useSyncOncePerIdentity(recordFieldsSyncState, async () => {
+    const result = await fetchRecordFields();
+    if (!result) return false;
+    // Only fills in fields this device doesn't already have — an
+    // unsynced local edit always wins over a stale server copy.
+    setRecordFieldList(prev => {
+      const merged = { ...prev };
+      let changed = false;
+      for (const field of result.fields) {
+        if (!merged[field.id]) {
+          merged[field.id] = field;
+          changed = true;
         }
-        return changed ? merged : prev;
-      });
+      }
+      return changed ? merged : prev;
     });
-  }, []);
+    return true;
+  });
 
   const getAllRecordFields = () => {
     return Object.values(recordFieldList);

@@ -1,6 +1,6 @@
 import { v4 } from 'uuid';
 import { format } from 'date-fns';
-import { useLocalStorage } from '../../hook';
+import { useLocalStorage, useSession } from '../../hook';
 
 // Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
 // and this hook's own useLocalStorage state is the fallback, unchanged.
@@ -50,13 +50,17 @@ type AddChecklistRecordData = {
 // Records are unbounded (every day, forever), so unlike the other resources
 // there's no single "fetch everything on mount" — instead getChecklistRecords
 // syncs the one range it was actually asked for, keyed so the same
-// (template, range, fields) tuple isn't re-fetched every call within a page
-// load.
+// (identity, template, range, fields) tuple isn't re-fetched every call
+// within a page load. `userId` is part of that key (not just a page-load
+// guard) so a range already synced for one identity re-fetches once the
+// signed-in identity actually changes — see useSyncOncePerIdentity's
+// comment on the equivalent bug this fixes for every other domain store.
 const syncedRanges = new Set<string>();
 
 export const useChecklistRecord = () => {
   const [checklistRecordList, setChecklistRecordList] =
     useLocalStorage<ChecklistRecorStore>(CHECKLIST_RECORD_KEY, {});
+  const { userId, ready } = useSession();
 
   const addChecklistRecord = (data: AddChecklistRecordData) => {
     if (data.records.length) {
@@ -111,9 +115,10 @@ export const useChecklistRecord = () => {
     // time this component mounts), not necessarily in the result returned
     // below. See CLAUDE.md: null (offline, no backend) just means "use what
     // this device already has", which is exactly what happens if this never
-    // resolves.
-    const rangeKey = JSON.stringify({ checklistTemplateId, rangeDate, fieldIds });
-    if (!syncedRanges.has(rangeKey)) {
+    // resolves. Waits for `ready` so this doesn't fire against whatever
+    // transient session exists before the real one settles.
+    const rangeKey = JSON.stringify({ userId, checklistTemplateId, rangeDate, fieldIds });
+    if (ready && !syncedRanges.has(rangeKey)) {
       syncedRanges.add(rangeKey);
       fetchChecklistRecords({
         checklistTemplateId: checklistTemplateId || undefined,

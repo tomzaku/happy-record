@@ -3,6 +3,63 @@ import type { Session } from '@supabase/supabase-js';
 import { ensureSession, resetSessionCache, supabase } from '../lib/supabase';
 
 /**
+ * Every `useLocalStorage` key a domain store keeps — see each store's own
+ * `_KEY`/`*_KEY` constant (`useChecklistTemplates.tsx`, `useChecklists.tsx`,
+ * `useChecklistRecord.ts`, `useRecordField.tsx`, `useNote.tsx`,
+ * `useNoteFolder.tsx`, `useFlag.tsx`, `useTags.tsx`). `signOut` clears these:
+ * without it, this device kept showing the account that just signed out's
+ * checklists/fields/notes/etc. under the fresh anonymous identity that
+ * replaces it — confusing on its own, and any further edit to that leftover
+ * data would silently fail to sync anyway, since those rows' primary keys
+ * already belong to the `user_id` that just left (the same "id must be
+ * unique per its own scope" problem CLAUDE.md documents for `fields.id`).
+ * Add a new domain's key here when it's added there — nothing derives this
+ * list automatically.
+ */
+const SYNCED_DATA_KEYS = [
+  'checklist_template',
+  'selected_checklist_templates',
+  'checklist',
+  'checklist_record',
+  'record_field',
+  'note',
+  'note_folder',
+  'flag',
+  'tags',
+];
+
+/**
+ * Deliberately *not* in `SYNCED_DATA_KEYS` — this one has to survive
+ * `signOut`'s wipe, not get cleared by it. Records that this device's
+ * Google identity belongs to an existing account, so `signInWithGoogle`
+ * knows to sign back into it (`signInWithOAuth`) instead of trying to
+ * attach Google to whatever fresh anonymous identity `signOut` (or a first
+ * cold load) just created (`linkIdentity`) — which fails with
+ * `identity_already_exists` since that identity is already spoken for. See
+ * `signInWithGoogle`'s own comment for how this gets set.
+ */
+const HAS_EXISTING_ACCOUNT_KEY = 'had_linked_identity';
+
+function hasExistingAccount(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(HAS_EXISTING_ACCOUNT_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function rememberExistingAccount() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(HAS_EXISTING_ACCOUNT_KEY, 'true');
+  } catch {
+    // Storage disabled/unavailable — signInWithGoogle falls back to
+    // `linkIdentity` every time, same as before this existed.
+  }
+}
+
+/**
  * Signs the device in anonymously on first load so it has a Supabase session
  * — every edge function requires one (see CLAUDE.md, "identity comes from
  * the session"). No signup screen, no friction: this is what makes sync
@@ -31,10 +88,30 @@ export const useSession = () => {
 
     let cancelled = false;
 
+    // A `linkIdentity` attempt (below) that fails because this Google
+    // identity already belongs to a *different* account doesn't throw —
+    // GoTrue redirects back here with the error instead, in the query
+    // string, the hash, or both depending on flow. That redirect is itself
+    // proof this device should sign into that existing account next time,
+    // not keep trying to link — see `rememberExistingAccount`. Cleaning it
+    // out of the URL after just avoids it lingering across a refresh.
+    if (typeof window !== 'undefined') {
+      const query = new URLSearchParams(window.location.search);
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      if (query.get('error_code') === 'identity_already_exists' || hash.get('error_code') === 'identity_already_exists') {
+        rememberExistingAccount();
+        const url = new URL(window.location.href);
+        url.search = '';
+        url.hash = '';
+        window.history.replaceState({}, '', url.toString());
+      }
+    }
+
     // Shared with api.ts — same in-flight sign-in, same resulting session,
     // rather than this hook racing every request's own session check.
     ensureSession().then(result => {
       if (!cancelled) {
+        if (result && !result.user.is_anonymous) rememberExistingAccount();
         setSession(result);
         setReady(true);
       }
@@ -43,7 +120,10 @@ export const useSession = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, next) => {
-      if (!cancelled) setSession(next);
+      if (!cancelled) {
+        if (next && !next.user.is_anonymous) rememberExistingAccount();
+        setSession(next);
+      }
     });
 
     return () => {
@@ -53,13 +133,16 @@ export const useSession = () => {
   }, []);
 
   /**
-   * Google sign-in. While the device is still anonymous this **links**
-   * Google to the existing anonymous identity (`linkIdentity`) rather than
-   * starting a fresh sign-in — the `user_id`, and everything already synced
-   * under it, carries over unchanged. Once an identity is linked there's no
-   * anonymous session left to link into, so later calls (e.g. a "connect
-   * Google" button after switching devices) fall through to a normal
-   * `signInWithOAuth`.
+   * Google sign-in. Branches on `hasExistingAccount()`, not on whether the
+   * *current* session happens to be anonymous — right after a `signOut` (or
+   * a first-ever cold load) every session is anonymous, but those mean
+   * opposite things: a cold load's anonymous session has nothing to lose
+   * and should `linkIdentity` (attach Google to it, first time); a
+   * post-sign-out anonymous session belongs to a device that already proved
+   * (by linking before, or by bouncing off `identity_already_exists` once
+   * already) it has a *real* account elsewhere, and should `signInWithOAuth`
+   * into that instead — `linkIdentity` there always fails the same way,
+   * since Google's already spoken for.
    *
    * Needs `[auth.external.google]` configured in supabase/config.toml (and
    * a Supabase project with the credentials set) — see CLAUDE.md. Resolves
@@ -73,32 +156,45 @@ export const useSession = () => {
       redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
     };
     const { error } =
-      session?.user.is_anonymous
-        ? await supabase.auth.linkIdentity({ provider: 'google', options })
-        : await supabase.auth.signInWithOAuth({ provider: 'google', options });
+      hasExistingAccount() || session?.user.is_anonymous === false
+        ? await supabase.auth.signInWithOAuth({ provider: 'google', options })
+        : await supabase.auth.linkIdentity({ provider: 'google', options });
     return error?.message ?? null;
   };
 
   /**
-   * Ends this device's session. `resetSessionCache()` is what makes that
-   * stick — otherwise `ensureSession()` would keep handing out the
-   * just-revoked session to the next request. The very next request (or the
-   * `onAuthStateChange` handler above) re-anonymizes the device straight
-   * away, same as a brand new install — this app never gates on being
-   * signed in, so there's no "signed out" screen to land on in between.
+   * Ends this device's session and wipes the local copy of every synced
+   * domain's data (`SYNCED_DATA_KEYS`) — otherwise the fresh anonymous
+   * identity that replaces it would still show the previous account's
+   * checklists/fields/notes/etc., which is surprising on its own and
+   * silently unsyncable besides (see `SYNCED_DATA_KEYS`'s comment).
+   * `resetSessionCache()` keeps `ensureSession()` from handing the
+   * just-revoked session to the next request; the full reload after is what
+   * actually applies the wipe — every `useLocalStorage` store and each
+   * domain's own "synced once per page load" guard (`checklistsSynced` and
+   * friends) are plain in-memory state that a clear alone can't reach, so
+   * without the reload they'd keep serving what was already in memory, and
+   * a next real sign-in would think it had already synced when it hasn't.
    *
-   * Signing back into the *same* Google-linked account afterward isn't
-   * wired up yet: `signInWithGoogle` above only ever sees this fresh
-   * anonymous session and calls `linkIdentity`, which Supabase will reject
-   * since that Google identity is already linked to the account this device
-   * just left. Fine as "forget this device", not yet a working "log back
-   * in" — flagging rather than guessing at a fix here, since verifying one
-   * needs real Google OAuth credentials this environment doesn't have.
+   * `HAS_EXISTING_ACCOUNT_KEY` deliberately isn't in `SYNCED_DATA_KEYS` —
+   * it has to survive this wipe so `signInWithGoogle` still knows to sign
+   * back into the account that owned this device, instead of trying (and
+   * failing) to link Google onto the fresh anonymous identity this creates.
    */
   const signOut = async (): Promise<string | null> => {
     if (!supabase) return 'Not connected.';
     const { error } = await supabase.auth.signOut();
     resetSessionCache();
+    if (typeof window !== 'undefined') {
+      for (const key of SYNCED_DATA_KEYS) {
+        try {
+          window.localStorage.removeItem(key);
+        } catch {
+          // Storage disabled/unavailable — nothing to clear either way.
+        }
+      }
+      window.location.reload();
+    }
     return error?.message ?? null;
   };
 

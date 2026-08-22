@@ -5,3 +5,4 @@ export { useWakeLockPwa } from './useWakeLockPwa';
 export { useLongPress } from './useLongPress';
 export { useIsMobile } from './useIsMobile';
 export { useSession } from './useSession';
+export { useSyncOncePerIdentity, type SyncState } from './useSyncOncePerIdentity';

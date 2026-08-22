@@ -95,22 +95,62 @@ configured at all (`hasBackend`), but without those credentials clicking it just
 
 `useSession().signOut` (settings page's "Sign Out" row, shown once linked) ends the device's
 session and calls `supabase.ts`'s `resetSessionCache()` so the next request doesn't keep sending
-the revoked token — the device just re-anonymizes right away, same as a fresh install, since
-nothing here gates on being signed in. **Signing back into that same account isn't wired up
-yet**: `signInWithGoogle` only ever sees the fresh anonymous session afterward and calls
-`linkIdentity`, which Supabase rejects since that Google identity is already linked elsewhere.
-Untested against real Google OAuth either way — this project has no credentials configured to
-verify against (see above).
+the revoked token, then clears every domain store's `useLocalStorage` key
+(`SYNCED_DATA_KEYS` in `useSession.ts`) and reloads the page — without that, the fresh anonymous
+identity that replaces the old session kept showing the previous account's checklists/fields/
+notes/etc. (confusing on its own), and any edit to that leftover data would silently fail to sync
+anyway, since those rows' primary keys already belong to the `user_id` that just left (the
+`fields.id` problem above, one level up). The reload also resets each domain's own "synced once
+per page load" guard (`checklistsSynced` and friends) — without it a next real sign-in would
+think it had already synced when it hasn't. **Adding a new domain store's `useLocalStorage` key
+means adding it to `SYNCED_DATA_KEYS` too** — nothing derives that list automatically.
+
+Signing back into that same account afterward needs `signInWithGoogle` to call `signInWithOAuth`
+(a real login) instead of `linkIdentity` (attach-to-this-anonymous-session) — but the *current*
+session is anonymous in both the "first-ever cold load" and "just signed out" cases, so
+`is_anonymous` alone can't tell them apart. `useSession.ts` tracks that separately in
+`HAS_EXISTING_ACCOUNT_KEY` (a `localStorage` flag deliberately excluded from `SYNCED_DATA_KEYS`,
+since `signOut` must not clear it): set the moment a session is ever seen non-anonymous, and —
+the self-healing part — set just as well by *catching the failure itself*. A `linkIdentity` that
+fails because the identity's already linked elsewhere doesn't throw; GoTrue redirects back with
+`?error_code=identity_already_exists` (query and/or hash, depending on flow), which
+`useSession.ts`'s mount effect watches for. So a device that hits this once self-corrects: the
+failed attempt is itself proof this device belongs to an existing account, and the very next
+"Sign in with Google" click uses `signInWithOAuth` and succeeds. Untested against real Google
+OAuth either way — this project has no credentials configured to verify against (see above).
 
 The anonymous sign-in is a network round trip, so on a cold load (nothing in `localStorage` yet)
 it's racing every `request.*` call already firing from mounted components. `supabase.ts`'s
-`ensureSession()` — a single memoized promise `api.ts`'s `send()` and `useSession.ts` both
-await — is what makes every call wait out that one sign-in instead of each seeing "no session
-yet" and failing 401. Most resources don't notice a lost race (their `useLocalStorage` fallback
-already has something to show); the `/checklist-template/shared/:id` page does, since a fetched
-template is its only source of data — that's the bug this fixed. Anything that needs the session
-itself, not just an authenticated request, should call `ensureSession()` too rather than
-`supabase.auth.getSession()` directly, for the same reason.
+`ensureSession()` is what makes every call wait out that one sign-in instead of each seeing "no
+session yet" and failing 401 — `api.ts`'s `send()` and `useSession.ts` both await it rather than
+calling `supabase.auth.getSession()` directly, for the same reason anything else that needs the
+session itself should too. **Only the anonymous-sign-in *attempt* is memoized, never the
+resulting session** — `ensureSession()` re-checks `getSession()` fresh on every call. An earlier
+version cached the resolved session itself, which meant a request that happened to race ahead of
+a real session settling (finishing an OAuth redirect a beat later, say) and fell through to
+`signInAnonymously()` kept using that wrong anonymous session for the rest of the page's life even
+after the real one showed up — every request silently authenticated as a throwaway anonymous user
+nobody ever saw, which is why signing back in with Google looked successful (the UI's own
+`session` state updates live off `onAuthStateChange` regardless) while every checklist/field/etc.
+came back empty. Re-checking fresh means the very next call after the real session lands picks it
+up immediately, no matter what got there first.
+
+That race showing up even once, though, exposed a second, independent bug: every domain store's
+initial fetch (`useChecklistTemplates.tsx` and the same pattern in `useChecklists.tsx`,
+`useRecordField.tsx`, `useNote.tsx`, `useNoteFolder.tsx`, `useFlag.tsx`) used to guard on a plain
+`let xSynced = false` — fired once per page load, by whichever identity happened to exist at that
+exact moment, and never again. A fetch that landed on a transient anonymous session before the
+real one settled left that flag permanently `true`, so the store never found out the real,
+signed-in identity actually had data waiting — checklist templates staying empty after signing in
+even once `ensureSession()` itself had self-corrected. `useSyncOncePerIdentity` (`packages/global/
+src/hook/useSyncOncePerIdentity.ts`) replaces the boolean: it keys on `useSession()`'s `userId`
+instead of a fire-once flag, so switching identity re-triggers the fetch, and it waits for
+`ready` so the first fetch doesn't fire before a real session has had the chance to settle at all.
+Each store still holds its own module-level `SyncState` cell (not component state) so every
+mounted instance of that store shares one fetch rather than each racing to start its own — same
+property the old boolean flags had. `checklist-records` doesn't fit this shape (there's no single
+"fetch on mount," `getChecklistRecords` syncs whatever range it's asked for) — it gets the same
+fix by folding `userId` into the per-range cache key in `useChecklistRecord.ts` directly instead.
 
 ### `supabase` is for auth only, in one place
 

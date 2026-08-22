@@ -4,12 +4,24 @@
 .default {
   background: var(--button-default-background);
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--text-color-invert);
   font-size: toRem(14px);
-  font-weight: 400;
-  padding: 6px 20px;
+  font-weight: 500;
+  padding: 10px 24px;
   cursor: pointer;
+  box-shadow: 0 2px 8px var(--card-shadow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px var(--card-shadow);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px var(--card-shadow);
+  }
 }
 
 .ghost {
@@ -17,28 +29,49 @@
   border: 1px solid var(--button-ghost-border);
   color: var(--button-ghost-color);
   padding: 0 4px;
-  border-radius: 3px;
+  border-radius: 10px;
+  box-shadow: none;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 4px 10px var(--card-shadow);
+  }
+
+  &:active:not(:disabled) {
+    box-shadow: none;
+  }
 }
 
+// Radius stays well under half of each size's rendered height on purpose —
+// a flat radius shared across sizes (the first pass here) clamps to a full
+// pill on the smallest button the moment it exceeds that, which read as
+// oversized/odd rather than "softly rounded" at sm.
 .sm {
-  font-size: toRem(12px);
-  padding: 4px 12px;
+  font-size: toRem(13px);
+  padding: 8px 18px;
+  border-radius: 10px;
 }
 
 .lg {
-  font-size: toRem(18px);
-  padding: 10px 12px;
+  font-size: toRem(16px);
+  padding: 14px 32px;
+  border-radius: 14px;
 }
 
 .md {
   font-size: toRem(14px);
-  padding: 6px 20px;
+  padding: 10px 24px;
+  border-radius: 12px;
 }
 
 .dash {
   border: 1px dashed var(--button-dash);
   background: transparent;
   color: var(--text-color);
+  box-shadow: none;
+
+  &:hover:not(:disabled) {
+    box-shadow: none;
+  }
 }
 
 .block {
