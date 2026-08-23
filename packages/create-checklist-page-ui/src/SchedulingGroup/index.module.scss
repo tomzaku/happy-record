@@ -195,9 +195,59 @@
   margin-top: $spacing-sm;
 }
 
-.derivedScheduleNote {
-  color: var(--text-secondary, #666);
+.groupScheduleWrapper {
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+}
+
+.groupScheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.groupScheduleRow {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid var(--division-color);
+
+  &:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+}
+
+.groupScheduleItemLabel {
   font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #222);
+}
+
+.groupScheduleTimeInput {
+  width: 140px;
+  margin-top: $spacing-xs;
+}
+
+.groupScheduleDays {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+// Used by WeekDaysPills — the compact read-only summary (ChecklistGenericInfo's collapsed
+// Schedule row). Plain text, not a badge/button: an inactive day is just dimmer, an active one
+// just darker and bold. GroupScheduleList's own per-group rows, by contrast, are editable and
+// use MultiSelectButton directly, not these.
+.dayPill {
+  font-size: 12px;
+  color: var(--text-description-color);
+}
+
+.dayPillActive {
+  color: var(--text-primary, #222);
+  font-weight: 700;
 }
 
 .dateInput {

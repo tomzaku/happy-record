@@ -6,7 +6,7 @@ import Button from '@moon-ui/button';
 import Icon from '@moon-ui/icon/Icon';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
-import { ChecklistTemplate, useChecklistTemplates } from '@dreamer/global';
+import { ChecklistTemplate, getActiveFieldGroups, useChecklistTemplates } from '@dreamer/global';
 import styles from './index.desktop.module.scss';
 
 // `from`/`to` ride along as query params rather than anything persisted
@@ -52,7 +52,12 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
     }
 
     try {
-      const checklistTemplateFieldIds = checklistTemplate.fieldGroups.flatMap(
+      // Scoped to active groups only — an archived group's fields have no reason to be marked
+      // public just because they're still physically present in the jsonb (see
+      // FieldGroup.archivedAt). `data.checklistTemplate` below still carries the *whole*
+      // `fieldGroups` array unmodified — this call writes back to the owner's own row, and
+      // dropping archived groups from it here would permanently lose them.
+      const checklistTemplateFieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(
         group => group.fields,
       );
       const allFields = await getRecordFieldsByIds(checklistTemplateFieldIds);

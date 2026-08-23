@@ -1,9 +1,12 @@
 import React from 'react';
 import {
   ChecklistTemplate,
+  FieldGroup,
   useChecklistTemplates,
   getEffectiveDayOfWeek,
   formatDaysOfWeek,
+  getActiveFieldGroups,
+  getArchivedFieldGroups,
 } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import List from '@moon-ui/list';
@@ -22,7 +25,7 @@ import ColorPicker from '@pregnant/create-checklist-page-ui/src/ColorPicker';
 import TagInput from '@pregnant/create-checklist-page-ui/src/TagInput';
 import { getDaysFromRepeat } from '@pregnant/create-checklist-page-ui/src/getDayFromRepeat';
 import { calculateRepeat } from '@pregnant/create-checklist-page-ui/src/calculateRepeat';
-import { ScheduleModalContent } from '@pregnant/create-checklist-page-ui';
+import { ScheduleModalContent, WeekDaysPills } from '@pregnant/create-checklist-page-ui';
 
 import styles from './index.module.scss';
 
@@ -37,6 +40,7 @@ enum EditModal {
   Icon,
   Schedule,
   Tags,
+  Archived,
 }
 
 const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed }: Props) => {
@@ -69,6 +73,9 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
   const [tempTags, setTempTags] = React.useState<string[]>(
     checklistTemplate.tags || [],
   );
+  const [tempFieldGroups, setTempFieldGroups] = React.useState<FieldGroup[]>(
+    checklistTemplate.fieldGroups,
+  );
 
   const formatDisplayTime = () => {
     if (checklistTemplate.repeat?.hour && checklistTemplate.repeat?.minute) {
@@ -82,7 +89,8 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
   // getEffectiveDayOfWeek) rather than edited here — otherwise a group
   // could end up scheduled for a day the template itself never generates a
   // Checklist instance on, making it silently unreachable.
-  const hasFieldGroups = (checklistTemplate.fieldGroups?.length ?? 0) > 0;
+  const hasFieldGroups = getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).length > 0;
+  const archivedFieldGroups = getArchivedFieldGroups(checklistTemplate.fieldGroups ?? []);
 
   const formatDisplayDays = () => {
     if (hasFieldGroups) {
@@ -110,7 +118,12 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
     if (checklistTemplate.repeat?.startedAt) {
       return new Date(checklistTemplate.repeat.startedAt).toLocaleDateString();
     }
-    return 'Not set';
+    // A template with field groups but no template-level `repeat` at all (schedules were only
+    // ever set per-group, the template's own Schedule modal never saved) has no start date to
+    // show — but it does have a real schedule, already shown in the row's description via the
+    // derived days. "Not set" here read as if nothing were configured at all. See withSyncedRepeat
+    // in useChecklistTemplates.tsx for why `repeat` can be entirely absent in this case.
+    return hasFieldGroups ? '' : 'Not set';
   };
 
   const formatDisplayTags = () => {
@@ -144,6 +157,11 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
         ...repeat,
         startedAt: new Date(tempStartDay).toISOString(),
       },
+      // Only actually changed when this template has field groups — GroupScheduleList edits
+      // this per group instead of the day picker above; the store resyncs the template's own
+      // `repeat.dayOfWeek` from these on save regardless (see withSyncedRepeat in
+      // useChecklistTemplates.tsx), so what's picked into `repeat` above doesn't need to agree.
+      fieldGroups: tempFieldGroups,
     });
     setActiveModal(EditModal.None);
   };
@@ -154,6 +172,18 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
       tags: tempTags,
     });
     setActiveModal(EditModal.None);
+  };
+
+  // Restores immediately, no staging — this is a plain toggle of one field on one group, not a
+  // multi-field form like the modals above. `archivedAt: null`, not `undefined` — see
+  // FieldGroup.archivedAt's own comment on why `undefined` here would silently fail to persist.
+  const handleRestoreGroup = (groupId: string) => {
+    onUpdate({
+      ...checklistTemplate,
+      fieldGroups: checklistTemplate.fieldGroups.map(group =>
+        group.id === groupId ? { ...group, archivedAt: null } : group,
+      ),
+    });
   };
 
   const resetModalStates = () => {
@@ -173,6 +203,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
     );
     setTempWeeklyHobbies(getDaysFromRepeat(checklistTemplate.repeat));
     setTempTags(checklistTemplate.tags || []);
+    setTempFieldGroups(checklistTemplate.fieldGroups);
   };
 
   const handleModalClose = () => {
@@ -257,10 +288,28 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
             <List.ItemMeta
               logo={<Icon width={24} icon="solar:calendar-date-line-duotone" />}
               title="Schedule"
-              description={`${formatDisplayDays()} at ${formatDisplayTime()}`}
+              description={
+                // The merged union of every group's own days (WeekDaysPills, read-only summary
+                // — the modal's GroupScheduleList is where each group's own days actually get
+                // edited) rather than a comma-separated list. "at HH:MM" is dropped here too:
+                // neither the template's own schedule nor a group's has ever gated on
+                // time-of-day, only the day, so pairing a real merged value with a leftover
+                // default time read as more precise than it actually is.
+                hasFieldGroups ? (
+                  <WeekDaysPills
+                    activeDays={getDaysFromRepeat({
+                      dayOfWeek: getEffectiveDayOfWeek(checklistTemplate) ?? '*',
+                    })}
+                  />
+                ) : (
+                  `${formatDisplayDays()} at ${formatDisplayTime()}`
+                )
+              }
               rightComponent={
                 <div className={styles.displayRow}>
-                  <Typography.Text>{formatDisplayStartDate()}</Typography.Text>
+                  {formatDisplayStartDate() && (
+                    <Typography.Text>{formatDisplayStartDate()}</Typography.Text>
+                  )}
                   <Icon
                     width={16}
                     icon="solar:pen-2-line-duotone"
@@ -303,6 +352,18 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
                 setActiveModal(EditModal.Tags);
               }}
             />
+
+            {/* Archived Groups — only shown once there's something to restore */}
+            {archivedFieldGroups.length > 0 && (
+              <List.ItemMeta
+                logo={<Icon width={24} icon="solar:trash-bin-2-linear" />}
+                title="Archived Groups"
+                description={`${archivedFieldGroups.length} deleted group${archivedFieldGroups.length === 1 ? '' : 's'}`}
+                rightComponent={<Icon width={16} icon="solar:alt-arrow-right-linear" />}
+                noPaddingHorizontal
+                onClick={() => setActiveModal(EditModal.Archived)}
+              />
+            )}
           </div>
         </motion.div>
       </Card>
@@ -359,11 +420,8 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
               tempTime={tempTime}
               setTempTime={setTempTime}
               isDesktop={false}
-              weeklyHobbiesReadOnlyNote={
-                hasFieldGroups
-                  ? `Determined by each group's own schedule: ${formatDisplayDays()}`
-                  : undefined
-              }
+              fieldGroups={tempFieldGroups}
+              onFieldGroupsChange={setTempFieldGroups}
             />
           </div>
         }
@@ -386,6 +444,35 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
             <div className={styles.modalContent}>
               <TagInput tags={tempTags} setTags={setTempTags} />
               <div style={{ height: 100 }} />
+            </div>
+          </div>
+        }
+      />
+
+      {/* Archived Groups — restore, one at a time. No "delete forever" here on purpose: this
+          screen exists specifically to make a soft delete recoverable; a permanent-delete action
+          belongs somewhere that says so explicitly, not folded into a restore list. */}
+      <BottomModal
+        visible={activeModal === EditModal.Archived}
+        onDismiss={handleModalClose}
+        content={
+          <div className={styles.modalContainer}>
+            <div className={styles.modalHeader}>
+              <Typography.Title level={3} noMargin>
+                Archived Groups
+              </Typography.Title>
+            </div>
+            <div className={styles.modalContent}>
+              {archivedFieldGroups.map(group => (
+                <div key={group.id} className={styles.archivedGroupRow}>
+                  <Typography.Text className={styles.archivedGroupTitle}>
+                    {group.title || 'Untitled group'}
+                  </Typography.Text>
+                  <Button onClick={() => handleRestoreGroup(group.id)} type="ghost" size="sm">
+                    Restore
+                  </Button>
+                </div>
+              ))}
             </div>
           </div>
         }

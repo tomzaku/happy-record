@@ -3,6 +3,7 @@ import {
   Checklist,
   ChecklistTemplate,
   FieldGroup,
+  getActiveFieldGroups,
   isFieldGroupActiveOnDay,
   useChecklist,
 } from '@dreamer/global';
@@ -43,7 +44,7 @@ const ChecklistFieldGroup = ({
   const [activeTab, setActiveTab] = React.useState<
     Record<string, ChecklistFieldGroupTab>
   >(
-    checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
+    getActiveFieldGroups(checklistTemplate.fieldGroups).reduce((acc, fieldGroup) => {
       return {
         ...acc,
         [fieldGroup.id]: fieldGroup.defaultTab ?? ChecklistFieldGroupTab.Home,
@@ -53,7 +54,7 @@ const ChecklistFieldGroup = ({
   const [collapsedGroups, setCollapsedGroups] = React.useState<
     Record<string, boolean>
   >(
-    checklistTemplate.fieldGroups.reduce((acc, fieldGroup) => {
+    getActiveFieldGroups(checklistTemplate.fieldGroups).reduce((acc, fieldGroup) => {
       return {
         ...acc,
         [fieldGroup.id]: fieldGroup.collapseDefault ?? false,
@@ -226,87 +227,95 @@ const ChecklistFieldGroup = ({
     );
   };
   const renderBody = () => {
-    return checklistTemplate.fieldGroups.map((fieldGroup, index) => {
-      const fieldDetails = fieldGroup.fields
-        .map(fieldId => fields.find(field => field.id === fieldId))
-        .filter((field): field is RecordField => field !== undefined);
-      const isCollapsed = collapsedGroups[fieldGroup.id] || false;
-      const isActiveToday = isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay));
+    // Every update below (onUpdateNote, onUpdateFieldGroup, onSelectedFieldsChange) splices
+    // `checklistTemplate.fieldGroups` at `index` directly, so `index` here has to stay the real
+    // position in that array — filtering fieldGroups down to the active ones first and mapping
+    // over the filtered array would hand those splices the wrong position for every group after
+    // an archived one. Pairing with the original index before filtering keeps it correct.
+    return checklistTemplate.fieldGroups
+      .map((fieldGroup, index) => ({ fieldGroup, index }))
+      .filter(({ fieldGroup }) => !fieldGroup.archivedAt)
+      .map(({ fieldGroup, index }) => {
+        const fieldDetails = fieldGroup.fields
+          .map(fieldId => fields.find(field => field.id === fieldId))
+          .filter((field): field is RecordField => field !== undefined);
+        const isCollapsed = collapsedGroups[fieldGroup.id] || false;
+        const isActiveToday = isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay));
 
-      return (
-        <Card
-          key={fieldGroup.id}
-          className={[styles.cardContainer, !isActiveToday && styles.cardNotScheduled]
-            .filter(Boolean)
-            .join(' ')}
-        >
-          <ChecklistFieldGroupHeader
-            activeTab={activeTab[fieldGroup.id]}
-            activeTabs={
-              fieldGroup.activeTabs ?? [
-                ChecklistFieldGroupTab.Home,
-                ChecklistFieldGroupTab.Metric,
-                ChecklistFieldGroupTab.Config,
-                ChecklistFieldGroupTab.Add,
-              ]
-            }
-            onClickHome={() =>
-              setActiveTab({
-                ...activeTab,
-                [fieldGroup.id]: ChecklistFieldGroupTab.Home,
-              })
-            }
-            onClickHistory={() =>
-              setActiveTab({
-                ...activeTab,
-                [fieldGroup.id]: ChecklistFieldGroupTab.History,
-              })
-            }
-            onClickAdd={() =>
-              setActiveTab({
-                ...activeTab,
-                [fieldGroup.id]: ChecklistFieldGroupTab.Add,
-              })
-            }
-            onClickMetric={() =>
-              setActiveTab({
-                ...activeTab,
-                [fieldGroup.id]: ChecklistFieldGroupTab.Metric,
-              })
-            }
-            onClickConfig={() =>
-              setActiveTab({
-                ...activeTab,
-                [fieldGroup.id]: ChecklistFieldGroupTab.Config,
-              })
-            }
-            renderTitle={() => renderTitle(fieldGroup)}
-            isCollapsed={isCollapsed}
-            onToggleCollapse={() => toggleCollapse(fieldGroup.id)}
-          />
-          <motion.div
-            initial={false}
-            animate={{
-              height: isCollapsed ? 0 : 'auto',
-              opacity: isCollapsed ? 0 : 1,
-            }}
-            transition={{
-              height: {
-                type: 'spring',
-                stiffness: 300,
-                damping: 30,
-              },
-              opacity: {
-                duration: 0.2,
-              },
-            }}
+        return (
+          <Card
+            key={fieldGroup.id}
+            className={[styles.cardContainer, !isActiveToday && styles.cardNotScheduled]
+              .filter(Boolean)
+              .join(' ')}
           >
-            <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
-            {renderTab({ fieldGroup, fieldDetails, index })}
-          </motion.div>
-        </Card>
-      );
-    });
+            <ChecklistFieldGroupHeader
+              activeTab={activeTab[fieldGroup.id]}
+              activeTabs={
+                fieldGroup.activeTabs ?? [
+                  ChecklistFieldGroupTab.Home,
+                  ChecklistFieldGroupTab.Metric,
+                  ChecklistFieldGroupTab.Config,
+                  ChecklistFieldGroupTab.Add,
+                ]
+              }
+              onClickHome={() =>
+                setActiveTab({
+                  ...activeTab,
+                  [fieldGroup.id]: ChecklistFieldGroupTab.Home,
+                })
+              }
+              onClickHistory={() =>
+                setActiveTab({
+                  ...activeTab,
+                  [fieldGroup.id]: ChecklistFieldGroupTab.History,
+                })
+              }
+              onClickAdd={() =>
+                setActiveTab({
+                  ...activeTab,
+                  [fieldGroup.id]: ChecklistFieldGroupTab.Add,
+                })
+              }
+              onClickMetric={() =>
+                setActiveTab({
+                  ...activeTab,
+                  [fieldGroup.id]: ChecklistFieldGroupTab.Metric,
+                })
+              }
+              onClickConfig={() =>
+                setActiveTab({
+                  ...activeTab,
+                  [fieldGroup.id]: ChecklistFieldGroupTab.Config,
+                })
+              }
+              renderTitle={() => renderTitle(fieldGroup)}
+              isCollapsed={isCollapsed}
+              onToggleCollapse={() => toggleCollapse(fieldGroup.id)}
+            />
+            <motion.div
+              initial={false}
+              animate={{
+                height: isCollapsed ? 0 : 'auto',
+                opacity: isCollapsed ? 0 : 1,
+              }}
+              transition={{
+                height: {
+                  type: 'spring',
+                  stiffness: 300,
+                  damping: 30,
+                },
+                opacity: {
+                  duration: 0.2,
+                },
+              }}
+            >
+              <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
+              {renderTab({ fieldGroup, fieldDetails, index })}
+            </motion.div>
+          </Card>
+        );
+      });
   }
   const handleAddFieldGroup = (newGroup: FieldGroup) => {
     const updatedTemplate = {
@@ -333,7 +342,7 @@ const ChecklistFieldGroup = ({
     <>
       {renderBody()}
       <ChecklistFieldGroupAddGroup
-        fieldGroups={checklistTemplate.fieldGroups}
+        fieldGroups={getActiveFieldGroups(checklistTemplate.fieldGroups)}
         onAddFieldGroup={handleAddFieldGroup}
         onFieldAdded={onFieldAdded}
       />

@@ -3,10 +3,11 @@ import { Icon } from '@moon-ui/icon/Icon';
 import List from '@moon-ui/list';
 import DatePicker from '@moon-ui/date-picker';
 import MultiSelectButton from '@moon-ui/button/src/MultiSelectButton';
-import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
 import { a, useSpring } from '@react-spring/web';
 import { Day } from '@dreamer/tasks-page-common';
+import { FieldGroup, getActiveFieldGroups, mergeEditedFieldGroups } from '@dreamer/global';
+import GroupScheduleList from './GroupScheduleList';
 import styles from './index.module.scss';
 
 interface ScheduleModalContentProps {
@@ -18,13 +19,23 @@ interface ScheduleModalContentProps {
   setTempTime: (time: string) => void;
   isDesktop?: boolean;
   /**
-   * When set, the day picker renders read-only with this note instead of a MultiSelectButton —
-   * for a template whose days are derived from its field groups' own schedules rather than
-   * edited here directly (see getEffectiveDayOfWeek in @dreamer/global's scheduleUtils). Editing
-   * days on a template with field groups would be a silent no-op: the store resyncs
-   * `repeat.dayOfWeek` from the groups on every save regardless of what's picked here.
+   * When the template has active (non-archived — see FieldGroup's own `archivedAt`) field
+   * groups, the day picker (and the template-level Time section) are replaced by
+   * GroupScheduleList — one editable row per group, each with its own days and time, rather than
+   * a single picker for the whole template. Editing the template's own days directly would be
+   * pointless: the store derives them as the union of the groups' own days on every save
+   * (getEffectiveDayOfWeek in @dreamer/global's scheduleUtils) regardless of what's picked here,
+   * so this is where that per-group data actually lives and gets edited — the same data
+   * ChecklistFieldGroupConfig's own Schedule section edits, just reachable from one place for
+   * every group instead of going into each group's own Config tab.
+   *
+   * May include archived groups — this component filters them out of what GroupScheduleList
+   * sees and re-merges its edits back into the full array before calling
+   * `onFieldGroupsChange`, so callers can just pass their whole `fieldGroups` state through
+   * unchanged rather than each having to do that filtering/merging themselves.
    */
-  weeklyHobbiesReadOnlyNote?: string;
+  fieldGroups?: FieldGroup[];
+  onFieldGroupsChange?: (groups: FieldGroup[]) => void;
 }
 
 const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
@@ -35,9 +46,12 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
   tempTime,
   setTempTime,
   isDesktop = false,
-  weeklyHobbiesReadOnlyNote,
+  fieldGroups,
+  onFieldGroupsChange,
 }) => {
   const intl = useIntl();
+  const activeFieldGroups = fieldGroups ? getActiveFieldGroups(fieldGroups) : undefined;
+  const hasFieldGroups = (activeFieldGroups?.length ?? 0) > 0;
 
   // Temporary state for time editing
   const [tempHour, setTempHour] = React.useState('');
@@ -103,17 +117,25 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
             id: 'build-weekly-hobby-subtitle',
           })}
         />
-        <a.div
-          className={styles.weeklyHobbyContainer}
-          style={{
-            maxHeight: animationStyles.maxHeight,
-          }}
-        >
-          {weeklyHobbiesReadOnlyNote ? (
-            <Typography.Text className={styles.derivedScheduleNote}>
-              {weeklyHobbiesReadOnlyNote}
-            </Typography.Text>
-          ) : (
+        {hasFieldGroups && fieldGroups && activeFieldGroups && onFieldGroupsChange ? (
+          // No fixed-height animated wrapper here — one row per group (GroupScheduleList) can
+          // run to several lines, and the MultiSelectButton-only wrapper below is capped at a
+          // height sized for one row of day buttons.
+          <div className={styles.groupScheduleWrapper}>
+            <GroupScheduleList
+              fieldGroups={activeFieldGroups}
+              onChange={editedActive =>
+                onFieldGroupsChange(mergeEditedFieldGroups(fieldGroups, editedActive))
+              }
+            />
+          </div>
+        ) : (
+          <a.div
+            className={styles.weeklyHobbyContainer}
+            style={{
+              maxHeight: animationStyles.maxHeight,
+            }}
+          >
             <MultiSelectButton
               values={tempWeeklyHobbies}
               setValues={setTempWeeklyHobbies}
@@ -127,8 +149,8 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
                 { label: 'Sun', value: Day.Sun },
               ]}
             />
-          )}
-        </a.div>
+          </a.div>
+        )}
       </div>
 
       {/* Start Date Section */}
@@ -155,61 +177,63 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
       </div>
 
       {/* Time Selector Section */}
-      <div className={styles.sectionContainer}>
-        <List.ItemMeta
-          logo={<Icon width={24} icon="solar:clock-circle-line-duotone" />}
-          noPaddingHorizontal
-          title={intl.formatMessage({
-            defaultMessage: 'Time',
-            id: 'label-time.label',
-          })}
-          description={intl.formatMessage({
-            defaultMessage: 'Select the time (optional)',
-            id: 'label-time.description',
-          })}
-          rightComponent={
-            <div className={styles.timeSelector}>
-              <label className={styles.timeLabel}>
-                {intl.formatMessage({
-                  defaultMessage: 'Hour',
-                  id: 'label-time.hour',
-                })}
-                <select
-                  value={tempHour}
-                  onChange={handleTempHourChange}
-                  className={styles.select}
-                >
-                  <option value="">--</option>
-                  {hourOptions.map(h => (
-                    <option key={h} value={h}>
-                      {h}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <span className={styles.colon}>:</span>
-              <label className={styles.timeLabel}>
-                {intl.formatMessage({
-                  defaultMessage: 'Minute',
-                  id: 'label-time.minute',
-                })}
-                <select
-                  value={tempMinute}
-                  onChange={handleTempMinuteChange}
-                  className={styles.select}
-                >
-                  <option value="">--</option>
-                  {minuteOptions.map(m => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          }
-        />
-      </div>
+      {!hasFieldGroups && (
+        <div className={styles.sectionContainer}>
+          <List.ItemMeta
+            logo={<Icon width={24} icon="solar:clock-circle-line-duotone" />}
+            noPaddingHorizontal
+            title={intl.formatMessage({
+              defaultMessage: 'Time',
+              id: 'label-time.label',
+            })}
+            description={intl.formatMessage({
+              defaultMessage: 'Select the time (optional)',
+              id: 'label-time.description',
+            })}
+            rightComponent={
+              <div className={styles.timeSelector}>
+                <label className={styles.timeLabel}>
+                  {intl.formatMessage({
+                    defaultMessage: 'Hour',
+                    id: 'label-time.hour',
+                  })}
+                  <select
+                    value={tempHour}
+                    onChange={handleTempHourChange}
+                    className={styles.select}
+                  >
+                    <option value="">--</option>
+                    {hourOptions.map(h => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <span className={styles.colon}>:</span>
+                <label className={styles.timeLabel}>
+                  {intl.formatMessage({
+                    defaultMessage: 'Minute',
+                    id: 'label-time.minute',
+                  })}
+                  <select
+                    value={tempMinute}
+                    onChange={handleTempMinuteChange}
+                    className={styles.select}
+                  >
+                    <option value="">--</option>
+                    {minuteOptions.map(m => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            }
+          />
+        </div>
+      )}
     </div>
   );
 };

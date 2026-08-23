@@ -180,6 +180,19 @@
   color: var(--text-color);
 }
 
+.reviseSection {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding-top: $spacing-sm;
+  border-top: 1px solid var(--division-color);
+}
+
+.reviseButton {
+  align-self: flex-start;
+  padding: $spacing-xs $spacing-md;
+}
+
 .footer {
   display: flex;
   justify-content: flex-end;

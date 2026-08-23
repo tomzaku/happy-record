@@ -41,9 +41,20 @@ interface GeneratedField {
   description: string;
 }
 
+// The note editor (@moon-ui/note-editor, backed by @editorjs/editorjs) supports far more than a
+// paragraph of text — headings, quotes, and a YouTube embed among them. A generated group's note
+// is a short sequence of typed blocks so the client can build a real Editor.js document instead
+// of always wrapping plain text in a single paragraph (see useApplyAiChecklistTemplate.ts's
+// buildNoteFromBlocks, which does that mapping).
+type GeneratedNoteBlock =
+  | { type: 'heading'; text: string }
+  | { type: 'paragraph'; text: string }
+  | { type: 'quote'; text: string; caption: string }
+  | { type: 'video'; videoId: string; caption: string };
+
 interface GeneratedGroup {
   title: string;
-  note: string;
+  note: GeneratedNoteBlock[];
   repeat: { hour: string; minute: string; dayOfWeek: string } | null;
   fields: GeneratedField[];
 }
@@ -98,18 +109,46 @@ function build(p: Record<string, unknown>): BuiltRequest {
     }\nPropose NEW groups to add — do not repeat the existing group titles above.`
     : 'The user wants a BRAND NEW checklist template from scratch — propose a title, an icon/color, and its groups.';
 
+  // A feedback-driven follow-up on a proposal from an earlier call to this same function, not a
+  // fresh generation — "previous" is re-validated through the exact same `validate()` this
+  // function uses on its own output (bounds every field/count the same way, and throwing on a
+  // genuinely malformed payload is the right behavior here too), so the model always sees a
+  // proposal shaped exactly like what it's expected to return.
+  const refineRaw = p.refine && typeof p.refine === 'object' ? p.refine as Record<string, unknown> : null;
+  const refine = refineRaw
+    ? { feedback: reqStr(refineRaw, 'feedback', 500), previous: validate(refineRaw.previous) }
+    : null;
+
   const prompt_ = `${context}
 
-The user's request: "${prompt}"
+The user's original request: "${prompt}"
+${
+    refine
+      ? `
+You already proposed this, based on that request:
+${JSON.stringify(refine.previous)}
 
+The user's follow-up feedback on that proposal: "${refine.feedback}"
+
+Revise your proposal to address this feedback. Keep everything the feedback doesn't mention the same, unless the feedback clearly implies a broader change. Output the FULL revised proposal in the exact same JSON shape as before — not just the parts that changed.
+`
+      : ''
+  }
 The user's existing fields (reuse one of these EXACT titles whenever it fits, instead of inventing a near-duplicate):
 ${fieldsCatalog}
 
 Design a small set of groups (usually 1-4) that break the request into a sane weekly structure. Each group:
 - has a short title (e.g. "Push Day", "Morning Routine")
-- has a "note": 1-3 sentences of plain-language guidance a beginner could follow for that group
+- has a "note": 2-5 content blocks explaining how to do it — see the block shapes below
 - has a "repeat" schedule: which day(s) of the week it happens and what time, OR null if it should show every day
 - has 1-6 fields to record when doing it (a mix of "metric" fields like reps/duration, or a "note" field for a written log)
+
+A group's "note" is an array of blocks, each one of:
+  { "type": "heading", "text": "short heading, e.g. 'How to do it'" }
+  { "type": "paragraph", "text": "1-3 sentences of beginner-friendly guidance" }
+  { "type": "quote", "text": "a short motivating tip or form cue", "caption": "optional short attribution, empty string if none" }
+  { "type": "video", "url": "https://www.youtube.com/watch?v=...", "caption": "short label for what the video shows" }
+Most groups just need one "heading" and one "paragraph". Only add a "quote" when you have a genuinely useful form cue or motivating line for it. Only add a "video" block when you are confident the URL points to a real, specific, existing YouTube video (e.g. a well-known channel's tutorial for that exact exercise) — if you are not certain a video is real, leave it out entirely rather than guessing a URL; a broken or wrong video is worse than no video.
 
 Icon names must be Iconify icon identifiers in "collection:name" form (e.g. "iconoir:gym", "solar:dumbbell-large-linear", "solar:running-round-linear") — pick ones that plausibly exist, favoring the "solar" or "iconoir" collections since this app already uses them. Color must be a 6-digit hex string.
 
@@ -121,7 +160,7 @@ Return ONLY this JSON, no markdown, no extra text:
   "fieldGroups": [
     {
       "title": "group title",
-      "note": "1-3 sentences of guidance",
+      "note": [ { "type": "heading" | "paragraph" | "quote" | "video", "text": "...", "caption": "...", "url": "..." } ],
       "repeat": { "hour": "8", "minute": "0", "dayOfWeek": "1,4" } | null,
       "fields": [
         { "title": "field title", "icon": "iconify-icon-id", "type": "metric" | "note", "unit": "reps/minutes/etc, empty string for note fields", "description": "one short sentence" }
@@ -137,8 +176,50 @@ Return ONLY this JSON, no markdown, no extra text:
   return {
     system: 'You design checklist/habit-tracking templates for a personal productivity app. Return ONLY valid JSON matching the requested schema — no markdown fences, no commentary.',
     messages: [{ role: 'user', content: prompt_ }],
-    maxTokens: 2000,
+    // Bumped from 2000 — structured note blocks (heading/paragraph/quote/video, each its own
+    // JSON object) are meaningfully more verbose per group than the single sentence this used to
+    // be, and up to 8 groups' worth can add up.
+    maxTokens: 3000,
   };
+}
+
+// Matches a youtube.com/watch, youtube.com/embed, youtube.com/shorts, or youtu.be URL and
+// captures the video id. This only confirms the URL is *shaped* like a real YouTube video link —
+// it can't confirm the video actually exists (that would need a live YouTube Data API call, a
+// separate integration this doesn't have). A block that fails this check is dropped rather than
+// passed through, so a malformed/non-YouTube URL never reaches the client as a "video" block.
+const YOUTUBE_ID_RE = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{6,})/;
+
+function extractYoutubeId(url: unknown): string | null {
+  if (typeof url !== 'string') return null;
+  const match = url.match(YOUTUBE_ID_RE);
+  return match ? match[1].slice(0, 20) : null;
+}
+
+function validateNoteBlocks(raw: unknown): GeneratedNoteBlock[] {
+  if (!Array.isArray(raw)) return [];
+  const blocks: GeneratedNoteBlock[] = [];
+  for (const item of raw.slice(0, 6)) {
+    if (!item || typeof item !== 'object') continue;
+    const b = item as Record<string, unknown>;
+    const text = typeof b.text === 'string' ? b.text.trim().slice(0, 300) : '';
+    const caption = typeof b.caption === 'string' ? b.caption.trim().slice(0, 100) : '';
+
+    if (b.type === 'heading' && text) {
+      blocks.push({ type: 'heading', text });
+    } else if (b.type === 'quote' && text) {
+      blocks.push({ type: 'quote', text, caption });
+    } else if (b.type === 'video') {
+      const videoId = extractYoutubeId(b.url);
+      if (videoId) blocks.push({ type: 'video', videoId, caption });
+      // Else silently dropped — see YOUTUBE_ID_RE's comment.
+    } else if (text) {
+      // Anything else with real text (including a plain "paragraph") falls back to a paragraph
+      // — cheaper than rejecting the whole group over one malformed block.
+      blocks.push({ type: 'paragraph', text });
+    }
+  }
+  return blocks;
 }
 
 function validate(parsed: unknown): GeneratedTemplate {
@@ -162,7 +243,7 @@ function validate(parsed: unknown): GeneratedTemplate {
   const fieldGroups: GeneratedGroup[] = p.fieldGroups.slice(0, 8).map((raw) => {
     const g = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
     const groupTitle = typeof g.title === 'string' && g.title.trim() ? g.title.trim().slice(0, 60) : 'Group';
-    const note = typeof g.note === 'string' ? g.note.slice(0, 500) : '';
+    const note = validateNoteBlocks(g.note);
 
     let repeat: GeneratedGroup['repeat'] = null;
     if (g.repeat && typeof g.repeat === 'object') {

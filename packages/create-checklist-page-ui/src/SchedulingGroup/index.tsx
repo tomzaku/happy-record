@@ -7,6 +7,7 @@ import Typography from '@moon-ui/typography';
 import Modal from '@moon-ui/modal/src/Modal';
 import { useIntl } from '@dreamer/translation';
 import { Day } from '@dreamer/tasks-page-common';
+import { FieldGroup, getActiveFieldGroups } from '@dreamer/global';
 import styles from './index.module.scss';
 import cx from 'classnames';
 import ScheduleModalContent from './ScheduleModalContent';
@@ -18,7 +19,8 @@ export const SchedulingGroup = ({
   setDate,
   time,
   setTime,
-  weeklyHobbiesReadOnlyNote,
+  fieldGroups,
+  onFieldGroupsChange,
 }: {
   weeklyHobbies: Day[];
   setWeeklyHobbies: (hobbies: Day[]) => void;
@@ -27,7 +29,8 @@ export const SchedulingGroup = ({
   time: string;
   setTime: (time: string) => void;
   /** See ScheduleModalContent's own prop of the same name. */
-  weeklyHobbiesReadOnlyNote?: string;
+  fieldGroups?: FieldGroup[];
+  onFieldGroupsChange?: (groups: FieldGroup[]) => void;
 }) => {
   const intl = useIntl();
   const [isModalVisible, setIsModalVisible] = React.useState(false);
@@ -51,13 +54,17 @@ export const SchedulingGroup = ({
     React.useState<Day[]>(weeklyHobbies);
   const [tempDate, setTempDate] = React.useState(date);
   const [tempTime, setTempTime] = React.useState(time);
+  const [tempFieldGroups, setTempFieldGroups] = React.useState<FieldGroup[]>(
+    fieldGroups ?? [],
+  );
 
   // Update temp values when props change
   React.useEffect(() => {
     setTempWeeklyHobbies(weeklyHobbies);
     setTempDate(date);
     setTempTime(time);
-  }, [weeklyHobbies, date, time]);
+    setTempFieldGroups(fieldGroups ?? []);
+  }, [weeklyHobbies, date, time, fieldGroups]);
 
   const handleModalOpen = () => {
     setIsModalVisible(true);
@@ -69,12 +76,14 @@ export const SchedulingGroup = ({
     setTempWeeklyHobbies(weeklyHobbies);
     setTempDate(date);
     setTempTime(time);
+    setTempFieldGroups(fieldGroups ?? []);
   };
 
   const handleSave = () => {
     setWeeklyHobbies(tempWeeklyHobbies);
     setDate(tempDate);
     setTime(tempTime);
+    onFieldGroupsChange?.(tempFieldGroups);
     setIsModalVisible(false);
   };
 
@@ -112,7 +121,8 @@ export const SchedulingGroup = ({
         tempTime={tempTime}
         setTempTime={setTempTime}
         isDesktop={isDesktop}
-        weeklyHobbiesReadOnlyNote={weeklyHobbiesReadOnlyNote}
+        fieldGroups={tempFieldGroups}
+        onFieldGroupsChange={setTempFieldGroups}
       />
     </div>
   );
@@ -201,7 +211,11 @@ export const SchedulingGroup = ({
       parts.push(`Start: ${date}`);
     }
 
-    if (time) {
+    // The template's own time is meaningless once it has active field groups — each group now
+    // carries its own time instead (see GroupScheduleList), which the summary line doesn't have
+    // room to list; open the modal to see each group's. A template whose groups are all archived
+    // has nothing overriding this, same as one with no groups at all.
+    if (time && getActiveFieldGroups(fieldGroups ?? []).length === 0) {
       parts.push(`Time: ${time}`);
     }
 
@@ -286,3 +300,5 @@ export const SchedulingGroup = ({
 
 export default SchedulingGroup;
 export { default as ScheduleModalContent } from './ScheduleModalContent';
+export { default as GroupScheduleList } from './GroupScheduleList';
+export { default as WeekDaysPills } from './WeekDaysPills';

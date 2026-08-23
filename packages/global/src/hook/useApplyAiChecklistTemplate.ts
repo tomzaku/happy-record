@@ -7,7 +7,11 @@ import { v4 } from 'uuid';
 import { useChecklist } from '../store/checklists/useChecklists';
 import { useChecklistTemplates, type ChecklistTemplate, type FieldGroup } from '../store/checklists/useChecklistTemplates';
 import { useRecordField } from '../store/record-field/useRecordField';
-import type { AiGeneratedChecklistTemplate, AiGeneratedGroup } from '../store/checklists/aiChecklistTemplateApi';
+import type {
+  AiGeneratedChecklistTemplate,
+  AiGeneratedGroup,
+  AiGeneratedNoteBlock,
+} from '../store/checklists/aiChecklistTemplateApi';
 
 /**
  * `FieldGroup.note` is an Editor.js `OutputData` document, NOT a Yoopta document — despite
@@ -19,21 +23,51 @@ import type { AiGeneratedChecklistTemplate, AiGeneratedGroup } from '../store/ch
  * `Blocks.buildBlockData` shape byte-for-byte) still rendered as an empty "Start writing your
  * note..." placeholder, while this shape renders the real text immediately.
  *
- * The AI only returns plain guidance text (see ai-checklist-template's prompt), so this wraps
- * it in the smallest valid one-block Editor.js document by hand — `packages/global` has no
- * dependency on `@editorjs/editorjs`'s types, so the shape (`{ time, blocks, version }`, a
- * `paragraph` block's data being `{ text }`) is reproduced structurally rather than imported.
+ * The AI returns a short sequence of typed blocks now (see ai-checklist-template's prompt and
+ * its own GeneratedNoteBlock), not just plain text — headings, quotes, and a YouTube embed are
+ * tools the note editor already has installed and working (@editorjs/header, @editorjs/quote,
+ * @editorjs/embed), so a generated note can use them instead of always being a single paragraph.
+ * `packages/global` has no dependency on `@editorjs/editorjs`'s types, so each tool's block shape
+ * is reproduced structurally rather than imported — `header`'s data is `{ text, level }`,
+ * `quote`'s is `{ text, caption, alignment }`, and `embed`'s (confirmed against
+ * @editorjs/embed's own source, since a hand-built block skips the paste-detection flow that
+ * normally derives it) is `{ service, source, embed, width, height, caption }` — `embed` is the
+ * actual iframe src, `source` is the original watch URL kept only for display.
  *
  * An empty note stays `null`, same as a manually created group (see
  * ChecklistFieldGroupAddGroupDesktop's `note: null`).
  */
-function buildNoteFromText(text: string): unknown {
-  if (!text.trim()) return null;
-  return {
-    time: Date.now(),
-    blocks: [{ type: 'paragraph', data: { text } }],
-    version: '2.31.0',
-  };
+function buildNoteFromBlocks(blocks: AiGeneratedNoteBlock[]): unknown {
+  if (blocks.length === 0) return null;
+
+  const editorBlocks = blocks.map(block => {
+    switch (block.type) {
+      case 'heading':
+        return { type: 'header', data: { text: block.text, level: 3 } };
+      case 'quote':
+        return {
+          type: 'quote',
+          data: { text: block.text, caption: block.caption, alignment: 'left' },
+        };
+      case 'video':
+        return {
+          type: 'embed',
+          data: {
+            service: 'youtube',
+            source: `https://www.youtube.com/watch?v=${block.videoId}`,
+            embed: `https://www.youtube.com/embed/${block.videoId}`,
+            width: 580,
+            height: 320,
+            caption: block.caption,
+          },
+        };
+      case 'paragraph':
+      default:
+        return { type: 'paragraph', data: { text: block.text } };
+    }
+  });
+
+  return { time: Date.now(), blocks: editorBlocks, version: '2.31.6' };
 }
 
 export const useApplyAiChecklistTemplate = () => {
@@ -69,7 +103,7 @@ export const useApplyAiChecklistTemplate = () => {
     groups.map(group => ({
       id: v4(),
       title: group.title,
-      note: buildNoteFromText(group.note),
+      note: buildNoteFromBlocks(group.note),
       fields: resolveFieldIds(group.fields),
       ...(group.repeat ? { repeat: group.repeat } : {}),
     }));

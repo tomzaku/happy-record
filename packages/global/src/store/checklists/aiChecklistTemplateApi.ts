@@ -25,6 +25,16 @@ export type AiGenerateChecklistTemplateParams = {
   };
   /** The caller's own + public fields, so the model reuses one instead of inventing a duplicate. */
   availableFields: AiAvailableField[];
+  /**
+   * Present when this is a feedback-driven follow-up on an already-generated proposal, not a
+   * fresh generation — `previous` is echoed straight back as context and `feedback` is the
+   * user's free-text change request ("make Push Day easier"); see AiChecklistGenerate's
+   * `handleRevise` and the edge function's own prompt for how it's used.
+   */
+  refine?: {
+    previous: AiGeneratedChecklistTemplate;
+    feedback: string;
+  };
 };
 
 export type AiGeneratedField = {
@@ -35,9 +45,21 @@ export type AiGeneratedField = {
   description: string;
 };
 
+// Mirrors supabase/functions/ai-checklist-template's own GeneratedNoteBlock — a short sequence of
+// typed content blocks (not plain text), so the client can build a real multi-block Editor.js
+// document instead of always wrapping text in a single paragraph. See
+// useApplyAiChecklistTemplate.ts's buildNoteFromBlocks for that mapping. `video`'s `videoId` has
+// already been extracted and format-validated server-side — it's shaped like a real YouTube
+// video id, though the server can't confirm the video itself actually exists.
+export type AiGeneratedNoteBlock =
+  | { type: 'heading'; text: string }
+  | { type: 'paragraph'; text: string }
+  | { type: 'quote'; text: string; caption: string }
+  | { type: 'video'; videoId: string; caption: string };
+
 export type AiGeneratedGroup = {
   title: string;
-  note: string;
+  note: AiGeneratedNoteBlock[];
   repeat: { hour: string; minute: string; dayOfWeek: string } | null;
   fields: AiGeneratedField[];
 };

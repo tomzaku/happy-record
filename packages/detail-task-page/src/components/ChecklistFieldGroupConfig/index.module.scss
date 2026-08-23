@@ -222,3 +222,11 @@
     background-color: var(--surface-secondary);
   }
 }
+
+.deleteGroupButton {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  color: var(--error-color, #e5484d);
+}

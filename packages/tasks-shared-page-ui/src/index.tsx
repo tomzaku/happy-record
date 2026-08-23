@@ -1,4 +1,4 @@
-import { useChecklistTemplates, useSyncedSelector } from '@dreamer/global';
+import { getActiveFieldGroups, useChecklistTemplates, useSyncedSelector } from '@dreamer/global';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
 import Icon from '@moon-ui/icon/Icon';
@@ -46,7 +46,14 @@ const TasksSharedPage = () => {
     if (!id) {
       return;
     }
-    const checklistTemplateFieldIds = checklistTemplate.fieldGroups.flatMap(
+    // This `updateChecklistTemplate` call writes back to the owner's own template row (sharing
+    // works by flipping that row's own `visibility`, not by making a separate copy — see
+    // CLAUDE.md's sharing-flow section) — so `checklistTemplate.fieldGroups` itself must go
+    // through unmodified, archived groups included, or sharing would permanently strip them
+    // from the owner's own data and defeat the entire point of a soft delete being recoverable.
+    // Only which *fields* get marked public is scoped to the active groups — no reason to
+    // publicize a deleted group's fields just because they're still in the jsonb.
+    const checklistTemplateFieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(
       group => group.fields,
     );
     const allFields = await getRecordFieldsByIds(checklistTemplateFieldIds);

@@ -45,7 +45,55 @@ export type FieldGroup = {
     minute: string;
     dayOfWeek: string;
   };
+  /**
+   * Soft delete — set (to the deletion time) instead of removing the group from `fieldGroups`,
+   * by "Delete Group" in ChecklistFieldGroupConfig. There's no undo anywhere else in this app
+   * (a write here is immediate and optimistic, same as everywhere — see CLAUDE.md's "online-first"
+   * section), so this is what makes a group's own title/note/schedule/fields recoverable at all
+   * after a delete, rather than that config being gone the instant the request fires. Every
+   * consumer that renders or counts "the template's groups" should go through
+   * `getActiveFieldGroups` (below) rather than reading `fieldGroups` directly, so an archived
+   * group doesn't silently reappear in a tab list, a schedule union, or a group-name summary
+   * that forgot to filter it out.
+   *
+   * Restoring a group must set this to `null`, not `undefined` — `JSON.stringify` drops an
+   * `undefined`-valued key entirely, so it would never even reach `patchChecklistTemplate`'s
+   * request body, and the per-group patch merge (`_shared/checklistTemplates.ts`'s
+   * `mergeFieldGroupPatches`, a plain `{ ...group, ...patch }`) only overwrites keys the patch
+   * actually contains — the group would look restored locally (optimistic update) while staying
+   * archived server-side, forever, until whatever local copy showed it restored got reloaded.
+   * `null` isn't dropped by `JSON.stringify`, so it reaches the merge and actually overwrites.
+   */
+  archivedAt?: string | null;
 };
+
+/** See `FieldGroup.archivedAt`'s own comment for why this exists instead of just removing the
+ * array entry. */
+export const getActiveFieldGroups = (fieldGroups: FieldGroup[]): FieldGroup[] =>
+  fieldGroups.filter(group => !group.archivedAt);
+
+/** Every archived group, most recently archived first — for a "restore" surface (see
+ * ChecklistGenericInfo's Archived Groups row). */
+export const getArchivedFieldGroups = (fieldGroups: FieldGroup[]): FieldGroup[] =>
+  fieldGroups
+    .filter(group => !!group.archivedAt)
+    .sort((a, b) => (b.archivedAt as string).localeCompare(a.archivedAt as string));
+
+/**
+ * Merges an edited *active-only* group list (from an editor that was only ever shown the active
+ * subset — see ScheduleModalContent's own use of this) back into the full array, matching by id
+ * and leaving every archived group exactly as it was. `edited` is assumed to carry the same set
+ * of ids as `getActiveFieldGroups(all)` — every editor that hands back an edited list here only
+ * ever changes fields on the groups it was given, never adds or removes one.
+ */
+export const mergeEditedFieldGroups = (
+  all: FieldGroup[],
+  edited: FieldGroup[],
+): FieldGroup[] => {
+  const editedById = new Map(edited.map(group => [group.id, group]));
+  return all.map(group => editedById.get(group.id) ?? group);
+};
+
 export type ChecklistTemplate = {
   id: string;
   title: string;

@@ -14,6 +14,7 @@ import {
   useApplyAiChecklistTemplate,
   generateChecklistTemplate,
   type AiGeneratedChecklistTemplate,
+  type AiGeneratedNoteBlock,
 } from '@dreamer/global';
 import styles from './index.module.scss';
 
@@ -55,6 +56,16 @@ const AiChecklistGenerate = ({
   const [includedGroups, setIncludedGroups] = React.useState<Set<number>>(new Set());
   const [applyAvatarAndTags, setApplyAvatarAndTags] = React.useState(false);
 
+  // Feedback loop on an already-generated proposal ("make Push Day easier", "move Pull Day to
+  // Wednesday") — a separate request that sends the current `generated` back as `refine.previous`
+  // alongside the feedback text (see ai-checklist-template's own prompt for what it does with
+  // that). Its own loading/error state, deliberately not reusing `phase`/`error`: those drive the
+  // prompt-vs-review screen switch, and a failed revision should leave the current proposal on
+  // screen rather than discarding it back to the prompt screen — see handleRevise.
+  const [feedback, setFeedback] = React.useState('');
+  const [isRevising, setIsRevising] = React.useState(false);
+  const [reviseError, setReviseError] = React.useState('');
+
   const reset = () => {
     setPhase('prompt');
     setPrompt('');
@@ -62,6 +73,9 @@ const AiChecklistGenerate = ({
     setGenerated(null);
     setIncludedGroups(new Set());
     setApplyAvatarAndTags(false);
+    setFeedback('');
+    setIsRevising(false);
+    setReviseError('');
   };
 
   const handleDismiss = () => {
@@ -69,35 +83,63 @@ const AiChecklistGenerate = ({
     onDismiss();
   };
 
+  // Shared by a fresh generation and a feedback-driven revision — only what varies (whether this
+  // is a follow-up on a previous proposal) is passed in.
+  const buildParams = (refine?: { previous: AiGeneratedChecklistTemplate; feedback: string }) => {
+    const allFields = getAllRecordFields();
+    return {
+      prompt: prompt.trim(),
+      availableFields: allFields.map(f => ({ title: f.title, icon: f.icon, type: f.type, unit: f.unit })),
+      ...(mode === 'existing' && existingTemplate
+        ? {
+          existing: {
+            title: existingTemplate.title,
+            fieldGroups: existingTemplate.fieldGroups.map(g => ({
+              title: g.title,
+              fields: g.fields
+                .map(id => allFields.find(f => f.id === id)?.title)
+                .filter((title): title is string => !!title),
+            })),
+          },
+        }
+        : {}),
+      ...(refine ? { refine } : {}),
+    };
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setPhase('loading');
     setError('');
     try {
-      const allFields = getAllRecordFields();
-      const result = await generateChecklistTemplate({
-        prompt: prompt.trim(),
-        availableFields: allFields.map(f => ({ title: f.title, icon: f.icon, type: f.type, unit: f.unit })),
-        ...(mode === 'existing' && existingTemplate
-          ? {
-            existing: {
-              title: existingTemplate.title,
-              fieldGroups: existingTemplate.fieldGroups.map(g => ({
-                title: g.title,
-                fields: g.fields
-                  .map(id => allFields.find(f => f.id === id)?.title)
-                  .filter((title): title is string => !!title),
-              })),
-            },
-          }
-          : {}),
-      });
+      const result = await generateChecklistTemplate(buildParams());
       setGenerated(result);
       setIncludedGroups(new Set(result.fieldGroups.map((_, i) => i)));
+      setFeedback('');
       setPhase('review');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Couldn't generate a plan — try again.");
       setPhase('error');
+    }
+  };
+
+  const handleRevise = async () => {
+    if (!feedback.trim() || !generated) return;
+    setIsRevising(true);
+    setReviseError('');
+    try {
+      const result = await generateChecklistTemplate(
+        buildParams({ previous: generated, feedback: feedback.trim() }),
+      );
+      setGenerated(result);
+      setIncludedGroups(new Set(result.fieldGroups.map((_, i) => i)));
+      setFeedback('');
+    } catch (err) {
+      setReviseError(
+        err instanceof ApiError ? err.message : "Couldn't apply that feedback — try again.",
+      );
+    } finally {
+      setIsRevising(false);
     }
   };
 
@@ -213,7 +255,11 @@ const AiChecklistGenerate = ({
                     {group.repeat ? formatDayOfWeek(group.repeat.dayOfWeek) : intl.formatMessage({ id: 'ai-checklist-generate.every-day', defaultMessage: 'Every day' })}
                   </Typography.Text>
                 </div>
-                {group.note && <Typography.Text className={styles.groupNote}>{group.note}</Typography.Text>}
+                {group.note.length > 0 && (
+                  <Typography.Text className={styles.groupNote}>
+                    {summarizeNoteBlocks(group.note)}
+                  </Typography.Text>
+                )}
                 <div className={styles.fieldsList}>
                   {group.fields.map((field, fieldIndex) => (
                     <div key={fieldIndex} className={styles.fieldItem}>
@@ -224,6 +270,37 @@ const AiChecklistGenerate = ({
                 </div>
               </div>
             ))}
+
+            <div className={styles.reviseSection}>
+              <Typography.Text className={styles.description}>
+                {intl.formatMessage({
+                  id: 'ai-checklist-generate.revise-description',
+                  defaultMessage: "Not quite right? Say what to change and we'll update the proposal above.",
+                })}
+              </Typography.Text>
+              <textarea
+                className={styles.promptInput}
+                value={feedback}
+                onChange={e => setFeedback(e.target.value)}
+                placeholder={intl.formatMessage({
+                  id: 'ai-checklist-generate.revise-placeholder',
+                  defaultMessage: 'e.g. Make Push Day easier, move Pull Day to Wednesday',
+                })}
+                rows={2}
+                disabled={isRevising}
+              />
+              {reviseError && <Typography.Text className={styles.errorText}>{reviseError}</Typography.Text>}
+              <Button
+                onClick={handleRevise}
+                type="ghost"
+                disabled={!feedback.trim() || isRevising}
+                className={styles.reviseButton}
+              >
+                {isRevising
+                  ? intl.formatMessage({ id: 'ai-checklist-generate.revising', defaultMessage: 'Updating…' })
+                  : intl.formatMessage({ id: 'ai-checklist-generate.revise', defaultMessage: 'Update with feedback' })}
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -231,10 +308,20 @@ const AiChecklistGenerate = ({
       <div className={styles.footer}>
         {phase === 'review' ? (
           <>
-            <Button onClick={() => setPhase('prompt')} type="ghost" className={styles.secondaryButton}>
+            <Button
+              onClick={() => setPhase('prompt')}
+              type="ghost"
+              disabled={isRevising}
+              className={styles.secondaryButton}
+            >
               {intl.formatMessage({ id: 'ai-checklist-generate.back', defaultMessage: 'Back' })}
             </Button>
-            <Button onClick={handleApply} type="primary" disabled={includedGroups.size === 0} className={styles.primaryButton}>
+            <Button
+              onClick={handleApply}
+              type="primary"
+              disabled={includedGroups.size === 0 || isRevising}
+              className={styles.primaryButton}
+            >
               {mode === 'new'
                 ? intl.formatMessage({ id: 'ai-checklist-generate.apply-new', defaultMessage: 'Create Task' })
                 : intl.formatMessage({ id: 'ai-checklist-generate.apply-existing', defaultMessage: 'Add to Task' })}
@@ -271,6 +358,18 @@ const DAY_NAMES: Record<string, string> = {
 function formatDayOfWeek(dayOfWeek: string): string {
   if (!dayOfWeek || dayOfWeek === '*') return 'Every day';
   return dayOfWeek.split(',').map(d => DAY_NAMES[d.trim()] ?? d).join(', ');
+}
+
+/**
+ * A one-line preview of the group's note for this review card — the actual multi-block Editor.js
+ * document (headings, quotes, an embed) only gets built on Accept, in
+ * useApplyAiChecklistTemplate.ts's buildNoteFromBlocks. This just needs to give a sense of what's
+ * in there without rendering a real editor inside a small review card.
+ */
+function summarizeNoteBlocks(blocks: AiGeneratedNoteBlock[]): string {
+  return blocks
+    .map(block => (block.type === 'video' ? '🎥 includes a video' : block.text))
+    .join(' · ');
 }
 
 export default AiChecklistGenerate;

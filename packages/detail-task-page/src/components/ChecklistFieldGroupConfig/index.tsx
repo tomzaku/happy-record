@@ -6,13 +6,10 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import Input from '@moon-ui/input';
 import Checkbox from '@moon-ui/checkbox';
 import Typography from '@moon-ui/typography';
-import MultiSelectButton from '@moon-ui/button/src/MultiSelectButton';
-import { Day } from '@dreamer/tasks-page-common';
+import WarningModal from '@moon-ui/modal/src/WarningModal';
 import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
 import { FieldGroup, RecordField } from '@dreamer/global';
 import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
-import { getDaysFromRepeat } from '../../../../create-checklist-page-ui/src/getDayFromRepeat';
-import { calculateRepeat } from '../../../../create-checklist-page-ui/src/calculateRepeat';
 
 import styles from './index.module.scss';
 
@@ -26,8 +23,6 @@ interface ChecklistFieldGroupConfigProps {
   onFieldAdded?: (newField: RecordField) => void;
 }
 
-const ALL_DAYS = [Day.Sun, Day.Mon, Day.Tue, Day.Wed, Day.Thu, Day.Fri, Day.Sat];
-
 // One entry per tab this group can show. `Config` (this screen itself) is deliberately left out
 // — hiding the tab you're currently configuring, or landing on it by default, isn't a choice
 // that makes sense to offer from inside it.
@@ -37,17 +32,6 @@ const TAB_OPTIONS = [
   { value: ChecklistFieldGroupTab.Metric, label: 'Metric', icon: 'solar:chart-square-linear' },
   { value: ChecklistFieldGroupTab.Add, label: 'Add', icon: 'solar:add-square-line-duotone' },
 ];
-
-// All 7 days selected is "every day" — same convention as the template-level repeat — stored as
-// no `repeat` at all rather than a redundant dayOfWeek: '0,1,2,3,4,5,6'. No time-of-day input:
-// isFieldGroupActiveOnDay (scheduleUtils.ts) only ever checks the day, never the hour/minute, so
-// there's nothing here for a time picker to actually control.
-const buildRepeatFromDays = (days: Day[]): FieldGroup['repeat'] => {
-  const full = calculateRepeat({ weeklyHobbies: days });
-  return days.length === 0 || days.length === 7 || !full
-    ? undefined
-    : { hour: full.hour, minute: full.minute, dayOfWeek: full.dayOfWeek };
-};
 
 const ChecklistFieldGroupConfig = ({
   fieldGroup,
@@ -76,21 +60,17 @@ const ChecklistFieldGroupConfig = ({
     fieldGroup.collapseDefault ?? false,
   );
   const [isAddFieldPanelVisible, setIsAddFieldPanelVisible] = React.useState(false);
-
-  // This group's own schedule — independent of the template's `repeat`, so e.g. a "Push Day"
-  // group can show Mon/Thu while a "Pull Day" group in the same template shows Tue/Fri. Absent
-  // `repeat` (or every day selected) means "every day" — see scheduleUtils.ts's
-  // `isFieldGroupActiveOnDay`, which is what actually gates rendering by day.
-  const [scheduleDays, setScheduleDays] = React.useState<Day[]>(
-    fieldGroup.repeat?.dayOfWeek ? getDaysFromRepeat(fieldGroup.repeat) : ALL_DAYS,
-  );
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = React.useState(false);
 
   // Every control on this screen saves the instant it changes — same as field selection below
   // always has — rather than staging edits behind a single "Save Changes" button. A mix of the
   // two within one screen is what made it easy to believe an edit had saved when it hadn't.
   // `overrides` carries whatever just changed; everything else comes from current state, which
   // is why this needs the caller to also pass the new value it just set locally, not rely on the
-  // state setter having landed yet.
+  // state setter having landed yet. `repeat` (this group's own schedule) isn't edited here at
+  // all anymore — see the template's own Edit Schedule modal (GroupScheduleList), which edits
+  // every group's schedule in one place — so it's left out of the spread below and just passes
+  // through from `fieldGroup` unchanged.
   const saveGroup = (overrides: Partial<FieldGroup> = {}) => {
     onUpdateFieldGroup({
       ...fieldGroup,
@@ -98,7 +78,6 @@ const ChecklistFieldGroupConfig = ({
       defaultTab,
       activeTabs,
       collapseDefault,
-      repeat: buildRepeatFromDays(scheduleDays),
       ...overrides,
     });
   };
@@ -134,11 +113,6 @@ const ChecklistFieldGroupConfig = ({
     saveGroup({ activeTabs: newActiveTabs, defaultTab: tab });
   };
 
-  const handleScheduleDaysChange = (days: Day[]) => {
-    setScheduleDays(days);
-    saveGroup({ repeat: buildRepeatFromDays(days) });
-  };
-
   const handleCollapseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setCollapseDefault(checked);
@@ -165,6 +139,15 @@ const ChecklistFieldGroupConfig = ({
   const handleFieldPanelSubmit = (newField: RecordField) => {
     onFieldAdded?.(newField);
     setIsAddFieldPanelVisible(false);
+  };
+
+  // Soft delete — sets `archivedAt` instead of the caller removing this group from
+  // `fieldGroups` (see FieldGroup's own comment on why). No local state to update here: once
+  // this saves, the group's own screen is what gets unmounted (this template's group list stops
+  // rendering it), same as any other change made from this tab.
+  const handleConfirmDelete = () => {
+    onUpdateFieldGroup({ ...fieldGroup, archivedAt: new Date().toISOString() });
+    setIsDeleteModalVisible(false);
   };
 
   // Get field display info
@@ -253,36 +236,6 @@ const ChecklistFieldGroupConfig = ({
       <div className={styles.section}>
         <Typography.Title level={5} noMargin className={styles.sectionTitle}>
           {intl.formatMessage({
-            id: 'checklist-field-group-config.schedule',
-            defaultMessage: 'Schedule',
-          })}
-        </Typography.Title>
-        <Typography.Text className={styles.sectionDescription}>
-          {intl.formatMessage({
-            id: 'checklist-field-group-config.schedule-description',
-            defaultMessage: 'When this group is due — independent of the task’s own schedule. Select every day for no restriction.',
-          })}
-        </Typography.Text>
-        <MultiSelectButton
-          values={scheduleDays}
-          setValues={handleScheduleDaysChange}
-          options={[
-            { label: 'Mon', value: Day.Mon },
-            { label: 'Tue', value: Day.Tue },
-            { label: 'Wed', value: Day.Wed },
-            { label: 'Thu', value: Day.Thu },
-            { label: 'Fri', value: Day.Fri },
-            { label: 'Sat', value: Day.Sat },
-            { label: 'Sun', value: Day.Sun },
-          ]}
-        />
-      </div>
-
-      <div className={styles.divider} />
-
-      <div className={styles.section}>
-        <Typography.Title level={5} noMargin className={styles.sectionTitle}>
-          {intl.formatMessage({
             id: 'checklist-field-group-config.collapse-default',
             defaultMessage: 'Collapse Default',
           })}
@@ -362,6 +315,45 @@ const ChecklistFieldGroupConfig = ({
           </div>
         </>
       )}
+
+      <div className={styles.divider} />
+
+      <div className={styles.section}>
+        <Button
+          type="ghost"
+          onClick={() => setIsDeleteModalVisible(true)}
+          className={styles.deleteGroupButton}
+        >
+          <Icon width={16} icon="solar:trash-bin-trash-linear" />
+          {intl.formatMessage({
+            id: 'checklist-field-group-config.delete-group',
+            defaultMessage: 'Delete Group',
+          })}
+        </Button>
+      </div>
+
+      <WarningModal
+        visible={isDeleteModalVisible}
+        title={intl.formatMessage({
+          id: 'checklist-field-group-config.delete-confirm-title',
+          defaultMessage: 'Delete Group',
+        })}
+        primaryButtonText={intl.formatMessage({
+          id: 'checklist-field-group-config.delete-confirm-ok',
+          defaultMessage: 'Delete',
+        })}
+        primaryButtonOnClick={handleConfirmDelete}
+        secondaryButtonText={intl.formatMessage({
+          id: 'checklist-field-group-config.delete-confirm-cancel',
+          defaultMessage: 'Cancel',
+        })}
+        secondaryButtonClick={() => setIsDeleteModalVisible(false)}
+        content={intl.formatMessage({
+          id: 'checklist-field-group-config.delete-confirm-message',
+          defaultMessage:
+            'This hides "{title}" and its fields from the task. Nothing recorded through it is deleted, and you can restore it later from General Settings → Archived Groups.',
+        }, { title: fieldGroup.title || 'this group' })}
+      />
 
       {isAddFieldPanelVisible && (
         <div className={styles.addFieldPanel}>

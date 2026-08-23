@@ -8,7 +8,7 @@ type Props = React.DetailedHTMLProps<
 > & {
   logo: React.ReactNode;
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   rightComponent?: React.ReactNode;
   noPaddingHorizontal?: boolean;
 };

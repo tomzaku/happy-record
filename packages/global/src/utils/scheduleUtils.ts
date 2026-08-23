@@ -115,9 +115,13 @@ export const isFieldGroupActiveOnDay = (
  * end up scheduled for a day the template itself doesn't generate a `Checklist` on (which would
  * make that group unreachable, silently — see the "two schedules" note in
  * useChecklistTemplates.tsx). A group with no `repeat`, or `dayOfWeek: '*'`, has no day
- * restriction, so it alone forces the whole result to `'*'`. Falls back to the template's own
- * `repeat.dayOfWeek` when there are no field groups at all — a plain `completedAt`-only
- * checklist has nothing to union.
+ * restriction, so it alone forces the whole result to `'*'`. A soft-deleted group (`archivedAt`
+ * set — see FieldGroup's own comment) never contributes to the union, same as if it weren't in
+ * the array at all: an archived group no longer renders, so its schedule shouldn't keep the
+ * template generating `Checklist` instances on days nothing else needs. Falls back to the
+ * template's own `repeat.dayOfWeek` when there are no *active* field groups — a plain
+ * `completedAt`-only checklist, or a template every one of whose groups has been archived, has
+ * nothing left to union.
  *
  * Callers that gate on this (getChecklistTemplateIdsByGivingDate) should always call this rather
  * than reading `repeat.dayOfWeek` directly — that's what actually keeps the two schedules from
@@ -125,9 +129,9 @@ export const isFieldGroupActiveOnDay = (
  */
 export const getEffectiveDayOfWeek = (template: {
   repeat?: { dayOfWeek?: string };
-  fieldGroups?: { repeat?: { dayOfWeek?: string } }[];
+  fieldGroups?: { repeat?: { dayOfWeek?: string }; archivedAt?: string | null }[];
 }): string | undefined => {
-  const groups = template.fieldGroups ?? [];
+  const groups = (template.fieldGroups ?? []).filter(group => !group.archivedAt);
   if (groups.length === 0) return template.repeat?.dayOfWeek;
 
   const allDays = new Set<string>();

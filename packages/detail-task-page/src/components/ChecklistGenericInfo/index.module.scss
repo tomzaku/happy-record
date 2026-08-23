@@ -76,6 +76,24 @@
   overflow-y: visible;
 }
 
+.archivedGroupRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  padding: $spacing-sm 0;
+  border-bottom: 1px solid var(--division-color);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.archivedGroupTitle {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
 .modalFooter {
   padding: 20px 24px;
   display: flex;
