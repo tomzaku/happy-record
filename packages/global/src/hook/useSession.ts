@@ -173,7 +173,18 @@ export const useSession = () => {
   const signInWithGoogle = async (): Promise<string | null> => {
     if (!supabase) return 'Not connected.';
     const options = {
-      redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+      // `window.location.origin` alone is wrong on GitHub Pages: the app is
+      // served from a sub-path (vite.config's `base: '/happy-record/'` in
+      // prod), so the origin by itself points at the *domain root*, not the
+      // deployed app — that path may 404 or serve an unrelated site. Since
+      // this is a HashRouter, `pathname` never changes with the in-app route
+      // (the route lives in the hash — see CLAUDE.md), so origin + pathname
+      // reliably reconstructs the deployed app's own base URL in both prod
+      // and local dev (where base is '/').
+      redirectTo:
+        typeof window !== 'undefined'
+          ? window.location.origin + window.location.pathname
+          : undefined,
     };
     const { error } =
       hasExistingAccount() || session?.user.is_anonymous === false
