@@ -1,11 +1,17 @@
 import React from 'react';
-import { useSyncedCollection, type SyncState } from '../../hook';
+import { useSessionStore } from '../../hook/useSessionStore';
+import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
 
-// Backend — see CLAUDE.md. Every call is quiet: a failure (offline, signed
-// out, no backend configured) resolves to null and this hook's own
-// useLocalStorage state is the fallback, unchanged.
-import { fetchRecordFields, removeRecordField as removeRecordFieldApi, saveRecordField } from './recordFieldApi';
+// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
+// a failure (offline, signed out, no backend configured) resolves to null
+// and this hook's own in-memory state is the fallback, unchanged.
+import {
+  fetchRecordFields,
+  fetchRecordFieldsByIds,
+  removeRecordField as removeRecordFieldApi,
+  saveRecordField,
+} from './recordFieldApi';
 
 const RECORD_KEY = 'record_field';
 
@@ -28,10 +34,10 @@ export type RecordField = {
 };
 
 // `updatedAt: epoch` on purpose — these three are a bootstrap fallback only
-// (never written to storage until something actually persists them; see
-// useSyncedCollection's `initialValue`), so anything the sync fetches for
-// real, even the system rows' own genuine timestamps, is unconditionally
-// newer and correctly replaces this placeholder.
+// (never written to storage until something actually persists them), so
+// anything a real fetch returns, even the system rows' own genuine
+// timestamps, is unconditionally newer and correctly replaces this
+// placeholder.
 const NEVER_SYNCED = new Date(0).toISOString();
 const defaultRecordField: Record<string, RecordField> = {
   duration: {
@@ -65,23 +71,68 @@ const defaultRecordField: Record<string, RecordField> = {
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
-// Shared across every mounted instance of this store — see useSyncedCollection.
-const recordFieldsSyncState: SyncState = { current: null };
+// Fetched by whatever scope is actually asked for — "all mine + public"
+// (needed by most consumers: field pickers, the manage-fields screen, AI
+// context, dedupe checks) or a specific set of ids (the share-flow
+// consumers, which only need one template's referenced fields) — never
+// unconditionally on mount. Keyed so the same (identity, scope) tuple isn't
+// re-fetched every call within a page load.
+const fetchedScopes = new Set<string>();
+const ALL_SCOPE = '__all__';
 
 export const useRecordField = () => {
-  const [recordFieldList, setRecordFieldList] = useSyncedCollection(
+  const [recordFieldList, setRecordFieldList] = useSessionStore<Record<string, RecordField>>(
     RECORD_KEY,
-    recordFieldsSyncState,
-    async () => (await fetchRecordFields())?.fields ?? null,
     defaultRecordField,
+  );
+  const { userId, ready } = useSession();
+
+  /**
+   * Merges fetched (or shared-template) fields into local state without
+   * writing them back if this device doesn't own them — for a shared
+   * checklist template's fields, which are already persisted (owned by
+   * whoever shared them, `visibility: 'public'`). Saving them again here
+   * would upsert a row with this device's `user_id` against an id whose
+   * primary key already belongs to someone else, the exact "every client
+   * races to write the same global id" bug CLAUDE.md warns about for
+   * `fields.id`.
+   */
+  const mergeRecordFields = React.useCallback(
+    (fields: RecordField[]) => {
+      if (!fields.length) return;
+      setRecordFieldList(prev => {
+        const merged = { ...prev };
+        let changed = false;
+        for (const field of fields) {
+          const existing = merged[field.id];
+          if (!existing || new Date(field.updatedAt) > new Date(existing.updatedAt)) {
+            merged[field.id] = field;
+            changed = true;
+          }
+        }
+        return changed ? merged : prev;
+      });
+    },
+    [setRecordFieldList],
   );
 
   // useCallback'd (not a plain closure) so a consumer's own useSyncedSelector
   // can memoize on it — its identity now only changes when `recordFieldList`
   // itself changes, instead of on every render.
   const getAllRecordFields = React.useCallback(() => {
+    const scopeKey = JSON.stringify({ userId, scope: ALL_SCOPE });
+    if (ready && !fetchedScopes.has(scopeKey)) {
+      fetchedScopes.add(scopeKey);
+      fetchRecordFields().then(result => {
+        if (!result) {
+          fetchedScopes.delete(scopeKey);
+          return;
+        }
+        mergeRecordFields(result.fields);
+      });
+    }
     return Object.values(recordFieldList);
-  }, [recordFieldList]);
+  }, [recordFieldList, userId, ready, mergeRecordFields]);
 
   const getRecordFields = React.useCallback(
     (ids: string[]) => {
@@ -91,28 +142,37 @@ export const useRecordField = () => {
   );
 
   /**
-   * Caches fields this device doesn't own into local state without writing
-   * them back — for a shared checklist template's fields, which are already
-   * persisted (owned by whoever shared them, `visibility: 'public'`). Saving
-   * them again here would upsert a row with this device's `user_id` against
-   * an id whose primary key already belongs to someone else, the exact
-   * "every client races to write the same global id" bug CLAUDE.md warns
-   * about for `fields.id`.
+   * Scoped fetch for exactly the ids asked for — the share-flow consumers
+   * (CardShare, tasks-shared-page-ui, checklist-template-shared-page-ui)
+   * only need one template's referenced field ids, not the full list.
+   * Async and awaited (unlike every other read here) because these are
+   * one-shot action handlers ("generate a share link") that need the real
+   * field data this tick to build a request payload — not a render-time
+   * value that's fine to start empty and fill in on a later re-render.
+   * Builds the return value from what was already cached plus the fresh
+   * response directly, rather than re-reading the store after the await —
+   * the `recordFieldList` closure here is stale by the time `setRecordFieldList`
+   * (inside `mergeRecordFields`) actually lands.
    */
-  const mergeRecordFields = (fields: RecordField[]) => {
-    setRecordFieldList(prev => {
-      const merged = { ...prev };
-      let changed = false;
-      for (const field of fields) {
-        const existing = merged[field.id];
-        if (!existing || new Date(field.updatedAt) > new Date(existing.updatedAt)) {
-          merged[field.id] = field;
-          changed = true;
+  const getRecordFieldsByIds = React.useCallback(
+    async (ids: string[]): Promise<RecordField[]> => {
+      const uniqueIds = [...new Set(ids)];
+      const have: Record<string, RecordField> = {};
+      for (const id of uniqueIds) {
+        if (recordFieldList[id]) have[id] = recordFieldList[id];
+      }
+      const missingIds = uniqueIds.filter(id => !have[id]);
+      if (ready && missingIds.length) {
+        const result = await fetchRecordFieldsByIds(missingIds);
+        if (result) {
+          mergeRecordFields(result.fields);
+          for (const field of result.fields) have[field.id] = field;
         }
       }
-      return changed ? merged : prev;
-    });
-  };
+      return uniqueIds.map(id => have[id]).filter((f): f is RecordField => !!f);
+    },
+    [recordFieldList, ready, mergeRecordFields],
+  );
 
   const addRecordField = (
     checklistRecord: PartialBy<RecordField, 'id' | 'updatedAt'>,
@@ -165,6 +225,7 @@ export const useRecordField = () => {
   return {
     getAllRecordFields,
     getRecordFields,
+    getRecordFieldsByIds,
     addRecordField,
     removeRecordField,
     updateRecordField,

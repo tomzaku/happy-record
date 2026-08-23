@@ -34,7 +34,17 @@ type Props = {
   onSubmit?: () => void;
 };
 
-const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+// A metric record's `value` can be null/undefined/a non-numeric string —
+// old bad submissions, a note-type field's value shape leaking in, or a
+// backend row saved before a value existed. `+b` on any of those turns the
+// whole running sum into NaN, so this filters to real finite numbers first
+// rather than trusting every record already has one.
+const toFiniteNumber = (value: unknown): number | null => {
+  const n = typeof value === 'string' ? Number(value) : value;
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
+};
+const sum = (arr: unknown[]) =>
+  arr.reduce<number>((a, b) => a + (toFiniteNumber(b) ?? 0), 0);
 const ChecklistFieldGroupAdd = ({
   fields,
   checklistTemplate,
@@ -296,7 +306,11 @@ const ChecklistFieldGroupAdd = ({
           size="lg"
           className={styles.submitBtn}
           onClick={() => {
-            if (checklistTemplate) {
+            // Nothing filled in — addChecklistRecord (see useChecklistRecord.ts) returns
+            // undefined for an empty records array rather than writing a no-op submission,
+            // so this has to bail before that, not rely on `result` being spreadable below.
+            const hasAnyValue = Object.values(fieldRecord).some(value => value !== undefined);
+            if (checklistTemplate && hasAnyValue) {
               const now = new Date();
 
               // Create a new date with the same day/month/year as currentDay but with the current time
@@ -318,10 +332,20 @@ const ChecklistFieldGroupAdd = ({
                 checklistId: checklist.id,
                 checklistTemplateId: checklistTemplate.id,
                 createdAt: newDate.toISOString(),
-                records: Object.entries(fieldRecord).map(([key, value]) => ({
-                  fieldId: key,
-                  value: value,
-                })),
+                // A field the user never touched stays `undefined` in
+                // fieldRecord (see getEmptyFieldRecord) — sending it anyway
+                // fails the *whole* submission, since the server validates
+                // every record and rejects the first one with no value
+                // ("Missing value.") rather than skipping it. Groups with
+                // several fields (e.g. an AI-generated one) are commonly
+                // only partly filled in per submission, so this has to be a
+                // real filter, not a hard requirement to fill every field.
+                records: Object.entries(fieldRecord)
+                  .filter(([, value]) => value !== undefined)
+                  .map(([key, value]) => ({
+                    fieldId: key,
+                    value: value as number | string,
+                  })),
               });
               setCurrentChecklistRecords([
                 ...result,

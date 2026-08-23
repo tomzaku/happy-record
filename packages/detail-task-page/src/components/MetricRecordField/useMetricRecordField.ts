@@ -12,7 +12,16 @@ import { useChecklistTemplates } from '@dreamer/global';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 
-const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+// A record's `value` can be null/undefined/non-numeric (old bad submissions,
+// or a mismatched field type) — skip those rather than let one `NaN` (via
+// `+`) poison the whole running sum. See ChecklistFieldGroupAdd's identical
+// helper for the same reason.
+const toFiniteNumber = (value: unknown): number | null => {
+  const n = typeof value === 'string' ? Number(value) : value;
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
+};
+const sum = (arr: unknown[]) =>
+  arr.reduce<number>((a, b) => a + (toFiniteNumber(b) ?? 0), 0);
 
 export const useMetricRecordField = ({
   checklistTemplateId,

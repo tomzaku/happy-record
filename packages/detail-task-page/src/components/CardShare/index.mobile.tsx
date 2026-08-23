@@ -35,7 +35,7 @@ const CardShareMobile = ({
   const intl = useIntl();
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
-  const { getAllRecordFields } = useRecordField();
+  const { getRecordFieldsByIds } = useRecordField();
   const { updateChecklistTemplate } = useCreateChecklistTemplate();
   const { getChecklistTemplate } = useChecklistTemplates();
 
@@ -59,14 +59,14 @@ const CardShareMobile = ({
     }
     
     try {
-      const allFields = getAllRecordFields();
       const checklistTemplate = getChecklistTemplate(checklistTemplateId);
-      
+
       // Already public just means "make sure the server copy matches" —
       // same call either way, so there's nothing left to branch on here.
       const checklistTemplateFieldIds = checklistTemplate.fieldGroups.flatMap(
         group => group.fields,
       );
+      const allFields = await getRecordFieldsByIds(checklistTemplateFieldIds);
       const data = {
         checklistTemplate: {
           ...checklistTemplate,

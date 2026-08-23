@@ -21,7 +21,7 @@ const ChecklistTemplateSharedPageUi = () => {
   // CardShare's getFullUrl and useCreateChecklistTemplateApi.tsx.
   const userName = searchParams.get('from') || 'Someone';
   const targetName = searchParams.get('to') || 'you';
-  const { getAllRecordFields, mergeRecordFields } = useRecordField();
+  const { getRecordFieldsByIds, mergeRecordFields } = useRecordField();
   const [dialogRejectOpen, setDialogRejectOpen] = React.useState(false);
   const { addChecklistTemplate, getChecklistTemplate } =
     useChecklistTemplates();
@@ -29,11 +29,13 @@ const ChecklistTemplateSharedPageUi = () => {
   const { getChecklistTemplateApi } = useGetChecklistTemplateApi();
 
   const [data, setData] = React.useState();
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!data) return;
-    const allFields = getAllRecordFields();
+    // Scoped to exactly the ids this shared template references, not the
+    // whole list — the dedupe check only needs to know about these.
+    const existingFields = await getRecordFieldsByIds(data.fields.map(f => f.id));
     const newFields = data.fields.filter(f => {
-      return !allFields.find(existingField => existingField.id === f.id);
+      return !existingFields.find(existingField => existingField.id === f.id);
     });
     // These fields are already public, real rows owned by whoever shared
     // this template — cache them locally for immediate use, don't re-save

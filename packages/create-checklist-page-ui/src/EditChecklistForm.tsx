@@ -1,6 +1,6 @@
 import React, { startTransition } from 'react';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
-import { useChecklistTemplates, useChecklist, useLocalStorage, Checklist } from '@dreamer/global';
+import { useChecklistTemplates, useChecklist } from '@dreamer/global';
 import { useNavigate, useParams } from 'react-router-dom';
 import CoreChecklistForm, { FormState } from './CoreChecklistForm';
 import { calculateRepeat } from './calculateRepeat';
@@ -11,8 +11,7 @@ import { useIntl } from '@dreamer/translation';
 const EditChecklistForm = () => {
   const { checklistTemplate, deleteChecklistTemplate } =
     useChecklistTemplates();
-  const { getAllChecklistWithTemplate } = useChecklist();
-  const [checklist, setChecklist] = useLocalStorage<Record<string, Checklist>>('checklist', {});
+  const { getAllChecklistWithTemplate, deleteChecklist } = useChecklist();
   const { id } = useParams<{ id: string }>();
   const template = checklistTemplate[id || ''];
   const { updateChecklistTemplate } = useChecklistTemplates();
@@ -49,23 +48,20 @@ const EditChecklistForm = () => {
   const handleDelete = () => {
     setDeleteModalVisible(true);
   };
-  const handleDeleteChecklistTemplate = (checklistTemplateId: string, includedAllChecklist: boolean) => {
+  const handleDeleteChecklistTemplate = async (checklistTemplateId: string, includedAllChecklist: boolean) => {
     // Delete the checklist template
     deleteChecklistTemplate(checklistTemplateId);
-    
-    // If includedAllChecklist is true, delete all checklists with this template ID
+
+    // If includedAllChecklist is true, delete every checklist instance
+    // (day) created from this template — a real server-side delete now
+    // (DELETE /checklists?id=), not just a local removal.
     if (includedAllChecklist) {
-      const checklistsToDelete = getAllChecklistWithTemplate(checklistTemplateId);
-      const updatedChecklist = { ...checklist };
-      
-      // Remove all checklists with the specified template ID
+      const checklistsToDelete = await getAllChecklistWithTemplate(checklistTemplateId);
       checklistsToDelete.forEach(checklistItem => {
-        delete updatedChecklist[checklistItem.id];
+        deleteChecklist(checklistItem.id);
       });
-      
-      setChecklist(updatedChecklist);
     }
-    
+
     setDeleteModalVisible(false);
     navigate('/');
   };

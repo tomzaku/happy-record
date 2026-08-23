@@ -1,12 +1,10 @@
 export { useLocalStorage } from './useLocalStorage';
+export { useSessionStore } from './useSessionStore';
 export { useRect } from './useRect';
 export { useKeyListener } from './useKeyListener';
 export { useWakeLockPwa } from './useWakeLockPwa';
 export { useLongPress } from './useLongPress';
 export { useIsMobile } from './useIsMobile';
 export { useSession } from './useSession';
-export { useSyncOncePerIdentity, type SyncState } from './useSyncOncePerIdentity';
-export { useSyncedCollection } from './useSyncedCollection';
-export { useConnectivityResync } from './useConnectivityResync';
 export { useSyncedSelector } from './useSyncedSelector';
 export { useApplyAiChecklistTemplate } from './useApplyAiChecklistTemplate';

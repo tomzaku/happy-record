@@ -18,7 +18,7 @@ const TasksSharedPage = () => {
   const { id } = useParams<{ id: string }>();
   const [url, setUrl] = React.useState('');
   const { getChecklistTemplate } = useChecklistTemplates();
-  const { getAllRecordFields } = useRecordField();
+  const { getRecordFieldsByIds } = useRecordField();
   const [copied, setCopied] = React.useState(false);
   const [targetName, setTargetName] = React.useState('you');
   const [message, setMessage] = React.useState('');
@@ -46,10 +46,10 @@ const TasksSharedPage = () => {
     if (!id) {
       return;
     }
-    const allFields = getAllRecordFields();
     const checklistTemplateFieldIds = checklistTemplate.fieldGroups.flatMap(
       group => group.fields,
     );
+    const allFields = await getRecordFieldsByIds(checklistTemplateFieldIds);
     const data = {
       checklistTemplate: { ...checklistTemplate, visibility: 'public' as const },
       fields: checklistTemplateFieldIds.map(id =>

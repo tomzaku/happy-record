@@ -18,7 +18,16 @@ import {
 } from 'date-fns';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 
-const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+// A record's `value` can be null/undefined/non-numeric (old bad submissions,
+// or a mismatched field type) — skip those rather than let one `NaN` (via
+// `+`) poison the whole running sum/total/today-count below. See
+// ChecklistFieldGroupAdd's identical helper for the same reason.
+const toFiniteNumber = (value: unknown): number | null => {
+  const n = typeof value === 'string' ? Number(value) : value;
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
+};
+const sum = (arr: unknown[]) =>
+  arr.reduce<number>((a, b) => a + (toFiniteNumber(b) ?? 0), 0);
 
 const getCurrentStreak = (dates: string[]) => {
   let currentStreak = 0;
@@ -80,11 +89,11 @@ export const useMetricRecordField = ({
     const categories = Object.keys(records);
     setCurrentStreak(getCurrentStreak(categories));
     const values = Object.values(records);
-    setTotal(values.flat().reduce((acc, i) => acc + i.value, 0));
+    setTotal(sum(values.flat().map(i => i.value)));
     const today = format(new Date(), 'yyyy-MM-dd');
     const recordToday = records[today];
     if (recordToday?.length > 0) {
-      setTodayCount(recordToday.reduce((acc, i) => acc + i.value, 0));
+      setTodayCount(sum(recordToday.map(i => i.value)));
     }
     const seriesValues = fields.reduce((acc, recordField, index) => {
       const seriesValue = values.map(value => {

@@ -2,11 +2,14 @@ import { v4 } from 'uuid';
 import React from 'react';
 import { startOfDay } from 'date-fns';
 import { useLocalStorage } from '../../hook/useLocalStorage';
-import { useSyncOncePerIdentity, type SyncState } from '../../hook/useSyncOncePerIdentity';
+import { useSessionStore } from '../../hook/useSessionStore';
+import { useSession } from '../../hook/useSession';
 
-// Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
-// and this hook's own useLocalStorage state is the fallback, unchanged.
+// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
+// a failure resolves to null and this hook's own in-memory state is the
+// fallback, unchanged.
 import {
+  fetchChecklistTemplateById,
   fetchChecklistTemplates,
   patchChecklistTemplate,
   removeChecklistTemplate as removeChecklistTemplateApi,
@@ -66,8 +69,12 @@ export type ChecklistTemplate = {
   updatedAt: string;
 };
 
-// Shared across every mounted instance of this store — see useSyncOncePerIdentity.
-const checklistTemplatesSyncState: SyncState = { current: null };
+// Fetched by whatever scope is actually asked for — one id, or "all mine"
+// (needed by the management screen and by schedule-matching for the home
+// view) — never unconditionally on mount. Keyed so the same (identity,
+// scope) tuple isn't re-fetched every call within a page load.
+const fetchedScopes = new Set<string>();
+const ALL_SCOPE = '__all__';
 
 /**
  * `fieldGroups` is one jsonb column, so a plain top-level diff of it is
@@ -108,61 +115,72 @@ function diffFieldGroups(
 }
 
 export const useChecklistTemplates = () => {
-  const [checklistTemplate, setChecklistTemplate] = useLocalStorage<
+  const [checklistTemplate, setChecklistTemplate] = useSessionStore<
     Record<string, ChecklistTemplate>
   >(CHECKLIST_TEMPLATE_KEY, {});
   const [selectedChecklistTemplates, setSelectedChecklist] = useLocalStorage<
     string[]
   >(SELECTED_CHECKLISTS_TEMPLATE_KEY, []);
+  const { userId, ready } = useSession();
 
-  useSyncOncePerIdentity(checklistTemplatesSyncState, async () => {
-    const result = await fetchChecklistTemplates();
-
-    const newIds: string[] = [];
-    setChecklistTemplate(prev => {
-      const merged = { ...prev };
-      let changed = false;
-      for (const template of result?.templates ?? []) {
-        const existing = merged[template.id];
-        // Last-write-wins by `updatedAt`, not "add if this device has never
-        // seen it" — see useSyncedCollection's comment for why the latter
-        // means an edit made on another device would never arrive here.
-        // (`checklist-templates` doesn't use useSyncedCollection itself, but
-        // follows the exact same rule.) `newIds` tracks only the genuinely
-        // new ones — an LWW update to an id this device already knows about
-        // still needs `changed = true` to actually stick, but it's not a
-        // "first time seen" for the selectedChecklistTemplates step below.
-        if (!existing || new Date(template.updatedAt) > new Date(existing.updatedAt)) {
-          merged[template.id] = template;
-          changed = true;
-          if (!existing) newIds.push(template.id);
+  // Shared by every fetch path below (one id, or "all mine") so a template
+  // landing here for the first time — no matter which scope brought it in —
+  // gets the same treatment `addChecklistTemplate` already gives a
+  // locally-created one.
+  const mergeTemplates = React.useCallback(
+    (fetched: ChecklistTemplate[]) => {
+      if (!fetched.length) return;
+      const newIds: string[] = [];
+      setChecklistTemplate(prev => {
+        const merged = { ...prev };
+        let changed = false;
+        for (const template of fetched) {
+          const existing = merged[template.id];
+          // Last-write-wins by `updatedAt` — cheap safety even though a
+          // direct scoped fetch makes a real conflict rare.
+          if (!existing || new Date(template.updatedAt) > new Date(existing.updatedAt)) {
+            merged[template.id] = template;
+            changed = true;
+            if (!existing) newIds.push(template.id);
+          }
         }
-      }
-      // No built-in starter templates are seeded here — a first-time
-      // account/device just starts with zero templates and adds its own.
-      return changed ? merged : prev;
-    });
-
-    // `selectedChecklistTemplates` is local-only and never itself synced
-    // (see CLAUDE.md) — a template landing here for the first time on this
-    // device has never had a chance to be selected or deselected, so it
-    // defaults in the same way creating one locally already does
-    // (addChecklistTemplate). Without this, a synced-down template exists
-    // in `checklistTemplate` but never actually shows up on the calendar:
-    // getChecklistTemplateIdsByGivingDate filters by this list, not by
-    // `checklistTemplate` itself.
-    if (newIds.length) {
-      setSelectedChecklist(prev => {
-        const additions = newIds.filter(id => !prev.includes(id));
-        return additions.length ? [...prev, ...additions] : prev;
+        return changed ? merged : prev;
       });
-    }
 
-    // Only a genuine fetch failure asks useSyncOncePerIdentity for a retry
-    // — an empty-but-successful response is a settled, correct state, not
-    // something to keep retrying.
-    return !!result;
-  });
+      // `selectedChecklistTemplates` is local-only and never itself fetched
+      // from the backend (see CLAUDE.md) — a template landing here for the
+      // first time on this device has never had a chance to be selected or
+      // deselected, so it defaults in the same way creating one locally
+      // already does (addChecklistTemplate). Without this, a fetched
+      // template exists in `checklistTemplate` but never actually shows up
+      // on the calendar: getChecklistTemplateIdsByGivingDate filters by
+      // this list, not by `checklistTemplate` itself.
+      if (newIds.length) {
+        setSelectedChecklist(prev => {
+          const additions = newIds.filter(id => !prev.includes(id));
+          return additions.length ? [...prev, ...additions] : prev;
+        });
+      }
+    },
+    [setChecklistTemplate, setSelectedChecklist],
+  );
+
+  // "All mine" — needed by the management screen and by schedule-matching
+  // for the home view (getChecklistTemplateIdsByGivingDate below checks
+  // every selected template's own schedule, which needs each of their real
+  // rows loaded). Fetched once per identity, not on every call.
+  const ensureAllTemplatesFetched = React.useCallback(() => {
+    const scopeKey = JSON.stringify({ userId, scope: ALL_SCOPE });
+    if (!ready || fetchedScopes.has(scopeKey)) return;
+    fetchedScopes.add(scopeKey);
+    fetchChecklistTemplates().then(result => {
+      if (!result) {
+        fetchedScopes.delete(scopeKey);
+        return;
+      }
+      mergeTemplates(result.templates);
+    });
+  }, [userId, ready, mergeTemplates]);
 
   const addChecklistTemplate = (
     currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt' | 'updatedAt'> & {
@@ -269,11 +287,13 @@ export const useChecklistTemplates = () => {
   // can memoize on it — its identity now only changes when `checklistTemplate`
   // itself changes, instead of on every render.
   const getRecommendChecklistTemplates = React.useCallback((): ChecklistTemplate[] => {
+    ensureAllTemplatesFetched();
     return Object.values(checklistTemplate);
-  }, [checklistTemplate]);
+  }, [checklistTemplate, ensureAllTemplatesFetched]);
 
   const getChecklistTemplateIdsByGivingDate = React.useCallback(
     ({ date }: { date: Date } = { date: new Date() }) => {
+      ensureAllTemplatesFetched();
       return selectedChecklistTemplates.filter(checklistTemplateId => {
         const currentChecklistTemplate = checklistTemplate[checklistTemplateId];
 
@@ -293,14 +313,25 @@ export const useChecklistTemplates = () => {
         );
       });
     },
-    [selectedChecklistTemplates, checklistTemplate],
+    [selectedChecklistTemplates, checklistTemplate, ensureAllTemplatesFetched],
   );
 
   const getChecklistTemplate = React.useCallback(
     (id: string) => {
+      const scopeKey = JSON.stringify({ userId, id });
+      if (ready && !fetchedScopes.has(scopeKey)) {
+        fetchedScopes.add(scopeKey);
+        fetchChecklistTemplateById(id).then(result => {
+          if (!result) {
+            fetchedScopes.delete(scopeKey);
+            return;
+          }
+          mergeTemplates(result.templates);
+        });
+      }
       return checklistTemplate[id];
     },
-    [checklistTemplate],
+    [checklistTemplate, userId, ready, mergeTemplates],
   );
 
   return {

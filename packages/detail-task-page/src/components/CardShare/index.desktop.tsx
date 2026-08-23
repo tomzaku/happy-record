@@ -28,7 +28,7 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
   const intl = useIntl();
   const [copied, setCopied] = useState(false);
   const checklistTemplateId = checklistTemplate?.id;
-  const { getAllRecordFields } = useRecordField();
+  const { getRecordFieldsByIds } = useRecordField();
   const { updateChecklistTemplate } = useCreateChecklistTemplate();
   const { updateChecklistTemplate: updateChecklistTemplateLocal } =
     useChecklistTemplates();
@@ -52,10 +52,10 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
     }
 
     try {
-      const allFields = getAllRecordFields();
       const checklistTemplateFieldIds = checklistTemplate.fieldGroups.flatMap(
         group => group.fields,
       );
+      const allFields = await getRecordFieldsByIds(checklistTemplateFieldIds);
       const data = {
         checklistTemplate: {
           ...checklistTemplate,

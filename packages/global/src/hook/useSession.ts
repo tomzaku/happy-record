@@ -3,41 +3,27 @@ import type { Session } from '@supabase/supabase-js';
 import { ensureSession, resetSessionCache, supabase } from '../lib/supabase';
 
 /**
- * Every `useLocalStorage` key a domain store keeps — see each store's own
- * `_KEY`/`*_KEY` constant (`useChecklistTemplates.tsx`, `useChecklists.tsx`,
- * `useChecklistRecord.ts`, `useRecordField.tsx`, `useNote.tsx`,
- * `useNoteFolder.tsx`, `useFlag.tsx`, `useTags.tsx`, `useProStatus.tsx`).
- * `signOut` clears these:
- * without it, this device kept showing the account that just signed out's
- * checklists/fields/notes/etc. under the fresh anonymous identity that
- * replaces it — confusing on its own, and any further edit to that leftover
- * data would silently fail to sync anyway, since those rows' primary keys
- * already belong to the `user_id` that just left (the same "id must be
- * unique per its own scope" problem CLAUDE.md documents for `fields.id`).
- * Add a new domain's key here when it's added there — nothing derives this
- * list automatically.
+ * Every genuinely local-only `useLocalStorage` key — never backend-mirrored,
+ * so there's no fetch to re-run under the next identity, just a stale value
+ * to clear. `signOut` clears these on sign-out so the next (fresh anonymous)
+ * identity doesn't inherit the previous account's calendar selection/labels.
+ *
+ * The 7 backend-mirrored resources (`checklist_template`, `checklist`,
+ * `checklist_record`, `record_field`, `note`, `note_folder`, `flag`, plus
+ * `pro_status`) are **not** here anymore — see CLAUDE.md's "online-first
+ * data layer." They're `useSessionStore`-backed (in-memory only, per
+ * `useSessionStore.ts`), so the full-page reload below already clears them
+ * for free; nothing to remove from `localStorage` because nothing was ever
+ * written there for them.
  */
 const SYNCED_DATA_KEYS = [
-  'checklist_template',
   'selected_checklist_templates',
-  'checklist',
-  'checklist_record',
-  'record_field',
-  'note',
-  'note_folder',
-  'flag',
   'tags',
-  'pro_status',
   // Not yet written by anything real (`useUser.ts` is only read by the
   // local-storage-editor debug tool today) — listed anyway so it can never
   // survive a sign-out and leak into the next identity the way `fields.id`
   // once did, if it's ever wired into a real domain store later.
   'user',
-  // A write queued while offline (see lib/writeQueue.ts) carries no
-  // `user_id` of its own — identity comes from the session token at flush
-  // time, not the queued body. Left uncleared, a pending write from this
-  // identity would flush under whichever identity signs in next.
-  'write_queue',
 ];
 
 /**
@@ -194,10 +180,11 @@ export const useSession = () => {
     // set regardless (see its own comment), but `session` then stays `null`
     // forever: nothing else here ever calls `ensureSession()` again, and a
     // failed `signInAnonymously()` never reaches a state that fires
-    // `onAuthStateChange`. Without this, that device is marked "synced" by
-    // `useSyncOncePerIdentity` for an `undefined` identity and never
-    // actually syncs again, even once connectivity returns. Only acts while
-    // `sessionRef.current` is still null — must not fight
+    // `onAuthStateChange`. Without this, every resource's scoped-fetch read
+    // functions (see CLAUDE.md's "online-first data layer") would keep
+    // gating on `ready && userId` with `userId` permanently `undefined`,
+    // never actually fetching anything even once connectivity returns.
+    // Only acts while `sessionRef.current` is still null — must not fight
     // `onAuthStateChange`/`signOut` once a real session exists.
     const onReconnect = () => {
       if (sessionRef.current) return;
@@ -259,18 +246,16 @@ export const useSession = () => {
   };
 
   /**
-   * Ends this device's session and wipes the local copy of every synced
-   * domain's data (`SYNCED_DATA_KEYS`) — otherwise the fresh anonymous
-   * identity that replaces it would still show the previous account's
-   * checklists/fields/notes/etc., which is surprising on its own and
-   * silently unsyncable besides (see `SYNCED_DATA_KEYS`'s comment).
-   * `resetSessionCache()` keeps `ensureSession()` from handing the
-   * just-revoked session to the next request; the full reload after is what
-   * actually applies the wipe — every `useLocalStorage` store and each
-   * domain's own "synced once per page load" guard (`checklistsSynced` and
-   * friends) are plain in-memory state that a clear alone can't reach, so
-   * without the reload they'd keep serving what was already in memory, and
-   * a next real sign-in would think it had already synced when it hasn't.
+   * Ends this device's session and wipes the local copy of every local-only
+   * preference (`SYNCED_DATA_KEYS`) — otherwise the fresh anonymous identity
+   * that replaces it would still show the previous account's calendar
+   * selection/labels, which is surprising on its own. `resetSessionCache()`
+   * keeps `ensureSession()` from handing the just-revoked session to the
+   * next request; the full reload after is what actually applies the wipe —
+   * both `localStorage` and every `useSessionStore`-backed resource cache
+   * (fields/notes/checklists/etc., in-memory only) need the reload to
+   * actually reset, a clear alone can't reach in-memory state that isn't
+   * plain `localStorage`.
    *
    * `HAS_EXISTING_ACCOUNT_KEY` deliberately isn't in `SYNCED_DATA_KEYS` —
    * it has to survive this wipe so `signInWithGoogle` still knows to sign

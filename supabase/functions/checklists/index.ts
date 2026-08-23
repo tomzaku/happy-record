@@ -1,11 +1,12 @@
 // The `checklists` resource — every read and write of `checklists` (one
 // day's instance of a template). See CLAUDE.md.
 //
-//   GET  /checklists  ?checklistTemplateId=&from=&to=   → { checklists }
-//   POST /checklists  { checklist }                     → { ok }
+//   GET    /checklists  ?id=                             → { checklists }  one, by id
+//   GET    /checklists  ?checklistTemplateId=&from=&to=   → { checklists }
+//   POST   /checklists  { checklist }                     → { ok }
+//   DELETE /checklists  ?id=                               → { ok }
 //
-// No DELETE — nothing in the app removes a checklist instance today. `save`
-// always takes the *whole* checklist (see `_shared/checklists.ts`): a
+// `save` always takes the *whole* checklist (see `_shared/checklists.ts`): a
 // caller doing a partial update (e.g. just setting `completedAt`) merges
 // with its local copy first, same as `tasks`' `updateTask`.
 //
@@ -28,8 +29,25 @@ async function body(req: Request): Promise<Record<string, unknown>> {
   }
 }
 
-/** This user's checklists, optionally scoped to one template and/or a `started_at` range. */
+/**
+ * This user's checklists — one by `id` (the shape `detail-task-page` needs:
+ * it already knows the exact checklist id from the URL, no reason to fetch
+ * a whole range and filter client-side), or optionally scoped to one
+ * template and/or a `started_at` range.
+ */
 async function list({ url, db, userId }: Ctx) {
+  const id = url.searchParams.get('id');
+  if (id) {
+    const { data, error } = await db
+      .from('checklists')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('id', id)
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return { checklists: ((data ?? []) as Record<string, unknown>[]).map(toChecklist) };
+  }
+
   const templateId = url.searchParams.get('checklistTemplateId');
   const from = url.searchParams.get('from');
   const to = url.searchParams.get('to');
@@ -60,9 +78,19 @@ async function save({ req, db, userId }: Ctx) {
   return { ok: true };
 }
 
+/** Idempotent — removing a missing checklist is not an error. */
+async function remove({ url, db, userId }: Ctx) {
+  const id = url.searchParams.get('id');
+  if (!id) throw new ApiError(400, 'Missing id.');
+  const { error } = await db.from('checklists').delete().eq('user_id', userId).eq('id', id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
 const ROUTES: Record<string, (ctx: Ctx) => Promise<unknown>> = {
   'GET /': list,
   'POST /': save,
+  'DELETE /': remove,
 };
 
 function subPath(url: URL): string {

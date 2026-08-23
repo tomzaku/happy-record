@@ -1,8 +1,11 @@
-import { useSyncedCollection, type SyncState } from '../../hook';
+import React from 'react';
+import { useSessionStore } from '../../hook/useSessionStore';
+import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
 
-// Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
-// and this hook's own useLocalStorage state is the fallback, unchanged.
+// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
+// a failure resolves to null and this hook's own in-memory state is the
+// fallback, unchanged.
 import { fetchFlags, removeFlag as removeFlagApi, saveFlag } from './flagApi';
 
 const FLAG_KEY = 'flag';
@@ -21,15 +24,13 @@ export type Flag = {
   updatedAt: string;
 };
 
-// Shared across every mounted instance of this store — see useSyncedCollection.
-const flagsSyncState: SyncState = { current: null };
+// Fetched once per identity ("all mine" — no consumer narrows this today),
+// not unconditionally on mount.
+const fetchedFor = new Set<string | undefined>();
 
 export const useFlag = () => {
-  const [flags, setFlags] = useSyncedCollection<Flag>(
-    FLAG_KEY,
-    flagsSyncState,
-    async () => (await fetchFlags())?.flags ?? null,
-  );
+  const [flags, setFlags] = useSessionStore<Record<string, Flag>>(FLAG_KEY, {});
+  const { userId, ready } = useSession();
 
   const addFlag = (data: { name: string; description?: string }) => {
     const id = v4();
@@ -60,9 +61,31 @@ export const useFlag = () => {
     removeFlagApi(id);
   };
 
-  const getAllFlags = () => {
+  const getAllFlags = React.useCallback(() => {
+    if (ready && !fetchedFor.has(userId)) {
+      fetchedFor.add(userId);
+      fetchFlags().then(result => {
+        if (!result) {
+          fetchedFor.delete(userId);
+          return;
+        }
+        if (!result.flags.length) return;
+        setFlags(prev => {
+          const merged = { ...prev };
+          let changed = false;
+          for (const flag of result.flags) {
+            const existing = merged[flag.id];
+            if (!existing || new Date(flag.updatedAt) > new Date(existing.updatedAt)) {
+              merged[flag.id] = flag;
+              changed = true;
+            }
+          }
+          return changed ? merged : prev;
+        });
+      });
+    }
     return Object.values(flags).sort((a, b) => a.name.localeCompare(b.name));
-  };
+  }, [flags, userId, ready, setFlags]);
 
   const getFlag = (id: string) => flags[id];
 

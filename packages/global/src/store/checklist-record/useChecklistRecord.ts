@@ -1,10 +1,11 @@
 import React from 'react';
 import { v4 } from 'uuid';
 import { format } from 'date-fns';
-import { useLocalStorage, useSession } from '../../hook';
+import { useSessionStore, useSession } from '../../hook';
 
-// Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
-// and this hook's own useLocalStorage state is the fallback, unchanged.
+// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
+// a failure resolves to null and this hook's own in-memory state is the
+// fallback, unchanged.
 import {
   fetchChecklistRecords,
   removeChecklistRecord as removeChecklistRecordApi,
@@ -49,33 +50,18 @@ type AddChecklistRecordData = {
   createdAt: string;
 };
 
-// Records are unbounded (every day, forever), so unlike the other resources
-// there's no single "fetch everything on mount" — instead getChecklistRecords
-// syncs the one range it was actually asked for, keyed so the same
-// (identity, template, range, fields) tuple isn't re-fetched every call
-// within a page load. `userId` is part of that key (not just a page-load
-// guard) so a range already synced for one identity re-fetches once the
-// signed-in identity actually changes — see useSyncOncePerIdentity's
-// comment on the equivalent bug this fixes for every other domain store.
+// Records are unbounded (every day, forever), so this fetches only the one
+// range it's actually asked for, keyed so the same (identity, template,
+// range, fields) tuple isn't re-fetched every call within a page load —
+// this is the shape every other resource's read function now follows too
+// (see CLAUDE.md's "online-first data layer"). `userId` is part of the key
+// (not just a page-load guard) so a range already fetched for one identity
+// re-fetches once the signed-in identity actually changes.
 const syncedRanges = new Set<string>();
-
-/**
- * Called on reconnect (see useConnectivityResync.ts) so a range this device
- * already fetched — possibly hours ago, before going offline — re-fetches
- * once instead of assuming it's still current. Every key already bakes in
- * `userId` (see `rangeKey` below), so clearing the whole set rather than
- * scoping it is deliberate: it's simpler, it's exactly the desired
- * behavior (every currently-rendered range re-checks itself), and it
- * doubles as the pruning this otherwise-unbounded, never-pruned `Set` has
- * no other mechanism for.
- */
-export function resetChecklistRecordSync(): void {
-  syncedRanges.clear();
-}
 
 export const useChecklistRecord = () => {
   const [checklistRecordList, setChecklistRecordList] =
-    useLocalStorage<ChecklistRecorStore>(CHECKLIST_RECORD_KEY, {});
+    useSessionStore<ChecklistRecorStore>(CHECKLIST_RECORD_KEY, {});
   const { userId, ready } = useSession();
 
   const addChecklistRecord = (data: AddChecklistRecordData) => {
@@ -163,11 +149,11 @@ export const useChecklistRecord = () => {
             } else if (
               new Date(record.updatedAt) > new Date(bucket[existingIndex].updatedAt)
             ) {
-              // Last-write-wins by `updatedAt` — see useSyncedCollection's
-              // comment on why this can't just be "add if missing": an edit
+              // Last-write-wins by `updatedAt`, not "add if missing": an edit
               // to a record's value on another device needs to actually
               // arrive here, not be silently ignored because this device
-              // already has *an* entry for that id.
+              // already has *an* entry for that id — cheap safety even
+              // though a direct scoped fetch makes this rarer to hit.
               const nextBucket = [...bucket];
               nextBucket[existingIndex] = record;
               merged[record.checklistTemplateId] = nextBucket;

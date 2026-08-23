@@ -2,11 +2,15 @@
 
 Project instructions for Claude Code. Keep this short — it's loaded into every session.
 
-This app is **offline-first by design**: every screen already works with no backend, storing
-its state in `localStorage` via `useLocalStorage` (`packages/global/src/hook/useLocalStorage.ts`).
-Supabase is an *enhancement* layered on top — sync when there's a connection, never a
-requirement to use the app. See `.cursor/rules/common-rules.mdc` for styling/i18n/component
-conventions; this file is about the backend only.
+This app is **online-first**, by deliberate choice — see "Fetching from the backend
+(online-first)" below for why and the full shape. It used to be offline-first (every screen
+working with no backend, storing its state in `localStorage`); that model's sync/merge complexity
+kept breaking in ways that were hard to debug, so the backend is the source of truth now: a
+component fetches directly, scoped to what it needs, and a write is optimistic with no offline
+retry queue. Real offline support (a write queue, working fully with no backend at all) is a
+deliberate later effort, not the current state — don't assume a screen works with no network
+today. `.cursor/rules/common-rules.mdc` has styling/i18n/component conventions; this file is about
+the backend only.
 
 ## Data access: go through an edge function, not the table
 
@@ -34,7 +38,7 @@ a resource whose server schema *isn't* a 1:1 mirror of the client shape — see 
 | Edge function | `supabase/functions/<resource>/index.ts` | One REST resource. Auth via `requireUser`, RLS-scoped client, returns client-shaped JSON |
 | Shared pieces | `supabase/functions/_shared/<resource>.ts` | Row mapping + validation for that resource; `_shared/auth.ts` and `_shared/cors.ts` are common to all |
 | Client module | `packages/<owning-package>/src/<resource>Api.ts` | One exported function per route, built on `packages/global/src/lib/api.ts` |
-| Caller | the domain's own hook (e.g. `useChecklist` in `checklists/useChecklists.tsx`) | Calls the API module, falls back to local `useLocalStorage` state on `null` |
+| Caller | the domain's own hook (e.g. `useChecklist` in `checklists/useChecklists.tsx`) | Calls the API module, scoped to what's needed; falls back to whatever's already in the local store on `null` |
 
 Deploy: `supabase functions deploy checklists`.
 
@@ -73,21 +77,18 @@ request.get<T>('/checklists', { quiet: true }) // → T | null instead of throwi
 ```
 
 A call throws `ApiError` by default, carrying the server's own message. Pass `quiet: true` to
-get `null` instead — **use this for almost every call in this app**, because the local
-`useLocalStorage` state is always right there as a fallback. `null` means "use what's already in
-the store," never an error screen. Choose per call, not per module.
+get `null` instead — **use this for almost every call in this app**, because the local store
+(`useSessionStore` or `useLocalStorage`, whichever backs that domain) is always right there as a
+fallback. `null` means "use what's already in the store," never an error screen. Choose per call,
+not per module.
 
-A `quiet` **write** (`POST`/`PATCH`/`PUT`/`DELETE`) that fails because the device is genuinely
-offline — `ApiError(0, ...)`, `send`'s own catch for "nothing came back to read a status from,"
-never a real 4xx/5xx the server actually saw and rejected — is also queued
-(`packages/global/src/lib/writeQueue.ts`, `localStorage['write_queue']`) instead of just being
-dropped. Nothing else needed at the call site: `run()` in `api.ts` detects this by method + status
-alone, so every existing `quiet: true` write function gets queuing for free. The queue flushes on
-the next `online` event (see `useConnectivityResync` below) — every write route here is already an
-upsert or an idempotent delete, so replay needs no dedup, and `updatedAt` is already set
-client-side at the moment of the original edit, so a write replayed hours later still merges
-correctly under the last-write-wins rule below. A read failure was already "safe" this way (the
-local store is the fallback); this is what makes a *write* safe the same way.
+This app is **online-first**: a write is optimistic (the local store updates immediately, the
+request fires directly, no retry queue) and a read is fetched fresh, scoped to whatever the
+caller actually asked for — see "Fetching from the backend" below. There's no offline queue today;
+a write that fails because the device is offline just doesn't persist, silently, same as it always
+has for a real rejection. Deliberate, not an oversight — rebuilding real offline resilience is a
+separate, later effort on top of a codebase that isn't also fighting a merge-conflict model (see
+that section's own note on what this doesn't solve).
 
 ### Identity comes from the session
 
@@ -96,8 +97,8 @@ Never take a `user_id` from a request body. It's read from the caller's session,
 someone else regardless of what the UI sends.
 
 There's no signup screen: `packages/global/src/hook/useSession.ts` signs every device in
-**anonymously** on first load, so sync works with the same zero-friction feel the app has
-offline today. A user who wants their data on a second device links Google to that same
+**anonymously** on first load, so every fetch has a session to authenticate through with zero
+friction — no login wall before the app is usable. A user who wants their data on a second device links Google to that same
 anonymous identity (`useSession().signInWithGoogle` → `supabase.auth.linkIdentity`, the
 settings page's "Sign in with Google" row) rather than starting over signed out — the `user_id`
 doesn't change, so their existing rows don't need migrating. Needs `[auth.external.google]` in `supabase/config.toml` and real credentials in
@@ -109,60 +110,61 @@ Session/sign-out/sync-on-identity-change details (`ensureSession`, `signOut`, th
 `identity_already_exists` self-heal) live in "Syncing local storage with the backend" below,
 alongside the equivalent guarantees for local domain data.
 
-## Syncing local storage with the backend
+## Fetching from the backend (online-first)
 
-One pattern, implemented once — not re-derived per store, which is exactly how the last several
-sync bugs got introduced (each store's own hand-rolled version of "fetch once and merge" had a
-subtly different gap).
+This app used to be offline-first: every domain store synced everything into `useLocalStorage`
+once per identity and merged in the background. That model kept breaking in ways that were hard to
+reason about (a component rendering a stale merge, a sync that silently never landed), so it's
+gone — see "What this still doesn't solve" below for what that tradeoff costs. **The backend is
+the source of truth now.** A read fetches directly, scoped to exactly what the caller asked for; a
+write is optimistic (the store updates immediately, the request fires immediately) and there's no
+retry queue.
 
-**`useSyncedCollection`** (`packages/global/src/hook/useSyncedCollection.ts`) is that pattern for
-any store shaped like "one `Record<string, T>` keyed by id, fetched from one edge function route"
-— `fields`, `notes`, `note-folders`, `flags`, and `checklists` all just call it with their own
-storage key and fetch function (see `useRecordField.tsx` for the shape). The contract:
+**`useSessionStore`** (`packages/global/src/hook/useSessionStore.ts`) is `useLocalStorage`'s exact
+`[value, setValue]` shape and its same module-level, zustand-backed `storeCache` mechanism (one
+reactive store shared across every component that asks for a key) — with no
+`window.localStorage` read/write. Every one of the 7 backend-mirrored resources (`fields`, `notes`,
+`note-folders`, `flags`, `checklists`, `checklist-templates`, `checklist-records`) uses this instead
+of `useLocalStorage` now: a fresh page load always starts empty and fetches fresh, never renders a
+stale local copy. Genuinely local-only state that was never backend-mirrored in the first place —
+`selected_checklist_templates`, `tags`, theme, pomodoro config — keeps using real `useLocalStorage`,
+unchanged; there's nothing to "go stale" for those.
 
-- **Local `useLocalStorage` state is the source of truth for rendering, always.** Every screen
-  renders from it instantly, online or offline; nothing blocks on the network.
-- **Sync happens once per signed-in identity, not once per page load** — plus once more on
-  reconnect. The lower-level `useSyncOncePerIdentity` keys on `useSession()`'s `userId`, so signing
-  in or out re-triggers a fresh sync instead of a store staying stuck on whatever the *first*
-  identity's fetch returned — a plain `let xSynced = false` (every store's own copy of this,
-  before) fires once ever, by whichever identity exists at that exact moment. It also re-syncs on
-  a shared "resync tick" bumped by `useConnectivityResync` on the browser's `online` event (see
-  below), so a tab left open catches up on another device's edit once this one reconnects, without
-  needing a reload.
-- **Waits for the session to be `ready`** before syncing at all, so the first fetch can't land
-  against a transient session before the real one settles (see `ensureSession()` below for the
-  matching guarantee on the request side).
-- **Merges last-write-wins by `updatedAt`, per id**: an id this device has never seen is always
-  added; an id it already has is only replaced by the fetched copy if the fetched copy's
-  `updatedAt` is strictly newer. Every `addX`/`updateX` on the client sets `updatedAt` to the
-  moment it happened, same as every server-side write already did (CLAUDE.md's "every table gets
-  `updated_at`" convention) — comparing two real timestamps, not guessing. This is what makes an
-  edit made on one device actually show up on another the next time that device syncs; a plain
-  "fill in what's missing" merge (this hook's first version) never revisits an id once it has one,
-  so an edit elsewhere would never arrive no matter how many times you reloaded. It still protects
-  an in-flight local edit from being clobbered by a slightly-stale fetch landing around the same
-  time, for the same reason — older loses, regardless of which side it's on.
-- **Shares one fetch across every mounted instance** of a store via a module-level `SyncState`
-  cell (not component state) — several components rendering the same store don't each start
-  their own redundant fetch.
-- **A quiet `null`** (offline, no backend, a failed request) **changes nothing and is retried on
-  the next identity check** — never an error screen, never a wipe.
+**The scoped-fetch-by-query-key pattern** is one shape, followed by every resource's own read
+functions (`useChecklistRecord.ts`'s `getChecklistRecords` had this shape first — the others were
+generalized from it): build a key from the query actually being asked for (an id, a date range, a
+set of field ids, or `"all mine"` where that's genuinely the right scope — the management screen,
+schedule-matching for the home view), check a module-level `Set<string>` for "have I already fetched
+this exact scope," and if not, fire the request and merge the result into the shared
+`useSessionStore` when it resolves — meanwhile returning whatever's in the store right now (empty
+until the fetch lands, then reactive, same last-write-wins-by-`updatedAt` merge as before, now
+mostly a cheap safety net rather than the load-bearing mechanism it used to be). `userId` is part of
+every scope key, so a scope already fetched for one identity re-fetches once the signed-in identity
+actually changes.
 
-Two stores don't fit the shape and intentionally don't use it, though both still follow the same
-last-write-wins-by-`updatedAt` merge rule by hand:
+**A one-shot action handler needs the real data this tick, not a value that's fine to start empty
+and fill in on a later render** — the scoped-fetch-and-return-a-snapshot shape above is for
+*rendering*, where React re-rendering once the fetch resolves is exactly the point. A few read
+functions are called from imperative click handlers instead ("generate a share link," "delete
+every checklist instance of this template") and need to actually `await` the fetch and build their
+return value from the response directly, not re-read the store afterward (that closure is stale by
+the time the store's setter actually lands) — `useRecordField.tsx`'s `getRecordFieldsByIds` and
+`useChecklists.tsx`'s `getAllChecklistWithTemplate` are async for exactly this reason; every other
+read function here is deliberately not.
 
-- **`checklist-templates`** calls `useSyncOncePerIdentity` directly rather than
-  `useSyncedCollection`, to keep the separate, genuinely local-only `selectedChecklistTemplates`
-  list (`selected_checklist_templates`, never itself synced) in sync: a template landing in
-  `checklistTemplate` isn't the same as it showing up on the calendar
-  (`getChecklistTemplateIdsByGivingDate` filters by this list, not by the templates themselves),
-  so any id new to this device gets added to it the same way `addChecklistTemplate` already does
-  for a locally-created one. There's no built-in starter set seeded anymore — a first-time
-  account/device starts with zero templates.
-- **`checklist-records`** has no single "fetch on mount" at all — `getChecklistRecords` syncs
-  whatever date range it's asked for — so it folds `userId` into its own per-range cache key in
-  `useChecklistRecord.ts` instead.
+Per-resource scoping, since each backend route supports something different (verify against the
+edge function before assuming a shape): `fields` supports `?ids=` for a specific set (the
+share-flow consumers use this — `CardShare`, `tasks-shared-page-ui`,
+`checklist-template-shared-page-ui`) alongside the unscoped "all mine + public" most consumers
+genuinely need (field pickers, the manage-fields screen, AI-generate context). `notes` supports
+`fieldIds`/`folderId`/`limit`. `checklist-templates` supports `?id=` (one, own or public) alongside
+"all mine." `checklists` supports `?id=` (one — added for `detail-task-page`, which already knows
+the exact id from the URL and has no reason to fetch a range and filter), `checklistTemplateId`,
+and `from`/`to` (`getChecklistByGivingDate` fetches one day at a time; `WeeklyCalendarVertical`'s
+growing multi-week view gets this for free since each new visible day is its own scope key).
+`checklist-records` supports `checklistTemplateId`/`from`/`to`/`fieldIds`/`limit`, unchanged.
+`note-folders`/`flags` have zero consumers today, so they just fetch "all mine" once, unscoped —
+there's nothing to narrow yet.
 
 **A component consuming a store must depend on the store's own function, never hand-pick its own
 dependency list.** `getChecklistByGivingDate`/`getChecklistTemplateIdsByGivingDate` are
@@ -175,8 +177,8 @@ correct: `ChecklistToday.desktop.tsx` and its mobile twin used to snapshot the r
 `selectedChecklistTemplates` entirely — while `WeeklyCalendarVertical.tsx` right next to it,
 already depending on the function itself, stayed correct on the exact same data. This turned out
 not to be a one-off: the same bug (a store's read function snapshotted into `useState` from a
-`useEffect` with an incomplete dependency array — so a value synced in later, from another device
-or even from an edit on this same device, never appears without an unrelated remount) recurred
+`useEffect` with an incomplete dependency array — so a value fetched later, from another device or
+even from an edit on this same device, never appears without an unrelated remount) recurred
 independently across `detail-task-page`'s own `/task/:id` page, its History/Add/Metric tabs, and
 the `/notes` pages. **`useSyncedSelector`** (`packages/global/src/hook/useSyncedSelector.ts`) is
 the fix spelled as a hook instead of a pattern to remember: `useSyncedSelector(storeFn, ...args)`
@@ -195,22 +197,19 @@ against their real store dependency for exactly this reason. `useNoteRecord.tsx`
 call — see "notes and note-folders" below) aren't wrapped yet, so those two still recompute every
 render rather than memoizing.
 
-**What this still doesn't solve**: a deletion on one device doesn't remove anything on another —
-this merge only ever adds or replaces, never deletes, which needs a tombstone (a `deleted_at` the
-sync can see) that no table has yet. The other historical gap here — a tab left open never
-noticing another device's edit until something triggered a re-sync — is closed: `useConnectivityResync`
-(`packages/global/src/hook/useConnectivityResync.ts`, mounted once in `web/src/App.tsx` next to
-`useSession()`) listens for the browser's `online` event and, on it, (1) flushes the write queue
-above, (2) clears `checklist-records`' own per-range sync cache
-(`resetChecklistRecordSync` — see below), and (3) bumps a shared "resync tick"
-(`packages/global/src/lib/resyncTick.ts`) that `useSyncOncePerIdentity` also watches, alongside its
-existing identity check — so a store that already synced successfully for this identity still
-re-syncs once connectivity returns, not just one whose last attempt failed. That tick is recorded
-on the store's own shared `SyncState` cell (`lastResyncTick`), not per component instance, so
-several components using the same store don't each fire their own redundant fetch on the same
-reconnect — the same "one fetch, not one per mounted instance" property `SyncState` already gave
-the identity-change case. Realtime (pushing a sync the instant another device writes, not just on
-this device's own reconnect) is still not built.
+**What this still doesn't solve**: there's no offline write queue — a write that fails because the
+device is genuinely offline just doesn't persist, silently, the same way a real rejection always
+has; rebuilding that resilience is a deliberate later effort, not an oversight (see "Never
+hand-roll `fetch`" above). There's no live push either — a scope already fetched once this page
+load stays whatever it was until something re-triggers a fresh fetch for that exact scope (a
+reload, or navigating to a view that asks for a wider/different range); another device's edit
+doesn't appear here until then. What *is* fixed relative to the old model: a delete now really
+deletes server-side (`checklists` gained a `DELETE /checklists?id=` route specifically so
+`EditChecklistForm`'s "delete every instance of this template" could stop reaching into
+`useLocalStorage('checklist', ...)` directly and actually delete rows), and since nothing is a
+merged-forever local copy anymore, a fresh fetch after a delete — on any device, including the one
+that deleted it — correctly won't show the row again; the old model could never do that (merging
+only ever added or replaced, never removed).
 
 On the auth/session side, the equivalent guarantee is `supabase.ts`'s **`ensureSession()`**:
 `api.ts`'s `send()` and `useSession.ts` both await it instead of calling
@@ -223,11 +222,11 @@ authenticated as a throwaway anonymous user for the rest of the page's life.
 
 `useSession.ts`'s own `ready` still has to come from somewhere on a cold load, though — it's set
 once `ensureSession()` resolves, which happens even when the anonymous sign-in itself fails (no
-network on first-ever load): `ready` becomes `true` for a `null` session, and
-`useSyncOncePerIdentity` would otherwise mark that `undefined` identity "synced" and never try
-again. `useSession.ts` also listens for `online` and retries `ensureSession()` while `session` is
-still `null`, so that device recovers the moment connectivity returns instead of staying stuck
-until a full reload.
+network on first-ever load): `ready` becomes `true` for a `null` session, and every resource's
+scoped-fetch read functions gate on `ready && userId` (see above) — with `userId` permanently
+`undefined`, they'd never actually fetch anything even once connectivity returns. `useSession.ts`
+also listens for `online` and retries `ensureSession()` while `session` is still `null`, so that
+device recovers the moment connectivity returns instead of staying stuck until a full reload.
 
 Testing any of this by clearing `localStorage` and reloading doesn't simulate "this account's
 cache is cold" the way it might seem to — Supabase persists its own session token in `localStorage`
@@ -238,11 +237,13 @@ open the app in a second browser/profile already signed into the same Google acc
 
 `useSession().signOut` (settings page's "Sign Out" row, shown once linked) ends the device's
 session, calls `resetSessionCache()` so the next request doesn't keep sending the revoked token,
-clears every domain store's `useLocalStorage` key (`SYNCED_DATA_KEYS` in `useSession.ts`), and
-reloads the page — the reload is what resets each store's `SyncState` cell back to "never synced,"
-without which a next real sign-in would think it had already synced when it hadn't.
-**Adding a new domain store's `useLocalStorage` key means adding it to `SYNCED_DATA_KEYS` too** —
-nothing derives that list automatically.
+clears every remaining genuinely-local-only `useLocalStorage` key (`SYNCED_DATA_KEYS` in
+`useSession.ts` — `selected_checklist_templates`, `tags`, `user`; the 7 backend-mirrored resources
+aren't in this list anymore, since they're `useSessionStore`-backed and in-memory only), and
+reloads the page — the reload is what actually clears those in-memory stores and each resource's
+own "have I fetched this scope" `Set`, without which a next real sign-in would think it had
+already fetched when it hadn't. **Adding a new genuinely local-only `useLocalStorage` key means
+adding it to `SYNCED_DATA_KEYS` too** — nothing derives that list automatically.
 
 Signing back into that same account afterward needs `signInWithGoogle` to call `signInWithOAuth`
 (a real login) instead of `linkIdentity` (attach-to-this-anonymous-session) — but the *current*
@@ -273,8 +274,9 @@ because `replaceState` doesn't fire the `hashchange` event HashRouter listens fo
 ### `supabase` is for auth only, in one place
 
 `packages/global/src/lib/supabase.ts` creates the client (or `null` when `VITE_SUPABASE_URL` /
-`VITE_SUPABASE_ANON_KEY` aren't set — the app must still build and run fully offline with no
-backend configured). Nothing outside `useSession.ts` and `api.ts` should import it.
+`VITE_SUPABASE_ANON_KEY` aren't set — the app must still build and run with no backend configured,
+degrading to empty data rather than crashing, per the "online-first" tradeoff above). Nothing
+outside `useSession.ts` and `api.ts` should import it.
 
 ## The server schema can differ from the client shape
 
@@ -398,9 +400,9 @@ file imports it" bar as `tasks-page-ui`/`pomodoro-mobile`/`pregnant-page-ui` bef
 - **Every table gets `updated_at timestamptz not null default now()`, and every write sets it
   explicitly** in the row-mapping function (`fromX`) — Postgres only fills a column default on
   insert, never on update, so an upsert that doesn't set it leaves a stale value. It's not
-  enforced (no version check blocks a stale write), just makes one auditable — this app is
-  offline-first, so a delayed write from a device that was offline landing after a newer one is
-  a real scenario, not a hypothetical.
+  enforced (no version check blocks a stale write), just makes one auditable — two devices editing
+  the same row close together, or a scoped fetch racing a write on this same device, are real
+  scenarios (see "Fetching from the backend"'s last-write-wins merge), not hypotheticals.
 - **A column that should only ever hold one of two values gets a CHECK saying so**, not just a
   row-mapping function that happens to only ever set one — see `checklist_records`' `value_number`
   / `value_text`. A mapping bug should fail the write, not corrupt a chart three reads later.
