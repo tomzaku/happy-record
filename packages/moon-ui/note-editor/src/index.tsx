@@ -63,6 +63,10 @@ interface NoteEditorProps {
   initialData?: any;
   setValue?: (value: any) => void;
   value?: any;
+  /** Defaults to editable (`false`) — pass `true` for a view-mode note with its own Edit
+   * button toggling this back to `false`. See EditorJs.tsx for how this reaches Editor.js's
+   * own readOnly API on an already-mounted instance. */
+  readOnly?: boolean;
 }
 
 const NoteEditor = (props: NoteEditorProps) => {

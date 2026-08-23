@@ -21,6 +21,11 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
   const { updateNote } = useNoteRecords();
   const [isCreatingNote, setIsCreatingNote] = React.useState(false);
   const [newNoteValue, setNewNoteValue] = React.useState<string | number | undefined>();
+  // Existing notes open in view (read-only) mode by default; editing one is opt-in via its own
+  // Edit button. Keyed by note id so toggling one note's edit state doesn't affect any other.
+  const [editingNoteIds, setEditingNoteIds] = React.useState<Record<string, boolean>>({});
+  const toggleEditingNote = (noteId: string) =>
+    setEditingNoteIds(prev => ({ ...prev, [noteId]: !prev[noteId] }));
 
   const noteFieldMap = allNoteFields.reduce<Record<string, RecordField>>(
     (acc, field) => ({
@@ -98,6 +103,7 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
         </div>
       )}
       {allNotes.map(note => {
+        const isEditingNote = editingNoteIds[note.id] ?? false;
         return (
           <div key={note.id} className={styles.noteItem}>
             <div className={styles.itemHeader}>
@@ -107,6 +113,18 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
               <Typography.Text className={styles.itemHeaderLabel}>
                 {noteFieldMap[note.fieldId]?.title || 'Note'}
               </Typography.Text>
+              <Button
+                className={styles.editButton}
+                type="dash"
+                onClick={() => toggleEditingNote(note.id)}
+              >
+                <Icon
+                  icon={isEditingNote ? 'material-symbols:check' : 'solar:pen-2-line-duotone'}
+                  width={14}
+                  height={14}
+                />
+                {isEditingNote ? 'Done' : 'Edit'}
+              </Button>
               <Button
                 className={styles.deleteButton}
                 type="dash"
@@ -124,9 +142,10 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
               </Button>
             </div>
             <div className={styles.noteContent}>
-              <NoteEditor 
-                value={note.value} 
+              <NoteEditor
+                value={note.value}
                 setValue={(value: string | number) => startTransition(() => handleNoteValueChange(note, value))}
+                readOnly={!isEditingNote}
               />
             </div>
           </div>

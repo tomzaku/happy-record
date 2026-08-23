@@ -4,6 +4,19 @@
   position: relative;
 }
 
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: $spacing-xs;
+}
+
+.editButton {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+}
+
 .iconSuccess {
   position: absolute;
   right: -20px;

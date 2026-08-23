@@ -78,8 +78,26 @@
   white-space: nowrap;
 }
 
-.deleteButton {
+.editButton {
   margin-left: auto;
+  padding: $spacing-xs $spacing-sm;
+  border: none;
+  border-radius: 8px;
+  font-size: toRem(12px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  &:hover {
+    background: var(--button-action-background);
+    color: var(--button-action-color);
+  }
+}
+
+.deleteButton {
   padding: $spacing-xs $spacing-sm;
   border: none;
   border-radius: 8px;

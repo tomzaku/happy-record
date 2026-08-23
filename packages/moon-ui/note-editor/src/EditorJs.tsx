@@ -18,13 +18,13 @@ interface NoteEditorProps {
   initialData?: any;
   setValue?: (value: any) => void;
   value?: any;
-  readOnly: boolean;
+  readOnly?: boolean;
   classes?: {
     container?: string;
   };
 }
 
-const EditorJs = ({ initialData, setValue, value, classes, readOnly }: NoteEditorProps) => {
+const EditorJs = ({ initialData, setValue, value, classes, readOnly = false }: NoteEditorProps) => {
   const editorRef = useRef<EditorJS | null>(null);
   const holderRef = useRef<HTMLDivElement>(null);
 
@@ -113,6 +113,16 @@ const EditorJs = ({ initialData, setValue, value, classes, readOnly }: NoteEdito
       }
     };
   }, []);
+
+  // The constructor above only sets the *initial* readOnly state (its effect only runs once,
+  // on mount) — flipping the `readOnly` prop afterward (a consumer's view/edit toggle) has to
+  // go through Editor.js's own API on the already-mounted instance instead. `isReady` guards
+  // against toggling before construction actually finishes.
+  useEffect(() => {
+    editorRef.current?.isReady.then(() => {
+      editorRef.current?.readOnly.toggle(readOnly);
+    });
+  }, [readOnly]);
 
   return (
     <div
