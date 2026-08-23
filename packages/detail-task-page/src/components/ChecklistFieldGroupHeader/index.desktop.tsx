@@ -14,16 +14,15 @@ const ChecklistFieldGroupHeader = ({
   onClickHistory,
   onClickAdd,
   onClickMetric,
-  onClickConfig,
   activeTab,
   activeTabs = [
     ChecklistFieldGroupTab.Home,
     ChecklistFieldGroupTab.History,
     ChecklistFieldGroupTab.Metric,
-    ChecklistFieldGroupTab.Config,
     ChecklistFieldGroupTab.Add,
   ],
   renderTitle = () => null,
+  renderMenu,
   isCollapsed = false,
   onToggleCollapse,
 }: {
@@ -31,10 +30,13 @@ const ChecklistFieldGroupHeader = ({
   onClickHistory: () => void;
   onClickAdd: () => void;
   onClickMetric: () => void;
-  onClickConfig: () => void;
   activeTab: ChecklistFieldGroupTab;
   activeTabs?: ChecklistFieldGroupTab[];
   renderTitle?: () => React.ReactNode;
+  /** The group's own settings menu (ChecklistFieldGroupMenu) — always reachable regardless of
+   * `activeTabs`, since it isn't a content tab any more (see that component's own doc comment
+   * for why `Config` was removed from the tab row entirely). */
+  renderMenu?: () => React.ReactNode;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }) => {
@@ -77,14 +79,6 @@ const ChecklistFieldGroupHeader = ({
       tab: ChecklistFieldGroupTab.Add,
       label: 'Submit',
     },
-    {
-      icon: 'solar:settings-line-duotone',
-      iconActive: 'solar:settings-bold',
-      onClick: onClickTab(onClickConfig),
-      isActive: activeTab === ChecklistFieldGroupTab.Config,
-      tab: ChecklistFieldGroupTab.Config,
-      label: 'Settings',
-    },
   ];
 
   const tabs = allTabs.filter(tab => activeTabs.includes(tab.tab));
@@ -117,8 +111,9 @@ const ChecklistFieldGroupHeader = ({
               {renderTitle()}
             </Typography.Title>
           </div>
+          {renderMenu?.()}
         </div>
-        
+
         <div className={styles.tabsContainer}>
           {tabs.map(({ icon, iconActive, onClick, isActive, label }, index) => (
             <button

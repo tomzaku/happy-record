@@ -3,10 +3,10 @@ import { FieldGroup } from '@dreamer/global';
 import { calculateRepeat } from './calculateRepeat';
 
 /**
- * Builds a field group's own `repeat` from the days/time picked for it. Shared by every place a
- * group's schedule is edited — the group's own Config tab (ChecklistFieldGroupConfig) and the
- * per-group editor in the template's Schedule modal (GroupScheduleList) — so the "all 7 days
- * means no repeat at all" convention only lives in one place.
+ * Builds a field group's own `repeat` from the days/time picked for it — used by the per-group
+ * editor in the template's Schedule modal (GroupScheduleList), the only place a group's own
+ * schedule is edited (the group's own settings menu, ChecklistFieldGroupMenu, doesn't touch
+ * `repeat` at all — see that component's own doc comment).
  *
  * The time isn't used for anything today — scheduleUtils.ts's isFieldGroupActiveOnDay only ever
  * gates on the day — but it's kept (rather than dropped like the template-level one was) because

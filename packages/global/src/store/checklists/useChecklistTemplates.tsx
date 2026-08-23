@@ -47,7 +47,8 @@ export type FieldGroup = {
   };
   /**
    * Soft delete — set (to the deletion time) instead of removing the group from `fieldGroups`,
-   * by "Delete Group" in ChecklistFieldGroupConfig. There's no undo anywhere else in this app
+   * by "Delete Group" in the group's own settings menu (ChecklistFieldGroupMenu). There's no
+   * undo anywhere else in this app
    * (a write here is immediate and optimistic, same as everywhere — see CLAUDE.md's "online-first"
    * section), so this is what makes a group's own title/note/schedule/fields recoverable at all
    * after a delete, rather than that config being gone the instant the request fires. Every

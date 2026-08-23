@@ -13,16 +13,15 @@ const ChecklistFieldGroupHeader = ({
   onClickHistory,
   onClickAdd,
   onClickMetric,
-  onClickConfig,
   activeTab,
   activeTabs = [
     ChecklistFieldGroupTab.Home,
     ChecklistFieldGroupTab.History,
     ChecklistFieldGroupTab.Metric,
-    ChecklistFieldGroupTab.Config,
     ChecklistFieldGroupTab.Add,
   ],
   renderTitle = () => null,
+  renderMenu,
   isCollapsed = false,
   onToggleCollapse,
 }: {
@@ -30,10 +29,13 @@ const ChecklistFieldGroupHeader = ({
   onClickHistory: () => void;
   onClickAdd: () => void;
   onClickMetric: () => void;
-  onClickConfig: () => void;
   activeTab: ChecklistFieldGroupTab;
   activeTabs?: ChecklistFieldGroupTab[];
   renderTitle?: () => React.ReactNode;
+  /** The group's own settings menu (ChecklistFieldGroupMenu) — always reachable regardless of
+   * `activeTabs`, since it isn't a content tab any more (see that component's own doc comment
+   * for why `Config` was removed from the tab row entirely). */
+  renderMenu?: () => React.ReactNode;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }) => {
@@ -65,25 +67,10 @@ const ChecklistFieldGroupHeader = ({
       isActive: activeTab === ChecklistFieldGroupTab.Metric,
       tab: ChecklistFieldGroupTab.Metric,
     },
-    {
-      icon: 'solar:settings-line-duotone',
-      iconActive: 'solar:settings-bold',
-      onClick: onClickTab(onClickConfig),
-      isActive: activeTab === ChecklistFieldGroupTab.Config,
-      tab: ChecklistFieldGroupTab.Config,
-    },
   ];
 
   const buttons = allButtons.filter(button => activeTabs.includes(button.tab));
   const intl = useIntl();
-
-  // Find the config/settings button
-  const configButton = allButtons.find(
-    button => button.tab === ChecklistFieldGroupTab.Config,
-  );
-  const otherButtons = buttons.filter(
-    button => button.tab !== ChecklistFieldGroupTab.Config,
-  );
 
   return (
     <>
@@ -112,24 +99,9 @@ const ChecklistFieldGroupHeader = ({
               {renderTitle()}
             </Typography.Title>
           </div>
-          {configButton &&
-            activeTabs.includes(ChecklistFieldGroupTab.Config) && (
-              <Icon
-                onClick={configButton.onClick}
-                className={cx(
-                  styles.icon,
-                  configButton.isActive && styles.iconActive,
-                )}
-                width={16}
-                icon={
-                  configButton.isActive
-                    ? configButton.iconActive
-                    : configButton.icon
-                }
-              />
-            )}
+          {renderMenu?.()}
         </div>
-        {otherButtons.map(({ icon, iconActive, onClick, isActive }, index) => (
+        {buttons.map(({ icon, iconActive, onClick, isActive }, index) => (
           <Icon
             key={index}
             onClick={onClick}

@@ -25,9 +25,9 @@ interface ScheduleModalContentProps {
    * a single picker for the whole template. Editing the template's own days directly would be
    * pointless: the store derives them as the union of the groups' own days on every save
    * (getEffectiveDayOfWeek in @dreamer/global's scheduleUtils) regardless of what's picked here,
-   * so this is where that per-group data actually lives and gets edited — the same data
-   * ChecklistFieldGroupConfig's own Schedule section edits, just reachable from one place for
-   * every group instead of going into each group's own Config tab.
+   * so this is where that per-group data actually lives and gets edited — reachable from one
+   * place for every group instead of going into each group's own settings menu (which doesn't
+   * edit `repeat` at all — see ChecklistFieldGroupMenu's own doc comment).
    *
    * May include archived groups — this component filters them out of what GroupScheduleList
    * sees and re-merges its edits back into the full array before calling

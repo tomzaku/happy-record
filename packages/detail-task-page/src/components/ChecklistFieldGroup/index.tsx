@@ -19,7 +19,7 @@ import ChecklistFieldGroupAdd from '../ChecklistFieldGroupAdd';
 import ChecklistFieldGroupHistory from '../ChecklistFieldGroupHistory';
 import ChecklistFieldGroupView from '../ChecklistFieldGroupView';
 import ChecklistFieldMetric from '../ChecklistFieldMetric';
-import ChecklistFieldGroupConfig from '../ChecklistFieldGroupConfig';
+import ChecklistFieldGroupMenu from '../ChecklistFieldGroupMenu';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import ChecklistFieldGroupAddGroup from '../ChecklistFieldGroupAddGroup';
 
@@ -73,8 +73,8 @@ const ChecklistFieldGroup = ({
     if (isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay))) {
       return fieldGroup.title;
     }
-    // Not hidden outright — just marked, so Config/Add stay reachable regardless of the day
-    // being viewed. See scheduleUtils.ts's isFieldGroupActiveOnDay.
+    // Not hidden outright — just marked, so the settings menu/Add stay reachable regardless of
+    // the day being viewed. See scheduleUtils.ts's isFieldGroupActiveOnDay.
     return (
       <span className={styles.notScheduledTitle}>
         {fieldGroup.title}
@@ -82,6 +82,21 @@ const ChecklistFieldGroup = ({
       </span>
     );
   };
+  // Shared by every place that changes one group in place (a note edit, the settings menu's
+  // field/tab/name/collapse changes) — splices `checklistTemplate.fieldGroups` at `index`
+  // directly, so `index` has to be the real position in that array (see renderBody's own note on
+  // why archived groups are filtered out only after pairing with their real index).
+  const updateFieldGroupAt = (index: number, updatedGroup: FieldGroup) => {
+    onUpdateChecklistTemplate({
+      ...checklistTemplate,
+      fieldGroups: [
+        ...checklistTemplate.fieldGroups.slice(0, index),
+        updatedGroup,
+        ...checklistTemplate.fieldGroups.slice(index + 1),
+      ],
+    });
+  };
+
   const renderTab = ({
     fieldGroup,
     fieldDetails,
@@ -98,19 +113,9 @@ const ChecklistFieldGroup = ({
         tabContent = (
           <ChecklistFieldGroupView
             fieldGroup={fieldGroup}
-            onUpdateNote={value => {
-              onUpdateChecklistTemplate({
-                ...checklistTemplate,
-                fieldGroups: [
-                  ...checklistTemplate.fieldGroups.slice(0, index),
-                  {
-                    ...checklistTemplate.fieldGroups[index],
-                    note: value,
-                  },
-                  ...checklistTemplate.fieldGroups.slice(index + 1),
-                ],
-              });
-            }}
+            onUpdateNote={value =>
+              updateFieldGroupAt(index, { ...checklistTemplate.fieldGroups[index], note: value })
+            }
           />
         );
         break;
@@ -154,55 +159,13 @@ const ChecklistFieldGroup = ({
         );
         break;
       }
-      case ChecklistFieldGroupTab.Config: {
-        tabContent = (
-          <ChecklistFieldGroupConfig
-            fieldGroup={fieldGroup}
-            onUpdateFieldGroup={updatedGroup => {
-              onUpdateChecklistTemplate({
-                ...checklistTemplate,
-                fieldGroups: [
-                  ...checklistTemplate.fieldGroups.slice(0, index),
-                  updatedGroup,
-                  ...checklistTemplate.fieldGroups.slice(index + 1),
-                ],
-              });
-            }}
-            selectedFields={fieldGroup.fields}
-            onSelectedFieldsChange={selectedFields => {
-              onUpdateChecklistTemplate({
-                ...checklistTemplate,
-                fieldGroups: [
-                  ...checklistTemplate.fieldGroups.slice(0, index),
-                  { ...fieldGroup, fields: selectedFields },
-                  ...checklistTemplate.fieldGroups.slice(index + 1),
-                ],
-              });
-            }}
-            availableFields={fields.map(f => f.id)}
-            allRecordFields={fields}
-            onFieldAdded={onFieldAdded}
-          />
-        );
-        break;
-      }
       default: {
         tabContent = (
           <ChecklistFieldGroupView
             fieldGroup={fieldGroup}
-            onUpdateNote={value => {
-              onUpdateChecklistTemplate({
-                ...checklistTemplate,
-                fieldGroups: [
-                  ...checklistTemplate.fieldGroups.slice(0, index),
-                  {
-                    ...checklistTemplate.fieldGroups[index],
-                    note: value,
-                  },
-                  ...checklistTemplate.fieldGroups.slice(index + 1),
-                ],
-              });
-            }}
+            onUpdateNote={value =>
+              updateFieldGroupAt(index, { ...checklistTemplate.fieldGroups[index], note: value })
+            }
           />
         );
         break;
@@ -255,7 +218,6 @@ const ChecklistFieldGroup = ({
                 fieldGroup.activeTabs ?? [
                   ChecklistFieldGroupTab.Home,
                   ChecklistFieldGroupTab.Metric,
-                  ChecklistFieldGroupTab.Config,
                   ChecklistFieldGroupTab.Add,
                 ]
               }
@@ -283,13 +245,20 @@ const ChecklistFieldGroup = ({
                   [fieldGroup.id]: ChecklistFieldGroupTab.Metric,
                 })
               }
-              onClickConfig={() =>
-                setActiveTab({
-                  ...activeTab,
-                  [fieldGroup.id]: ChecklistFieldGroupTab.Config,
-                })
-              }
               renderTitle={() => renderTitle(fieldGroup)}
+              renderMenu={() => (
+                <ChecklistFieldGroupMenu
+                  fieldGroup={fieldGroup}
+                  onUpdateFieldGroup={updatedGroup => updateFieldGroupAt(index, updatedGroup)}
+                  selectedFields={fieldGroup.fields}
+                  onSelectedFieldsChange={selectedFields =>
+                    updateFieldGroupAt(index, { ...fieldGroup, fields: selectedFields })
+                  }
+                  availableFields={fields.map(f => f.id)}
+                  allRecordFields={fields}
+                  onFieldAdded={onFieldAdded}
+                />
+              )}
               isCollapsed={isCollapsed}
               onToggleCollapse={() => toggleCollapse(fieldGroup.id)}
             />

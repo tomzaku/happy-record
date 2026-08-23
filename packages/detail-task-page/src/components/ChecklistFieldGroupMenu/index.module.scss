@@ -1,41 +1,120 @@
 @use '@moon-ui/app-scss/color' as *;
 @use '@moon-ui/app-scss/metric' as *;
 
-.container {
-  padding: $spacing-lg;
+// The "⋮"-equivalent trigger in the group header — kept as a plain icon button rather than the
+// old tab button styling, since it no longer switches which body content is shown.
+.trigger {
   display: flex;
-  flex-direction: column;
-  gap: $spacing-xl;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xs;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-description-color);
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
 }
 
-.section {
+// `position: fixed`, not absolute — the trigger sits inside a card with `overflow: hidden`
+// (ChecklistFieldGroup's own .cardContainer), which would clip an absolutely-positioned popup
+// the moment it grew taller than the remaining card space. Fixed positioning (computed from the
+// trigger's own getBoundingClientRect at open time) is the same technique BottomModal itself
+// already relies on to escape that same clipping.
+.menuOverlay {
+  position: fixed;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  z-index: 1000;
+  cursor: default;
+}
+
+.menu {
+  position: fixed;
+  z-index: 1001;
+  min-width: 180px;
+  padding: $spacing-xs;
+  background: var(--card-background);
+  border: 1px solid var(--card-border, var(--division-color));
+  border-radius: 10px;
+  box-shadow: 0 4px 16px var(--card-shadow, rgba(0, 0, 0, 0.15));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-color);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.menuItemDanger {
+  color: var(--error-color, #e5484d);
+}
+
+.modalContainer {
+  background: var(--card-background);
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: $spacing-md $spacing-lg $spacing-sm $spacing-lg;
+  background: var(--card-background);
+  border-radius: 16px 16px 0 0;
+  position: relative;
+  border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  flex-shrink: 0;
+  min-height: 50px;
+}
+
+// Not a "Save" — every control here already saved the instant it changed, this just dismisses.
+.doneButton {
+  min-width: 60px;
+  padding: $spacing-sm $spacing-md;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  position: absolute;
+  right: $spacing-lg;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.modalContent {
+  padding: $spacing-sm $spacing-lg $spacing-xl;
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
 }
 
-.sectionTitle {
-  color: var(--text-title-primary-color);
-  font-weight: 600;
-  margin-bottom: 0;
-}
-
-.sectionDescription {
+.dialogDescription {
   font-size: 12px;
   color: var(--text-description-color);
-}
-
-.inputGroup {
-  display: flex;
-  gap: $spacing-sm;
-  align-items: center;
-}
-
-// A thin rule between sections instead of relying on gap alone — the panel reads as one
-// undifferentiated scroll without it.
-.divider {
-  height: 1px;
-  background: var(--division-color);
 }
 
 .tabList {
@@ -62,8 +141,7 @@
 }
 
 // The "which tab opens first" marker, folded into the same row as its "is it shown at all"
-// checkbox instead of a separate button row above (Default Tab used to be its own section,
-// duplicating this exact list of tabs).
+// checkbox instead of a separate list.
 .defaultToggle {
   display: flex;
   align-items: center;
@@ -97,14 +175,8 @@
   }
 }
 
-.sectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: $spacing-sm;
-}
-
 .addFieldButton {
+  align-self: flex-start;
   font-size: 12px;
   padding: $spacing-xs $spacing-sm;
   display: flex;
@@ -181,7 +253,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1002;
 }
 
 .addFieldPanelContent {
@@ -221,12 +293,4 @@
   &:hover {
     background-color: var(--surface-secondary);
   }
-}
-
-.deleteGroupButton {
-  align-self: flex-start;
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  color: var(--error-color, #e5484d);
 }
