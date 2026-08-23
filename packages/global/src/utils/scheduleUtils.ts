@@ -108,6 +108,33 @@ export const isFieldGroupActiveOnDay = (
   return days.includes(String(date.getDay()));
 };
 
+const SHORT_DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/**
+ * The next calendar day (strictly after `fromDate`) a field group's own schedule is next due —
+ * "Tomorrow" for the very next day, otherwise the short weekday name (e.g. "Wed"). Mirrors
+ * isFieldGroupActiveOnDay's day-of-week-only convention. A group with no `repeat`, or
+ * `dayOfWeek === '*'`, is active every day, so there's no "next" to report — returns undefined,
+ * same as a `dayOfWeek` that (shouldn't, but defensively) names no day at all.
+ */
+export const getNextScheduledDayLabel = (
+  repeat: { dayOfWeek: string } | undefined,
+  fromDate: Date,
+): string | undefined => {
+  if (!repeat?.dayOfWeek || repeat.dayOfWeek === '*') return undefined;
+  const days = repeat.dayOfWeek.split(',').map(d => d.trim());
+  if (days.length === 0) return undefined;
+
+  for (let offset = 1; offset <= 7; offset++) {
+    const candidate = new Date(fromDate);
+    candidate.setDate(candidate.getDate() + offset);
+    if (days.includes(String(candidate.getDay()))) {
+      return offset === 1 ? 'Tomorrow' : SHORT_DAY_NAMES[candidate.getDay()];
+    }
+  }
+  return undefined;
+};
+
 /**
  * The set of days a template's own `Checklist` instance should actually exist on. When the
  * template has field groups, this is *derived* — the union of every group's own `dayOfWeek` —

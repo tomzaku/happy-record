@@ -12,10 +12,13 @@
   opacity: 0.6;
 }
 
+// Badge sits on its own line below the title instead of inline next to it — inline ate up
+// enough horizontal space to crowd the tab icons/Add button on narrower headers.
 .notScheduledTitle {
-  display: inline-flex;
-  align-items: center;
-  gap: $spacing-xs;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 .notScheduledBadge {
@@ -25,6 +28,7 @@
   background: var(--surface-secondary);
   border-radius: 999px;
   padding: 2px $spacing-sm;
+  white-space: nowrap;
 }
 
 .hrContainer {

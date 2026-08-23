@@ -4,6 +4,7 @@ import {
   ChecklistTemplate,
   FieldGroup,
   getActiveFieldGroups,
+  getNextScheduledDayLabel,
   isFieldGroupActiveOnDay,
   useChecklist,
 } from '@dreamer/global';
@@ -74,11 +75,16 @@ const ChecklistFieldGroup = ({
       return fieldGroup.title;
     }
     // Not hidden outright — just marked, so the settings menu/Add stay reachable regardless of
-    // the day being viewed. See scheduleUtils.ts's isFieldGroupActiveOnDay.
+    // the day being viewed. See scheduleUtils.ts's isFieldGroupActiveOnDay. The badge sits on
+    // its own line below the title rather than inline next to it — inline pushed the tab
+    // icons/Add button too far right on narrower headers.
+    const nextDayLabel = getNextScheduledDayLabel(fieldGroup.repeat, new Date(currentDay));
     return (
       <span className={styles.notScheduledTitle}>
-        {fieldGroup.title}
-        <span className={styles.notScheduledBadge}>Not scheduled today</span>
+        <span>{fieldGroup.title}</span>
+        <span className={styles.notScheduledBadge}>
+          Not scheduled today{nextDayLabel ? ` · Next ${nextDayLabel}` : ''}
+        </span>
       </span>
     );
   };
@@ -198,6 +204,14 @@ const ChecklistFieldGroup = ({
     return checklistTemplate.fieldGroups
       .map((fieldGroup, index) => ({ fieldGroup, index }))
       .filter(({ fieldGroup }) => !fieldGroup.archivedAt)
+      // Groups scheduled today float to the top; a stable sort keeps everything else in its
+      // existing relative order (the splice indices above are already captured, so reordering
+      // here only changes render order, never which position an update lands on).
+      .sort((a, b) => {
+        const aActive = isFieldGroupActiveOnDay(a.fieldGroup.repeat, new Date(currentDay));
+        const bActive = isFieldGroupActiveOnDay(b.fieldGroup.repeat, new Date(currentDay));
+        return aActive === bActive ? 0 : aActive ? -1 : 1;
+      })
       .map(({ fieldGroup, index }) => {
         const fieldDetails = fieldGroup.fields
           .map(fieldId => fields.find(field => field.id === fieldId))
