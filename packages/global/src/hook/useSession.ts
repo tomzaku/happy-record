@@ -124,6 +124,30 @@ export const useSession = () => {
         if (rawHash.includes('error_code=identity_already_exists')) {
           window.location.hash = '/';
         }
+
+        // Without this, the device is left sitting anonymous: nothing in the
+        // UI changes (the button still reads "Sign in with Google" — see
+        // AccountStatus.tsx/setting-page-ui, neither shows this failure),
+        // so a user has no reason to know a *second* click is what actually
+        // signs them in. That's the bug this closes — a second device
+        // syncing only the handful of templates it created locally itself,
+        // never the account's real set, because it silently never finished
+        // signing in. Retrying immediately makes the two-redirect handshake
+        // invisible instead of relying on the user to notice and retry.
+        // Not awaited/returned-early on: success navigates the page away
+        // regardless of anything below, and a failure (offline, misconfigured)
+        // must still fall through to the normal anonymous-session flow below
+        // rather than leaving `ready` stuck false forever.
+        supabase.auth
+          .signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname,
+            },
+          })
+          .then(({ error }) => {
+            if (error) console.warn('[dreamer] Google re-sign-in failed:', error.message);
+          });
       }
     }
 

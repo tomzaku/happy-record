@@ -10,30 +10,29 @@ import { useRecordField } from '../store/record-field/useRecordField';
 import type { AiGeneratedChecklistTemplate, AiGeneratedGroup } from '../store/checklists/aiChecklistTemplateApi';
 
 /**
- * `FieldGroup.note` is a Yoopta editor document (see ChecklistFieldGroupView / NoteEditor's
- * `YooptaContentValue` — `Record<string, { id, type, value, meta }>`, each block's `value`
- * a Slate node tree), not a plain string. The AI only returns plain guidance text (see
- * ai-checklist-template's prompt), so this wraps it in the smallest valid one-paragraph
- * document by hand — `packages/global` has no dependency on `@yoopta/editor`'s types, so the
- * shape is reproduced structurally rather than imported. An empty note stays `null`, same as
- * a manually created group (see ChecklistFieldGroupAddGroupDesktop's `note: null`).
+ * `FieldGroup.note` is an Editor.js `OutputData` document, NOT a Yoopta document — despite
+ * `ChecklistFieldGroupView`'s own `as YooptaContentValue` cast suggesting otherwise. That cast
+ * is stale/misleading: `@moon-ui/note-editor`'s actual default export (`index.tsx`) renders
+ * `EditorJs.tsx` (backed by `@editorjs/editorjs`) inside an error boundary — `YooptaEditor.tsx`,
+ * `LexicalEditor.tsx` and `BlockNote.tsx` in that same package are dead, unwired alternates.
+ * Confirmed empirically: a hand-built Yoopta document (matching `@yoopta/editor`'s own
+ * `Blocks.buildBlockData` shape byte-for-byte) still rendered as an empty "Start writing your
+ * note..." placeholder, while this shape renders the real text immediately.
+ *
+ * The AI only returns plain guidance text (see ai-checklist-template's prompt), so this wraps
+ * it in the smallest valid one-block Editor.js document by hand — `packages/global` has no
+ * dependency on `@editorjs/editorjs`'s types, so the shape (`{ time, blocks, version }`, a
+ * `paragraph` block's data being `{ text }`) is reproduced structurally rather than imported.
+ *
+ * An empty note stays `null`, same as a manually created group (see
+ * ChecklistFieldGroupAddGroupDesktop's `note: null`).
  */
 function buildNoteFromText(text: string): unknown {
   if (!text.trim()) return null;
-  const blockId = v4();
   return {
-    [blockId]: {
-      id: blockId,
-      type: 'paragraph',
-      value: [
-        {
-          id: v4(),
-          type: 'paragraph',
-          children: [{ text }],
-        },
-      ],
-      meta: { order: 0, depth: 0 },
-    },
+    time: Date.now(),
+    blocks: [{ type: 'paragraph', data: { text } }],
+    version: '2.31.0',
   };
 }
 
