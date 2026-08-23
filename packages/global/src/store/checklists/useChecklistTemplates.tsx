@@ -228,7 +228,12 @@ export const useChecklistTemplates = () => {
       // this list, not by `checklistTemplate` itself.
       if (newIds.length) {
         setSelectedChecklist(prev => {
-          const additions = newIds.filter(id => !prev.includes(id));
+          // `newIds` itself can't carry a duplicate within one call (see
+          // above), but dedupe defensively anyway — this is the same list
+          // getChecklistTemplateIdsByGivingDate filters over directly, so a
+          // repeated id here means a template's checklist rendering twice
+          // for the same day everywhere that reads it.
+          const additions = Array.from(new Set(newIds)).filter(id => !prev.includes(id));
           return additions.length ? [...prev, ...additions] : prev;
         });
       }
@@ -342,11 +347,6 @@ export const useChecklistTemplates = () => {
     setChecklistTemplate(newChecklistTemplate);
     removeChecklistTemplateApi(id);
     // Also remove from selected templates if it was selected
-    console.log("selectedChecklistTemplates", {
-      selectedChecklistTemplates,
-      id,
-      newChecklistTemplate,
-    })
     if (selectedChecklistTemplates.includes(id)) {
       updateSelectedChecklistTemplate(
         selectedChecklistTemplates.filter(templateId => templateId !== id),
@@ -355,7 +355,16 @@ export const useChecklistTemplates = () => {
   };
 
   const updateSelectedChecklistTemplate = (checklistIds: string[] = []) => {
-    setSelectedChecklist(checklistIds);
+    // Dedupe here, once, rather than trusting every caller — this is the
+    // single choke point every write to the list goes through (the
+    // checkbox in checklist-template-page-ui, addChecklistTemplate below).
+    // getChecklistTemplateIdsByGivingDate filters this list directly with
+    // no dedup of its own, so a duplicate id here renders that template's
+    // checklist more than once for the same day, everywhere it's read. This
+    // also self-heals a list that already picked up a duplicate from an
+    // older client build, rather than requiring the id to be manually
+    // cleared out of localStorage.
+    setSelectedChecklist(Array.from(new Set(checklistIds)));
   };
 
   // useCallback'd (not a plain closure) so a consumer's own useSyncedSelector

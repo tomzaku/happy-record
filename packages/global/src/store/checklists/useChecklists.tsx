@@ -3,6 +3,7 @@ import { useSessionStore, useSession } from '../../hook';
 import { useChecklistTemplates } from './useChecklistTemplates';
 import { v4 } from 'uuid';
 import { startOfDay, endOfDay } from 'date-fns';
+import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
@@ -131,9 +132,17 @@ export const useChecklist = () => {
           const template =
           checklistTemplate[existingChecklist.checklistTemplateId];
 
-        const hasSchedule =
-          template?.repeat?.dayOfWeek &&
-          template.repeat.dayOfWeek.trim() !== '';
+        // Must agree with checklistTemplatesByGivingDateIds above on what
+        // "scheduled" means, or a template whose schedule lives entirely on
+        // its field groups (no template-level `repeat` set — the normal
+        // shape once a template has any field groups, see
+        // getEffectiveDayOfWeek's own comment) reads as unscheduled here
+        // while being correctly scheduled there. That double-counts it: it
+        // shows up once from `scheduledChecklists` (found by id, today's
+        // real row) *and* again here (its `startedAt` falls today too),
+        // rendering the same template's checklist twice for the day.
+        const effectiveDayOfWeek = getEffectiveDayOfWeek(template ?? {});
+        const hasSchedule = !!effectiveDayOfWeek && effectiveDayOfWeek.trim() !== '';
         if(hasSchedule) return false;
 
         // A one-off (unscheduled) checklist belongs to exactly the day it
