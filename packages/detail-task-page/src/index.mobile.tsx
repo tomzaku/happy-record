@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Checklist,
+  checklistInstanceId,
   useChecklist,
   useChecklistTemplates,
   useSyncedSelector,
@@ -49,8 +50,12 @@ const DetailTaskPageMobile = () => {
       const checklist = getChecklistDetail(checklistId);
       setChecklist(checklist);
     } else {
-      // Should create checklist id if non exist
+      // Should create checklist id if non exist. Deterministic id — see
+      // index.desktop.tsx's matching effect and useChecklists.tsx's
+      // checklistInstanceId for why (this effect re-running before its own
+      // setSearchParams lands should upsert, not duplicate).
       const checklist = addChecklist({
+        id: checklistInstanceId(id, new Date(currentDay)),
         title: checklistTemplate.title,
         checklistTemplateId: id,
         startedAt: new Date(currentDay).toISOString(),

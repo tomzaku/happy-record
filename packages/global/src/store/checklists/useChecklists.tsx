@@ -1,8 +1,8 @@
 import React from 'react';
 import { useSessionStore, useSession } from '../../hook';
 import { useChecklistTemplates } from './useChecklistTemplates';
-import { v4 } from 'uuid';
-import { startOfDay, endOfDay, addDays } from 'date-fns';
+import { v4, v5 as uuidv5 } from 'uuid';
+import { startOfDay, endOfDay, addDays, format } from 'date-fns';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
@@ -32,6 +32,28 @@ const fetchedScopes = new Set<string>();
 
 const dayScopeKey = (userId: string | undefined, date: Date) =>
   JSON.stringify({ userId, day: date.toDateString() });
+
+// A scheduled template's `Checklist` instance for a given day is naturally
+// identified by (checklistTemplateId, calendar day) — the whole app assumes
+// at most one exists per day (computeChecklistsForDate's own
+// `checklistsByGivingDate.find` below). A random `v4()` id for that instance
+// only holds that invariant if nothing ever races the fetch that would have
+// found the real row first — and clicking a scheduled checklist's checkbox,
+// or opening `detail-task-page`, both can, before this day's own GET has
+// resolved. Deriving the id from the natural key instead means every racing
+// "not found, let's create one" attempt converges on the *same* id, so
+// `saveChecklist`'s upsert just updates one row instead of inserting a new
+// one each time — the same fix CLAUDE.md's `fields.id` note already
+// describes: a client-generated id must be unique per its own scope, and
+// when that scope has a natural key, derive the id from it rather than
+// hoping concurrent writers never collide. Namespace is an arbitrary fixed
+// UUID (uuidv5 requires one); `format` (not `toDateString`/
+// `toLocaleDateString`) keeps the day key locale-independent, so the same
+// (template, day) hashes identically regardless of the device's locale.
+const CHECKLIST_INSTANCE_NAMESPACE = '2f21ee1e-6b0a-4a5b-9b0b-2b9a6a2e6b62';
+export function checklistInstanceId(checklistTemplateId: string, date: Date): string {
+  return uuidv5(`${checklistTemplateId}:${format(date, 'yyyy-MM-dd')}`, CHECKLIST_INSTANCE_NAMESPACE);
+}
 
 export const useChecklist = () => {
   const [checklist, setChecklist] = useSessionStore<Record<string, Checklist>>(CHECKLIST_KEY, {});
@@ -137,7 +159,7 @@ export const useChecklist = () => {
             return foundChecklist;
           } else {
             return {
-              id: v4(),
+              id: checklistInstanceId(id, date),
               clientOnly: true,
               title: checklistTemplate[id].title,
               checklistTemplateId: id,
@@ -267,8 +289,15 @@ export const useChecklist = () => {
   );
 
   const addChecklist = React.useCallback(
-    (checklistToAdd: Omit<Checklist, 'id' | 'updatedAt'>) => {
-      const id = v4();
+    (checklistToAdd: Omit<Checklist, 'id' | 'updatedAt'> & { id?: string }) => {
+      // Callers that already know the natural (checklistTemplateId, day) key
+      // — detail-task-page's "create today's instance if one doesn't exist
+      // yet" effect — pass `checklistInstanceId(...)` explicitly so a
+      // re-run of that effect (a remount before its own `setSearchParams`
+      // landed, a race with this day's own fetch) upserts the same row
+      // instead of minting a new one. Falls back to a fresh `v4()` for a
+      // genuine one-off (AddInlineTask) with no such natural key.
+      const id = checklistToAdd.id ?? v4();
       const newChecklist: Checklist = {
         ...checklistToAdd,
         id,

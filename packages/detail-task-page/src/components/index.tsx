@@ -4,6 +4,7 @@ import RecordDay from './components/RecordDay';
 import {
   ChecklistTemplate,
   FieldGroup,
+  checklistInstanceId,
   useChecklist,
   useChecklistTemplates,
 } from '@dreamer/global';
@@ -37,9 +38,13 @@ const DetailTaskPage = () => {
   React.useEffect(() => {
     const checklistTemplate = getChecklistTemplate(id);
     setChecklistTemplate(checklistTemplate);
-    // Should create checklist id if non exist
+    // Should create checklist id if non exist. Deterministic id — see
+    // index.desktop.tsx's matching effect and useChecklists.tsx's
+    // checklistInstanceId for why (this effect re-running before its own
+    // setSearchParams lands should upsert, not duplicate).
     if (!checklistId && checklistTemplate) {
       const checklist = addChecklist({
+        id: checklistInstanceId(id, new Date(currentDay)),
         title: checklistTemplate.title,
         checklistTemplateId: id,
         startedAt: new Date(currentDay).toISOString(),

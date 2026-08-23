@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Checklist,
+  checklistInstanceId,
   useChecklist,
   useChecklistTemplates,
   useSyncedSelector,
@@ -60,8 +61,14 @@ const DetailTaskPageDesktop = () => {
       const checklist = getChecklistDetail(checklistId);
       setChecklist(checklist);
     } else {
-      // Should create checklist id if non exist
+      // Should create checklist id if non exist. A deterministic id (see
+      // checklistInstanceId) instead of a fresh random one: this effect
+      // re-running before its own setSearchParams below has landed (a
+      // remount, React Strict Mode's dev double-invoke) upserts the same
+      // row instead of minting a duplicate — see useChecklists.tsx's own
+      // comment on the same fix for the home page's checkbox.
       const checklist = addChecklist({
+        id: checklistInstanceId(id, new Date(currentDay)),
         title: checklistTemplate.title,
         checklistTemplateId: id,
         startedAt: new Date(currentDay).toISOString(),
