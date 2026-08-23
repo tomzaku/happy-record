@@ -30,6 +30,7 @@ const CoreChecklistForm = ({
   onSubmit,
   onClickDeleteButton,
   classes,
+  weeklyHobbiesReadOnlyNote,
 }: {
   initialValues: FormState;
   onSubmit: (form: FormState) => void;
@@ -41,6 +42,9 @@ const CoreChecklistForm = ({
     submitButton?: string;
     deleteButton?: string;
   };
+  /** See SchedulingGroup's own prop of the same name — set when editing a template that
+   * already has field groups, whose own schedules determine this template's days instead. */
+  weeklyHobbiesReadOnlyNote?: string;
 }) => {
   const [form, setForm] = React.useState<FormState>(initialValues);
   const {
@@ -110,6 +114,7 @@ const CoreChecklistForm = ({
           setDate={setStartedAt}
           time={selectedTime}
           setTime={setSelectedTime}
+          weeklyHobbiesReadOnlyNote={weeklyHobbiesReadOnlyNote}
         />
         <Hr />
 

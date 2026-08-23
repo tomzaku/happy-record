@@ -3,6 +3,7 @@ import { Icon } from '@moon-ui/icon/Icon';
 import List from '@moon-ui/list';
 import DatePicker from '@moon-ui/date-picker';
 import MultiSelectButton from '@moon-ui/button/src/MultiSelectButton';
+import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
 import { a, useSpring } from '@react-spring/web';
 import { Day } from '@dreamer/tasks-page-common';
@@ -16,6 +17,14 @@ interface ScheduleModalContentProps {
   tempTime: string;
   setTempTime: (time: string) => void;
   isDesktop?: boolean;
+  /**
+   * When set, the day picker renders read-only with this note instead of a MultiSelectButton —
+   * for a template whose days are derived from its field groups' own schedules rather than
+   * edited here directly (see getEffectiveDayOfWeek in @dreamer/global's scheduleUtils). Editing
+   * days on a template with field groups would be a silent no-op: the store resyncs
+   * `repeat.dayOfWeek` from the groups on every save regardless of what's picked here.
+   */
+  weeklyHobbiesReadOnlyNote?: string;
 }
 
 const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
@@ -26,6 +35,7 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
   tempTime,
   setTempTime,
   isDesktop = false,
+  weeklyHobbiesReadOnlyNote,
 }) => {
   const intl = useIntl();
 
@@ -99,19 +109,25 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
             maxHeight: animationStyles.maxHeight,
           }}
         >
-          <MultiSelectButton
-            values={tempWeeklyHobbies}
-            setValues={setTempWeeklyHobbies}
-            options={[
-              { label: 'Mon', value: Day.Mon },
-              { label: 'Tue', value: Day.Tue },
-              { label: 'Thu', value: Day.Thu },
-              { label: 'Wed', value: Day.Wed },
-              { label: 'Fri', value: Day.Fri },
-              { label: 'Sat', value: Day.Sat },
-              { label: 'Sun', value: Day.Sun },
-            ]}
-          />
+          {weeklyHobbiesReadOnlyNote ? (
+            <Typography.Text className={styles.derivedScheduleNote}>
+              {weeklyHobbiesReadOnlyNote}
+            </Typography.Text>
+          ) : (
+            <MultiSelectButton
+              values={tempWeeklyHobbies}
+              setValues={setTempWeeklyHobbies}
+              options={[
+                { label: 'Mon', value: Day.Mon },
+                { label: 'Tue', value: Day.Tue },
+                { label: 'Thu', value: Day.Thu },
+                { label: 'Wed', value: Day.Wed },
+                { label: 'Fri', value: Day.Fri },
+                { label: 'Sat', value: Day.Sat },
+                { label: 'Sun', value: Day.Sun },
+              ]}
+            />
+          )}
         </a.div>
       </div>
 

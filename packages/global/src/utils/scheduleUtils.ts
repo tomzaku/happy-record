@@ -109,6 +109,37 @@ export const isFieldGroupActiveOnDay = (
 };
 
 /**
+ * The set of days a template's own `Checklist` instance should actually exist on. When the
+ * template has field groups, this is *derived* — the union of every group's own `dayOfWeek` —
+ * rather than trusting the template's separately stored `repeat.dayOfWeek`, so a group can never
+ * end up scheduled for a day the template itself doesn't generate a `Checklist` on (which would
+ * make that group unreachable, silently — see the "two schedules" note in
+ * useChecklistTemplates.tsx). A group with no `repeat`, or `dayOfWeek: '*'`, has no day
+ * restriction, so it alone forces the whole result to `'*'`. Falls back to the template's own
+ * `repeat.dayOfWeek` when there are no field groups at all — a plain `completedAt`-only
+ * checklist has nothing to union.
+ *
+ * Callers that gate on this (getChecklistTemplateIdsByGivingDate) should always call this rather
+ * than reading `repeat.dayOfWeek` directly — that's what actually keeps the two schedules from
+ * drifting apart, not remembering to sync them on every write.
+ */
+export const getEffectiveDayOfWeek = (template: {
+  repeat?: { dayOfWeek?: string };
+  fieldGroups?: { repeat?: { dayOfWeek?: string } }[];
+}): string | undefined => {
+  const groups = template.fieldGroups ?? [];
+  if (groups.length === 0) return template.repeat?.dayOfWeek;
+
+  const allDays = new Set<string>();
+  for (const group of groups) {
+    const dayOfWeek = group.repeat?.dayOfWeek;
+    if (!dayOfWeek || dayOfWeek === '*') return '*';
+    for (const day of dayOfWeek.split(',')) allDays.add(day.trim());
+  }
+  return Array.from(allDays).sort().join(',');
+};
+
+/**
  * Formats tags array into a readable string
  * @param tags - Array of tag strings
  * @returns Formatted tags string or 'No tags'

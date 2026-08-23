@@ -1,5 +1,10 @@
 import React from 'react';
-import { ChecklistTemplate, useChecklistTemplates } from '@dreamer/global';
+import {
+  ChecklistTemplate,
+  useChecklistTemplates,
+  getEffectiveDayOfWeek,
+  formatDaysOfWeek,
+} from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import List from '@moon-ui/list';
 import Card from '@moon-ui/card';
@@ -72,7 +77,18 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
     return 'Not set';
   };
 
+  // Once a template has field groups, its own day-of-week is derived from
+  // the union of the groups' own schedules (see @dreamer/global's
+  // getEffectiveDayOfWeek) rather than edited here — otherwise a group
+  // could end up scheduled for a day the template itself never generates a
+  // Checklist instance on, making it silently unreachable.
+  const hasFieldGroups = (checklistTemplate.fieldGroups?.length ?? 0) > 0;
+
   const formatDisplayDays = () => {
+    if (hasFieldGroups) {
+      return formatDaysOfWeek(getEffectiveDayOfWeek(checklistTemplate) ?? '*');
+    }
+
     const days = getDaysFromRepeat(checklistTemplate.repeat);
     if (days.length === 0) return 'Not set';
     if (days.length === 7) return 'Every day';
@@ -343,6 +359,11 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
               tempTime={tempTime}
               setTempTime={setTempTime}
               isDesktop={false}
+              weeklyHobbiesReadOnlyNote={
+                hasFieldGroups
+                  ? `Determined by each group's own schedule: ${formatDisplayDays()}`
+                  : undefined
+              }
             />
           </div>
         }

@@ -195,6 +195,11 @@
   margin-top: $spacing-sm;
 }
 
+.derivedScheduleNote {
+  color: var(--text-secondary, #666);
+  font-size: 13px;
+}
+
 .dateInput {
   padding: $spacing-xs $spacing-md;
   font-size: toRem(16px);

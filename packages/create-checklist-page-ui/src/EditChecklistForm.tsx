@@ -1,6 +1,11 @@
 import React, { startTransition } from 'react';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
-import { useChecklistTemplates, useChecklist } from '@dreamer/global';
+import {
+  useChecklistTemplates,
+  useChecklist,
+  getEffectiveDayOfWeek,
+  formatDaysOfWeek,
+} from '@dreamer/global';
 import { useNavigate, useParams } from 'react-router-dom';
 import CoreChecklistForm, { FormState } from './CoreChecklistForm';
 import { calculateRepeat } from './calculateRepeat';
@@ -75,6 +80,13 @@ const EditChecklistForm = () => {
     setDeleteModalVisible(false);
   };
   if (!template) return null;
+
+  // Same "derived, not editable here" rule as detail-task-page's ChecklistGenericInfo — once
+  // the template has field groups, its day-of-week is the union of their own schedules
+  // (getEffectiveDayOfWeek), so editing it via this form's weekly-hobbies picker would be a
+  // silent no-op the moment it's saved (see withSyncedRepeat in useChecklistTemplates.tsx).
+  const hasFieldGroups = (template.fieldGroups?.length ?? 0) > 0;
+
   return (
     <>
       <BackHeader
@@ -122,6 +134,13 @@ const EditChecklistForm = () => {
           fieldGroups: template.fieldGroups,
           tags: template.tags || [],
         }}
+        weeklyHobbiesReadOnlyNote={
+          hasFieldGroups
+            ? `Determined by each group's own schedule: ${formatDaysOfWeek(
+                getEffectiveDayOfWeek(template) ?? '*',
+              )}`
+            : undefined
+        }
       />
     </>
   );

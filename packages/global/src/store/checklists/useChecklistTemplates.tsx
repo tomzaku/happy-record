@@ -4,6 +4,7 @@ import { startOfDay } from 'date-fns';
 import { useLocalStorage } from '../../hook/useLocalStorage';
 import { useSessionStore } from '../../hook/useSessionStore';
 import { useSession } from '../../hook/useSession';
+import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
@@ -28,11 +29,15 @@ export type FieldGroup = {
   activeTabs?: number[];
   collapseDefault?: boolean;
   /**
-   * Which day(s)/time this group is actually due, independent of the template's own `repeat` —
-   * a "Gym" template can show a Push group Mon/Thu and a Pull group Tue/Fri. Day/time only (no
-   * `dayOfMonth`/`month`/`startedAt` — those live at the template level, where they're actually
-   * used). Absent, or `dayOfWeek: '*'`, means "every day" — see scheduleUtils.ts's
-   * `isFieldGroupActiveOnDay`. `fieldGroups` is jsonb end to end (see
+   * Which day(s)/time this group is actually due — a "Gym" template can show a Push group
+   * Mon/Thu and a Pull group Tue/Fri. Day/time only (no `dayOfMonth`/`month`/`startedAt` — those
+   * live at the template level, where they're actually used). Absent, or `dayOfWeek: '*'`, means
+   * "every day" — see scheduleUtils.ts's `isFieldGroupActiveOnDay`, which gates whether this
+   * group renders on a given day. The template's own `repeat.dayOfWeek` is *derived* from the
+   * union of every group's `dayOfWeek` when there are any field groups (scheduleUtils.ts's
+   * `getEffectiveDayOfWeek`) rather than edited independently — otherwise a group could end up
+   * scheduled for a day the template itself never generates a `Checklist` instance on, making it
+   * silently unreachable. `fieldGroups` is jsonb end to end (see
    * supabase/functions/_shared/checklistTemplates.ts), so this needed no migration.
    */
   repeat?: {
@@ -114,6 +119,23 @@ function diffFieldGroups(
   return { patches };
 }
 
+/**
+ * Keeps the stored `repeat.dayOfWeek` in sync with the derived union of the template's own
+ * field-group schedules (getEffectiveDayOfWeek). Gating itself never trusts this stored value
+ * (see getChecklistTemplateIdsByGivingDate below) — this is only for the handful of consumers
+ * that still read `repeat.dayOfWeek` directly for display (share cards, ChecklistToday's
+ * "today's schedule" label), so those don't show a stale value once a group's own schedule
+ * changes. Only touches `repeat` when one is already set on the template — a template with
+ * field-group schedules but no template-level `repeat` at all has nothing to sync into, and the
+ * derived gate works from the field groups either way.
+ */
+function withSyncedRepeat(template: ChecklistTemplate): ChecklistTemplate {
+  if (!template.repeat || !template.fieldGroups?.length) return template;
+  const dayOfWeek = getEffectiveDayOfWeek(template);
+  if (dayOfWeek === undefined || dayOfWeek === template.repeat.dayOfWeek) return template;
+  return { ...template, repeat: { ...template.repeat, dayOfWeek } };
+}
+
 export const useChecklistTemplates = () => {
   const [checklistTemplate, setChecklistTemplate] = useSessionStore<
     Record<string, ChecklistTemplate>
@@ -192,12 +214,12 @@ export const useChecklistTemplates = () => {
       keepId && currentChecklistTemplate.id
         ? currentChecklistTemplate.id
         : v4();
-    const template: ChecklistTemplate = {
+    const template: ChecklistTemplate = withSyncedRepeat({
       ...currentChecklistTemplate,
       id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    };
+    });
     setChecklistTemplate({
       ...checklistTemplate,
       [id]: template,
@@ -213,12 +235,12 @@ export const useChecklistTemplates = () => {
     currentChecklistTemplate: Omit<ChecklistTemplate, 'createdAt' | 'updatedAt'>,
   ) => {
     const existing = checklistTemplate[currentChecklistTemplate.id];
-    const template: ChecklistTemplate = {
+    const template: ChecklistTemplate = withSyncedRepeat({
       ...existing,
       ...currentChecklistTemplate,
       createdAt: existing?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    };
+    });
     setChecklistTemplate({
       ...checklistTemplate,
       [currentChecklistTemplate.id]: template,
@@ -234,12 +256,16 @@ export const useChecklistTemplates = () => {
     // Only send the keys that actually changed — a full upsert here would
     // let this device's possibly-stale copy of an untouched field (say,
     // fieldGroups, while only editing a note) overwrite a newer write to
-    // that field from elsewhere. See checklistTemplatesApi.ts.
+    // that field from elsewhere. See checklistTemplatesApi.ts. Compares and
+    // sends `template` (post withSyncedRepeat), not the caller's raw
+    // `currentChecklistTemplate`, so a `repeat.dayOfWeek` resynced from the
+    // field groups above actually reaches the backend instead of only
+    // updating local state.
     const changes: Record<string, unknown> = {};
     for (const key of Object.keys(currentChecklistTemplate) as (keyof ChecklistTemplate)[]) {
       if (key === 'id' || key === 'fieldGroups') continue;
-      if (JSON.stringify(currentChecklistTemplate[key]) !== JSON.stringify(existing[key])) {
-        changes[key] = currentChecklistTemplate[key];
+      if (JSON.stringify(template[key]) !== JSON.stringify(existing[key])) {
+        changes[key] = template[key];
       }
     }
 
@@ -305,11 +331,15 @@ export const useChecklistTemplates = () => {
           return false;
         }
 
+        // Derived from the field groups' own schedules when there are any —
+        // never trust the template's stored `repeat.dayOfWeek` for gating,
+        // since that's only kept in sync as a display convenience (see
+        // withSyncedRepeat) and could in principle still be stale (an
+        // externally-written row, an old client). See getEffectiveDayOfWeek.
+        const effectiveDayOfWeek = getEffectiveDayOfWeek(currentChecklistTemplate ?? {});
         return (
-          currentChecklistTemplate?.repeat?.dayOfWeek
-            .split(',')
-            .includes(date.getDay().toString()) ||
-          currentChecklistTemplate?.repeat?.dayOfWeek === '*'
+          effectiveDayOfWeek?.split(',').includes(date.getDay().toString()) ||
+          effectiveDayOfWeek === '*'
         );
       });
     },

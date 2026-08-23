@@ -18,6 +18,7 @@ export const SchedulingGroup = ({
   setDate,
   time,
   setTime,
+  weeklyHobbiesReadOnlyNote,
 }: {
   weeklyHobbies: Day[];
   setWeeklyHobbies: (hobbies: Day[]) => void;
@@ -25,6 +26,8 @@ export const SchedulingGroup = ({
   setDate: (date: string) => void;
   time: string;
   setTime: (time: string) => void;
+  /** See ScheduleModalContent's own prop of the same name. */
+  weeklyHobbiesReadOnlyNote?: string;
 }) => {
   const intl = useIntl();
   const [isModalVisible, setIsModalVisible] = React.useState(false);
@@ -109,6 +112,7 @@ export const SchedulingGroup = ({
         tempTime={tempTime}
         setTempTime={setTempTime}
         isDesktop={isDesktop}
+        weeklyHobbiesReadOnlyNote={weeklyHobbiesReadOnlyNote}
       />
     </div>
   );
