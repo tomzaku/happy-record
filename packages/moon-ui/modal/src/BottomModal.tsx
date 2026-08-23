@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 // Hooks
 import { useDrag } from '@use-gesture/react';
@@ -6,6 +7,7 @@ import { useDrag } from '@use-gesture/react';
 // Utils
 import cx from 'classnames';
 import { a, useSpring, config } from '@react-spring/web';
+import { getModalRoot } from './modalRoot';
 
 import styles from './BottomModal.module.scss';
 
@@ -82,7 +84,11 @@ export default function BottomModal({ visible, content, onDismiss }: Props) {
       close();
     }
   }, [visible]);
-  return (
+  // Portaled to a body-level node — see modalRoot.ts's own comment. This component always
+  // renders (even while closed, it's just `display: none` via the spring above, since it needs
+  // to be mounted to animate the *close*), so the portal target has to be resolved unconditionally
+  // here too, not only when `visible`.
+  return createPortal(
     <>
       <a.div
         className={cx(styles.overlay, visible && styles.overlayVisible)}
@@ -95,6 +101,7 @@ export default function BottomModal({ visible, content, onDismiss }: Props) {
       <a.div className={styles.sheet} {...bind()} style={{ display, y }}>
         {content}
       </a.div>
-    </>
+    </>,
+    getModalRoot(),
   );
 }

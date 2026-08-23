@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 
 import Division from '@moon-ui/division';
 import Typography from '@moon-ui/typography';
+import { getModalRoot } from './modalRoot';
 
 import styles from './Modal.module.scss';
 
@@ -15,14 +16,7 @@ type Props = {
 
 export default function Modal({ visible, content, onDismiss, title }: Props) {
   if (!visible) return null;
-  
-  let modalRoot = document.getElementById('modal-global-root');
-  if (!modalRoot) {
-    modalRoot = document.createElement('div');
-    modalRoot.id = 'modal-global-root';
-    document.body.appendChild(modalRoot);
-  }
-  
+
   return createPortal(
     <div className={styles.overlay} onClick={onDismiss}>
       <div className={styles.container} onClick={e => {
@@ -41,6 +35,6 @@ export default function Modal({ visible, content, onDismiss, title }: Props) {
         {content}
       </div>
     </div>,
-    modalRoot
+    getModalRoot(),
   );
 }

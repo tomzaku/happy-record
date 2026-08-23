@@ -1,8 +1,10 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 import Button from '@moon-ui/button';
 import IconWarning from '@moon-ui/icon/IconWarning';
 import Division from '@moon-ui/division';
+import { getModalRoot } from './modalRoot';
 
 import styles from './WarningModal.module.scss';
 import Typography from '@moon-ui/typography';
@@ -27,7 +29,7 @@ export default function WarningModal({
   title,
 }: Props) {
   if (!visible) return null;
-  return (
+  return createPortal(
     <div className={styles.overlay}>
       <div className={styles.container}>
         <div className={styles.header}>
@@ -58,6 +60,7 @@ export default function WarningModal({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalRoot(),
   );
 }
