@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { ensureSession, resetSessionCache, supabase } from '../lib/supabase';
 
@@ -28,6 +28,16 @@ const SYNCED_DATA_KEYS = [
   'flag',
   'tags',
   'pro_status',
+  // Not yet written by anything real (`useUser.ts` is only read by the
+  // local-storage-editor debug tool today) — listed anyway so it can never
+  // survive a sign-out and leak into the next identity the way `fields.id`
+  // once did, if it's ever wired into a real domain store later.
+  'user',
+  // A write queued while offline (see lib/writeQueue.ts) carries no
+  // `user_id` of its own — identity comes from the session token at flush
+  // time, not the queued body. Left uncleared, a pending write from this
+  // identity would flush under whichever identity signs in next.
+  'write_queue',
 ];
 
 /**
@@ -80,6 +90,15 @@ function rememberExistingAccount() {
 export const useSession = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
+  // `onReconnect` below is registered once, inside the mount-only effect —
+  // it needs the *current* session, not the one closed over at mount, so a
+  // ref is what stays live across renders without re-registering the
+  // listener every time `session` changes.
+  const sessionRef = useRef<Session | null>(null);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   useEffect(() => {
     if (!supabase) {
@@ -170,9 +189,31 @@ export const useSession = () => {
       }
     });
 
+    // The anonymous sign-in above can fail outright (offline on a cold
+    // load) — `ensureSession()` still resolves (to `null`) so `ready` gets
+    // set regardless (see its own comment), but `session` then stays `null`
+    // forever: nothing else here ever calls `ensureSession()` again, and a
+    // failed `signInAnonymously()` never reaches a state that fires
+    // `onAuthStateChange`. Without this, that device is marked "synced" by
+    // `useSyncOncePerIdentity` for an `undefined` identity and never
+    // actually syncs again, even once connectivity returns. Only acts while
+    // `sessionRef.current` is still null — must not fight
+    // `onAuthStateChange`/`signOut` once a real session exists.
+    const onReconnect = () => {
+      if (sessionRef.current) return;
+      ensureSession().then(result => {
+        if (!cancelled && result) {
+          if (!result.user.is_anonymous) rememberExistingAccount();
+          setSession(result);
+        }
+      });
+    };
+    window.addEventListener('online', onReconnect);
+
     return () => {
       cancelled = true;
       subscription.unsubscribe();
+      window.removeEventListener('online', onReconnect);
     };
   }, []);
 

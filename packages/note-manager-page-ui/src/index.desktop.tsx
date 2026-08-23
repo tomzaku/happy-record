@@ -1,26 +1,29 @@
 import React from 'react';
-import { ChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 import { DesktopDrawer } from '@dreamer/header';
 import NoteGroupDesktop from './components/note-group/index.desktop';
 import styles from './index.desktop.module.scss';
 import NoteDetail from './components/note-detail';
-import { RecordField } from '@dreamer/global/src/store/record-field';
 import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
+import { useSyncedSelector } from '@dreamer/global/src/hook';
 import { useSearchParams } from 'react-router-dom';
 
 export const NoteManagerPageDesktop = () => {
   const [search] = useSearchParams();
   const fieldId = search.get('fieldId');
 
-  const [allNoteFields, setAllNoteFields] = React.useState<RecordField[]>([]);
-  const [allNotes, setAllNotes] = React.useState<ChecklistRecord[]>([]);
   const { getNotes, getAllNoteFields, deleteNote, addNote } = useNoteRecords();
 
-  React.useEffect(() => {
-    const fields = getAllNoteFields();
-    setAllNoteFields(fields);
-    setAllNotes(getNotes(fieldId ? [fieldId] : fields.map(f => f.id)));
-  }, []);
+  // Derived straight from the store's own functions every render instead of
+  // snapshotted into local state from a `useEffect(..., [])` that never
+  // refired — a note added/edited on another device now actually shows up
+  // here. `null` means "no explicit field filter chosen yet" — falls back
+  // to the URL's `fieldId`, then every note field, same as the original
+  // mount-time default.
+  const allNoteFields = useSyncedSelector(getAllNoteFields);
+  const [selectedFieldIds, setSelectedFieldIds] = React.useState<string[] | null>(null);
+  const effectiveFieldIds =
+    selectedFieldIds ?? (fieldId ? [fieldId] : allNoteFields.map(f => f.id));
+  const allNotes = useSyncedSelector(getNotes, effectiveFieldIds);
 
   return (
     <div className={styles.desktopContainer}>
@@ -34,19 +37,14 @@ export const NoteManagerPageDesktop = () => {
               allNoteFields={allNoteFields}
               deleteNote={note => {
                 deleteNote(note);
-                setAllNotes(allNotes.filter(n => n.id !== note.id));
               }}
               addNote={(fieldId, value) => {
-                const result = addNote(fieldId, value);
-                if(result?.length) {
-                  setAllNotes([...result, ...allNotes]);
-                }
+                addNote(fieldId, value);
               }}
             />
             <NoteGroupDesktop
               onChangeField={fieldIds => {
-                getNotes(fieldIds);
-                setAllNotes(getNotes(fieldIds));
+                setSelectedFieldIds(fieldIds);
               }}
               allNoteFields={allNoteFields}
               minimal={false}

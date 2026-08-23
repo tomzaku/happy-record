@@ -1,5 +1,4 @@
 import React from 'react';
-import { ChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 import { BackHeader } from '@dreamer/header';
 import NoteGroup from './components/note-group';
 import styles from './index.module.scss';
@@ -7,24 +6,25 @@ import NoteDetail from './components/note-detail';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';
 import { useNavigate } from 'react-router-dom';
-import { RecordField } from '@dreamer/global/src/store/record-field';
 import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
-import { useIsMobile } from '@dreamer/global/src/hook';
+import { useIsMobile, useSyncedSelector } from '@dreamer/global/src/hook';
 import cx from 'classnames';
 
 export const NoteManagerPage = () => {
-  const [allNoteFields, setAllNoteFields] = React.useState<RecordField[]>([]);
-  const [allNotes, setAllNotes] = React.useState<ChecklistRecord[]>([]);
   const [isExtended, setIsExtended] = React.useState(false);
   const { getNotes, getAllNoteFields, deleteNote, addNote } = useNoteRecords();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  React.useEffect(() => {
-    const fields = getAllNoteFields();
-    setAllNoteFields(fields);
-    setAllNotes(getNotes(fields.map(f => f.id)));
-  }, []);
+  // Derived straight from the store's own functions every render instead of
+  // snapshotted into local state from a `useEffect(..., [])` that never
+  // refired — a note added/edited on another device now actually shows up
+  // here. `null` means "no explicit field filter yet" — show every note
+  // field, same as the original mount-time default.
+  const allNoteFields = useSyncedSelector(getAllNoteFields);
+  const [selectedFieldIds, setSelectedFieldIds] = React.useState<string[] | null>(null);
+  const effectiveFieldIds = selectedFieldIds ?? allNoteFields.map(f => f.id);
+  const allNotes = useSyncedSelector(getNotes, effectiveFieldIds);
 
   return (
     <>
@@ -50,8 +50,7 @@ export const NoteManagerPage = () => {
       >
         <NoteGroup
           onChangeField={fieldIds => {
-            getNotes(fieldIds);
-            setAllNotes(getNotes(fieldIds));
+            setSelectedFieldIds(fieldIds);
             if (isMobile) {
               setIsExtended(false);
             }
@@ -67,13 +66,9 @@ export const NoteManagerPage = () => {
           defaultFieldId={allNoteFields[0]?.id || ''}
           deleteNote={note => {
             deleteNote(note);
-            setAllNotes(allNotes.filter(n => n.id !== note.id));
           }}
           addNote={(fieldId, value) => {
-            const result = addNote(fieldId, value);
-            if (result?.length) {
-              setAllNotes([...result, ...allNotes]);
-            }
+            addNote(fieldId, value);
           }}
         />
       </div>

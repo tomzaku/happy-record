@@ -2,14 +2,11 @@ import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Checklist,
-  ChecklistTemplate,
   useChecklist,
   useChecklistTemplates,
+  useSyncedSelector,
 } from '@dreamer/global';
-import {
-  RecordField,
-  useRecordField,
-} from '@dreamer/global/src/store/record-field';
+import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { DesktopDrawer } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
@@ -32,10 +29,13 @@ const DetailTaskPageDesktop = () => {
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
 
-  const [checklistTemplate, setChecklistTemplate] =
-    React.useState<ChecklistTemplate>();
+  // Derived straight from each store's own function every render (see
+  // useSyncedSelector) instead of snapshotted into local state from an
+  // effect — a template/field synced in from another device now actually
+  // shows up here instead of only refreshing when `id` itself changes.
+  const checklistTemplate = useSyncedSelector(getChecklistTemplate, id ?? '');
+  const fields = useSyncedSelector(getAllRecordFields);
   const [checklist, setChecklist] = React.useState<Checklist>();
-  const [fields, setFields] = React.useState<RecordField[]>([]);
   const [isEditingTitle, setIsEditingTitle] = React.useState(false);
   const [editedTitle, setEditedTitle] = React.useState('');
   const [isAiModalVisible, setIsAiModalVisible] = React.useState(false);
@@ -44,13 +44,15 @@ const DetailTaskPageDesktop = () => {
     return;
   }
 
-  // Load checklist template
-  React.useEffect(() => {
-    const checklistTemplate = getChecklistTemplate(id);
-    setChecklistTemplate(checklistTemplate);
-  }, [id]);
-
-  // Load or create checklist
+  // Load or create checklist. `addChecklist` and `setSearchParams` are
+  // deliberately not in the deps array: `addChecklist` is a useCallback
+  // whose own identity changes with the `checklist` store it writes to, so
+  // including it would refire this effect (and re-create a checklist)
+  // every time this very call succeeds. `getChecklistDetail` IS included —
+  // its identity changes with that same store, but purely as a read, so a
+  // checklist completed/edited on another device now refreshes this page's
+  // own copy instead of only refreshing when `checklistId` changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     if (!checklistTemplate) return;
 
@@ -72,21 +74,7 @@ const DetailTaskPageDesktop = () => {
       });
       setChecklist(checklist);
     }
-  }, [checklistTemplate, checklistId, id, currentDay]);
-
-  // Update fields when checklistTemplate changes
-  React.useEffect(() => {
-    if (!checklistTemplate) return;
-
-    // Get all available fields, not just the ones already assigned to groups
-    const allFields = getAllRecordFields();
-    setFields(allFields);
-  }, [checklistTemplate]);
-
-  // Callback for when new fields are added
-  const handleFieldAdded = (newField: RecordField) => {
-    setFields([...fields, newField]);
-  };
+  }, [checklistTemplate, checklistId, id, currentDay, getChecklistDetail]);
 
   // Handle title editing
   const handleEditTitle = () => {
@@ -103,7 +91,6 @@ const DetailTaskPageDesktop = () => {
         title: editedTitle.trim(),
       };
       updateChecklistTemplate(updatedTemplate);
-      setChecklistTemplate(updatedTemplate);
       setIsEditingTitle(false);
     }
   };
@@ -201,10 +188,7 @@ const DetailTaskPageDesktop = () => {
                 currentDay={currentDay}
                 onUpdateChecklistTemplate={updatedTemplate => {
                   updateChecklistTemplate(updatedTemplate);
-                  setChecklistTemplate(updatedTemplate);
-                  // Fields will be updated automatically via useEffect
                 }}
-                onFieldAdded={handleFieldAdded}
               />
             </div>
             <div className={styles.side}>
@@ -213,7 +197,6 @@ const DetailTaskPageDesktop = () => {
                 checklistTemplate={checklistTemplate}
                 onUpdate={updatedTemplate => {
                   updateChecklistTemplate(updatedTemplate);
-                  setChecklistTemplate(updatedTemplate);
                 }}
               />
               
@@ -231,9 +214,6 @@ const DetailTaskPageDesktop = () => {
         onDismiss={() => setIsAiModalVisible(false)}
         mode="existing"
         existingTemplate={checklistTemplate}
-        onApplied={({ template }) => {
-          if (template) setChecklistTemplate(template);
-        }}
       />
 
       {/* <FocusZoneModal */}

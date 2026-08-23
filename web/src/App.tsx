@@ -8,7 +8,7 @@ import {
   usePomodoroGlobalConfig,
   withPomodoroGlobalConfig,
 } from '@dreamer/pomodoro-common';
-import { useSession } from '@dreamer/global';
+import { useConnectivityResync, useSession } from '@dreamer/global';
 
 // Hoc
 import { withTranslation } from '@dreamer/translation';
@@ -55,6 +55,9 @@ function App() {
   // Anonymous sign-in so the device has a Supabase session to sync through —
   // no-op when no backend is configured (VITE_SUPABASE_URL unset).
   useSession();
+  // Replays writes queued while offline and forces every domain store to
+  // resync once connectivity returns — see useConnectivityResync.ts.
+  useConnectivityResync();
   // Focus Zone Modal state
   const [isFocusZoneOpen, setIsFocusZoneOpen] = React.useState(false);
   return (

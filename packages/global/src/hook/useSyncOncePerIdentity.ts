@@ -1,8 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { useSession } from './useSession';
+import { getResyncTick, subscribeResyncTick } from '../lib/resyncTick';
 
-/** A domain store's own module-level "have I synced, and for whom" cell — see below. */
-export type SyncState = { current: string | undefined | null };
+/**
+ * A domain store's own module-level "have I synced, and for whom" cell —
+ * see below. `lastResyncTick` is the same idea for `bumpResyncTick`
+ * (useConnectivityResync.ts, on `online`): recorded on the *shared* cell,
+ * not per component instance, so when several mounted components use the
+ * same store (e.g. `ChecklistToday` and `WeeklyCalendarVertical` both
+ * calling `useChecklist()`), only the first one to notice a given tick
+ * actually re-syncs — the rest see it's already been handled. Per-instance
+ * tracking (a `useRef` in the hook below) would lose that guarantee: every
+ * mounted instance would independently fire its own redundant fetch on
+ * every reconnect, exactly what this shared cell exists to prevent for the
+ * identity-change case already.
+ */
+export type SyncState = { current: string | undefined | null; lastResyncTick?: number };
 
 /**
  * Every domain store's initial fetch used to guard on a plain
@@ -30,14 +43,23 @@ export type SyncState = { current: string | undefined | null };
  */
 export function useSyncOncePerIdentity(syncState: SyncState, sync: () => Promise<boolean>) {
   const { userId, ready } = useSession();
+  // Bumped by useConnectivityResync.ts on `online` — a store that already
+  // synced successfully for this identity still needs to catch up on
+  // whatever changed elsewhere while this device was offline, not just a
+  // store whose last attempt failed (that case is already covered below by
+  // `syncState.current` getting reset to `null` on failure).
+  const resyncTick = useSyncExternalStore(subscribeResyncTick, getResyncTick);
 
   useEffect(() => {
     if (!ready) return;
-    if (syncState.current === userId) return;
+    const identityChanged = syncState.current !== userId;
+    const forcedResync = (syncState.lastResyncTick ?? 0) !== resyncTick;
+    if (!identityChanged && !forcedResync) return;
     syncState.current = userId;
+    syncState.lastResyncTick = resyncTick;
     sync().then(ok => {
       if (!ok) syncState.current = null;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, userId]);
+  }, [ready, userId, resyncTick]);
 }

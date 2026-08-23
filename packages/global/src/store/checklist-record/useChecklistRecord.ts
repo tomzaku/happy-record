@@ -1,3 +1,4 @@
+import React from 'react';
 import { v4 } from 'uuid';
 import { format } from 'date-fns';
 import { useLocalStorage, useSession } from '../../hook';
@@ -58,6 +59,20 @@ type AddChecklistRecordData = {
 // comment on the equivalent bug this fixes for every other domain store.
 const syncedRanges = new Set<string>();
 
+/**
+ * Called on reconnect (see useConnectivityResync.ts) so a range this device
+ * already fetched — possibly hours ago, before going offline — re-fetches
+ * once instead of assuming it's still current. Every key already bakes in
+ * `userId` (see `rangeKey` below), so clearing the whole set rather than
+ * scoping it is deliberate: it's simpler, it's exactly the desired
+ * behavior (every currently-rendered range re-checks itself), and it
+ * doubles as the pruning this otherwise-unbounded, never-pruned `Set` has
+ * no other mechanism for.
+ */
+export function resetChecklistRecordSync(): void {
+  syncedRanges.clear();
+}
+
 export const useChecklistRecord = () => {
   const [checklistRecordList, setChecklistRecordList] =
     useLocalStorage<ChecklistRecorStore>(CHECKLIST_RECORD_KEY, {});
@@ -96,7 +111,11 @@ export const useChecklistRecord = () => {
       return result;
     }
   };
-  const getChecklistRecords = (
+  // useCallback'd (not a plain closure) so a consumer's own useSyncedSelector
+  // can memoize on it — its identity now only changes when the data it
+  // actually reads (`checklistRecordList`, `userId`, `ready`) changes,
+  // instead of on every render.
+  const getChecklistRecords = React.useCallback((
     checklistTemplateId: string,
     {
       rangeDate,
@@ -238,7 +257,7 @@ export const useChecklistRecord = () => {
     }
 
     return groupsByDay;
-  };
+  }, [checklistRecordList, userId, ready, setChecklistRecordList]);
 
   const updateChecklistRecord = (
     recordId: string,

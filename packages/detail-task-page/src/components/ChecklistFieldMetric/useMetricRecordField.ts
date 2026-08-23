@@ -50,7 +50,13 @@ export const useMetricRecordField = ({
   const [currentStreak, setCurrentStreak] = React.useState(0);
   const [todayCount, setTodayCount] = React.useState(0);
   const [peak, setPeak] = React.useState(0);
+  // Tracks whichever range the caller last asked for (see ChecklistFieldMetric/
+  // index.tsx's month/year toggle) so the effect below can re-request the
+  // same range on a store update, without a state dependency that would
+  // re-trigger itself every time `fetchChecklistRecords` runs.
+  const rangeTypeRef = React.useRef<'month' | 'year'>('month');
   const fetchChecklistRecords = (rangeDateType: 'month' | 'year') => {
+    rangeTypeRef.current = rangeDateType;
     const metricFieldIds = fields
       .filter(field => field.type === 'metric')
       .map(field => field.id);
@@ -100,9 +106,15 @@ export const useMetricRecordField = ({
       seriesValues,
     });
   };
+  // Was `useEffect(..., [])` — fired once ever, so a record submitted on
+  // another device (or the field list itself changing) never refreshed this
+  // chart. `getChecklistRecords` is a plain closure today (new identity
+  // every render until it's `useCallback`-wrapped), so this still refires
+  // on every render — correct, just not free.
   React.useEffect(() => {
-    fetchChecklistRecords('month');
-  }, []);
+    fetchChecklistRecords(rangeTypeRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checklistTemplateId, fields, getChecklistRecords]);
 
   const series = fields.map(recordField => {
     return {

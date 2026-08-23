@@ -1,3 +1,4 @@
+import React from 'react';
 import { useSyncedCollection, type SyncState } from '../../hook';
 import { v4 } from 'uuid';
 
@@ -62,9 +63,15 @@ export const useNote = () => {
     removeNoteApi(id);
   };
 
-  const getNotes = (fieldIds: string[]) => {
-    return Object.values(notes).filter(note => fieldIds.includes(note.fieldId));
-  };
+  // useCallback'd (not a plain closure) so a consumer's own useSyncedSelector
+  // can memoize on it — its identity now only changes when `notes` itself
+  // changes, instead of on every render.
+  const getNotes = React.useCallback(
+    (fieldIds: string[]) => {
+      return Object.values(notes).filter(note => fieldIds.includes(note.fieldId));
+    },
+    [notes],
+  );
 
   return {
     notes,

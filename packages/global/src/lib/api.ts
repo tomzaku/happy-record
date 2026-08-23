@@ -23,6 +23,7 @@
 // — almost every call should be quiet, with the local store as the fallback.
 
 import { ensureSession, supabase } from './supabase';
+import { enqueueWrite, flushWriteQueue } from './writeQueue';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -120,16 +121,33 @@ async function send<T>(method: Method, path: string, body: unknown, opts: Option
   return data as T;
 }
 
-/** `quiet` turns any failure into a null, with one line in the console. */
+/**
+ * `quiet` turns any failure into a null, with one line in the console. A
+ * write (not `GET`) that failed because the device is genuinely offline
+ * (`ApiError(0, ...)` — see `send`'s own catch: no response ever came back
+ * to read a real status from) is also queued for a later retry — see
+ * lib/writeQueue.ts. A real 4xx/5xx means the server saw and rejected the
+ * request; replaying that later would just fail the same way forever, so
+ * only `status === 0` queues.
+ */
 async function run<T>(method: Method, path: string, body: unknown, opts: Options): Promise<T | null> {
   if (!opts.quiet) return await send<T>(method, path, body, opts);
   try {
     return await send<T>(method, path, body, opts);
   } catch (err) {
-    const status = err instanceof ApiError && err.status ? ` ${err.status}` : '';
-    console.warn(`[dreamer] ${method} ${path}${status}:`, err instanceof Error ? err.message : err);
+    const status = err instanceof ApiError ? err.status : -1;
+    console.warn(`[dreamer] ${method} ${path}${status > 0 ? ` ${status}` : ''}:`, err instanceof Error ? err.message : err);
+    if (method !== 'GET' && status === 0) {
+      enqueueWrite({ method, path, body, params: opts.params });
+    }
     return null;
   }
+}
+
+/** Replays every write queued while this device was offline. Quiet by
+ * construction — a queued write that's still failing just stays queued. */
+export function flushQueuedWrites(): Promise<void> {
+  return flushWriteQueue((method, path, body, opts) => send<unknown>(method, path, body, opts));
 }
 
 // The overloads are what make `quiet: true` visible in the type: with it a

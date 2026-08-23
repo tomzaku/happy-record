@@ -1,4 +1,4 @@
-import { ChecklistTemplate, useChecklistTemplates } from '@dreamer/global';
+import { useChecklistTemplates, useSyncedSelector } from '@dreamer/global';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
 import Icon from '@moon-ui/icon/Icon';
@@ -24,14 +24,10 @@ const TasksSharedPage = () => {
   const [message, setMessage] = React.useState('');
   const [userName, setUserName] = React.useState('');
   const { updateChecklistTemplate } = useCreateChecklistTemplate();
-  const [checklistTemplate, setChecklistTemplate] =
-    React.useState<ChecklistTemplate>();
-  React.useEffect(() => {
-    if (id) {
-      const checklistTemplate = getChecklistTemplate(id);
-      setChecklistTemplate(checklistTemplate);
-    }
-  }, [id, userName, targetName]);
+  // Derived straight from the store's own function every render instead of
+  // snapshotted into local state from an effect missing `getChecklistTemplate`
+  // itself — a template edited elsewhere now actually shows up here.
+  const checklistTemplate = useSyncedSelector(getChecklistTemplate, id ?? '');
   const handleCopy = (fullUrl: string) => {
     navigator.clipboard
       .writeText(fullUrl)
@@ -51,8 +47,6 @@ const TasksSharedPage = () => {
       return;
     }
     const allFields = getAllRecordFields();
-    const checklistTemplate = getChecklistTemplate(id);
-    setChecklistTemplate(checklistTemplate);
     const checklistTemplateFieldIds = checklistTemplate.fieldGroups.flatMap(
       group => group.fields,
     );

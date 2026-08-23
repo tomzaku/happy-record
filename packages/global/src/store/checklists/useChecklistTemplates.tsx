@@ -265,9 +265,12 @@ export const useChecklistTemplates = () => {
     setSelectedChecklist(checklistIds);
   };
 
-  const getRecommendChecklistTemplates = (): ChecklistTemplate[] => {
+  // useCallback'd (not a plain closure) so a consumer's own useSyncedSelector
+  // can memoize on it — its identity now only changes when `checklistTemplate`
+  // itself changes, instead of on every render.
+  const getRecommendChecklistTemplates = React.useCallback((): ChecklistTemplate[] => {
     return Object.values(checklistTemplate);
-  };
+  }, [checklistTemplate]);
 
   const getChecklistTemplateIdsByGivingDate = React.useCallback(
     ({ date }: { date: Date } = { date: new Date() }) => {

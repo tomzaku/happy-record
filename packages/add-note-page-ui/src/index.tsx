@@ -11,6 +11,7 @@ import Typography from '@moon-ui/typography';
 import Select from '@moon-ui/select';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
+import { useSyncedSelector } from '@dreamer/global/src/hook';
 
 export const AddNotePage = () => {
   const { addNote, getAllNoteFields } =
@@ -19,7 +20,11 @@ export const AddNotePage = () => {
   const [selectedField, setSelectedField] = React.useState<RecordField | null>(
     null,
   );
-  const [allNoteFields, setAllNoteFields] = React.useState<RecordField[]>([]);
+  // Derived straight from the store's own function every render instead of
+  // snapshotted into local state from a `useEffect(..., [])` that never
+  // refired — a note field synced in from another device now actually
+  // shows up in this picker.
+  const allNoteFields = useSyncedSelector(getAllNoteFields);
   const [noteValue, setNoteValue] = React.useState();
   const handleAddNote = () => {
     if (selectedField && noteValue) {
@@ -34,10 +39,6 @@ export const AddNotePage = () => {
       setSelectedField(allNoteFields[0]);
     }
   }, [allNoteFields, selectedField]);
-  React.useEffect(() => {
-    const fields = getAllNoteFields()
-    setAllNoteFields(fields)
-  }, [])
   return (
     <>
       <BackHeader renderLeftComponent={() => <>Add Note</>} />

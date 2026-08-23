@@ -29,8 +29,7 @@ type Props = {
 
 const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Props) => {
   const { getChecklistByGivingDate } = useChecklist();
-  const { getChecklistTemplate, getChecklistTemplateIdsByGivingDate } =
-    useChecklistTemplates();
+  const { getChecklistTemplate } = useChecklistTemplates();
   const [showCalendarDialog, setShowCalendarDialog] = React.useState(false);
 
   // Get the week range for the current date
@@ -60,7 +59,12 @@ const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Pr
     });
 
     return tasksMap;
-  }, [weekDays, getChecklistTemplateIdsByGivingDate, getChecklistTemplate, selectedTag]);
+    // `getChecklistTemplateIdsByGivingDate`/`getChecklistTemplate` aren't
+    // actually called in this memo — `getChecklistByGivingDate` is, and was
+    // missing here, which meant a checklist synced/edited elsewhere (or
+    // even completed on this same device, in the same session) never
+    // refreshed this week's task list.
+  }, [weekDays, getChecklistByGivingDate, selectedTag]);
 
   const handlePrevWeek = React.useCallback(() => {
     const prevWeek = new Date(currentDate);

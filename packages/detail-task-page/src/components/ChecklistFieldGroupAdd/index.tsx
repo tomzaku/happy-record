@@ -106,9 +106,18 @@ const ChecklistFieldGroupAdd = ({
   };
   const today = isToday(currentDay);
   const intl = useIntl();
+  // `reloadChecklistRecord` has side effects beyond a pure read
+  // (`setShowHistory`), so this stays an effect rather than becoming a
+  // `useSyncedSelector` — but its deps were missing `checklistTemplate.id`,
+  // `fields`, and `getChecklistRecords` itself, so a record submitted on
+  // another device (or a field list synced in) never refired this and just
+  // sat un-rendered. `getChecklistRecords` is a plain closure today (a new
+  // identity every render until it's `useCallback`-wrapped), so this still
+  // refires on every render — correct, just not free.
   React.useEffect(() => {
     reloadChecklistRecord();
-  }, [currentDay]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDay, checklistTemplate.id, fields, getChecklistRecords]);
 
   const renderEmpty = () => {
     return null;

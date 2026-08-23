@@ -77,6 +77,18 @@ get `null` instead — **use this for almost every call in this app**, because t
 `useLocalStorage` state is always right there as a fallback. `null` means "use what's already in
 the store," never an error screen. Choose per call, not per module.
 
+A `quiet` **write** (`POST`/`PATCH`/`PUT`/`DELETE`) that fails because the device is genuinely
+offline — `ApiError(0, ...)`, `send`'s own catch for "nothing came back to read a status from,"
+never a real 4xx/5xx the server actually saw and rejected — is also queued
+(`packages/global/src/lib/writeQueue.ts`, `localStorage['write_queue']`) instead of just being
+dropped. Nothing else needed at the call site: `run()` in `api.ts` detects this by method + status
+alone, so every existing `quiet: true` write function gets queuing for free. The queue flushes on
+the next `online` event (see `useConnectivityResync` below) — every write route here is already an
+upsert or an idempotent delete, so replay needs no dedup, and `updatedAt` is already set
+client-side at the moment of the original edit, so a write replayed hours later still merges
+correctly under the last-write-wins rule below. A read failure was already "safe" this way (the
+local store is the fallback); this is what makes a *write* safe the same way.
+
 ### Identity comes from the session
 
 Never take a `user_id` from a request body. It's read from the caller's session, server-side
@@ -110,11 +122,14 @@ storage key and fetch function (see `useRecordField.tsx` for the shape). The con
 
 - **Local `useLocalStorage` state is the source of truth for rendering, always.** Every screen
   renders from it instantly, online or offline; nothing blocks on the network.
-- **Sync happens once per signed-in identity, not once per page load.** The lower-level
-  `useSyncOncePerIdentity` keys on `useSession()`'s `userId`, so signing in or out re-triggers a
-  fresh sync instead of a store staying stuck on whatever the *first* identity's fetch returned
-  — a plain `let xSynced = false` (every store's own copy of this, before) fires once ever, by
-  whichever identity exists at that exact moment.
+- **Sync happens once per signed-in identity, not once per page load** — plus once more on
+  reconnect. The lower-level `useSyncOncePerIdentity` keys on `useSession()`'s `userId`, so signing
+  in or out re-triggers a fresh sync instead of a store staying stuck on whatever the *first*
+  identity's fetch returned — a plain `let xSynced = false` (every store's own copy of this,
+  before) fires once ever, by whichever identity exists at that exact moment. It also re-syncs on
+  a shared "resync tick" bumped by `useConnectivityResync` on the browser's `online` event (see
+  below), so a tab left open catches up on another device's edit once this one reconnects, without
+  needing a reload.
 - **Waits for the session to be `ready`** before syncing at all, so the first fetch can't land
   against a transient session before the real one settles (see `ensureSession()` below for the
   matching guarantee on the request side).
@@ -158,14 +173,44 @@ depend on" by hand is how a component ends up silently stale even once the store
 correct: `ChecklistToday.desktop.tsx` and its mobile twin used to snapshot the result into local
 `useState` from a `useEffect` keyed on `[date, selectedTag, checklistTemplate]` — missing
 `selectedChecklistTemplates` entirely — while `WeeklyCalendarVertical.tsx` right next to it,
-already depending on the function itself, stayed correct on the exact same data.
+already depending on the function itself, stayed correct on the exact same data. This turned out
+not to be a one-off: the same bug (a store's read function snapshotted into `useState` from a
+`useEffect` with an incomplete dependency array — so a value synced in later, from another device
+or even from an edit on this same device, never appears without an unrelated remount) recurred
+independently across `detail-task-page`'s own `/task/:id` page, its History/Add/Metric tabs, and
+the `/notes` pages. **`useSyncedSelector`** (`packages/global/src/hook/useSyncedSelector.ts`) is
+the fix spelled as a hook instead of a pattern to remember: `useSyncedSelector(storeFn, ...args)`
+is exactly the `useMemo` line above, written so the store function can't be left out of the deps
+array by hand. Reach for it whenever a component wants a store's derived value and has no other
+side effect tied to computing it — an effect that also does something else (creating a row if one
+doesn't exist yet, toggling other local state) still needs to stay a real `useEffect`, just with a
+complete dependency list (see `ChecklistFieldGroupAdd`'s `reloadChecklistRecord` for that shape).
+A selector not itself wrapped in `useCallback` by its owning hook (a plain closure, new identity
+every render) still works here, it just recomputes every render instead of memoizing — correct,
+not free; `useChecklistRecord.ts`'s `getChecklistRecords`, `useRecordField.tsx`'s
+`getAllRecordFields`/`getRecordFields`, `useChecklistTemplates.tsx`'s
+`getRecommendChecklistTemplates`, and `useNote.tsx`'s `getNotes` are all `useCallback`-wrapped
+against their real store dependency for exactly this reason. `useNoteRecord.tsx`'s own
+`getNotes`/`getAllNoteFields` (the `ChecklistRecord`-shaped wrapper the `/notes` pages actually
+call — see "notes and note-folders" below) aren't wrapped yet, so those two still recompute every
+render rather than memoizing.
 
-**What this still doesn't solve**, in priority order for whenever it's tackled next: a sync only
-ever runs once per identity per page load (see `useSyncOncePerIdentity`) — a tab left open won't
-notice another device's edit until something triggers a re-sync (a reload today; refetch-on-focus/
-reconnect, or Supabase Realtime, would be the real fix and isn't built); and a deletion on one
-device doesn't remove anything on another — this merge only ever adds or replaces, never deletes,
-which needs a tombstone (a `deleted_at` the sync can see) that no table has yet.
+**What this still doesn't solve**: a deletion on one device doesn't remove anything on another —
+this merge only ever adds or replaces, never deletes, which needs a tombstone (a `deleted_at` the
+sync can see) that no table has yet. The other historical gap here — a tab left open never
+noticing another device's edit until something triggered a re-sync — is closed: `useConnectivityResync`
+(`packages/global/src/hook/useConnectivityResync.ts`, mounted once in `web/src/App.tsx` next to
+`useSession()`) listens for the browser's `online` event and, on it, (1) flushes the write queue
+above, (2) clears `checklist-records`' own per-range sync cache
+(`resetChecklistRecordSync` — see below), and (3) bumps a shared "resync tick"
+(`packages/global/src/lib/resyncTick.ts`) that `useSyncOncePerIdentity` also watches, alongside its
+existing identity check — so a store that already synced successfully for this identity still
+re-syncs once connectivity returns, not just one whose last attempt failed. That tick is recorded
+on the store's own shared `SyncState` cell (`lastResyncTick`), not per component instance, so
+several components using the same store don't each fire their own redundant fetch on the same
+reconnect — the same "one fetch, not one per mounted instance" property `SyncState` already gave
+the identity-change case. Realtime (pushing a sync the instant another device writes, not just on
+this device's own reconnect) is still not built.
 
 On the auth/session side, the equivalent guarantee is `supabase.ts`'s **`ensureSession()`**:
 `api.ts`'s `send()` and `useSession.ts` both await it instead of calling
@@ -175,6 +220,14 @@ on a cold load rather than racing it and seeing "no session yet." Only the anony
 call means a request that happened to race ahead of a real session settling elsewhere (finishing
 an OAuth redirect a beat later, say) self-corrects on its very next call instead of staying
 authenticated as a throwaway anonymous user for the rest of the page's life.
+
+`useSession.ts`'s own `ready` still has to come from somewhere on a cold load, though — it's set
+once `ensureSession()` resolves, which happens even when the anonymous sign-in itself fails (no
+network on first-ever load): `ready` becomes `true` for a `null` session, and
+`useSyncOncePerIdentity` would otherwise mark that `undefined` identity "synced" and never try
+again. `useSession.ts` also listens for `online` and retries `ensureSession()` while `session` is
+still `null`, so that device recovers the moment connectivity returns instead of staying stuck
+until a full reload.
 
 Testing any of this by clearing `localStorage` and reloading doesn't simulate "this account's
 cache is cold" the way it might seem to — Supabase persists its own session token in `localStorage`
@@ -201,9 +254,15 @@ self-healing part — set just as well by *catching the failure itself*. A `link
 because the identity's already linked elsewhere doesn't throw; GoTrue redirects back with
 `?error_code=identity_already_exists` (query and/or hash, depending on flow), which
 `useSession.ts`'s mount effect watches for. So a device that hits this once self-corrects: the
-failed attempt is itself proof this device belongs to an existing account, and the very next
-"Sign in with Google" click uses `signInWithOAuth` and succeeds. Untested against real Google
-OAuth either way — this project has no credentials configured to verify against (see above).
+failed attempt is itself proof this device belongs to an existing account, and `useSession.ts`
+immediately retries with `signInWithOAuth` on the spot (a second, invisible redirect round-trip)
+rather than leaving the device sitting anonymous until someone notices nothing happened and clicks
+"Sign in with Google" again — nothing in the UI (`AccountStatus.tsx`/`setting-page-ui`) shows this
+failure, so relying on a manual retry meant a second device syncing only what it created locally
+itself, never the account's real data. If that immediate retry itself fails (offline,
+misconfigured), it still falls through to the normal anonymous-session flow rather than leaving
+`ready` stuck. Untested against real Google OAuth either way — this project has no credentials
+configured to verify against (see above).
 Cleaning that error out of the URL after has to treat the query string and the hash differently —
 this app is a `HashRouter`, so the hash *is* the route, and GoTrue's redirect lands the raw error
 params there with no leading `/` (`#error=...`, not `#/error=...`), which HashRouter reads as an

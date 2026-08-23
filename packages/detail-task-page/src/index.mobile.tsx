@@ -2,14 +2,11 @@ import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Checklist,
-  ChecklistTemplate,
   useChecklist,
   useChecklistTemplates,
+  useSyncedSelector,
 } from '@dreamer/global';
-import {
-  RecordField,
-  useRecordField,
-} from '@dreamer/global/src/store/record-field';
+import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
@@ -26,30 +23,26 @@ const DetailTaskPageMobile = () => {
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
 
-  const [checklistTemplate, setChecklistTemplate] =
-    React.useState<ChecklistTemplate>();
+  // Derived straight from each store's own function every render (see
+  // useSyncedSelector) instead of snapshotted into local state from an
+  // effect — a template/field synced in from another device now actually
+  // shows up here instead of only refreshing when `checklistId` changes.
+  const checklistTemplate = useSyncedSelector(getChecklistTemplate, id ?? '');
+  const fields = useSyncedSelector(getAllRecordFields);
   const [checklist, setChecklist] = React.useState<Checklist>();
-  const [fields, setFields] = React.useState<RecordField[]>([]);
   const [isAiModalVisible, setIsAiModalVisible] = React.useState(false);
-
-
-  // Function to update fields based on current checklistTemplate
-  const updateFields = React.useCallback(() => {
-    if (!checklistTemplate) return;
-    
-    // Get all available fields, not just the ones already assigned to groups
-    const allFields = getAllRecordFields();
-    setFields(allFields);
-  }, [checklistTemplate]);
 
   if (!id || !currentDay) {
     return;
   }
-  // Update checklistId Params
+  // Load or create checklist. `addChecklist`/`setSearchParams` deliberately
+  // not in the deps array — see index.desktop.tsx's matching effect for why
+  // (addChecklist's own identity changes with the store it writes to,
+  // which would retrigger creation every time this call succeeds).
+  // `getChecklistDetail` IS included so a checklist completed/edited on
+  // another device refreshes this page's own copy.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
-    const checklistTemplate = getChecklistTemplate(id);
-    setChecklistTemplate(checklistTemplate);
-
     if (!checklistTemplate) return;
 
     if (checklistId) {
@@ -69,19 +62,7 @@ const DetailTaskPageMobile = () => {
       });
       setChecklist(checklist);
     }
-  }, [checklistId]);
-
-  // Update fields when checklistTemplate changes
-  React.useEffect(() => {
-    updateFields();
-  }, [updateFields]);
-
-  // Callback for when new fields are added
-  const handleFieldAdded = React.useCallback(() => {
-    // Refresh fields to include the new field
-    updateFields();
-  }, [updateFields]);
-
+  }, [checklistTemplate, checklistId, id, currentDay, getChecklistDetail]);
 
   const navigate = useNavigate();
   if (!checklistId || !checklist || !checklistTemplate) {
@@ -123,7 +104,6 @@ const DetailTaskPageMobile = () => {
         checklistTemplate={checklistTemplate}
         onUpdate={(updatedTemplate) => {
           updateChecklistTemplate(updatedTemplate);
-          setChecklistTemplate(updatedTemplate);
         }}
       />
       <ChecklistFieldGroup
@@ -133,10 +113,7 @@ const DetailTaskPageMobile = () => {
         currentDay={currentDay}
         onUpdateChecklistTemplate={(updatedTemplate) => {
           updateChecklistTemplate(updatedTemplate);
-          setChecklistTemplate(updatedTemplate);
-          // Fields will be updated automatically via useEffect
         }}
-        onFieldAdded={handleFieldAdded}
       />
 
       <AiChecklistGenerate
@@ -144,9 +121,6 @@ const DetailTaskPageMobile = () => {
         onDismiss={() => setIsAiModalVisible(false)}
         mode="existing"
         existingTemplate={checklistTemplate}
-        onApplied={({ template }) => {
-          if (template) setChecklistTemplate(template);
-        }}
       />
 
       {/* <FocusZoneModal */}

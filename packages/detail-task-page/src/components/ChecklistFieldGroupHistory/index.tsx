@@ -1,9 +1,6 @@
 import React from 'react';
-import { ChecklistTemplate } from '@dreamer/global';
-import {
-  ChecklistRecord,
-  useChecklistRecord,
-} from '@dreamer/global/src/store/checklist-record';
+import { ChecklistTemplate, useSyncedSelector } from '@dreamer/global';
+import { useChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import Typography from '@moon-ui/typography';
@@ -18,24 +15,20 @@ type Props = {
   fields: RecordField[];
 };
 const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
-  const { getChecklistRecords, updateChecklistRecord, deleteChecklistRecord } =
-    useChecklistRecord();
-  const [records, setRecords] = React.useState<
-    Record<string, ChecklistRecord[]>
-  >({});
-
-  React.useEffect(() => {
-    const records = getChecklistRecords(checklistTemplate.id, {
-      rangeDate: {
-        from: startOfMonth(new Date()).toISOString(),
-        to: endOfMonth(new Date()).toISOString(),
-      },
-      type: 'time',
-      fieldIds: fields.map(field => field.id),
-      sortDirection: 'desc',
-    });
-    setRecords(records);
-  }, []);
+  const { getChecklistRecords, deleteChecklistRecord } = useChecklistRecord();
+  // Derived straight from the store's own function every render instead of
+  // snapshotted into local state from a `useEffect(..., [])` that never
+  // refired — a record submitted or edited on another device, or even on
+  // this one, now actually shows up here.
+  const records = useSyncedSelector(getChecklistRecords, checklistTemplate.id, {
+    rangeDate: {
+      from: startOfMonth(new Date()).toISOString(),
+      to: endOfMonth(new Date()).toISOString(),
+    },
+    type: 'time' as const,
+    fieldIds: fields.map(field => field.id),
+    sortDirection: 'desc' as const,
+  });
   return (
     <div className={styles.recordSection}>
       {Object.entries(records).length === 0 && (
@@ -60,9 +53,9 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
                     checklistTemplateId: record.checklistTemplateId,
                   });
                 });
-                const newRecords = { ...records };
-                delete newRecords[key];
-                setRecords(newRecords);
+                // `records` is derived from the store — no local copy to
+                // update; the delete above already updates the shared store,
+                // and this component re-renders with the fresh derivation.
               }}
             >
               <Icon
@@ -77,17 +70,10 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
           {checklistRecords.map(checklistRecord => (
             <ChecklistFieldGeneral
               record={checklistRecord}
-              setRecord={record => {
-                setRecords({
-                  ...records,
-                  [key]: records[key].map(r => {
-                    if (r.id === record.id) {
-                      return record;
-                    }
-                    return r;
-                  }),
-                });
-              }}
+              // `records` is derived from the store — ChecklistFieldGeneral's
+              // own `updateChecklistRecord` call already updates it; nothing
+              // to echo back locally.
+              setRecord={() => {}}
               fields={fields}
             />
           ))}

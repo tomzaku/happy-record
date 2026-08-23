@@ -44,14 +44,17 @@ import { useSyncOncePerIdentity, type SyncState } from './useSyncOncePerIdentity
  *    nothing and is retried on the next identity check** — never an error
  *    screen, never a wipe.
  *
- * What this hook deliberately does *not* try to solve: a sync only ever
- * runs once per identity per page load (see `useSyncOncePerIdentity`) — a
- * tab left open won't notice another device's edit until something
- * triggers a re-sync (a reload today; a real "sync again" trigger —
- * refetch-on-focus/reconnect, or Realtime — is a separate, not-yet-built
- * piece). And deletions on one device don't remove anything on another —
- * this merge only ever adds or replaces, never deletes; that needs a
- * tombstone (a `deleted_at` the sync can see), which no table has yet.
+ * A sync runs once per identity per page load, *or* whenever the shared
+ * resync tick is bumped (see `useSyncOncePerIdentity` — `useConnectivityResync`
+ * bumps it on `online`), so a tab left open does catch up on another
+ * device's edit once this one reconnects, without needing a reload.
+ * Realtime (pushing a sync the instant another device writes, not just on
+ * reconnect) is still a separate, not-yet-built piece.
+ *
+ * What this hook deliberately does *not* try to solve: deletions on one
+ * device don't remove anything on another — this merge only ever adds or
+ * replaces, never deletes; that needs a tombstone (a `deleted_at` the sync
+ * can see), which no table has yet.
  */
 export function useSyncedCollection<T extends { id: string; updatedAt: string }>(
   storageKey: string,

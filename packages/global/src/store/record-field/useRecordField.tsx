@@ -1,3 +1,4 @@
+import React from 'react';
 import { useSyncedCollection, type SyncState } from '../../hook';
 import { v4 } from 'uuid';
 
@@ -75,9 +76,19 @@ export const useRecordField = () => {
     defaultRecordField,
   );
 
-  const getAllRecordFields = () => {
+  // useCallback'd (not a plain closure) so a consumer's own useSyncedSelector
+  // can memoize on it — its identity now only changes when `recordFieldList`
+  // itself changes, instead of on every render.
+  const getAllRecordFields = React.useCallback(() => {
     return Object.values(recordFieldList);
-  };
+  }, [recordFieldList]);
+
+  const getRecordFields = React.useCallback(
+    (ids: string[]) => {
+      return ids.map(id => recordFieldList[id]);
+    },
+    [recordFieldList],
+  );
 
   /**
    * Caches fields this device doesn't own into local state without writing
@@ -153,9 +164,7 @@ export const useRecordField = () => {
 
   return {
     getAllRecordFields,
-    getRecordFields: (ids: string[]) => {
-      return ids.map(id => recordFieldList[id]);
-    },
+    getRecordFields,
     addRecordField,
     removeRecordField,
     updateRecordField,
