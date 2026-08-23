@@ -25,37 +25,26 @@
   color: var(--text-description-color);
 }
 
-.scheduleTimeInput {
-  width: 140px;
-}
-
 .inputGroup {
   display: flex;
   gap: $spacing-sm;
   align-items: center;
 }
 
-.tabOptions {
-  display: flex;
-  gap: $spacing-sm;
-  flex-wrap: wrap;
+// A thin rule between sections instead of relying on gap alone — the panel reads as one
+// undifferentiated scroll without it.
+.divider {
+  height: 1px;
+  background: var(--division-color);
 }
 
-.tabOption {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  min-width: 80px;
-  justify-content: center;
-}
-
-.checkboxGroup {
+.tabList {
   display: flex;
   flex-direction: column;
   gap: $spacing-sm;
 }
 
-.checkboxItem {
+.tabRow {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
@@ -66,6 +55,33 @@
   &:hover {
     background-color: var(--card-group-background);
   }
+}
+
+.tabRowLabel {
+  flex: 1;
+}
+
+// The "which tab opens first" marker, folded into the same row as its "is it shown at all"
+// checkbox instead of a separate button row above (Default Tab used to be its own section,
+// duplicating this exact list of tabs).
+.defaultToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xs;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-description-color);
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.defaultToggleActive {
+  color: var(--warning-color, #f5a623);
 }
 
 .collapseSetting {
@@ -79,11 +95,6 @@
   &:hover {
     background-color: var(--card-group-background);
   }
-}
-
-.submitButton {
-  align-self: flex-start;
-  margin-top: $spacing-md;
 }
 
 .sectionHeader {

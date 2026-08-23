@@ -1,4 +1,5 @@
 import React from 'react';
+import cx from 'classnames';
 import { useIntl } from '@dreamer/translation';
 import { Icon } from '@moon-ui/icon/Icon';
 import Button from '@moon-ui/button/src/DefaultButton';
@@ -24,6 +25,29 @@ interface ChecklistFieldGroupConfigProps {
   allRecordFields?: RecordField[];
   onFieldAdded?: (newField: RecordField) => void;
 }
+
+const ALL_DAYS = [Day.Sun, Day.Mon, Day.Tue, Day.Wed, Day.Thu, Day.Fri, Day.Sat];
+
+// One entry per tab this group can show. `Config` (this screen itself) is deliberately left out
+// — hiding the tab you're currently configuring, or landing on it by default, isn't a choice
+// that makes sense to offer from inside it.
+const TAB_OPTIONS = [
+  { value: ChecklistFieldGroupTab.Home, label: 'Home', icon: 'solar:home-2-line-duotone' },
+  { value: ChecklistFieldGroupTab.History, label: 'History', icon: 'solar:clock-square-broken' },
+  { value: ChecklistFieldGroupTab.Metric, label: 'Metric', icon: 'solar:chart-square-linear' },
+  { value: ChecklistFieldGroupTab.Add, label: 'Add', icon: 'solar:add-square-line-duotone' },
+];
+
+// All 7 days selected is "every day" — same convention as the template-level repeat — stored as
+// no `repeat` at all rather than a redundant dayOfWeek: '0,1,2,3,4,5,6'. No time-of-day input:
+// isFieldGroupActiveOnDay (scheduleUtils.ts) only ever checks the day, never the hour/minute, so
+// there's nothing here for a time picker to actually control.
+const buildRepeatFromDays = (days: Day[]): FieldGroup['repeat'] => {
+  const full = calculateRepeat({ weeklyHobbies: days });
+  return days.length === 0 || days.length === 7 || !full
+    ? undefined
+    : { hour: full.hour, minute: full.minute, dayOfWeek: full.dayOfWeek };
+};
 
 const ChecklistFieldGroupConfig = ({
   fieldGroup,
@@ -57,54 +81,73 @@ const ChecklistFieldGroupConfig = ({
   // group can show Mon/Thu while a "Pull Day" group in the same template shows Tue/Fri. Absent
   // `repeat` (or every day selected) means "every day" — see scheduleUtils.ts's
   // `isFieldGroupActiveOnDay`, which is what actually gates rendering by day.
-  const ALL_DAYS = [Day.Sun, Day.Mon, Day.Tue, Day.Wed, Day.Thu, Day.Fri, Day.Sat];
   const [scheduleDays, setScheduleDays] = React.useState<Day[]>(
     fieldGroup.repeat?.dayOfWeek ? getDaysFromRepeat(fieldGroup.repeat) : ALL_DAYS,
   );
-  const [scheduleTime, setScheduleTime] = React.useState(
-    fieldGroup.repeat?.hour && fieldGroup.repeat?.minute
-      ? `${fieldGroup.repeat.hour.padStart(2, '0')}:${fieldGroup.repeat.minute.padStart(2, '0')}`
-      : '',
-  );
 
-  const handleTabToggle = (tab: ChecklistFieldGroupTab) => {
-    const newActiveTabs = activeTabs.includes(tab)
-      ? activeTabs.filter(t => t !== tab)
-      : [...activeTabs, tab];
-
-    // Ensure at least one tab is always active
-    if (newActiveTabs.length > 0) {
-      setActiveTabs(newActiveTabs);
-
-      // If the default tab is being removed, set the first remaining tab as default
-      if (!newActiveTabs.includes(defaultTab)) {
-        setDefaultTab(newActiveTabs[0]);
-      }
-    }
-  };
-
-  const handleSubmit = () => {
-    // All 7 days selected is "every day" — same convention as the template-level repeat —
-    // stored as no `repeat` at all rather than a redundant dayOfWeek: '0,1,2,3,4,5,6'.
-    const full = calculateRepeat({ weeklyHobbies: scheduleDays, selectedTime: scheduleTime });
-    const repeat =
-      scheduleDays.length === 0 || scheduleDays.length === 7 || !full
-        ? undefined
-        : { hour: full.hour, minute: full.minute, dayOfWeek: full.dayOfWeek };
-
+  // Every control on this screen saves the instant it changes — same as field selection below
+  // always has — rather than staging edits behind a single "Save Changes" button. A mix of the
+  // two within one screen is what made it easy to believe an edit had saved when it hadn't.
+  // `overrides` carries whatever just changed; everything else comes from current state, which
+  // is why this needs the caller to also pass the new value it just set locally, not rely on the
+  // state setter having landed yet.
+  const saveGroup = (overrides: Partial<FieldGroup> = {}) => {
     onUpdateFieldGroup({
       ...fieldGroup,
       title: groupName.trim(),
       defaultTab,
       activeTabs,
       collapseDefault,
-      repeat,
+      repeat: buildRepeatFromDays(scheduleDays),
+      ...overrides,
     });
+  };
+
+  const handleNameBlur = () => {
+    const trimmed = groupName.trim();
+    if (trimmed !== fieldGroup.title) saveGroup({ title: trimmed });
+  };
+
+  const handleTabToggle = (tab: ChecklistFieldGroupTab) => {
+    const isActive = activeTabs.includes(tab);
+    // Keep at least one tab active — silently ignore the toggle that would clear the last one.
+    if (isActive && activeTabs.length === 1) return;
+
+    const newActiveTabs = isActive ? activeTabs.filter(t => t !== tab) : [...activeTabs, tab];
+    setActiveTabs(newActiveTabs);
+
+    // If the default tab is being removed, fall back to the first remaining tab.
+    let newDefaultTab = defaultTab;
+    if (!newActiveTabs.includes(defaultTab)) {
+      newDefaultTab = newActiveTabs[0];
+      setDefaultTab(newDefaultTab);
+    }
+    saveGroup({ activeTabs: newActiveTabs, defaultTab: newDefaultTab });
+  };
+
+  const handleSetDefaultTab = (tab: ChecklistFieldGroupTab) => {
+    // Marking a tab as default also activates it — a default tab that isn't shown doesn't mean
+    // anything.
+    const newActiveTabs = activeTabs.includes(tab) ? activeTabs : [...activeTabs, tab];
+    setActiveTabs(newActiveTabs);
+    setDefaultTab(tab);
+    saveGroup({ activeTabs: newActiveTabs, defaultTab: tab });
+  };
+
+  const handleScheduleDaysChange = (days: Day[]) => {
+    setScheduleDays(days);
+    saveGroup({ repeat: buildRepeatFromDays(days) });
+  };
+
+  const handleCollapseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setCollapseDefault(checked);
+    saveGroup({ collapseDefault: checked });
   };
 
   const handleFieldToggle = (fieldId: string) => {
     if (!onSelectedFieldsChange) return;
-    
+
     const newSelectedFields = selectedFields.includes(fieldId)
       ? selectedFields.filter(id => id !== fieldId)
       : [...selectedFields, fieldId];
@@ -130,29 +173,6 @@ const ChecklistFieldGroupConfig = ({
     return field ? { title: field.title, icon: field.icon } : { title: fieldId, icon: 'solar:document-linear' };
   };
 
-  const tabOptions = [
-    {
-      value: ChecklistFieldGroupTab.Home,
-      label: 'Home',
-      icon: 'solar:home-2-line-duotone',
-    },
-    {
-      value: ChecklistFieldGroupTab.History,
-      label: 'History',
-      icon: 'solar:clock-square-broken',
-    },
-    {
-      value: ChecklistFieldGroupTab.Metric,
-      label: 'Metric',
-      icon: 'solar:chart-square-linear',
-    },
-    {
-      value: ChecklistFieldGroupTab.Add,
-      label: 'Add',
-      icon: 'solar:chart-square-linear',
-    },
-  ];
-
   return (
     <div className={styles.container}>
       <div className={styles.section}>
@@ -170,56 +190,65 @@ const ChecklistFieldGroupConfig = ({
               id: 'checklist-field-group-config.group-name-placeholder',
               defaultMessage: 'Enter group name',
             })}
-            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleSubmit()}
+            onBlur={handleNameBlur}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
+              e.key === 'Enter' && (e.target as HTMLInputElement).blur()
+            }
             renderRightInput={() => <></>}
           />
         </div>
       </div>
 
-      <div className={styles.section}>
-        <Typography.Title level={5} noMargin className={styles.sectionTitle}>
-          {intl.formatMessage({
-            id: 'checklist-field-group-config.default-tab',
-            defaultMessage: 'Default Tab',
-          })}
-        </Typography.Title>
-        <div className={styles.tabOptions}>
-          {tabOptions.map(({ value, label, icon }) => (
-            <Button
-              key={value}
-              type={defaultTab === value ? 'primary' : 'dash'}
-              size="sm"
-              onClick={() => setDefaultTab(value)}
-              className={styles.tabOption}
-            >
-              <Icon icon={icon} width={16} />
-              {label}
-            </Button>
-          ))}
-        </div>
-      </div>
+      <div className={styles.divider} />
 
       <div className={styles.section}>
         <Typography.Title level={5} noMargin className={styles.sectionTitle}>
           {intl.formatMessage({
-            id: 'checklist-field-group-config.active-tabs',
-            defaultMessage: 'Active Tabs',
+            id: 'checklist-field-group-config.tabs',
+            defaultMessage: 'Tabs',
           })}
         </Typography.Title>
-        <div className={styles.checkboxGroup}>
-          {tabOptions.map(({ value, label, icon }) => (
-            <div key={value} className={styles.checkboxItem}>
-              <Checkbox
-                checked={activeTabs.includes(value)}
-                onChange={() => handleTabToggle(value)}
-                disabled={activeTabs.length === 1 && activeTabs.includes(value)}
-              />
-              <Icon icon={icon} width={16} />
-              <Typography.Text>{label}</Typography.Text>
-            </div>
-          ))}
+        <Typography.Text className={styles.sectionDescription}>
+          {intl.formatMessage({
+            id: 'checklist-field-group-config.tabs-description',
+            defaultMessage: 'Which tabs show for this group, and which one opens first.',
+          })}
+        </Typography.Text>
+        <div className={styles.tabList}>
+          {TAB_OPTIONS.map(({ value, label, icon }) => {
+            const isActive = activeTabs.includes(value);
+            const isDefault = defaultTab === value;
+            return (
+              <div key={value} className={styles.tabRow}>
+                <Checkbox
+                  checked={isActive}
+                  onChange={() => handleTabToggle(value)}
+                  disabled={isActive && activeTabs.length === 1}
+                />
+                <Icon icon={icon} width={16} />
+                <Typography.Text className={styles.tabRowLabel}>{label}</Typography.Text>
+                <button
+                  type="button"
+                  className={cx(styles.defaultToggle, isDefault && styles.defaultToggleActive)}
+                  onClick={() => handleSetDefaultTab(value)}
+                  aria-pressed={isDefault}
+                  aria-label={intl.formatMessage(
+                    {
+                      id: 'checklist-field-group-config.make-default-tab',
+                      defaultMessage: 'Make {label} the default tab',
+                    },
+                    { label },
+                  )}
+                >
+                  <Icon icon={isDefault ? 'solar:star-bold' : 'solar:star-linear'} width={16} />
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
+
+      <div className={styles.divider} />
 
       <div className={styles.section}>
         <Typography.Title level={5} noMargin className={styles.sectionTitle}>
@@ -236,7 +265,7 @@ const ChecklistFieldGroupConfig = ({
         </Typography.Text>
         <MultiSelectButton
           values={scheduleDays}
-          setValues={setScheduleDays}
+          setValues={handleScheduleDaysChange}
           options={[
             { label: 'Mon', value: Day.Mon },
             { label: 'Tue', value: Day.Tue },
@@ -247,14 +276,9 @@ const ChecklistFieldGroupConfig = ({
             { label: 'Sun', value: Day.Sun },
           ]}
         />
-        <Input
-          type="time"
-          value={scheduleTime}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setScheduleTime(e.target.value)}
-          className={styles.scheduleTimeInput}
-          renderRightInput={() => <></>}
-        />
       </div>
+
+      <div className={styles.divider} />
 
       <div className={styles.section}>
         <Typography.Title level={5} noMargin className={styles.sectionTitle}>
@@ -264,10 +288,7 @@ const ChecklistFieldGroupConfig = ({
           })}
         </Typography.Title>
         <div className={styles.collapseSetting}>
-          <Checkbox
-            checked={collapseDefault}
-            onChange={e => setCollapseDefault(e.target.checked)}
-          />
+          <Checkbox checked={collapseDefault} onChange={handleCollapseChange} />
           <Typography.Text>
             {intl.formatMessage({
               id: 'checklist-field-group-config.collapse-default-description',
@@ -278,80 +299,69 @@ const ChecklistFieldGroupConfig = ({
       </div>
 
       {onSelectedFieldsChange && (
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <Typography.Title level={5} noMargin className={styles.sectionTitle}>
-              {intl.formatMessage({
-                id: 'checklist-field-group-config.select-fields',
-                defaultMessage: 'Select Fields',
-              })}
-            </Typography.Title>
-            <Button
-              onClick={handleAddField}
-              className={styles.addFieldButton}
-              type="ghost"
-              size="sm"
-            >
-              <Icon width={16} icon="fe:plus" />
-              {intl.formatMessage({
-                id: 'checklist-field-group-config.add-field',
-                defaultMessage: 'Add Field',
-              })}
-            </Button>
-          </div>
+        <>
+          <div className={styles.divider} />
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <Typography.Title level={5} noMargin className={styles.sectionTitle}>
+                {intl.formatMessage({
+                  id: 'checklist-field-group-config.select-fields',
+                  defaultMessage: 'Select Fields',
+                })}
+              </Typography.Title>
+              <Button
+                onClick={handleAddField}
+                className={styles.addFieldButton}
+                type="ghost"
+                size="sm"
+              >
+                <Icon width={16} icon="fe:plus" />
+                {intl.formatMessage({
+                  id: 'checklist-field-group-config.add-field',
+                  defaultMessage: 'Add Field',
+                })}
+              </Button>
+            </div>
 
-          <div className={styles.fieldsList}>
-            {availableFields.length === 0 ? (
-              <div className={styles.emptyState}>
-                <Icon
-                  width={48}
-                  icon="solar:folder-open-line-duotone"
-                  className={styles.emptyIcon}
-                />
-                <Typography.Text className={styles.emptyText}>
-                  {intl.formatMessage({
-                    id: 'checklist-field-group-config.no-fields-available',
-                    defaultMessage: 'No fields available',
-                  })}
-                </Typography.Text>
-              </div>
-            ) : (
-              availableFields.map(fieldId => {
-                const { title, icon } = getFieldDisplayInfo(fieldId);
-                const isChecked = selectedFields.includes(fieldId);
-                return (
-                  <div key={fieldId} className={styles.fieldItem}>
-                    <Checkbox
-                      key={`${fieldId}-${isChecked}`}
-                      checked={isChecked}
-                      onChange={() => handleFieldToggle(fieldId)}
-                      className={styles.fieldCheckbox}
-                    />
-                    <Icon width={16} icon={icon} className={styles.fieldIcon} />
-                    <Typography.Text className={styles.fieldLabel}>
-                      {title}
-                    </Typography.Text>
-                  </div>
-                );
-              })
-            )}
+            <div className={styles.fieldsList}>
+              {availableFields.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <Icon
+                    width={48}
+                    icon="solar:folder-open-line-duotone"
+                    className={styles.emptyIcon}
+                  />
+                  <Typography.Text className={styles.emptyText}>
+                    {intl.formatMessage({
+                      id: 'checklist-field-group-config.no-fields-available',
+                      defaultMessage: 'No fields available',
+                    })}
+                  </Typography.Text>
+                </div>
+              ) : (
+                availableFields.map(fieldId => {
+                  const { title, icon } = getFieldDisplayInfo(fieldId);
+                  const isChecked = selectedFields.includes(fieldId);
+                  return (
+                    <div key={fieldId} className={styles.fieldItem}>
+                      <Checkbox
+                        key={`${fieldId}-${isChecked}`}
+                        checked={isChecked}
+                        onChange={() => handleFieldToggle(fieldId)}
+                        className={styles.fieldCheckbox}
+                      />
+                      <Icon width={16} icon={icon} className={styles.fieldIcon} />
+                      <Typography.Text className={styles.fieldLabel}>
+                        {title}
+                      </Typography.Text>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
-
-      <div className={styles.section}>
-        <Button
-          type="primary"
-          size="md"
-          onClick={handleSubmit}
-          className={styles.submitButton}
-        >
-          {intl.formatMessage({
-            id: 'checklist-field-group-config.submit',
-            defaultMessage: 'Save Changes',
-          })}
-        </Button>
-      </div>
 
       {isAddFieldPanelVisible && (
         <div className={styles.addFieldPanel}>
