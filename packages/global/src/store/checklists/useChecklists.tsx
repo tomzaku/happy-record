@@ -2,7 +2,7 @@ import React from 'react';
 import { useSessionStore, useSession } from '../../hook';
 import { useChecklistTemplates } from './useChecklistTemplates';
 import { v4 } from 'uuid';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay, addDays } from 'date-fns';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
@@ -23,12 +23,15 @@ export type Checklist = {
   updatedAt: string;
 };
 
-// Fetched by whatever scope is actually asked for — one day, one id, or one
-// template's whole history — never "everything." Keyed so the same
-// (identity, scope) tuple isn't re-fetched every call within a page load;
-// `userId` is part of every key so a scope already fetched for one identity
-// re-fetches once the signed-in identity actually changes.
+// Fetched by whatever scope is actually asked for — one day, one range, one
+// id, or one template's whole history — never "everything." Keyed so the
+// same (identity, scope) tuple isn't re-fetched every call within a page
+// load; `userId` is part of every key so a scope already fetched for one
+// identity re-fetches once the signed-in identity actually changes.
 const fetchedScopes = new Set<string>();
+
+const dayScopeKey = (userId: string | undefined, date: Date) =>
+  JSON.stringify({ userId, day: date.toDateString() });
 
 export const useChecklist = () => {
   const [checklist, setChecklist] = useSessionStore<Record<string, Checklist>>(CHECKLIST_KEY, {});
@@ -57,30 +60,55 @@ export const useChecklist = () => {
     [setChecklist],
   );
 
-  const getRepeatChecklistByGivingDate = React.useCallback(
-    (
-      { date, selectedTag }: { date: Date; selectedTag?: string } = {
-        date: new Date(),
-      },
-    ) => {
-      // Background fetch for this exact day — merges into the store when it
-      // lands, visible next time this day is read. A quiet `null` (offline,
-      // no backend) just means "use what this device already has."
-      const dayKey = JSON.stringify({ userId, day: date.toDateString() });
-      if (ready && !fetchedScopes.has(dayKey)) {
-        fetchedScopes.add(dayKey);
-        fetchChecklists({
-          from: startOfDay(date).toISOString(),
-          to: endOfDay(date).toISOString(),
-        }).then(result => {
-          if (!result) {
-            fetchedScopes.delete(dayKey);
-            return;
-          }
-          mergeFetched(result.checklists);
-        });
-      }
+  // A wider-range fetch a multi-day view (WeeklyCalendarVertical) can call
+  // once for its whole visible window instead of relying on
+  // getRepeatChecklistByGivingDate's own one-day fallback below — asking
+  // for 4 weeks one day at a time was 28 separate requests; a caller that
+  // knows it needs a week (or several) can ask for that in one instead.
+  // Scoped by the exact (identity, from, to) tuple, same dedup mechanism as
+  // every other scoped fetch here.
+  const ensureChecklistsFetched = React.useCallback(
+    ({ from, to }: { from: Date; to: Date }) => {
+      const rangeKey = JSON.stringify({
+        userId,
+        from: startOfDay(from).toISOString(),
+        to: endOfDay(to).toISOString(),
+      });
+      if (!ready || fetchedScopes.has(rangeKey)) return;
+      fetchedScopes.add(rangeKey);
+      fetchChecklists({
+        from: startOfDay(from).toISOString(),
+        to: endOfDay(to).toISOString(),
+      }).then(result => {
+        if (!result) {
+          fetchedScopes.delete(rangeKey);
+          return;
+        }
+        // Every day inside this range is now covered — mark each one under
+        // the same key getRepeatChecklistByGivingDate's own per-day fallback
+        // checks, so a single-day view (ChecklistToday) sitting next to a
+        // multi-day one that already covered today doesn't fire a second,
+        // redundant request for the exact same day.
+        for (let day = startOfDay(from); day <= to; day = addDays(day, 1)) {
+          fetchedScopes.add(dayScopeKey(userId, day));
+        }
+        mergeFetched(result.checklists);
+      });
+    },
+    [userId, ready, mergeFetched],
+  );
 
+  // Pure — derives a day's view from whatever's already in the local store,
+  // no fetch triggered. Split out from getRepeatChecklistByGivingDate below
+  // so a caller that manages its own fetching (WeeklyCalendarVertical, via
+  // ensureChecklistsFetched, one request per visible week rather than one
+  // per day) can read a day's computed view without also triggering that
+  // day's own redundant single-day fetch — computing this inside a
+  // useMemo/render, as every consumer here does, runs before any effect
+  // does, so a fetch trigger left in the read path itself always wins the
+  // race against a wider batched fetch scheduled from an effect.
+  const computeChecklistsForDate = React.useCallback(
+    ({ date, selectedTag }: { date: Date; selectedTag?: string }) => {
       // Get existing checklists for the given date
       const checklistsByGivingDate = Object.values(checklist).filter(
         currentChecklist =>
@@ -178,7 +206,41 @@ export const useChecklist = () => {
         ),
       };
     },
-    [checklist, getChecklistTemplateIdsByGivingDate, checklistTemplate, userId, ready, mergeFetched],
+    [checklist, getChecklistTemplateIdsByGivingDate, checklistTemplate],
+  );
+
+  // The original combined "fetch this day, then read it" shape — still what
+  // a single-day view (ChecklistToday) wants, so its own fetch keeps
+  // happening automatically on read with no separate effect to remember.
+  const getRepeatChecklistByGivingDate = React.useCallback(
+    (
+      { date, selectedTag }: { date: Date; selectedTag?: string } = {
+        date: new Date(),
+      },
+    ) => {
+      // Background fetch for this exact day — merges into the store when it
+      // lands, visible next time this day is read. A quiet `null` (offline,
+      // no backend) just means "use what this device already has." A no-op
+      // when a wider ensureChecklistsFetched call already covered this day
+      // (see above).
+      const dayKey = dayScopeKey(userId, date);
+      if (ready && !fetchedScopes.has(dayKey)) {
+        fetchedScopes.add(dayKey);
+        fetchChecklists({
+          from: startOfDay(date).toISOString(),
+          to: endOfDay(date).toISOString(),
+        }).then(result => {
+          if (!result) {
+            fetchedScopes.delete(dayKey);
+            return;
+          }
+          mergeFetched(result.checklists);
+        });
+      }
+
+      return computeChecklistsForDate({ date, selectedTag });
+    },
+    [computeChecklistsForDate, userId, ready],
   );
 
   const updateChecklist = React.useCallback(
@@ -234,6 +296,22 @@ export const useChecklist = () => {
       };
     },
     [getRepeatChecklistByGivingDate],
+  );
+
+  // Same read as getChecklistByGivingDate, but no fetch side effect — for a
+  // caller that's already fetching its own range via ensureChecklistsFetched
+  // (WeeklyCalendarVertical, one call per day it renders) and would
+  // otherwise fire that many redundant single-day requests before its own
+  // batched fetch even gets a chance to run.
+  const getChecklistForDateWithoutFetching = React.useCallback(
+    ({ date, selectedTag }: { date: Date; selectedTag?: string }) => {
+      const { checklistIds, checklist } = computeChecklistsForDate({ date, selectedTag });
+      return {
+        checklist,
+        checklistIds,
+      };
+    },
+    [computeChecklistsForDate],
   );
 
   // Async and awaited (unlike the other read functions here) — its one
@@ -296,6 +374,8 @@ export const useChecklist = () => {
   return {
     updateChecklist,
     getChecklistByGivingDate,
+    getChecklistForDateWithoutFetching,
+    ensureChecklistsFetched,
     getAllChecklistWithTemplate,
     addChecklist,
     getChecklistDetail,

@@ -1,3 +1,4 @@
+import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 
 // See useChecklistTemplates.test.tsx's own comment on this one — same
@@ -123,6 +124,80 @@ describe('getChecklistByGivingDate — day-scoped fetch volume', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
 
     expect(fetchChecklistsMock).toHaveBeenCalledTimes(7);
+  });
+});
+
+describe('ensureChecklistsFetched — batching a multi-day view into one request', () => {
+  it('fetches a whole range in a single request instead of one per day', async () => {
+    freshUserId();
+    const from = new Date(2026, 7, 17); // Monday
+    const to = new Date(2026, 7, 23); // Sunday, same week
+
+    const { result } = renderHook(() => useChecklist());
+
+    act(() => {
+      result.current.ensureChecklistsFetched({ from, to });
+    });
+
+    await waitFor(() => expect(fetchChecklistsMock).toHaveBeenCalledTimes(1));
+    // Give a wrongly-per-day implementation a chance to fire more.
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(fetchChecklistsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("a day already covered by a range fetch doesn't also fire its own single-day fetch", async () => {
+    freshUserId();
+    const from = new Date(2026, 7, 17);
+    const to = new Date(2026, 7, 23);
+    const dayInRange = new Date(2026, 7, 20);
+
+    const { result } = renderHook(() => useChecklist());
+
+    act(() => {
+      result.current.ensureChecklistsFetched({ from, to });
+    });
+    await waitFor(() => expect(fetchChecklistsMock).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      // The combined fetch+read function — ChecklistToday's own shape —
+      // asked for a day the range above already covers.
+      result.current.getChecklistByGivingDate({ date: dayInRange });
+    });
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(fetchChecklistsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('getChecklistForDateWithoutFetching never triggers a fetch on its own', async () => {
+    freshUserId();
+    const date = new Date(2026, 7, 20);
+
+    renderHook(() => {
+      const { getChecklistForDateWithoutFetching } = useChecklist();
+      getChecklistForDateWithoutFetching({ date });
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(fetchChecklistsMock).not.toHaveBeenCalled();
+  });
+
+  it('the WeeklyCalendarVertical pattern (ensureChecklistsFetched once + a per-day read) costs one request for a week, not seven', async () => {
+    freshUserId();
+    const from = new Date(2026, 7, 17);
+    const to = new Date(2026, 7, 23);
+    const days = Array.from({ length: 7 }, (_, i) => new Date(2026, 7, 17 + i));
+
+    renderHook(() => {
+      const { ensureChecklistsFetched, getChecklistForDateWithoutFetching } = useChecklist();
+      React.useEffect(() => {
+        ensureChecklistsFetched({ from, to });
+      }, [ensureChecklistsFetched]);
+      days.forEach(date => getChecklistForDateWithoutFetching({ date }));
+    });
+
+    await waitFor(() => expect(fetchChecklistsMock).toHaveBeenCalledTimes(1));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(fetchChecklistsMock).toHaveBeenCalledTimes(1);
   });
 });
 

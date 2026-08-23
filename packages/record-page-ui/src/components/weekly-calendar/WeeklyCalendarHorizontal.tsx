@@ -28,7 +28,7 @@ type Props = {
 };
 
 const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Props) => {
-  const { getChecklistByGivingDate } = useChecklist();
+  const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
   const { getChecklistTemplate } = useChecklistTemplates();
   const [showCalendarDialog, setShowCalendarDialog] = React.useState(false);
 
@@ -46,25 +46,31 @@ const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Pr
     [weekStart, weekEnd],
   );
 
+  // One fetch for the whole visible week instead of one per day — see
+  // WeeklyCalendarVertical's own comment on the same pattern.
+  React.useEffect(() => {
+    ensureChecklistsFetched({ from: weekStart, to: weekEnd });
+  }, [weekStart, weekEnd, ensureChecklistsFetched]);
+
   // Memoize tasks for each day to prevent unnecessary re-renders
   const tasksByDay = React.useMemo(() => {
     const tasksMap = new Map();
 
     weekDays.forEach(date => {
-      const { checklist } = getChecklistByGivingDate({ 
-        date, 
-        selectedTag: selectedTag === 'all' ? undefined : selectedTag 
+      const { checklist } = getChecklistForDateWithoutFetching({
+        date,
+        selectedTag: selectedTag === 'all' ? undefined : selectedTag,
       });
       tasksMap.set(date.toISOString().split('T')[0], Object.values(checklist));
     });
 
     return tasksMap;
     // `getChecklistTemplateIdsByGivingDate`/`getChecklistTemplate` aren't
-    // actually called in this memo — `getChecklistByGivingDate` is, and was
-    // missing here, which meant a checklist synced/edited elsewhere (or
-    // even completed on this same device, in the same session) never
+    // actually called in this memo — `getChecklistForDateWithoutFetching` is,
+    // and was missing here, which meant a checklist synced/edited elsewhere
+    // (or even completed on this same device, in the same session) never
     // refreshed this week's task list.
-  }, [weekDays, getChecklistByGivingDate, selectedTag]);
+  }, [weekDays, getChecklistForDateWithoutFetching, selectedTag]);
 
   const handlePrevWeek = React.useCallback(() => {
     const prevWeek = new Date(currentDate);

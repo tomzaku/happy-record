@@ -29,7 +29,7 @@ type Props = {
 };
 
 const WeeklyCalendarVertical = ({ currentDate, onDateChange, selectedTag }: Props) => {
-  const { getChecklistByGivingDate } = useChecklist();
+  const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
   const { getChecklistTemplate } = useChecklistTemplates();
   const [showCalendarDialog, setShowCalendarDialog] = React.useState(false);
   const [visibleWeeks, setVisibleWeeks] = React.useState(4);
@@ -55,22 +55,32 @@ const WeeklyCalendarVertical = ({ currentDate, onDateChange, selectedTag }: Prop
     return weeks;
   }, [visibleWeeks]);
 
+  // One fetch per visible *week*, not per day — asking for 4 weeks one day
+  // at a time was 28 separate requests. Each week's own scope key is stable
+  // as `visibleWeeks` grows via infinite scroll, so a week already fetched
+  // is never re-requested; only the newly-revealed weeks fire.
+  React.useEffect(() => {
+    weeksToShow.forEach(week => {
+      ensureChecklistsFetched({ from: week.weekStart, to: week.weekEnd });
+    });
+  }, [weeksToShow, ensureChecklistsFetched]);
+
   // Memoize tasks for each day
   const tasksByDay = React.useMemo(() => {
     const tasksMap = new Map();
     
     weeksToShow.forEach(week => {
       week.weekDays.forEach(date => {
-        const { checklist } = getChecklistByGivingDate({ 
-          date, 
-          selectedTag: selectedTag === 'all' ? undefined : selectedTag 
+        const { checklist } = getChecklistForDateWithoutFetching({
+          date,
+          selectedTag: selectedTag === 'all' ? undefined : selectedTag,
         });
         tasksMap.set(date.toISOString().split('T')[0], Object.values(checklist));
       });
     });
 
     return tasksMap;
-  }, [weeksToShow, getChecklistByGivingDate, selectedTag]);
+  }, [weeksToShow, getChecklistForDateWithoutFetching, selectedTag]);
 
   // Infinite scroll handler
   const handleScroll = React.useCallback(() => {

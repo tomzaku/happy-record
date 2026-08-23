@@ -160,8 +160,13 @@ genuinely need (field pickers, the manage-fields screen, AI-generate context). `
 `fieldIds`/`folderId`/`limit`. `checklist-templates` supports `?id=` (one, own or public) alongside
 "all mine." `checklists` supports `?id=` (one — added for `detail-task-page`, which already knows
 the exact id from the URL and has no reason to fetch a range and filter), `checklistTemplateId`,
-and `from`/`to` (`getChecklistByGivingDate` fetches one day at a time; `WeeklyCalendarVertical`'s
-growing multi-week view gets this for free since each new visible day is its own scope key).
+and `from`/`to` (`getChecklistByGivingDate` fetches its one day directly — the shape a single-day
+view like `ChecklistToday` wants. A multi-day view calls `ensureChecklistsFetched` instead, once
+for its whole visible range, and reads each day via the non-fetching `getChecklistForDateWithoutFetching`
+— `WeeklyCalendarVertical`/`WeeklyCalendarHorizontal` both do this, one request per visible week
+rather than one per day. This used to be one request per day even for a multi-week view — cheap to
+dedupe against re-fetching the same day twice, but not against the sheer number of days a growing
+calendar shows at once).
 `checklist-records` supports `checklistTemplateId`/`from`/`to`/`fieldIds`/`limit`, unchanged.
 `note-folders`/`flags` have zero consumers today, so they just fetch "all mine" once, unscoped —
 there's nothing to narrow yet.
