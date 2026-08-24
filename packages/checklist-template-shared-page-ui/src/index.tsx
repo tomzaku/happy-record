@@ -67,10 +67,13 @@ const ChecklistTemplateSharedPageUi = () => {
 
   // Joining a challenge never forks — see useJoinChallenge — and requires a
   // real (Google) sign-in, since an anonymous identity is throwaway and
-  // wouldn't mean anything on a leaderboard. `signInWithGoogle` redirects
-  // away entirely (HashRouter loses the in-app route across it — see
-  // useResumePendingChallengeJoin), so the intent has to be saved first and
-  // picked back up after the redirect, not awaited here.
+  // wouldn't mean anything on a leaderboard. `signInWithGoogle` navigates
+  // away to Google's consent screen and back — the redirect does land back
+  // on this same page (see useSession.ts's `redirectTo`), but this
+  // component has no "resume on return" logic of its own (and the URL's
+  // `?from=&to=` greeting params don't survive the round trip either), so
+  // the intent still has to be saved first and picked back up by the
+  // root-mounted resume hook — see useResumePendingChallengeJoin.
   const joinTheChallenge = async (name: string) => {
     if (!id || !challenge) return;
     if (isAnonymous) {

@@ -274,12 +274,19 @@ itself, never the account's real data. If that immediate retry itself fails (off
 misconfigured), it still falls through to the normal anonymous-session flow rather than leaving
 `ready` stuck. Untested against real Google OAuth either way — this project has no credentials
 configured to verify against (see above).
-Cleaning that error out of the URL after has to treat the query string and the hash differently —
-this app is a `HashRouter`, so the hash *is* the route, and GoTrue's redirect lands the raw error
-params there with no leading `/` (`#error=...`, not `#/error=...`), which HashRouter reads as an
-unmatched path and logs "No routes matched" for. The query half is fine to rewrite silently with
-`history.replaceState`; the hash half needs a real hash change (`window.location.hash = '/'`)
-because `replaceState` doesn't fire the `hashchange` event HashRouter listens for.
+Cleaning that error out of the URL after is a plain `history.replaceState` clearing both the query
+string and the hash — this app is a `BrowserRouter` (`packages/route/src/index.tsx`, `basename`
+tracking vite's `base` the same way `voca`'s `App.tsx` does), so neither one is part of routing and
+there's no risk of landing on an unmatched path the way a `HashRouter` reading `#error=...` as a
+route would. (This app used to be a `HashRouter`, specifically to dodge that — see git history on
+`useSession.ts` if you need the old shape.)
+
+`signInWithGoogle`'s `redirectTo: origin + pathname` sends the user back to the exact page they
+signed in from, not just the app root — `pathname` *is* the in-app route now. A page that wants to
+resume something after the round trip still can't rely on its own remount to do that (the URL's
+query params, e.g. a shared-challenge page's `?from=&to=` greeting text, don't survive the
+redirect) — save the intent to `localStorage` first and resume it from a hook mounted once at the
+app root, the shape `useResumePendingChallengeJoin.tsx` uses.
 
 ### `supabase` is for auth only, in one place
 

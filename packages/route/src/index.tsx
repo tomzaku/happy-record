@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Header from '@dreamer/header';
 import SettingPage from '@dreamer/setting-page-ui';
 import SettingPageDesktop from '@dreamer/setting-page-ui/src/index.desktop';
@@ -178,12 +178,16 @@ const AppRouter = () => {
   );
 };
 
-// Wrap AppRouter with HashRouter in a parent component or directly if needed
+// GitHub Pages serves the build under /happy-record/ (vite.config.mjs's
+// `base`) but local dev serves under '/' — `basename` has to track the same
+// split so a route like `/task/:id` resolves under both. `BASE_URL` always
+// has a trailing slash; `basename` must not, or react-router double-slashes
+// generated links (`//task/:id`). Same pattern as voca's App.tsx.
 const App = () => {
   return (
-    <HashRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/+$/, '') || '/'}>
       <AppRouter />
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

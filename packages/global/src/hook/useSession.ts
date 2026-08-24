@@ -108,31 +108,19 @@ export const useSession = () => {
     // not keep trying to link — see `rememberExistingAccount`.
     if (typeof window !== 'undefined') {
       const query = new URLSearchParams(window.location.search);
-      const rawHash = window.location.hash.replace(/^#/, '');
-      const hash = new URLSearchParams(rawHash);
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       if (query.get('error_code') === 'identity_already_exists' || hash.get('error_code') === 'identity_already_exists') {
         rememberExistingAccount();
 
-        // The query string isn't part of this app's routing (HashRouter
-        // only reads the hash) — safe to rewrite silently.
-        if (window.location.search) {
+        // Neither the query string nor the hash is part of this app's
+        // routing anymore (BrowserRouter reads `pathname`, ignores both) —
+        // safe to strip them with a plain `replaceState`, no special
+        // hash-vs-query handling needed the way HashRouter used to require.
+        if (window.location.search || window.location.hash) {
           const url = new URL(window.location.href);
           url.search = '';
+          url.hash = '';
           window.history.replaceState({}, '', url.toString());
-        }
-
-        // The hash IS this app's route. GoTrue's error redirect lands the
-        // raw error params there with no leading `/` (`#error=...`, not
-        // `#/error=...`), which HashRouter reads as the path `/error=...`
-        // and can't match — the "No routes matched" console error. Fixing
-        // it needs a *real* hash change, not `history.replaceState`: that
-        // API doesn't fire `hashchange`, which is what HashRouter listens
-        // for, so it would never notice and the app would stay stuck on
-        // that unmatched route even after the URL looked clean underneath.
-        // Assigning `location.hash` directly is a same-document navigation
-        // that does fire it, landing HashRouter back on `/`.
-        if (rawHash.includes('error_code=identity_already_exists')) {
-          window.location.hash = '/';
         }
 
         // Without this, the device is left sitting anonymous: nothing in the
@@ -230,14 +218,13 @@ export const useSession = () => {
   const signInWithGoogle = async (): Promise<string | null> => {
     if (!supabase) return 'Not connected.';
     const options = {
-      // `window.location.origin` alone is wrong on GitHub Pages: the app is
-      // served from a sub-path (vite.config's `base: '/happy-record/'` in
-      // prod), so the origin by itself points at the *domain root*, not the
-      // deployed app — that path may 404 or serve an unrelated site. Since
-      // this is a HashRouter, `pathname` never changes with the in-app route
-      // (the route lives in the hash — see CLAUDE.md), so origin + pathname
-      // reliably reconstructs the deployed app's own base URL in both prod
-      // and local dev (where base is '/').
+      // `origin + pathname` sends the user back to the exact page they
+      // signed in from (BrowserRouter's `pathname` *is* the in-app route —
+      // see CLAUDE.md), not just the app root. That's also why
+      // `window.location.origin` alone would be wrong on GitHub Pages: the
+      // app is served from a sub-path (vite.config's `base: '/happy-record/'`
+      // in prod), so `pathname` already carries both that sub-path and the
+      // current route.
       redirectTo:
         typeof window !== 'undefined'
           ? window.location.origin + window.location.pathname
