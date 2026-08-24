@@ -62,8 +62,8 @@ const ChecklistTodayDesktop = ({
   date: Date;
   selectedTag?: string;
 }) => {
-  const { getChecklistByGivingDate, updateChecklist } = useChecklist();
-  const { checklistTemplate } = useChecklistTemplates();
+  const { getChecklistByGivingDate, updateChecklist, checklistsLoading } = useChecklist();
+  const { checklistTemplate, templatesLoading } = useChecklistTemplates();
   const navigate = useNavigate();
   const intl = useIntl();
 
@@ -86,6 +86,30 @@ const ChecklistTodayDesktop = ({
     () => getChecklistByGivingDate({ date, selectedTag }),
     [getChecklistByGivingDate, date, selectedTag],
   );
+
+  // `checklistByGivingDateIds` is empty both while the templates/checklists
+  // fetch is still in flight and once it's genuinely resolved with nothing —
+  // indistinguishable without these flags. Showing "No tasks found!" during
+  // the former flashes a wrong, momentary answer on every fresh page load.
+  if ((templatesLoading || checklistsLoading) && checklistByGivingDateIds.length === 0) {
+    return (
+      <div className={styles.emptyContainer}>
+        <div className={styles.emptyBody}>
+          <Icon
+            width={40}
+            icon="svg-spinners:180-ring"
+            className={styles.iconEmpty}
+          />
+          <Typography.Text className={styles.emptyDescription}>
+            {intl.formatMessage({
+              id: 'ChecklistToday.loading',
+              defaultMessage: 'Fetching your tasks…',
+            })}
+          </Typography.Text>
+        </div>
+      </div>
+    );
+  }
 
   if (checklistByGivingDateIds.length === 0) {
     return (

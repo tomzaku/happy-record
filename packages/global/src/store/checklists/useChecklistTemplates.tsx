@@ -193,6 +193,16 @@ export const useChecklistTemplates = () => {
     string[]
   >(SELECTED_CHECKLISTS_TEMPLATE_KEY, []);
   const { userId, ready } = useSession();
+  // Starts `true` and flips to `false` once the "all mine" fetch settles
+  // (success or a quiet `null` both count — either way, there's nothing left
+  // to wait on). `checklistTemplate` being empty is otherwise indistinguishable
+  // from "hasn't loaded yet" — a consumer like ChecklistToday needs this to
+  // tell "no tasks exist" apart from "still fetching," so it doesn't flash a
+  // misleading empty state before the real data has had a chance to arrive.
+  const [templatesLoading, setTemplatesLoading] = useSessionStore<boolean>(
+    'checklist_templates_loading',
+    true,
+  );
 
   // Shared by every fetch path below (one id, or "all mine") so a template
   // landing here for the first time — no matter which scope brought it in —
@@ -252,11 +262,13 @@ export const useChecklistTemplates = () => {
     fetchChecklistTemplates().then(result => {
       if (!result) {
         fetchedScopes.delete(scopeKey);
+        setTemplatesLoading(false);
         return;
       }
       mergeTemplates(result.templates);
+      setTemplatesLoading(false);
     });
-  }, [userId, ready, mergeTemplates]);
+  }, [userId, ready, mergeTemplates, setTemplatesLoading]);
 
   const addChecklistTemplate = (
     currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt' | 'updatedAt'> & {
@@ -424,6 +436,7 @@ export const useChecklistTemplates = () => {
 
   return {
     checklistTemplate,
+    templatesLoading,
     getChecklistTemplate,
     addChecklistTemplate,
     updateChecklistTemplate,

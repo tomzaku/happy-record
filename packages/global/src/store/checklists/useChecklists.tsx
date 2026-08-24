@@ -60,6 +60,15 @@ export const useChecklist = () => {
   const { userId, ready } = useSession();
   const { getChecklistTemplateIdsByGivingDate, checklistTemplate } =
     useChecklistTemplates();
+  // Starts `true`, flips to `false` once a checklists fetch (either path
+  // below) settles — success or a quiet `null`. `checklist` being empty is
+  // otherwise indistinguishable from "hasn't loaded yet"; ChecklistToday
+  // needs this to show a loading state instead of flashing "No tasks
+  // found!" before the real data has had a chance to arrive.
+  const [checklistsLoading, setChecklistsLoading] = useSessionStore<boolean>(
+    'checklists_loading',
+    true,
+  );
 
   const mergeFetched = React.useCallback(
     (fetched: Checklist[]) => {
@@ -98,26 +107,38 @@ export const useChecklist = () => {
       });
       if (!ready || fetchedScopes.has(rangeKey)) return;
       fetchedScopes.add(rangeKey);
+      // Every day inside this range is claimed *before* the request fires,
+      // not after it resolves — ChecklistToday and this range fetch mount as
+      // siblings on the same page (see index.desktop.tsx/index.mobile.tsx)
+      // and their effects can run in the same tick, before either's network
+      // round trip completes. Marking after `.then()` left a window where
+      // both fired for the same day (ChecklistToday's own per-day dayScopeKey
+      // check, right below, races this instead of ever seeing it). Marking
+      // synchronously means whichever of the two effects runs second — in
+      // practice, ChecklistToday's, since the weekly calendar mounts first
+      // in both layouts — sees the day already claimed and skips its own
+      // request. Cleared alongside `rangeKey` on failure so a real rejection
+      // (offline, no backend) doesn't leave these days permanently un-fetchable.
+      const days: Date[] = [];
+      for (let day = startOfDay(from); day <= to; day = addDays(day, 1)) {
+        days.push(day);
+        fetchedScopes.add(dayScopeKey(userId, day));
+      }
       fetchChecklists({
         from: startOfDay(from).toISOString(),
         to: endOfDay(to).toISOString(),
       }).then(result => {
         if (!result) {
           fetchedScopes.delete(rangeKey);
+          days.forEach(day => fetchedScopes.delete(dayScopeKey(userId, day)));
+          setChecklistsLoading(false);
           return;
         }
-        // Every day inside this range is now covered — mark each one under
-        // the same key getRepeatChecklistByGivingDate's own per-day fallback
-        // checks, so a single-day view (ChecklistToday) sitting next to a
-        // multi-day one that already covered today doesn't fire a second,
-        // redundant request for the exact same day.
-        for (let day = startOfDay(from); day <= to; day = addDays(day, 1)) {
-          fetchedScopes.add(dayScopeKey(userId, day));
-        }
         mergeFetched(result.checklists);
+        setChecklistsLoading(false);
       });
     },
-    [userId, ready, mergeFetched],
+    [userId, ready, mergeFetched, setChecklistsLoading],
   );
 
   // Pure — derives a day's view from whatever's already in the local store,
@@ -254,15 +275,17 @@ export const useChecklist = () => {
         }).then(result => {
           if (!result) {
             fetchedScopes.delete(dayKey);
+            setChecklistsLoading(false);
             return;
           }
           mergeFetched(result.checklists);
+          setChecklistsLoading(false);
         });
       }
 
       return computeChecklistsForDate({ date, selectedTag });
     },
-    [computeChecklistsForDate, userId, ready],
+    [computeChecklistsForDate, userId, ready, setChecklistsLoading],
   );
 
   const updateChecklist = React.useCallback(
@@ -409,5 +432,6 @@ export const useChecklist = () => {
     addChecklist,
     getChecklistDetail,
     deleteChecklist,
+    checklistsLoading,
   };
 };

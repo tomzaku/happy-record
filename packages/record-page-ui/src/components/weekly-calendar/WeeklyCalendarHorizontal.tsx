@@ -29,7 +29,12 @@ type Props = {
 
 const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Props) => {
   const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
-  const { getChecklistTemplate } = useChecklistTemplates();
+  // A plain lookup, not `getChecklistTemplate` — that helper carries its own
+  // fetch-by-id side effect (for callers who only know one id), which fired
+  // redundantly here, racing the bulk "all mine" fetch that
+  // `getChecklistForDateWithoutFetching`'s own template-id resolution below
+  // already triggers.
+  const { checklistTemplate } = useChecklistTemplates();
   const [showCalendarDialog, setShowCalendarDialog] = React.useState(false);
 
   // Get the week range for the current date
@@ -176,9 +181,7 @@ const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Pr
 
               <div className={styles.tasksContainer}>
                 {dayTasks.slice(0, 3).map((task: Checklist) => {
-                  const template = getChecklistTemplate(
-                    task.checklistTemplateId,
-                  );
+                  const template = checklistTemplate[task.checklistTemplateId];
                   return (
                     <div key={task.id} className={styles.taskItem}>
                       <Icon

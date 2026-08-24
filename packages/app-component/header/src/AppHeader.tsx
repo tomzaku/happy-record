@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import styles from './AppHeader.module.scss';
 import Icon from '@moon-ui/icon/Icon';
 import AccountStatus from './AccountStatus';
+import TaskSearch from './TaskSearch';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -15,22 +16,18 @@ const Header = () => {
         DREAMER
       </div>
       <div className={styles.right}>
-        <Icon
+        {/* Notes is temporarily hidden while we focus on the task feature — re-enable later. */}
+        {/* <Icon
           className={styles.rightIcon}
           width={24}
           icon="solar:notes-line-duotone"
           onClick={() => {
             navigate('/notes');
           }}
-        />
-        <Icon
-          className={styles.rightIcon}
-          width={24}
-          icon="solar:settings-linear"
-          onClick={() => {
-            navigate('/setting');
-          }}
-        />
+        /> */}
+        <TaskSearch variant="header" className={styles.rightIcon} />
+        {/* Settings is reachable via the account icon below (AccountStatus navigates
+            there once signed in), so no separate settings icon here. */}
         <AccountStatus variant="header" className={styles.rightIcon} />
       </div>
       {/* <div className={styles.right}> */}

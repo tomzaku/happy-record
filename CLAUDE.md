@@ -123,12 +123,17 @@ retry queue.
 **`useSessionStore`** (`packages/global/src/hook/useSessionStore.ts`) is `useLocalStorage`'s exact
 `[value, setValue]` shape and its same module-level, zustand-backed `storeCache` mechanism (one
 reactive store shared across every component that asks for a key) — with no
-`window.localStorage` read/write. Every one of the 7 backend-mirrored resources (`fields`, `notes`,
-`note-folders`, `flags`, `checklists`, `checklist-templates`, `checklist-records`) uses this instead
-of `useLocalStorage` now: a fresh page load always starts empty and fetches fresh, never renders a
-stale local copy. Genuinely local-only state that was never backend-mirrored in the first place —
-`selected_checklist_templates`, `tags`, theme, pomodoro config — keeps using real `useLocalStorage`,
-unchanged; there's nothing to "go stale" for those.
+`window.localStorage` read/write. Every one of the 8 backend-mirrored resources (`fields`, `notes`,
+`note-folders`, `flags`, `checklists`, `checklist-templates`, `checklist-records`, `tags`) uses this
+instead of `useLocalStorage` now: a fresh page load always starts empty and fetches fresh, never
+renders a stale local copy. `tags` moved here from local-only for exactly the reason `flags` never
+was local-only in the first place: the home page's Filter by Tag dropdown reads the registry, not
+`checklist_templates.tags` (which was already synced) — a local-only registry could never list a
+tag that arrived any other way (synced down from another device, an AI-generated template's own
+proposed tags, a shared/public template), even though the template itself really had it. Genuinely
+local-only state that was never backend-mirrored in the first place — `selected_checklist_templates`,
+theme, pomodoro config — keeps using real `useLocalStorage`, unchanged; there's nothing to "go
+stale" for those.
 
 **The scoped-fetch-by-query-key pattern** is one shape, followed by every resource's own read
 functions (`useChecklistRecord.ts`'s `getChecklistRecords` had this shape first — the others were
@@ -243,8 +248,8 @@ open the app in a second browser/profile already signed into the same Google acc
 `useSession().signOut` (settings page's "Sign Out" row, shown once linked) ends the device's
 session, calls `resetSessionCache()` so the next request doesn't keep sending the revoked token,
 clears every remaining genuinely-local-only `useLocalStorage` key (`SYNCED_DATA_KEYS` in
-`useSession.ts` — `selected_checklist_templates`, `tags`, `user`; the 7 backend-mirrored resources
-aren't in this list anymore, since they're `useSessionStore`-backed and in-memory only), and
+`useSession.ts` — `selected_checklist_templates`, `user`; the 8 backend-mirrored resources aren't
+in this list anymore, since they're `useSessionStore`-backed and in-memory only), and
 reloads the page — the reload is what actually clears those in-memory stores and each resource's
 own "have I fetched this scope" `Set`, without which a next real sign-in would think it had
 already fetched when it hadn't. **Adding a new genuinely local-only `useLocalStorage` key means
@@ -322,6 +327,16 @@ templates — one flag groups many templates (`checklist_templates.flag_id`, a r
 `on delete set null`), not the many free-text labels `checklist_templates.tags` already is. Same
 shape as `note_folders`: name, description, timestamps, owner-only. Don't conflate the two —
 `tags` stays as loose multi-label filtering, `flag_id` is the "these are the same category" one.
+
+`tags` (table `tags`, client: `packages/global/src/store/tags/useTags.tsx`) is the *registry* of
+tag names behind the home page's Filter by Tag dropdown and `TagInput`'s autocomplete/create UI —
+distinct from `checklist_templates.tags`, the free-text `text[]` actually attached to a template.
+Same owner-only shape as `flags` (id, name, timestamps), no relation the way `flag_id` is a real
+foreign key — a template's `tags` array stores names, not registry ids, so renaming or deleting a
+registry row doesn't touch any template. Every `addTag` call (typing a new tag into `TagInput`, or
+applying an AI-generated template's own proposed tags — `useApplyAiChecklistTemplate.ts`) both
+updates a template's `tags` array *and* upserts the name into this table, deduped
+case-insensitively; nothing today deletes unused entries once a template stops referencing a name.
 
 `pro_users` (client: `useIsPro`/`packages/global/src/store/pro/useProStatus.tsx`, edge function
 `me` — `GET /me` only) is Pro entitlement, and it's read-only end to end: no payment integration

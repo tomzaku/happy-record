@@ -59,6 +59,11 @@
   text-align: center;
 }
 
+.iconEmpty {
+  color: var(--icon-color-inactive-invert);
+  margin-bottom: $spacing-xs;
+}
+
 .addTaskButton {
   margin-top: $spacing-xs;
   padding: $spacing-xs $spacing-sm;

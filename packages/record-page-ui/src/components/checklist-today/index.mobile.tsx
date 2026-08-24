@@ -16,8 +16,8 @@ const ChecklistToday = ({
   date: Date;
   selectedTag?: string;
 }) => {
-  const { getChecklistByGivingDate, updateChecklist } = useChecklist();
-  const { checklistTemplate } = useChecklistTemplates();
+  const { getChecklistByGivingDate, updateChecklist, checklistsLoading } = useChecklist();
+  const { checklistTemplate, templatesLoading } = useChecklistTemplates();
   const navigate = useNavigate();
   const intl = useIntl();
 
@@ -33,6 +33,28 @@ const ChecklistToday = ({
     () => getChecklistByGivingDate({ date, selectedTag }),
     [getChecklistByGivingDate, date, selectedTag],
   );
+
+  // See ChecklistToday.desktop.tsx's equivalent check: empty here means
+  // either "still fetching" or "genuinely nothing" — these flags are what
+  // tell the two apart, so a fresh page load doesn't flash "No tasks
+  // found!" before the real data has had a chance to arrive.
+  if ((templatesLoading || checklistsLoading) && checklistByGivingDateIds.length === 0) {
+    return (
+      <div className={styles.emptyContainer}>
+        <Icon
+          width={40}
+          icon="svg-spinners:180-ring"
+          className={styles.iconEmpty}
+        />
+        <Typography.Text>
+          {intl.formatMessage({
+            id: 'ChecklistToday.loading',
+            defaultMessage: 'Fetching your tasks…',
+          })}
+        </Typography.Text>
+      </div>
+    );
+  }
 
   if (checklistByGivingDateIds.length === 0) {
     return (

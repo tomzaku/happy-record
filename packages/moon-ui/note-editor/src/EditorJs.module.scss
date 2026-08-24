@@ -15,10 +15,66 @@
   
   blockquote {
     border-left-color: var(--icon-primary);
-    background: var(--surface-secondary);
     color: var(--text-color);
   }
-  
+
+  // Quote block (@editorjs/quote). Its default CSS treats the quote text and
+  // caption as bordered/shadowed `.cdx-input` boxes — the same chrome an
+  // actual editable field gets elsewhere in the editor. That reads as a form
+  // control sitting inside the note, not a quote; strip it back to plain
+  // text framed by the quote marks below. Its default CSS also hardcodes the
+  // quote text box at 158px tall regardless of content — one row is enough
+  // to start, it grows from there as the user actually types.
+  :global(.cdx-quote__text),
+  :global(.cdx-quote__caption) {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 0.2em 0;
+  }
+
+  :global(.cdx-quote__text) {
+    min-height: 1.5em;
+  }
+
+  // A reader has nothing to type into, so an empty author is just dead
+  // input chrome — hide it once the block is actually read-only. The
+  // attribute selector (not a readOnly-only class) is what scopes this:
+  // Editor.js re-renders the block's contentEditable="false" on toggle,
+  // so this stays correct across the edit/read toggle without any JS here.
+  :global(.cdx-quote__caption[contenteditable='false']:empty) {
+    display: none;
+  }
+
+  // Decorative opening/closing quote marks, framing the block like a quote
+  // card rather than a plain bordered text field.
+  :global(.cdx-quote) {
+    position: relative;
+    padding: 0 1.75rem;
+
+    &::before,
+    &::after {
+      position: absolute;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 2rem;
+      line-height: 1;
+      color: var(--icon-primary);
+      opacity: 0.45;
+    }
+
+    &::before {
+      content: '\201C';
+      top: 0.05em;
+      left: 0;
+    }
+
+    &::after {
+      content: '\201D';
+      bottom: 0.05em;
+      right: 0;
+    }
+  }
+
   table {
     border-color: var(--card-border);
     

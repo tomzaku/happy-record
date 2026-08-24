@@ -1,0 +1,58 @@
+@use '@moon-ui/app-scss/theme/light.scss' as *;
+@use '@moon-ui/app-scss/theme/dark.scss' as *;
+
+// Desktop drawer nav item — mirrors DesktopDrawer.module.scss's .navigationItem (same shape
+// AccountStatus.module.scss's .drawerRow already mirrors it in) so Search reads as part of the
+// same nav list rather than a bolted-on extra.
+.drawerRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-color);
+  text-align: left;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+
+  &.collapsed {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 4px;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+.iconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  color: var(--icon-color-inactive);
+  flex-shrink: 0;
+
+  .collapsed & {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+.label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

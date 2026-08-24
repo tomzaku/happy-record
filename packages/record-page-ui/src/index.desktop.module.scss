@@ -22,6 +22,16 @@
 }
 
 .centerContent {
+  // Explicit row *and* column, not just declaration order — the weekly
+  // calendar comes first in the JSX below so its checklists range-fetch
+  // effect (which claims each day it covers synchronously) runs before this
+  // panel's own single-day fetch, not after (see useChecklists.tsx's
+  // `ensureChecklistsFetched`). Grid auto-placement doesn't backtrack: with
+  // no explicit `grid-row`, this being second in DOM order pushed it into a
+  // new (empty, zero-height) row instead of back into row 1's first column,
+  // once `.rightCalendar` had already claimed row 1 column 2.
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   margin-top: $spacing-lg;
   flex-direction: column;
@@ -29,6 +39,9 @@
 }
 
 .rightCalendar {
+  grid-column: 2;
+  grid-row: 1;
+
   .calendarCard {
     height: 100%;
     overflow: hidden;

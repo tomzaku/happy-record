@@ -8,9 +8,9 @@ import { ensureSession, resetSessionCache, supabase } from '../lib/supabase';
  * to clear. `signOut` clears these on sign-out so the next (fresh anonymous)
  * identity doesn't inherit the previous account's calendar selection/labels.
  *
- * The 7 backend-mirrored resources (`checklist_template`, `checklist`,
- * `checklist_record`, `record_field`, `note`, `note_folder`, `flag`, plus
- * `pro_status`) are **not** here anymore — see CLAUDE.md's "online-first
+ * The 8 backend-mirrored resources (`checklist_template`, `checklist`,
+ * `checklist_record`, `record_field`, `note`, `note_folder`, `flag`, `tag`,
+ * plus `pro_status`) are **not** here anymore — see CLAUDE.md's "online-first
  * data layer." They're `useSessionStore`-backed (in-memory only, per
  * `useSessionStore.ts`), so the full-page reload below already clears them
  * for free; nothing to remove from `localStorage` because nothing was ever
@@ -18,7 +18,6 @@ import { ensureSession, resetSessionCache, supabase } from '../lib/supabase';
  */
 const SYNCED_DATA_KEYS = [
   'selected_checklist_templates',
-  'tags',
   // Not yet written by anything real (`useUser.ts` is only read by the
   // local-storage-editor debug tool today) — listed anyway so it can never
   // survive a sign-out and leak into the next identity the way `fields.id`

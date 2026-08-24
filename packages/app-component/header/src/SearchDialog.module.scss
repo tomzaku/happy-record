@@ -1,0 +1,75 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+
+// Sized by this element, not by @moon-ui/modal's own .container (which only sets a
+// min-width/min-height) — see TaskSearch.tsx's comment on reusing Modal as-is.
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(520px, 80vw);
+  max-height: 70vh;
+}
+
+.inputRow {
+  align-items: center;
+  border-bottom: 1px solid var(--division-color);
+  display: flex;
+  gap: $spacing-sm;
+  padding-bottom: $spacing-sm;
+}
+
+.inputIcon {
+  color: var(--text-description-color);
+  flex-shrink: 0;
+}
+
+.input {
+  background: transparent;
+  border: 0;
+  color: var(--text-color);
+  flex: 1;
+  font-size: 16px;
+  outline: none;
+
+  &::placeholder {
+    color: var(--text-description-color);
+  }
+}
+
+.results {
+  margin-top: $spacing-sm;
+  overflow-y: auto;
+}
+
+.emptyState {
+  color: var(--text-description-color);
+  font-size: 14px;
+  padding: $spacing-md $spacing-sm;
+  text-align: center;
+}
+
+.resultRow {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  text-align: left;
+  width: 100%;
+
+  &:hover,
+  &.activeResultRow {
+    background: var(--surface-secondary);
+  }
+}
+
+.resultTitle {
+  color: var(--text-color);
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

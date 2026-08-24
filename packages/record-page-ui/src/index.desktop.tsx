@@ -40,6 +40,22 @@ const TaskListPage = () => {
     <div className={styles.desktopContainer}>
       <DesktopDrawer />
       <div className={styles.desktopBody}>
+        {/* Right Calendar — rendered first (see the module's own
+            `grid-column` placement) so its checklists range-fetch effect
+            claims the visible days before ChecklistTodayDesktop's own
+            single-day fetch runs; effects fire in JSX order for sibling
+            components, and this fetch is the one that should win the race
+            for "today" — see useChecklists.tsx's `ensureChecklistsFetched`. */}
+        <div className={styles.rightCalendar}>
+          <Card className={styles.calendarCard}>
+            <WeeklyCalendarVertical
+              currentDate={startDate}
+              onDateChange={setStartDate}
+              selectedTag={selectedTag}
+            />
+          </Card>
+        </div>
+
         {/* Center Content - Always Shows Tasks */}
         <div className={styles.centerContent}>
           <div className={styles.taskListContainer}>
@@ -84,25 +100,14 @@ const TaskListPage = () => {
             >
               <div className={cx(styles.flipper)}>
                 <div className={styles.front} key={key}>
-                  <ChecklistTodayDesktop 
-                    date={startDate} 
+                  <ChecklistTodayDesktop
+                    date={startDate}
                     selectedTag={selectedTag === 'all' ? undefined : selectedTag}
                   />
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Right Calendar */}
-        <div className={styles.rightCalendar}>
-          <Card className={styles.calendarCard}>
-            <WeeklyCalendarVertical 
-              currentDate={startDate} 
-              onDateChange={setStartDate} 
-              selectedTag={selectedTag}
-            />
-          </Card>
         </div>
       </div>
       

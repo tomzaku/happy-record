@@ -8,6 +8,7 @@ import { usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 import { Theme } from '@dreamer/pomodoro-common';
 import cx from 'classnames';
 import AccountStatus from './AccountStatus';
+import TaskSearch from './TaskSearch';
 import styles from './DesktopDrawer.module.scss';
 
 const DesktopDrawer = () => {
@@ -25,22 +26,17 @@ const DesktopDrawer = () => {
       path: '/',
       action: () => navigate('/')
     },
-    {
-      id: 'note',
-      label: 'Notes',
-      icon: 'solar:notes-line-duotone',
-      description: 'View and create notes',
-      path: '/notes',
-      action: () => navigate('/notes')
-    },
-    {
-      id: 'setting',
-      label: 'Settings',
-      icon: 'solar:settings-linear',
-      description: 'Configure your preferences',
-      path: '/setting',
-      action: () => navigate('/setting')
-    }
+    // Notes is temporarily hidden while we focus on the task feature — re-enable later.
+    // {
+    //   id: 'note',
+    //   label: 'Notes',
+    //   icon: 'solar:notes-line-duotone',
+    //   description: 'View and create notes',
+    //   path: '/notes',
+    //   action: () => navigate('/notes')
+    // },
+    // Settings is reachable via the account row in the drawer footer (AccountStatus
+    // navigates there once signed in), so no separate settings nav item here.
   ];
 
   const isActivePath = (path: string) => {
@@ -100,6 +96,7 @@ const DesktopDrawer = () => {
         </button>
       </div>
       <nav className={styles.navigationMenu}>
+        <TaskSearch variant="drawer" collapsed={isMinimized} />
         {navigationItems.map((item) => (
           <button
             key={item.id}

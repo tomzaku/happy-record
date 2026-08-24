@@ -7,6 +7,7 @@ import { v4 } from 'uuid';
 import { useChecklist } from '../store/checklists/useChecklists';
 import { useChecklistTemplates, type ChecklistTemplate, type FieldGroup } from '../store/checklists/useChecklistTemplates';
 import { useRecordField } from '../store/record-field/useRecordField';
+import { useTags } from '../store/tags/useTags';
 import type {
   AiGeneratedChecklistTemplate,
   AiGeneratedGroup,
@@ -74,6 +75,19 @@ export const useApplyAiChecklistTemplate = () => {
   const { addChecklistTemplate, updateChecklistTemplate } = useChecklistTemplates();
   const { addChecklist } = useChecklist();
   const { getAllRecordFields, addRecordField } = useRecordField();
+  const { addTag } = useTags();
+
+  /**
+   * The AI proposes tags as plain strings, not registry ids — unlike TagInput's
+   * `handleAddTag`, nothing here ever calls `addTag` on its own. Without this, a
+   * generated template's `tags` array is set directly (below) and the tag exists on
+   * the template but never in the registry the home page's Filter by Tag dropdown
+   * reads from (`useTags().getAllTags()`) — see CLAUDE.md's tags note. `addTag`
+   * itself already dedupes by name, so re-applying the same tags twice is a no-op.
+   */
+  const registerTags = (tags: string[]) => {
+    tags.forEach(tag => addTag(tag));
+  };
 
   /**
    * One id per proposed field, reusing an existing field by title (case-insensitive) instead of
@@ -114,6 +128,7 @@ export const useApplyAiChecklistTemplate = () => {
    * `repeat` — day-gating lives on each group instead. */
   const applyAsNewTemplate = (generated: AiGeneratedChecklistTemplate) => {
     const fieldGroups = buildFieldGroups(generated.fieldGroups);
+    registerTags(generated.tags);
     const { id } = addChecklistTemplate({
       title: generated.title,
       avatar: { type: 'icon', name: generated.avatar.name, color: generated.avatar.color },
@@ -143,6 +158,7 @@ export const useApplyAiChecklistTemplate = () => {
     options: { applyAvatarAndTags?: boolean } = {},
   ): ChecklistTemplate => {
     const newGroups = buildFieldGroups(generated.fieldGroups);
+    if (options.applyAvatarAndTags) registerTags(generated.tags);
     const merged: ChecklistTemplate = {
       ...template,
       fieldGroups: [...template.fieldGroups, ...newGroups],
