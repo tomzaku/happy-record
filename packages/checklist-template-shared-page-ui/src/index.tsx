@@ -27,7 +27,7 @@ const ChecklistTemplateSharedPageUi = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   // Just greeting text, carried in the URL rather than fetched — see
-  // CardShare's getFullUrl and useCreateChecklistTemplateApi.tsx.
+  // util.ts's getSharedChecklistTemplateUrl and useCreateChecklistTemplateApi.tsx.
   const userName = searchParams.get('from') || 'Someone';
   const targetName = searchParams.get('to') || 'you';
   const { getRecordFieldsByIds, mergeRecordFields } = useRecordField();

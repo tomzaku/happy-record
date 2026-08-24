@@ -1,4 +1,9 @@
-import { getActiveFieldGroups, useChecklistTemplates, useSyncedSelector } from '@dreamer/global';
+import {
+  getActiveFieldGroups,
+  getSharedChecklistTemplateUrl,
+  useChecklistTemplates,
+  useSyncedSelector,
+} from '@dreamer/global';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
 import Icon from '@moon-ui/icon/Icon';
@@ -64,15 +69,7 @@ const TasksSharedPage = () => {
       ),
     };
     const result = await updateChecklistTemplate(data);
-    const domain = window.location.origin;
-    // `userName`/`targetName` are just greeting text for the recipient's
-    // page — they ride along in the query string rather than anything
-    // persisted server-side (see useCreateChecklistTemplateApi.tsx).
-    const params = new URLSearchParams({
-      from: userName || 'You',
-      to: targetName || 'Friend',
-    });
-    const fullUrl = `${domain}/#/checklist-template/shared/${result.id}?${params}`;
+    const fullUrl = getSharedChecklistTemplateUrl(result.id, userName || 'You', targetName || 'Friend');
     setUrl(fullUrl);
     handleCopy(fullUrl);
   };

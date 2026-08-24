@@ -8,17 +8,13 @@ import Icon from '@moon-ui/icon/Icon';
 import { Link } from 'react-router-dom';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
-import { getActiveFieldGroups, useChallenge, useChecklistTemplates } from '@dreamer/global';
+import {
+  getActiveFieldGroups,
+  getSharedChecklistTemplateUrl,
+  useChallenge,
+  useChecklistTemplates,
+} from '@dreamer/global';
 import styles from './index.mobile.module.scss';
-
-// `from`/`to` ride along as query params rather than anything persisted
-// server-side — they're just greeting text for the recipient's page, not
-// data with a real owner, so there's nothing here worth a table or a column.
-const getFullUrl = (checklistTemplateId: string, from = 'You', to = 'Friend') => {
-  const domain = window.location.origin;
-  const params = new URLSearchParams({ from, to });
-  return `${domain}/#/checklist-template/shared/${checklistTemplateId}?${params}`;
-};
 
 type CardShareProps = {
   checklistTemplateId: string;
@@ -95,7 +91,7 @@ const CardShareMobile = ({
       };
       const result = await updateChecklistTemplate(data);
       await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled });
-      const fullUrl = getFullUrl(result.id);
+      const fullUrl = getSharedChecklistTemplateUrl(result.id);
       setShareUrl(fullUrl);
       handleCopyLink(fullUrl);
     } catch (err) {
