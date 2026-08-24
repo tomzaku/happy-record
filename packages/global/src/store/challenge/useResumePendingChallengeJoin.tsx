@@ -13,12 +13,13 @@ export type PendingChallengeJoin = {
 };
 
 /**
- * `signInWithGoogle`'s `redirectTo` is `origin + pathname` (see
- * useSession.ts), so a "sign in, then join" click on the shared-challenge
- * page does land back on that same page — but the page component itself has
- * no code that resumes the join on return (and the URL's `?from=&to=`
- * greeting params don't survive the round trip). This is the resume half of
- * that flow: the shared page writes the intent here before redirecting
+ * `signInWithGoogle`'s `redirectTo` is pinned to the app's base URL, not
+ * wherever sign-in was triggered from (see useSession.ts — a per-route
+ * target needs a wildcard entry in GoTrue's Redirect URL allow-list, and a
+ * mismatch there silently falls back to the project's Site URL instead of
+ * erroring), so a "sign in, then join" click on the shared-challenge page
+ * lands back on `/`, not back on that page. This is the resume half of that
+ * flow: the shared page writes the intent here before redirecting
  * (savePendingChallengeJoin), and this hook — mounted once at the app root
  * (see packages/route) — picks it back up the moment a real session exists,
  * the same "persist before the redirect, self-heal after" shape

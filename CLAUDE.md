@@ -281,12 +281,21 @@ there's no risk of landing on an unmatched path the way a `HashRouter` reading `
 route would. (This app used to be a `HashRouter`, specifically to dodge that — see git history on
 `useSession.ts` if you need the old shape.)
 
-`signInWithGoogle`'s `redirectTo: origin + pathname` sends the user back to the exact page they
-signed in from, not just the app root — `pathname` *is* the in-app route now. A page that wants to
-resume something after the round trip still can't rely on its own remount to do that (the URL's
-query params, e.g. a shared-challenge page's `?from=&to=` greeting text, don't survive the
-redirect) — save the intent to `localStorage` first and resume it from a hook mounted once at the
-app root, the shape `useResumePendingChallengeJoin.tsx` uses.
+`signInWithGoogle`'s `redirectTo` is deliberately pinned to `origin + import.meta.env.BASE_URL` —
+the app's base URL, not wherever sign-in was triggered from. It was briefly `origin + pathname`
+(returning to the exact page, since `pathname` *is* the in-app route now that this is a
+`BrowserRouter`) but that broke Google sign-in in production: GoTrue's Redirect URL allow-list
+(the hosted project's own Dashboard → Authentication → URL Configuration, not this repo's
+`supabase/config.toml`) matches *exact* strings unless a wildcard entry is configured there, and a
+redirect target that doesn't match falls back to the project's **Site URL** *silently* — no error,
+just landing on whatever that's set to (which, misconfigured, sent production users to
+`127.0.0.1:4001`, the local dev Site URL). A fixed target needs one exact allow-list entry; a
+per-route target needs the allow-list widened to a wildcard and stays fragile against it ever being
+tightened — not worth the "land back on the same page" UX. A page that wants to resume something
+after the round trip can't rely on its own remount either way (the URL's query params, e.g. a
+shared-challenge page's `?from=&to=` greeting text, don't survive the redirect) — save the intent
+to `localStorage` first and resume it from a hook mounted once at the app root, the shape
+`useResumePendingChallengeJoin.tsx` uses.
 
 ### `supabase` is for auth only, in one place
 

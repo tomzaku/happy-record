@@ -218,16 +218,22 @@ export const useSession = () => {
   const signInWithGoogle = async (): Promise<string | null> => {
     if (!supabase) return 'Not connected.';
     const options = {
-      // `origin + pathname` sends the user back to the exact page they
-      // signed in from (BrowserRouter's `pathname` *is* the in-app route —
-      // see CLAUDE.md), not just the app root. That's also why
+      // Deliberately pinned to the app's base URL, not the page the user
+      // signed in from — `origin + pathname` would vary per route now that
+      // this is a BrowserRouter (`pathname` *is* the in-app route), and
+      // GoTrue's Redirect URL allow-list only matches *exact* strings unless
+      // a wildcard entry is configured there. A fixed target needs just one
+      // exact allow-list entry; a per-route target needs the allow-list
+      // widened to a wildcard, and any mismatch there makes GoTrue silently
+      // fall back to the project's Site URL instead of erroring — which is
+      // exactly the bug this caused in production (redirected to
+      // 127.0.0.1:4001, the local dev Site URL) before this was pinned back.
       // `window.location.origin` alone would be wrong on GitHub Pages: the
       // app is served from a sub-path (vite.config's `base: '/happy-record/'`
-      // in prod), so `pathname` already carries both that sub-path and the
-      // current route.
+      // in prod) — `import.meta.env.BASE_URL` supplies that.
       redirectTo:
         typeof window !== 'undefined'
-          ? window.location.origin + window.location.pathname
+          ? window.location.origin + import.meta.env.BASE_URL
           : undefined,
     };
     const { error } =
