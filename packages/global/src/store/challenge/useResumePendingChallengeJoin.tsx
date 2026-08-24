@@ -48,7 +48,9 @@ export const useResumePendingChallengeJoin = () => {
     acceptChallenge(pending.checklistTemplateId, pending.challengeId, pending.displayName)
       .then(template => {
         clearPendingChallengeJoin();
-        if (template) navigate(`/task/${template.id}`);
+        // detail-task-page requires `currentDay` in the query string (see
+        // ChecklistToday/SearchDialog) — without it the page bails out empty.
+        if (template) navigate(`/task/${template.id}?currentDay=${new Date().toISOString()}`);
       })
       .catch(err => {
         console.error('Failed to resume challenge join:', err);

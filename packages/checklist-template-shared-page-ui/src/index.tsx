@@ -83,7 +83,9 @@ const ChecklistTemplateSharedPageUi = () => {
       return;
     }
     const joined = await acceptChallenge(id, challenge.id, name);
-    if (joined) navigate(`/task/${joined.id}`);
+    // detail-task-page requires `currentDay` in the query string (see
+    // ChecklistToday/SearchDialog) — without it the page bails out empty.
+    if (joined) navigate(`/task/${joined.id}?currentDay=${new Date().toISOString()}`);
   };
 
   const confirmTakeIt = (name: string) => (isChallenge ? joinTheChallenge(name) : takeItPlain());
