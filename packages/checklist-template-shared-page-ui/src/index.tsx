@@ -1,5 +1,11 @@
 import React from 'react';
-import { useChecklistTemplates } from '@dreamer/global';
+import {
+  useChallenge,
+  useChecklistTemplates,
+  useJoinChallenge,
+  usePendingChallengeJoin,
+  useSession,
+} from '@dreamer/global';
 import AppHeader, { BackHeader } from '@dreamer/header';
 import { useParams, useSearchParams } from 'react-router-dom';
 import TaskSharedCard from './components/task-shared-card';
@@ -8,11 +14,14 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { useNavigate } from 'react-router-dom';
 import Typography from '@moon-ui/typography';
+import Input from '@moon-ui/input';
 import styles from './index.module.scss';
 import Drawer from '@moon-ui/drawer';
 import Icon from '@moon-ui/icon/Icon';
 import Timer from './components/timer';
 import { useGetChecklistTemplateApi } from '@dreamer/global/src/hook/checklist-template/useGetChecklistTemplateApi';
+import type { ChecklistTemplate } from '@dreamer/global';
+import type { RecordField } from '@dreamer/global/src/store/record-field';
 
 const ChecklistTemplateSharedPageUi = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,39 +32,71 @@ const ChecklistTemplateSharedPageUi = () => {
   const targetName = searchParams.get('to') || 'you';
   const { getRecordFieldsByIds, mergeRecordFields } = useRecordField();
   const [dialogRejectOpen, setDialogRejectOpen] = React.useState(false);
-  const { addChecklistTemplate, getChecklistTemplate } =
-    useChecklistTemplates();
+  const { addChecklistTemplate, getChecklistTemplate } = useChecklistTemplates();
+  const { getChallengeForTemplate } = useChallenge();
+  const { acceptChallenge } = useJoinChallenge();
+  const { savePendingChallengeJoin } = usePendingChallengeJoin();
+  const { isAnonymous, signInWithGoogle } = useSession();
+  // `id` here is the *owner's* template id (the challenge's canonical
+  // checklist_template_id), not any local copy — exactly what
+  // getChallengeForTemplate expects.
+  const challenge = getChallengeForTemplate(id);
+  const isChallenge = !!challenge && (challenge.shareRecords || challenge.commentsEnabled);
   const navigate = useNavigate();
   const { getChecklistTemplateApi } = useGetChecklistTemplateApi();
 
-  const [data, setData] = React.useState();
-  const handleSubmit = async () => {
-    if (!data) return;
-    // Scoped to exactly the ids this shared template references, not the
-    // whole list — the dedupe check only needs to know about these.
-    const existingFields = await getRecordFieldsByIds(data.fields.map(f => f.id));
-    const newFields = data.fields.filter(f => {
-      return !existingFields.find(existingField => existingField.id === f.id);
-    });
-    // These fields are already public, real rows owned by whoever shared
-    // this template — cache them locally for immediate use, don't re-save
-    // them as this device's own (see mergeRecordFields).
-    if (newFields.length) mergeRecordFields(newFields);
+  const [data, setData] = React.useState<{ checklistTemplate: ChecklistTemplate; fields: RecordField[] } | null>(
+    null,
+  );
+  const [dialogJoinOpen, setDialogJoinOpen] = React.useState(false);
+  const [displayName, setDisplayName] = React.useState(targetName);
 
+  // The plain, pre-challenge "Take it": forks the shared template into a
+  // brand-new row this device owns outright (its own id, never public, no
+  // flag — a flag id copied verbatim would point at a flag this device
+  // can't see or manage). Unchanged from before challenges existed, and
+  // still what happens for a share with neither challenge option on.
+  const takeItPlain = async () => {
+    if (!data) return;
+    const existingFields = await getRecordFieldsByIds(data.fields.map(f => f.id));
+    const newFields = data.fields.filter(f => !existingFields.find(existing => existing.id === f.id));
+    if (newFields.length) mergeRecordFields(newFields);
+    addChecklistTemplate({ ...data.checklistTemplate, visibility: 'private', flagId: undefined });
+    navigate('/');
+  };
+
+  // Joining a challenge never forks — see useJoinChallenge — and requires a
+  // real (Google) sign-in, since an anonymous identity is throwaway and
+  // wouldn't mean anything on a leaderboard. `signInWithGoogle` redirects
+  // away entirely (HashRouter loses the in-app route across it — see
+  // useResumePendingChallengeJoin), so the intent has to be saved first and
+  // picked back up after the redirect, not awaited here.
+  const joinTheChallenge = async (name: string) => {
+    if (!id || !challenge) return;
+    if (isAnonymous) {
+      savePendingChallengeJoin({ challengeId: challenge.id, checklistTemplateId: id, displayName: name });
+      await signInWithGoogle();
+      return;
+    }
+    const joined = await acceptChallenge(id, challenge.id, name);
+    if (joined) navigate(`/task/${joined.id}`);
+  };
+
+  const confirmTakeIt = (name: string) => (isChallenge ? joinTheChallenge(name) : takeItPlain());
+
+  const handleSubmit = () => {
+    if (!data) return;
     if (getChecklistTemplate(data.checklistTemplate.id)) {
       alert("You've have this task!!!");
-    } else {
-      // A fresh copy for this device: its own id (addChecklistTemplate
-      // generates one), never public by default, and no flag — a flag id
-      // copied verbatim would point at a flag this device can't see or
-      // manage, since flags are owner-scoped same as everything else here.
-      addChecklistTemplate({
-        ...data.checklistTemplate,
-        visibility: 'private',
-        flagId: undefined,
-      });
-      navigate('/');
+      return;
     }
+    // Only ask for a name (and possibly a sign-in) when there's actually a
+    // challenge to join — otherwise this behaves exactly as it always has.
+    if (isChallenge) {
+      setDialogJoinOpen(true);
+      return;
+    }
+    takeItPlain();
   };
 
   const onClickLeaveIt = () => {
@@ -97,6 +138,45 @@ const ChecklistTemplateSharedPageUi = () => {
         </div>
       </Card>
       <Drawer
+        visible={dialogJoinOpen}
+        className={styles.drawerContainer}
+        onBlur={() => setDialogJoinOpen(false)}
+      >
+        <div>
+          <div className={styles.header}>
+            <Typography.Title noMargin level={2}>
+              Join the challenge
+            </Typography.Title>
+            <Icon
+              width={32}
+              icon="material-symbols:close-rounded"
+              onClick={() => setDialogJoinOpen(false)}
+            />
+          </div>
+          <Typography.Text>
+            {isAnonymous
+              ? "Sign in with Google to join — you'll show up on the leaderboard as:"
+              : challenge?.shareRecords
+                ? "You'll show up on the group dashboard as:"
+                : 'What name should your comments show?'}
+          </Typography.Text>
+          <Input
+            value={displayName}
+            onChange={e => setDisplayName(e.target.value)}
+            renderRightInput={() => <></>}
+          />
+          <Button
+            onClick={() => {
+              setDialogJoinOpen(false);
+              joinTheChallenge(displayName.trim() || targetName);
+            }}
+            className={styles.button}
+          >
+            {isAnonymous ? 'Sign in with Google' : 'Join'}
+          </Button>
+        </div>
+      </Drawer>
+      <Drawer
         visible={dialogRejectOpen}
         className={styles.drawerContainer}
         onBlur={() => setDialogRejectOpen(false)}
@@ -120,7 +200,11 @@ const ChecklistTemplateSharedPageUi = () => {
             I know you’re not scared of this challenge, so I’ll take it for you
             in 10 seconds.
           </Typography.Text>
-          <Timer duration={10000} onFinish={handleSubmit} autoStart />
+          <Timer
+            duration={10000}
+            onFinish={() => confirmTakeIt(displayName.trim() || targetName)}
+            autoStart
+          />
         </div>
       </Drawer>
     </div>

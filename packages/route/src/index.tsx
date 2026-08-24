@@ -23,7 +23,8 @@ import RecordPage from '@dreamer/record-page-ui';
 import LocalStorageEditor from './local-storage-editor';
 import TasksSharedPage from '@happy-record/tasks-shared-page-ui';
 import ChecklistTemplateSharedPageUi from '@happy-record/checklist-template-shared-page-ui';
-import { useIsMobile } from '@dreamer/global';
+import ChallengeDashboardPageUi from '@happy-record/challenge-dashboard-page-ui';
+import { useIsMobile, useResumePendingChallengeJoin } from '@dreamer/global';
 
 const AnimationRoute = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -41,6 +42,12 @@ const AnimationRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRouter = () => {
   const location = useLocation(); // Get the current location
   const isMobile = useIsMobile();
+  // Resumes a "Take it" click on a challenge that had to detour through
+  // Google sign-in first — see useResumePendingChallengeJoin.tsx. Mounted
+  // once here (inside the Router, since it navigates on success) rather
+  // than on the shared-challenge page itself, because the Google redirect
+  // always lands back on "/", not on that page.
+  useResumePendingChallengeJoin();
 
   return (
     <AnimatePresence mode="wait">
@@ -83,6 +90,14 @@ const AppRouter = () => {
           element={
             <AnimationRoute>
               <ChecklistTemplateSharedPageUi />
+            </AnimationRoute>
+          }
+        />
+        <Route
+          path="/challenge/:id"
+          element={
+            <AnimationRoute>
+              <ChallengeDashboardPageUi />
             </AnimationRoute>
           }
         />

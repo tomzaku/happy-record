@@ -112,5 +112,18 @@
   "CardShare.copy-link": "Sao Chép Liên Kết",
   "CardShare.copied": "Đã Sao Chép!",
   "CardShare.share-description": "Tạo liên kết có thể chia sẻ",
-  "CardShare.generate-url": "Tạo URL"
+  "CardShare.generate-url": "Tạo URL",
+  "CardShare.option-share-records": "Chia sẻ lượt hoàn thành lên bảng chung",
+  "CardShare.option-comments": "Cho phép bình luận trong thử thách này",
+  "CardShare.view-dashboard": "Xem Bảng Điều Khiển",
+  "ChallengeDashboard.title": "Bảng Điều Khiển Thử Thách",
+  "ChallengeDashboard.no-participants": "Chưa có ai tham gia thử thách này.",
+  "ChallengeDashboard.not-found": "Không thể tải thử thách này.",
+  "ChallengeDashboard.comments": "Bình Luận",
+  "ChallengeDashboard.no-comments": "Chưa có bình luận nào.",
+  "ChallengeDashboard.your-name": "Tên của bạn",
+  "ChallengeDashboard.write-comment": "Viết gì đó…",
+  "ChallengeDashboard.post": "Đăng",
+  "ChecklistToday.public-badge": "Công khai",
+  "DetailTaskPage.view-challenge-dashboard": "Thuộc một thử thách — Xem Bảng Điều Khiển"
 }

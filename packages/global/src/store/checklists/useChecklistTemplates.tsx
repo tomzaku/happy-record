@@ -445,5 +445,10 @@ export const useChecklistTemplates = () => {
     updateSelectedChecklistTemplate,
     getRecommendChecklistTemplates,
     getChecklistTemplateIdsByGivingDate,
+    // Exposed for the challenge join flow (checklist-template-shared-page-ui,
+    // useResumePendingChallengeJoin): merging a shared template under its
+    // own id — never forking a new one — is exactly this function, already
+    // used internally by every scoped fetch above.
+    mergeTemplates,
   };
 };

@@ -1,0 +1,115 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+.card {
+  margin: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.ranking {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: ranking;
+}
+
+.rankingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: 6px;
+  background: var(--input-background);
+  counter-increment: ranking;
+}
+
+.rankingName {
+  font-size: toRem(13px);
+  color: var(--text-color);
+
+  &::before {
+    content: counter(ranking) '. ';
+    font-weight: 600;
+    color: #00aaff;
+  }
+}
+
+.rankingCount {
+  font-size: toRem(13px);
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.gridScroll {
+  overflow-x: auto;
+}
+
+.grid {
+  display: grid;
+  align-items: center;
+  gap: 2px;
+}
+
+.headerCell {
+  height: 20px;
+}
+
+.dayLabel {
+  font-size: toRem(9px);
+  color: var(--text-color-secondary, var(--text-color));
+  text-align: center;
+}
+
+.nameCell {
+  font-size: toRem(12px);
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: $spacing-xs;
+}
+
+.dayCell {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--input-background);
+  border: 1px solid var(--input-border);
+
+  &[data-done='true'] {
+    background: #00aaff;
+    border-color: #00aaff;
+  }
+}
+
+.comments {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.comment {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $spacing-xs 0;
+  border-bottom: 1px solid var(--input-border);
+}
+
+.commentAuthor {
+  font-weight: 600;
+  font-size: toRem(12px);
+}
+
+.commentForm {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}

@@ -54,3 +54,23 @@
   min-width: 80px;
   font-size: toRem(11px);
 }
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+  margin: $spacing-xs 0;
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  cursor: pointer;
+}
+
+.dashboardLink {
+  align-self: flex-start;
+  font-size: toRem(11px);
+  color: #00aaff;
+}

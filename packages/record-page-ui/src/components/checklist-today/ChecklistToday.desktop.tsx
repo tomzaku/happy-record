@@ -1,5 +1,12 @@
 import React from 'react';
-import { useChecklist, useChecklistTemplates } from '@dreamer/global';
+import {
+  useChecklist,
+  useChecklistTemplates,
+  ChecklistTemplate,
+  getEffectiveDayOfWeek,
+  formatDaysOfWeek,
+  getActiveFieldGroups,
+} from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
 import styles from './ChecklistToday.desktop.module.scss';
@@ -13,46 +20,25 @@ import { format } from 'date-fns';
 import CreateTaskModal from '../create-task-modal';
 import AddInlineTask from '../AddInlineTask';
 
-// Temporary local utility function - will be moved to global utils later
-const formatSchedule = (repeat?: {
-  hour: string;
-  minute: string;
-  dayOfWeek: string;
-}): string => {
-  if (!repeat || !repeat.dayOfWeek) {
-    return 'No schedule';
+// Mirrors ChecklistGenericInfo's own ("General Settings") schedule rendering: once a template
+// has field groups, its real schedule is the merged union of every *active* group's own days
+// (@dreamer/global's getEffectiveDayOfWeek), not the template-level `repeat` this used to read
+// alone — that can be stale, or entirely unset once schedules are only ever edited per group
+// (see useChecklistTemplates.tsx's withSyncedRepeat), which is why this showed "No schedule" for
+// a template whose groups very much did have one. Time-of-day is dropped in that case for the
+// same reason ChecklistGenericInfo drops it there: no schedule here, template-level or per-group,
+// has ever gated on time, so pairing a real merged day list with a leftover default time would
+// overstate how precise it is.
+const formatTemplateSchedule = (template?: ChecklistTemplate): string => {
+  if (!template) return 'No schedule';
+
+  if (getActiveFieldGroups(template.fieldGroups ?? []).length > 0) {
+    return formatDaysOfWeek(getEffectiveDayOfWeek(template) ?? '*');
   }
 
-  const time = `${repeat.hour.padStart(2, '0')}:${repeat.minute.padStart(2, '0')}`;
-  const days = formatDaysOfWeek(repeat.dayOfWeek);
-
-  return `${time} • ${days}`;
-};
-
-const formatDaysOfWeek = (dayOfWeek: string): string => {
-  if (!dayOfWeek || dayOfWeek === '*') {
-    return 'Every day';
-  }
-
-  const dayNumbers = dayOfWeek.split(',');
-  if (dayNumbers.length === 7) {
-    return 'Every day';
-  }
-
-  const dayNames = {
-    '0': 'Sun',
-    '1': 'Mon',
-    '2': 'Tue',
-    '3': 'Wed',
-    '4': 'Thu',
-    '5': 'Fri',
-    '6': 'Sat',
-  };
-
-  const formattedDays = dayNumbers.map(
-    day => dayNames[day as keyof typeof dayNames] || day,
-  );
-  return formattedDays.join(', ');
+  if (!template.repeat?.dayOfWeek) return 'No schedule';
+  const time = `${template.repeat.hour.padStart(2, '0')}:${template.repeat.minute.padStart(2, '0')}`;
+  return `${time} • ${formatDaysOfWeek(template.repeat.dayOfWeek)}`;
 };
 
 const ChecklistTodayDesktop = ({
@@ -184,6 +170,14 @@ const ChecklistTodayDesktop = ({
                     >
                       {currentChecklist?.title || currentChecklistTemplate?.title}
                     </Typography.Title>
+                    {currentChecklistTemplate?.visibility === 'public' && (
+                      <span className={styles.publicBadge}>
+                        {intl.formatMessage({
+                          id: 'ChecklistToday.public-badge',
+                          defaultMessage: 'Public',
+                        })}
+                      </span>
+                    )}
                     {currentChecklistTemplate?.tags &&
                       currentChecklistTemplate.tags.length > 0 && (
                         <div className={styles.tagsContainer}>
@@ -203,7 +197,7 @@ const ChecklistTodayDesktop = ({
                         className={styles.metaIcon}
                       />
                       <Typography.Text className={styles.metaText}>
-                        {formatSchedule(currentChecklistTemplate?.repeat)}
+                        {formatTemplateSchedule(currentChecklistTemplate)}
                       </Typography.Text>
                     </div>
                   </div>

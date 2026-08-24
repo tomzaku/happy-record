@@ -3,8 +3,10 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Checklist,
   checklistInstanceId,
+  useChallenge,
   useChecklist,
   useChecklistTemplates,
+  useSession,
   useSyncedSelector,
 } from '@dreamer/global';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
@@ -21,6 +23,8 @@ const DetailTaskPageMobile = () => {
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
   const { getAllRecordFields } = useRecordField();
+  const { getChallengeForTemplate } = useChallenge();
+  const { userId } = useSession();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
 
@@ -30,6 +34,11 @@ const DetailTaskPageMobile = () => {
   // shows up here instead of only refreshing when `checklistId` changes.
   const checklistTemplate = useSyncedSelector(getChecklistTemplate, id ?? '');
   const fields = useSyncedSelector(getAllRecordFields);
+  // Joining a challenge never forks the template (see CLAUDE.md) — a
+  // participant's local copy is the owner's exact row, so this page needs
+  // to tell "mine" from "one I joined" itself.
+  const challenge = getChallengeForTemplate(id);
+  const isOwner = !challenge || challenge.ownerId === userId;
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [isAiModalVisible, setIsAiModalVisible] = React.useState(false);
 
@@ -87,19 +96,23 @@ const DetailTaskPageMobile = () => {
               icon="material-symbols:psychology"
               style={{ cursor: 'pointer' }}
             />
-            <Icon
-              onClick={() => setIsAiModalVisible(true)}
-              width={24}
-              icon="solar:magic-stick-3-bold-duotone"
-              style={{ cursor: 'pointer' }}
-            />
-            <Icon
-              onClick={() => {
-                navigate(`/edit-checklist/${id}`);
-              }}
-              width={24}
-              icon="solar:pen-new-square-linear"
-            />
+            {isOwner && (
+              <Icon
+                onClick={() => setIsAiModalVisible(true)}
+                width={24}
+                icon="solar:magic-stick-3-bold-duotone"
+                style={{ cursor: 'pointer' }}
+              />
+            )}
+            {isOwner && (
+              <Icon
+                onClick={() => {
+                  navigate(`/edit-checklist/${id}`);
+                }}
+                width={24}
+                icon="solar:pen-new-square-linear"
+              />
+            )}
           </div>
         )}
         onClickLeftButton={() => navigate('/')}
@@ -107,18 +120,16 @@ const DetailTaskPageMobile = () => {
       <ChecklistGenericInfo
         isDefaultCollapsed
         checklistTemplate={checklistTemplate}
-        onUpdate={(updatedTemplate) => {
-          updateChecklistTemplate(updatedTemplate);
-        }}
+        onUpdate={isOwner ? (updatedTemplate) => updateChecklistTemplate(updatedTemplate) : () => {}}
       />
       <ChecklistFieldGroup
         checklist={checklist}
         checklistTemplate={checklistTemplate}
         fields={fields}
         currentDay={currentDay}
-        onUpdateChecklistTemplate={(updatedTemplate) => {
+        onUpdateChecklistTemplate={isOwner ? (updatedTemplate) => {
           updateChecklistTemplate(updatedTemplate);
-        }}
+        } : () => {}}
       />
 
       <AiChecklistGenerate

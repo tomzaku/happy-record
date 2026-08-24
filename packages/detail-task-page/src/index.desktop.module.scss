@@ -16,6 +16,16 @@
   margin: 0 auto;
 }
 
+.challengeLink {
+  display: block;
+  padding: $spacing-md;
+  color: #00aaff;
+  font-weight: 600;
+  text-align: center;
+  border: 1px dashed #00aaff;
+  border-radius: 8px;
+}
+
 .header {
   display: flex;
   justify-content: space-between;

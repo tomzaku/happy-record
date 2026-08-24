@@ -3,8 +3,10 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Checklist,
   checklistInstanceId,
+  useChallenge,
   useChecklist,
   useChecklistTemplates,
+  useSession,
   useSyncedSelector,
 } from '@dreamer/global';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
@@ -18,6 +20,7 @@ import AiChecklistGenerate from './components/AiChecklistGenerate';
 import styles from './index.desktop.module.scss';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button/src/DefaultButton';
+import { Link } from 'react-router-dom';
 
 const DetailTaskPageDesktop = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +29,8 @@ const DetailTaskPageDesktop = () => {
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
   const { getAllRecordFields } = useRecordField();
+  const { getChallengeForTemplate } = useChallenge();
+  const { userId } = useSession();
   const intl = useIntl();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
@@ -36,6 +41,12 @@ const DetailTaskPageDesktop = () => {
   // shows up here instead of only refreshing when `id` itself changes.
   const checklistTemplate = useSyncedSelector(getChecklistTemplate, id ?? '');
   const fields = useSyncedSelector(getAllRecordFields);
+  // Joining a challenge never forks the template (see CLAUDE.md) — a
+  // participant's local copy is the owner's exact row, so this page needs
+  // to tell "mine" from "one I joined" itself, rather than assuming
+  // whatever's in the local store is always editable.
+  const challenge = getChallengeForTemplate(id);
+  const isOwner = !challenge || challenge.ownerId === userId;
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [isEditingTitle, setIsEditingTitle] = React.useState(false);
   const [editedTitle, setEditedTitle] = React.useState('');
@@ -150,39 +161,43 @@ const DetailTaskPageDesktop = () => {
                     <Typography.Title level={2} className={styles.pageTitle}>
                       {checklistTemplate.title}
                     </Typography.Title>
-                    <Button
-                      type="ghost"
-                      size="sm"
-                      onClick={handleEditTitle}
-                      className={styles.editTitleButton}
-                      title={intl.formatMessage({ id: 'DetailTaskPage.edit-title', defaultMessage: 'Edit Title' })}
-                    >
-                      <Icon icon="solar:pen-new-square-linear" width={16} />
-                    </Button>
+                    {isOwner && (
+                      <Button
+                        type="ghost"
+                        size="sm"
+                        onClick={handleEditTitle}
+                        className={styles.editTitleButton}
+                        title={intl.formatMessage({ id: 'DetailTaskPage.edit-title', defaultMessage: 'Edit Title' })}
+                      >
+                        <Icon icon="solar:pen-new-square-linear" width={16} />
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
             </div>
-            <div className={styles.headerActions}>
-              <Button
-                type="ghost"
-                onClick={() => setIsAiModalVisible(true)}
-                className={styles.actionButton}
-              >
-                <Icon icon="solar:magic-stick-3-bold-duotone" width={20} />
-                {intl.formatMessage({ id: 'DetailTaskPage.generate-with-ai', defaultMessage: 'Generate with AI' })}
-              </Button>
-              <Button
-                type="ghost"
-                onClick={() => {
-                  navigate(`/edit-checklist/${id}`);
-                }}
-                className={styles.actionButton}
-              >
-                <Icon icon="solar:pen-new-square-linear" width={20} />
-                Edit Task
-              </Button>
-            </div>
+            {isOwner && (
+              <div className={styles.headerActions}>
+                <Button
+                  type="ghost"
+                  onClick={() => setIsAiModalVisible(true)}
+                  className={styles.actionButton}
+                >
+                  <Icon icon="solar:magic-stick-3-bold-duotone" width={20} />
+                  {intl.formatMessage({ id: 'DetailTaskPage.generate-with-ai', defaultMessage: 'Generate with AI' })}
+                </Button>
+                <Button
+                  type="ghost"
+                  onClick={() => {
+                    navigate(`/edit-checklist/${id}`);
+                  }}
+                  className={styles.actionButton}
+                >
+                  <Icon icon="solar:pen-new-square-linear" width={20} />
+                  Edit Task
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Main Content */}
@@ -193,24 +208,30 @@ const DetailTaskPageDesktop = () => {
                 checklistTemplate={checklistTemplate}
                 fields={fields}
                 currentDay={currentDay}
-                onUpdateChecklistTemplate={updatedTemplate => {
-                  updateChecklistTemplate(updatedTemplate);
-                }}
+                onUpdateChecklistTemplate={
+                  isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}
+                }
               />
             </div>
             <div className={styles.side}>
               <ChecklistGenericInfo
                 isDefaultCollapsed={false}
                 checklistTemplate={checklistTemplate}
-                onUpdate={updatedTemplate => {
-                  updateChecklistTemplate(updatedTemplate);
-                }}
-              />
-              
-              <CardShare
-                checklistTemplate={checklistTemplate}
+                onUpdate={isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}}
               />
 
+              {isOwner ? (
+                <CardShare checklistTemplate={checklistTemplate} />
+              ) : (
+                challenge && (
+                  <Link to={`/challenge/${challenge.id}`} className={styles.challengeLink}>
+                    {intl.formatMessage({
+                      id: 'DetailTaskPage.view-challenge-dashboard',
+                      defaultMessage: 'Part of a challenge — View Dashboard',
+                    })}
+                  </Link>
+                )
+              )}
             </div>
           </div>
         </div>

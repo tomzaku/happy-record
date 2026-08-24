@@ -23,6 +23,12 @@ const SYNCED_DATA_KEYS = [
   // survive a sign-out and leak into the next identity the way `fields.id`
   // once did, if it's ever wired into a real domain store later.
   'user',
+  // "I clicked Take it while anonymous, then got sent to Google" — see
+  // useResumePendingChallengeJoin.tsx. Must not survive a sign-out: the
+  // account that comes back after `signOut` reloads is a fresh identity
+  // that never actually clicked Take it, so it has no business auto-joining
+  // whatever challenge the *previous* identity was mid-signing-in for.
+  'pending_challenge_join',
 ];
 
 /**

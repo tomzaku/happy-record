@@ -1,4 +1,5 @@
 @use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
 
 .container {
   overflow: hidden;
@@ -46,5 +47,25 @@
   font-size: toRem(11px);
   padding: $spacing-xs $spacing-sm;
   min-width: auto;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+  margin: $spacing-xs 0;
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  cursor: pointer;
+}
+
+.dashboardLink {
+  align-self: flex-start;
+  font-size: toRem(12px);
+  color: #00aaff;
 }
 

@@ -3,10 +3,12 @@ import { useIntl } from '@dreamer/translation';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button';
+import Checkbox from '@moon-ui/checkbox';
 import Icon from '@moon-ui/icon/Icon';
+import { Link } from 'react-router-dom';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
-import { getActiveFieldGroups, useChecklistTemplates } from '@dreamer/global';
+import { getActiveFieldGroups, useChallenge, useChecklistTemplates } from '@dreamer/global';
 import styles from './index.mobile.module.scss';
 
 // `from`/`to` ride along as query params rather than anything persisted
@@ -38,13 +40,23 @@ const CardShareMobile = ({
   const { getRecordFieldsByIds } = useRecordField();
   const { updateChecklistTemplate } = useCreateChecklistTemplate();
   const { getChecklistTemplate } = useChecklistTemplates();
+  const { getChallengeForTemplate, setChallengeOptions } = useChallenge();
+  const challenge = getChallengeForTemplate(checklistTemplateId);
+  const [shareRecords, setShareRecords] = useState(false);
+  const [commentsEnabled, setCommentsEnabled] = useState(false);
+  React.useEffect(() => {
+    if (challenge) {
+      setShareRecords(challenge.shareRecords);
+      setCommentsEnabled(challenge.commentsEnabled);
+    }
+  }, [challenge]);
 
   const handleShareClick = async () => {
     if (!isShared) {
       // Generate share URL when sharing
       await generateShareUrl();
     }
-    
+
     if (onToggleShare) {
       onToggleShare(!isShared);
     }
@@ -57,7 +69,7 @@ const CardShareMobile = ({
     if (!checklistTemplateId) {
       return;
     }
-    
+
     try {
       const checklistTemplate = getChecklistTemplate(checklistTemplateId);
 
@@ -82,12 +94,24 @@ const CardShareMobile = ({
         ),
       };
       const result = await updateChecklistTemplate(data);
+      await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled });
       const fullUrl = getFullUrl(result.id);
       setShareUrl(fullUrl);
       handleCopyLink(fullUrl);
     } catch (err) {
       console.error('Failed to generate share URL:', err);
     }
+  };
+
+  // Already shared: a toggle writes straight through instead of waiting
+  // for another "Generate URL" click that won't happen again.
+  const handleToggleShareRecords = (checked: boolean) => {
+    setShareRecords(checked);
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords: checked, commentsEnabled });
+  };
+  const handleToggleComments = (checked: boolean) => {
+    setCommentsEnabled(checked);
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled: checked });
   };
 
   const handleCopyLink = async (url?: string) => {
@@ -110,7 +134,7 @@ const CardShareMobile = ({
           Share
         </Typography.Title>
         <Typography.Text>
-          {isShared && shareUrl 
+          {isShared && shareUrl
             ? intl.formatMessage({
                 id: 'CardShare.share-url-label',
                 defaultMessage: 'Share URL:',
@@ -121,6 +145,32 @@ const CardShareMobile = ({
               })
           }
         </Typography.Text>
+        <div className={styles.options}>
+          <label className={styles.optionRow}>
+            <Checkbox
+              checked={shareRecords}
+              onChange={e => handleToggleShareRecords(e.target.checked)}
+            />
+            <Typography.Text>
+              {intl.formatMessage({
+                id: 'CardShare.option-share-records',
+                defaultMessage: "Share everyone's check-ins on a group dashboard",
+              })}
+            </Typography.Text>
+          </label>
+          <label className={styles.optionRow}>
+            <Checkbox
+              checked={commentsEnabled}
+              onChange={e => handleToggleComments(e.target.checked)}
+            />
+            <Typography.Text>
+              {intl.formatMessage({
+                id: 'CardShare.option-comments',
+                defaultMessage: 'Allow comments on this challenge',
+              })}
+            </Typography.Text>
+          </label>
+        </div>
         {isShared && shareUrl && (
           <div className={styles.urlContainer}>
             <span className={styles.url}>{shareUrl}</span>
@@ -140,6 +190,14 @@ const CardShareMobile = ({
                     defaultMessage: 'Copy Link',
                   })}
             </Button>
+            {challenge && (challenge.shareRecords || challenge.commentsEnabled) && (
+              <Link to={`/challenge/${challenge.id}`} className={styles.dashboardLink}>
+                {intl.formatMessage({
+                  id: 'CardShare.view-dashboard',
+                  defaultMessage: 'View Dashboard',
+                })}
+              </Link>
+            )}
           </div>
         )}
       </div>
