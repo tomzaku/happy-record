@@ -11,6 +11,7 @@ import { useRecordField } from '@dreamer/global/src/store/record-field';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
 import {
+  ChallengeThemeId,
   getActiveFieldGroups,
   getSharedChecklistTemplateUrl,
   useChallenge,
@@ -43,11 +44,13 @@ const CardShareMobile = ({
   const [shareRecords, setShareRecords] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(false);
   const [fieldTargets, setFieldTargets] = useState<Record<string, number>>({});
+  const [theme, setTheme] = useState<ChallengeThemeId>('classic');
   React.useEffect(() => {
     if (challenge) {
       setShareRecords(challenge.shareRecords);
       setCommentsEnabled(challenge.commentsEnabled);
       setFieldTargets(challenge.fieldTargets);
+      setTheme(challenge.theme);
     }
   }, [challenge]);
 
@@ -107,7 +110,7 @@ const CardShareMobile = ({
         ),
       };
       const result = await updateChecklistTemplate(data);
-      await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets });
+      await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets, theme });
       const fullUrl = getSharedChecklistTemplateUrl(result.id);
       setShareUrl(fullUrl);
       handleCopyLink(fullUrl);
@@ -120,11 +123,15 @@ const CardShareMobile = ({
   // for another "Generate URL" click that won't happen again.
   const handleToggleShareRecords = (checked: boolean) => {
     setShareRecords(checked);
-    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords: checked, commentsEnabled, fieldTargets });
+    if (isShared) {
+      setChallengeOptions(checklistTemplateId, { shareRecords: checked, commentsEnabled, fieldTargets, theme });
+    }
   };
   const handleToggleComments = (checked: boolean) => {
     setCommentsEnabled(checked);
-    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled: checked, fieldTargets });
+    if (isShared) {
+      setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled: checked, fieldTargets, theme });
+    }
   };
   const handleTargetChange = (fieldId: string, value: string) => {
     const next = { ...fieldTargets };
@@ -135,7 +142,7 @@ const CardShareMobile = ({
       if (Number.isFinite(num) && num > 0) next[fieldId] = num;
     }
     setFieldTargets(next);
-    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets: next });
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets: next, theme });
   };
 
   const handleCopyLink = async (url?: string) => {

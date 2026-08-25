@@ -13,7 +13,7 @@
 //     `checklist_records` peer-read RLS policies (see the migrations) — this
 //     function's own `db` client is still the caller's RLS-scoped one,
 //     nothing here is service-role.
-//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), also enrolls the owner as a participant when shareRecords is on. `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids.
+//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), also enrolls the owner as a participant when shareRecords is on. `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids. `challenge.theme` is one of CHALLENGE_THEMES (_shared/challenges.ts), falls back to 'classic' if omitted/invalid.
 //
 // Deploy: `supabase functions deploy challenges`
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import cx from 'classnames';
 import { useIntl } from '@dreamer/translation';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
@@ -11,6 +12,9 @@ import { useRecordField } from '@dreamer/global/src/store/record-field';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
 import {
+  CHALLENGE_THEMES,
+  CHALLENGE_THEME_SWATCH,
+  ChallengeThemeId,
   ChecklistTemplate,
   getActiveFieldGroups,
   getSharedChecklistTemplateUrl,
@@ -18,6 +22,29 @@ import {
   useChecklistTemplates,
 } from '@dreamer/global';
 import styles from './index.desktop.module.scss';
+
+// Copy for each theme — kept here (translated via intl) rather than beside
+// CHALLENGE_THEME_SWATCH in the global store, which has no i18n access.
+const THEME_COPY: Record<ChallengeThemeId, { labelId: string; label: string; descriptionId: string; description: string }> = {
+  classic: {
+    labelId: 'CardShare.theme-classic',
+    label: 'Classic',
+    descriptionId: 'CardShare.theme-classic-description',
+    description: 'Clean and on-brand',
+  },
+  ignite: {
+    labelId: 'CardShare.theme-ignite',
+    label: 'Ignite',
+    descriptionId: 'CardShare.theme-ignite-description',
+    description: 'Bold and competitive',
+  },
+  playful: {
+    labelId: 'CardShare.theme-playful',
+    label: 'Playful',
+    descriptionId: 'CardShare.theme-playful-description',
+    description: 'Fun and low-pressure',
+  },
+};
 
 type CardShareProps = {
   checklistTemplate: ChecklistTemplate;
@@ -41,11 +68,16 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
   const [shareRecords, setShareRecords] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(false);
   const [fieldTargets, setFieldTargets] = useState<Record<string, number>>({});
+  // Applies to every share link, not only a "real" challenge (shareRecords/
+  // commentsEnabled on) — generateShareUrl below always writes a challenges
+  // row, so theme is always there to pick even for a plain "take it" share.
+  const [theme, setTheme] = useState<ChallengeThemeId>('classic');
   React.useEffect(() => {
     if (challenge) {
       setShareRecords(challenge.shareRecords);
       setCommentsEnabled(challenge.commentsEnabled);
       setFieldTargets(challenge.fieldTargets);
+      setTheme(challenge.theme);
     }
   }, [challenge]);
   const [shareUrl, setShareUrl] = useState(
@@ -100,7 +132,7 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
       };
       const result = await updateChecklistTemplate(data);
       updateChecklistTemplateLocal(data.checklistTemplate);
-      await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets });
+      await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets, theme });
       const fullUrl = getSharedChecklistTemplateUrl(result.id);
       setShareUrl(fullUrl);
       handleCopyLink(fullUrl);
@@ -113,11 +145,15 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
   // waiting for another "Generate URL" click that won't happen again.
   const handleToggleShareRecords = (checked: boolean) => {
     setShareRecords(checked);
-    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords: checked, commentsEnabled, fieldTargets });
+    if (isShared) {
+      setChallengeOptions(checklistTemplateId, { shareRecords: checked, commentsEnabled, fieldTargets, theme });
+    }
   };
   const handleToggleComments = (checked: boolean) => {
     setCommentsEnabled(checked);
-    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled: checked, fieldTargets });
+    if (isShared) {
+      setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled: checked, fieldTargets, theme });
+    }
   };
   const handleTargetChange = (fieldId: string, value: string) => {
     const next = { ...fieldTargets };
@@ -128,7 +164,11 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
       if (Number.isFinite(num) && num > 0) next[fieldId] = num;
     }
     setFieldTargets(next);
-    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets: next });
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets: next, theme });
+  };
+  const handleThemeChange = (next: ChallengeThemeId) => {
+    setTheme(next);
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets, theme: next });
   };
 
   const handleCopyLink = async (url?: string) => {
@@ -186,6 +226,28 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
               })}
             </Typography.Text>
           </label>
+        </div>
+        <div className={styles.themePicker}>
+          <Typography.Text className={styles.themeLabel}>
+            {intl.formatMessage({ id: 'CardShare.theme-label', defaultMessage: 'Page theme' })}
+          </Typography.Text>
+          <div className={styles.themeSwatches}>
+            {CHALLENGE_THEMES.map(id => {
+              const copy = THEME_COPY[id];
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className={cx(styles.themeSwatch, theme === id && styles.themeSwatchSelected)}
+                  style={{ background: CHALLENGE_THEME_SWATCH[id] }}
+                  title={intl.formatMessage({ id: copy.descriptionId, defaultMessage: copy.description })}
+                  aria-label={intl.formatMessage({ id: copy.labelId, defaultMessage: copy.label })}
+                  aria-pressed={theme === id}
+                  onClick={() => handleThemeChange(id)}
+                />
+              );
+            })}
+          </div>
         </div>
         {!!metricFields.length && (
           <div className={styles.targets}>

@@ -2,6 +2,9 @@
 // packages/global/src/store/challenge/useChallenge.tsx for the client shape
 // this mirrors.
 
+export const CHALLENGE_THEMES = ['classic', 'ignite', 'playful'] as const;
+export type ChallengeTheme = (typeof CHALLENGE_THEMES)[number];
+
 export function toChallenge(r: Record<string, unknown>) {
   return {
     id: r.id as string,
@@ -12,6 +15,10 @@ export function toChallenge(r: Record<string, unknown>) {
     // Keyed by the challenge's own (the owner's) field id — see the
     // 20260825000000_challenge_targets.sql migration.
     fieldTargets: (r.field_targets as Record<string, number>) ?? {},
+    // See 20260825010000_challenge_theme.sql — the DB's own CHECK constraint
+    // is the real guarantee this is always one of the three; the cast here
+    // is just so the client type isn't a bare `string`.
+    theme: (r.theme as ChallengeTheme) ?? 'classic',
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
   };
@@ -33,12 +40,19 @@ export function fromChallenge(e: Record<string, unknown>) {
     }
   }
 
+  // Falls back to 'classic' rather than throwing — the DB's CHECK
+  // constraint is the actual guard against garbage, and a client build
+  // that's briefly behind (or a caller that just never sends a theme, e.g.
+  // toggling shareRecords via a stale payload) shouldn't 400 over it.
+  const theme = CHALLENGE_THEMES.includes(e.theme as ChallengeTheme) ? (e.theme as ChallengeTheme) : 'classic';
+
   return {
     id: e.id,
     checklist_template_id: e.checklistTemplateId,
     share_records: !!e.shareRecords,
     comments_enabled: !!e.commentsEnabled,
     field_targets: fieldTargets,
+    theme,
     // Postgres only fills the default on insert, not update — an upsert
     // has to set this explicitly every time.
     updated_at: new Date().toISOString(),

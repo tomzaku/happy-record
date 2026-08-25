@@ -40,6 +40,7 @@ export function saveChallenge(challenge: {
   shareRecords: boolean;
   commentsEnabled: boolean;
   fieldTargets: Record<string, number>;
+  theme: Challenge['theme'];
 }): Promise<{ challenge: Challenge } | null> {
   return request.post('/challenges', { challenge }, { quiet: true });
 }

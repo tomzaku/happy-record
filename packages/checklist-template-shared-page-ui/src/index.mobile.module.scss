@@ -1,0 +1,106 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+.page {
+  min-height: 100vh;
+  background: var(--ct-page-bg);
+  display: flex;
+  flex-direction: column;
+  // Room for the sticky CTA bar so the last field row isn't hidden behind it.
+  padding-bottom: 100px;
+  box-sizing: border-box;
+}
+
+.navText {
+  font-size: toRem(14px);
+  font-weight: 600;
+  color: var(--ct-nav-text);
+  margin-left: $spacing-xs;
+}
+
+.body {
+  padding: $spacing-lg;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  background: var(--ct-chip-bg);
+  color: var(--ct-chip-text);
+  font-size: toRem(11px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 999px;
+  margin-bottom: $spacing-md;
+}
+
+.headline {
+  margin-bottom: $spacing-sm !important;
+}
+
+.subtext {
+  display: block;
+  margin-bottom: $spacing-lg;
+  line-height: 1.55;
+}
+
+.stickyBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--ct-card-bg);
+  box-shadow: 0 -8px 24px rgba(20, 30, 45, 0.1);
+  padding: $spacing-md $spacing-lg calc($spacing-lg + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.primaryButton {
+  background: var(--ct-button-bg);
+  color: #fff;
+  border: 0;
+  border-radius: var(--ct-button-radius);
+  padding: 15px;
+  font-size: toRem(15px);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.textLink {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: toRem(13px);
+  font-weight: 500;
+  color: var(--ct-muted-text);
+  cursor: pointer;
+}
+
+.drawerContainer {
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 4px 44px rgb(12 0 0 / 87%);
+  border-radius: 20px 20px 0 0;
+  text-align: center;
+  padding: $spacing-lg;
+  gap: $spacing-md;
+}
+
+.drawerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: $spacing-sm;
+}

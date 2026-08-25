@@ -1,0 +1,136 @@
+// All the data/state/handlers behind the "take the challenge" page —
+// pulled out of the old single index.tsx so index.desktop.tsx and
+// index.mobile.tsx can render genuinely different layouts (see CLAUDE.md:
+// the old version was just a mobile-width card stretched into an empty
+// desktop viewport, with no sticky mobile CTA) off the exact same logic
+// instead of forking it.
+import * as React from 'react';
+import {
+  useChallenge,
+  useChecklistTemplates,
+  useJoinChallenge,
+  usePendingChallengeJoin,
+  useSession,
+} from '@dreamer/global';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useRecordField } from '@dreamer/global/src/store/record-field';
+import { useGetChecklistTemplateApi } from '@dreamer/global/src/hook/checklist-template/useGetChecklistTemplateApi';
+import type { ChecklistTemplate } from '@dreamer/global';
+import type { RecordField } from '@dreamer/global/src/store/record-field';
+
+export function useChecklistTemplateSharedPage() {
+  const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  // Just greeting text, carried in the URL rather than fetched — see
+  // util.ts's getSharedChecklistTemplateUrl and useCreateChecklistTemplateApi.tsx.
+  const userName = searchParams.get('from') || 'Someone';
+  const targetName = searchParams.get('to') || 'you';
+  const { getRecordFieldsByIds, mergeRecordFields } = useRecordField();
+  const [dialogRejectOpen, setDialogRejectOpen] = React.useState(false);
+  const { addChecklistTemplate, getChecklistTemplate } = useChecklistTemplates();
+  const { getChallengeForTemplate } = useChallenge();
+  const { acceptChallenge } = useJoinChallenge();
+  const { savePendingChallengeJoin } = usePendingChallengeJoin();
+  const { isAnonymous, signInWithGoogle } = useSession();
+  // `id` here is the *owner's* template id (the challenge's canonical
+  // checklist_template_id), not any local copy — exactly what
+  // getChallengeForTemplate expects.
+  const challenge = getChallengeForTemplate(id);
+  const isChallenge = !!challenge && (challenge.shareRecords || challenge.commentsEnabled);
+  const navigate = useNavigate();
+  const { getChecklistTemplateApi } = useGetChecklistTemplateApi();
+
+  const [data, setData] = React.useState<{ checklistTemplate: ChecklistTemplate; fields: RecordField[] } | null>(
+    null,
+  );
+  const [dialogJoinOpen, setDialogJoinOpen] = React.useState(false);
+  const [displayName, setDisplayName] = React.useState(targetName);
+
+  // The plain, pre-challenge "Take it": forks the shared template into a
+  // brand-new row this device owns outright (its own id, never public, no
+  // flag — a flag id copied verbatim would point at a flag this device
+  // can't see or manage). Unchanged from before challenges existed, and
+  // still what happens for a share with neither challenge option on.
+  const takeItPlain = async () => {
+    if (!data) return;
+    const existingFields = await getRecordFieldsByIds(data.fields.map(f => f.id));
+    const newFields = data.fields.filter(f => !existingFields.find(existing => existing.id === f.id));
+    if (newFields.length) mergeRecordFields(newFields);
+    addChecklistTemplate({ ...data.checklistTemplate, visibility: 'private', flagId: undefined });
+    navigate('/');
+  };
+
+  // Joining a challenge never forks — see useJoinChallenge — and requires a
+  // real (Google) sign-in, since an anonymous identity is throwaway and
+  // wouldn't mean anything on a leaderboard. `signInWithGoogle` redirects
+  // away entirely — `redirectTo` is pinned to the app's base URL, not this
+  // page (see useSession.ts, and why: a per-route redirect target needs a
+  // wildcard entry in GoTrue's Redirect URL allow-list, and a mismatch there
+  // silently falls back to the project's Site URL instead of erroring —
+  // that's a real production bug this app hit once already) — so the intent
+  // has to be saved first and picked back up after the redirect, not
+  // awaited here.
+  const joinTheChallenge = async (name: string) => {
+    if (!id || !challenge) return;
+    if (isAnonymous) {
+      savePendingChallengeJoin({ challengeId: challenge.id, checklistTemplateId: id, displayName: name });
+      await signInWithGoogle();
+      return;
+    }
+    const joined = await acceptChallenge(id, challenge.id, name);
+    // detail-task-page requires `currentDay` in the query string (see
+    // ChecklistToday/SearchDialog) — without it the page bails out empty.
+    if (joined) navigate(`/task/${joined.id}?currentDay=${new Date().toISOString()}`);
+  };
+
+  const confirmTakeIt = (name: string) => (isChallenge ? joinTheChallenge(name) : takeItPlain());
+
+  const handleSubmit = () => {
+    if (!data) return;
+    if (getChecklistTemplate(data.checklistTemplate.id)) {
+      alert("You've have this task!!!");
+      return;
+    }
+    // Only ask for a name (and possibly a sign-in) when there's actually a
+    // challenge to join — otherwise this behaves exactly as it always has.
+    if (isChallenge) {
+      setDialogJoinOpen(true);
+      return;
+    }
+    takeItPlain();
+  };
+
+  const onClickLeaveIt = () => {
+    setDialogRejectOpen(true);
+  };
+
+  React.useEffect(() => {
+    if (!id) return;
+    getChecklistTemplateApi(id).then(setData);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  return {
+    data,
+    userName,
+    targetName,
+    displayName,
+    setDisplayName,
+    dialogJoinOpen,
+    setDialogJoinOpen,
+    dialogRejectOpen,
+    setDialogRejectOpen,
+    isAnonymous,
+    challenge,
+    isChallenge,
+    // Every challenge row (created the moment a link is generated — see
+    // CardShare's generateShareUrl) carries a theme, defaulting to
+    // 'classic'; a template shared before themes existed, or a share
+    // whose challenge row hasn't loaded yet, gets that same default.
+    themeId: challenge?.theme ?? 'classic',
+    handleSubmit,
+    onClickLeaveIt,
+    confirmTakeIt,
+    joinTheChallenge,
+  };
+}

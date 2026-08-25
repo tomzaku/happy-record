@@ -7,6 +7,17 @@ import { fetchChallengeDashboard, fetchChallengeForTemplate, saveChallenge } fro
 const CHALLENGE_KEY = 'challenge';
 
 /**
+ * The 3 fixed visual directions the shared "take the challenge" page
+ * (checklist-template-shared-page-ui) can render as — see the theme.ts
+ * module in that package for what each one actually looks like. Mirrors
+ * CHALLENGE_THEMES in supabase/functions/_shared/challenges.ts; the DB's
+ * own CHECK constraint (20260825010000_challenge_theme.sql) is the real
+ * guard, this is just so the client isn't typing it as a bare `string`.
+ */
+export const CHALLENGE_THEMES = ['classic', 'ignite', 'playful'] as const;
+export type ChallengeThemeId = (typeof CHALLENGE_THEMES)[number];
+
+/**
  * Turns a shared checklist template into something joinable — see
  * CLAUDE.md's "Challenges" section. `shareRecords` gates the peer
  * completion grid (packages/global/src/store/challenge/useChallengeParticipants);
@@ -29,6 +40,8 @@ export type Challenge = {
    * grid/ranking already covers "did they contribute" for those.
    */
   fieldTargets: Record<string, number>;
+  /** Owner-picked in CardShare; applied by the shared page for every visitor, not just participants. */
+  theme: ChallengeThemeId;
   createdAt: string;
   updatedAt: string;
 };
@@ -68,7 +81,12 @@ export const useChallenge = () => {
   /** Owner-only (RLS-enforced); upserts on checklistTemplateId, so re-sharing reuses the same challenge. */
   const setChallengeOptions = async (
     checklistTemplateId: string,
-    options: { shareRecords: boolean; commentsEnabled: boolean; fieldTargets: Record<string, number> },
+    options: {
+      shareRecords: boolean;
+      commentsEnabled: boolean;
+      fieldTargets: Record<string, number>;
+      theme: ChallengeThemeId;
+    },
   ) => {
     const existing = challenges[checklistTemplateId];
     const optimistic: Challenge = {
