@@ -12,6 +12,7 @@ import Select from '@moon-ui/select';
 import Typography from '@moon-ui/typography';
 import Icon from '@moon-ui/icon/Icon';
 import { useTags } from '@dreamer/global/src/store/tags/useTags';
+import { useSyncedSelector } from '@dreamer/global/src/hook/useSyncedSelector';
 
 const TaskListPage = () => {
   const [startDate, setStartDate] = React.useState(new Date());
@@ -30,7 +31,11 @@ const TaskListPage = () => {
     return () => clearTimeout(timeout);
   }, [startDate]);
 
-  const allTags = getAllTags();
+  // getAllTags() calling it directly in render (recomputing, and re-firing
+  // its fetch guard, on every unrelated re-render) is the bug class CLAUDE.md
+  // warns about — useSyncedSelector only recomputes when getAllTags's own
+  // identity actually changes.
+  const allTags = useSyncedSelector(getAllTags);
   const tagOptions = [
     { label: 'All', value: 'all' },
     ...allTags.map(tag => ({ label: tag.name, value: tag.name }))
