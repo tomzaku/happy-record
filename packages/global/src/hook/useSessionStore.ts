@@ -17,24 +17,11 @@ type SessionStore<T> = {
   setValue: (value: T | ((val: T) => T)) => void;
 };
 
-// TEMP DEBUG — remove once #185 repro is found. Counts calls to each
-// key's setValue within a rolling window so a runaway loop (vs. a normal
-// handful of calls per interaction) is obvious in the console.
-// eslint-disable-next-line
-const debug185Counts = new Map<string, number>();
-
 export function useSessionStore<T>(key: string, initialValue: T) {
   if (!storeCache.has(key)) {
     const useStore = create<SessionStore<T>>(set => ({
       storedValue: initialValue,
       setValue: (value: T | ((val: T) => T)) => {
-        // TEMP DEBUG — remove once #185 repro is found.
-        const count = (debug185Counts.get(key) ?? 0) + 1;
-        debug185Counts.set(key, count);
-        if (count <= 5 || count % 20 === 0) {
-          console.log(`[debug185] setValue("${key}") call #${count}`);
-          if (count % 20 === 0) console.trace(`[debug185] setValue("${key}") stack at #${count}`);
-        }
         set(state => ({
           storedValue: value instanceof Function ? value(state.storedValue) : value,
         }));

@@ -41,6 +41,16 @@ const DetailTaskPageMobile = () => {
   const isOwner = !challenge || challenge.ownerId === userId;
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [isAiModalVisible, setIsAiModalVisible] = React.useState(false);
+  // Guards the "create if missing" branch below against #185 (see
+  // index.desktop.tsx's matching ref for the full mechanism): `getChecklistDetail`'s
+  // identity changes on every write to the `checklist` store — including
+  // `addChecklist`'s own write below — so once this branch runs, the effect
+  // immediately re-fires, and if `checklistId` hasn't turned truthy yet takes
+  // this branch *again*, creating the same checklist forever (`addChecklist`
+  // sets a fresh `updatedAt` unconditionally, unlike every other store write
+  // here, so each iteration is a genuine, unbounded write — confirmed live via
+  // #185's debug logging until it hit React's "Maximum update depth exceeded").
+  const creatingChecklistIdRef = React.useRef<string>();
 
   if (!id || !currentDay) {
     return;
@@ -50,41 +60,38 @@ const DetailTaskPageMobile = () => {
   // (addChecklist's own identity changes with the store it writes to,
   // which would retrigger creation every time this call succeeds).
   // `getChecklistDetail` IS included so a checklist completed/edited on
-  // another device refreshes this page's own copy.
+  // another device refreshes this page's own copy — see `creatingChecklistIdRef`
+  // above for why the ADD branch still needs its own guard against that same churn.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
-    // TEMP DEBUG — remove once #185 repro is found.
-    console.log('[debug185] mobile create-or-load effect fired', {
-      checklistId,
-      hasChecklistTemplate: !!checklistTemplate,
-      id,
-      currentDay,
-    });
     if (!checklistTemplate) return;
 
     if (checklistId) {
       const checklist = getChecklistDetail(checklistId);
-      console.log('[debug185] mobile READ branch', { checklistId, found: !!checklist });
       setChecklist(checklist);
-    } else {
-      console.log('[debug185] mobile ADD branch (checklistId falsy)', { checklistId });
-      // Should create checklist id if non exist. Deterministic id — see
-      // index.desktop.tsx's matching effect and useChecklists.tsx's
-      // checklistInstanceId for why (this effect re-running before its own
-      // setSearchParams lands should upsert, not duplicate).
-      const checklist = addChecklist({
-        id: checklistInstanceId(id, new Date(currentDay)),
-        title: checklistTemplate.title,
-        checklistTemplateId: id,
-        startedAt: new Date(currentDay).toISOString(),
-        endedAt: new Date(currentDay).toISOString(),
-      });
-      setSearchParams({
-        ...Object.fromEntries(search),
-        checklistId: checklist.id,
-      });
-      setChecklist(checklist);
+      return;
     }
+
+    // Should create checklist id if non exist. Deterministic id — see
+    // index.desktop.tsx's matching effect and useChecklists.tsx's
+    // checklistInstanceId for why (this effect re-running before its own
+    // setSearchParams lands should upsert, not duplicate).
+    const deterministicId = checklistInstanceId(id, new Date(currentDay));
+    if (creatingChecklistIdRef.current === deterministicId) return;
+    creatingChecklistIdRef.current = deterministicId;
+
+    const checklist = addChecklist({
+      id: deterministicId,
+      title: checklistTemplate.title,
+      checklistTemplateId: id,
+      startedAt: new Date(currentDay).toISOString(),
+      endedAt: new Date(currentDay).toISOString(),
+    });
+    setSearchParams({
+      ...Object.fromEntries(search),
+      checklistId: checklist.id,
+    });
+    setChecklist(checklist);
   }, [checklistTemplate, checklistId, id, currentDay, getChecklistDetail]);
 
   const navigate = useNavigate();

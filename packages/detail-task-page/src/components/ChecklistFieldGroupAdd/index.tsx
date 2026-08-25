@@ -129,13 +129,6 @@ const ChecklistFieldGroupAdd = ({
   // identity every render until it's `useCallback`-wrapped), so this still
   // refires on every render — correct, just not free.
   React.useEffect(() => {
-    // TEMP DEBUG — remove once #185 repro is found.
-    console.log('[debug185] ChecklistFieldGroupAdd effect fired', {
-      checklistTemplateId: checklistTemplate.id,
-      fieldsLength: fields.length,
-      fieldIds: fields.map(f => f.id),
-      currentDay,
-    });
     reloadChecklistRecord();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDay, checklistTemplate.id, fields, getChecklistRecords]);

@@ -51,6 +51,24 @@ const DetailTaskPageDesktop = () => {
   const [isEditingTitle, setIsEditingTitle] = React.useState(false);
   const [editedTitle, setEditedTitle] = React.useState('');
   const [isAiModalVisible, setIsAiModalVisible] = React.useState(false);
+  // Guards the "create if missing" branch below against #185: `getChecklistDetail`'s
+  // identity changes on *every* write to the `checklist` store (it's a useCallback
+  // closed over that store, kept in deps so a checklist edited on another device
+  // still refreshes this page — see the effect's own comment). `addChecklist`'s own
+  // write is one such change, so once the ADD branch runs, the effect immediately
+  // sees a new `getChecklistDetail` identity and re-fires — and if `checklistId`
+  // hasn't turned truthy yet by then (`setSearchParams` landing is a separate,
+  // not-necessarily-synchronous state update), it takes the ADD branch *again*,
+  // creating the same checklist forever: unlike every other store write in this
+  // app, `addChecklist` sets a fresh `updatedAt` unconditionally with no "did this
+  // actually change" guard, so each iteration is a genuine, unbounded store write
+  // — confirmed live via #185's debug logging, `addChecklist` firing dozens of
+  // times a second for the same deterministic id until React's nested-update limit
+  // throws "Maximum update depth exceeded". Tracking the id already (being)
+  // created makes a re-fire for the *same* instance a no-op, so the loop can only
+  // ever run once per mount regardless of how many times `getChecklistDetail`'s
+  // identity churns.
+  const creatingChecklistIdRef = React.useRef<string>();
 
   if (!id || !currentDay) {
     return;
@@ -63,44 +81,42 @@ const DetailTaskPageDesktop = () => {
   // every time this very call succeeds. `getChecklistDetail` IS included —
   // its identity changes with that same store, but purely as a read, so a
   // checklist completed/edited on another device now refreshes this page's
-  // own copy instead of only refreshing when `checklistId` changes.
+  // own copy instead of only refreshing when `checklistId` changes. See
+  // `creatingChecklistIdRef` above for why the ADD branch still needs its
+  // own guard against that same churn.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
-    // TEMP DEBUG — remove once #185 repro is found.
-    console.log('[debug185] desktop create-or-load effect fired', {
-      checklistId,
-      hasChecklistTemplate: !!checklistTemplate,
-      id,
-      currentDay,
-    });
     if (!checklistTemplate) return;
 
     if (checklistId) {
       const checklist = getChecklistDetail(checklistId);
-      console.log('[debug185] desktop READ branch', { checklistId, found: !!checklist });
       setChecklist(checklist);
-    } else {
-      console.log('[debug185] desktop ADD branch (checklistId falsy)', { checklistId });
-      // Should create checklist id if non exist. A deterministic id (see
-      // checklistInstanceId) instead of a fresh random one: this effect
-      // re-running before its own setSearchParams below has landed (a
-      // remount, React Strict Mode's dev double-invoke) upserts the same
-      // row instead of minting a duplicate — see useChecklists.tsx's own
-      // comment on the same fix for the home page's checkbox.
-      const checklist = addChecklist({
-        id: checklistInstanceId(id, new Date(currentDay)),
-        title: checklistTemplate.title,
-        checklistTemplateId: id,
-        startedAt: new Date(currentDay).toISOString(),
-        endedAt: new Date(currentDay).toISOString(),
-      });
-      setSearchParams(prev => {
-        const newParams = new URLSearchParams(prev);
-        newParams.set('checklistId', checklist.id);
-        return newParams;
-      });
-      setChecklist(checklist);
+      return;
     }
+
+    // Should create checklist id if non exist. A deterministic id (see
+    // checklistInstanceId) instead of a fresh random one: this effect
+    // re-running before its own setSearchParams below has landed (a
+    // remount, React Strict Mode's dev double-invoke) upserts the same
+    // row instead of minting a duplicate — see useChecklists.tsx's own
+    // comment on the same fix for the home page's checkbox.
+    const deterministicId = checklistInstanceId(id, new Date(currentDay));
+    if (creatingChecklistIdRef.current === deterministicId) return;
+    creatingChecklistIdRef.current = deterministicId;
+
+    const checklist = addChecklist({
+      id: deterministicId,
+      title: checklistTemplate.title,
+      checklistTemplateId: id,
+      startedAt: new Date(currentDay).toISOString(),
+      endedAt: new Date(currentDay).toISOString(),
+    });
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('checklistId', checklist.id);
+      return newParams;
+    });
+    setChecklist(checklist);
   }, [checklistTemplate, checklistId, id, currentDay, getChecklistDetail]);
 
   // Handle title editing
