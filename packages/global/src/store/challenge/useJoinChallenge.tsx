@@ -49,7 +49,7 @@ export const useJoinChallenge = () => {
       idMap.set(field.id, forked.id);
     }
 
-    const { id: forkedTemplateId } = addChecklistTemplate({
+    const { id: forkedTemplateId, saved } = addChecklistTemplate({
       title: data.checklistTemplate.title,
       repeat: data.checklistTemplate.repeat,
       avatar: data.checklistTemplate.avatar,
@@ -66,6 +66,16 @@ export const useJoinChallenge = () => {
       // and a copied flagId would point at a flag only the original owner
       // can see.
     });
+
+    // challenge_participants.checklist_template_id has a real FK to
+    // checklist_templates(id) — without waiting for the fork's own POST to
+    // land first, this insert races it and 500s on the FK violation
+    // whenever the network round trip for `saved` hasn't finished yet
+    // (routine, not an edge case: it's a second request fired right after
+    // the first). `saved` resolves null on a genuine failure (offline, no
+    // retry queue — see CLAUDE.md), in which case joinChallenge below would
+    // just hit the same FK error; nothing further to do about that here.
+    await saved;
 
     await joinChallenge(challengeId, displayName, forkedTemplateId);
     return { id: forkedTemplateId };

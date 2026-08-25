@@ -297,9 +297,19 @@ export const useChecklistTemplates = () => {
       [id]: template,
     });
     updateSelectedChecklistTemplate([...selectedChecklistTemplates, id]);
-    saveChecklistTemplate(template);
+    // Optimistic — the caller gets `id` back immediately, before this
+    // resolves, same as every other write in this app (see CLAUDE.md's
+    // "online-first"). `saved` is exposed alongside it for the rare caller
+    // that references this id from *another table's* row before this one
+    // has necessarily landed server-side (useJoinChallenge.tsx forking a
+    // template then immediately inserting a challenge_participants row whose
+    // checklist_template_id has a real FK to this table — awaiting `saved`
+    // there is what keeps that insert from racing this row's own POST).
+    // Most callers can ignore it; the local store is already up to date.
+    const saved = saveChecklistTemplate(template);
     return {
       id,
+      saved,
     };
   };
 
