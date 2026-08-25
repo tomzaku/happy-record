@@ -129,6 +129,13 @@ const ChecklistFieldGroupAdd = ({
   // identity every render until it's `useCallback`-wrapped), so this still
   // refires on every render — correct, just not free.
   React.useEffect(() => {
+    // TEMP DEBUG — remove once #185 repro is found.
+    console.log('[debug185] ChecklistFieldGroupAdd effect fired', {
+      checklistTemplateId: checklistTemplate.id,
+      fieldsLength: fields.length,
+      fieldIds: fields.map(f => f.id),
+      currentDay,
+    });
     reloadChecklistRecord();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDay, checklistTemplate.id, fields, getChecklistRecords]);
@@ -229,7 +236,7 @@ const ChecklistFieldGroupAdd = ({
                 return null;
               }
               return (
-                <>
+                <React.Fragment key={latestRecord.id}>
                   <List.ItemMeta
                     logo={<Icon width={24} icon={recordField.icon} />}
                     title={recordField.title}
@@ -240,7 +247,7 @@ const ChecklistFieldGroupAdd = ({
                     readOnly
                     withoutBorder
                   />
-                </>
+                </React.Fragment>
               );
             }
           })}
@@ -257,6 +264,7 @@ const ChecklistFieldGroupAdd = ({
           case 'metric': {
             return (
               <List.ItemMeta
+                key={field.id}
                 logo={<Icon width={24} icon={field.icon} />}
                 title={field.title}
                 rightComponent={
@@ -284,7 +292,7 @@ const ChecklistFieldGroupAdd = ({
           }
           case 'note': {
             return (
-              <>
+              <React.Fragment key={field.id}>
                 <List.ItemMeta
                   logo={<Icon width={24} icon={field.icon} />}
                   title={field.title}
@@ -300,7 +308,7 @@ const ChecklistFieldGroupAdd = ({
                     });
                   }}
                 />
-              </>
+              </React.Fragment>
             );
           }
         }

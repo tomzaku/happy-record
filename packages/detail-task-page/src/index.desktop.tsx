@@ -66,12 +66,21 @@ const DetailTaskPageDesktop = () => {
   // own copy instead of only refreshing when `checklistId` changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
+    // TEMP DEBUG — remove once #185 repro is found.
+    console.log('[debug185] desktop create-or-load effect fired', {
+      checklistId,
+      hasChecklistTemplate: !!checklistTemplate,
+      id,
+      currentDay,
+    });
     if (!checklistTemplate) return;
 
     if (checklistId) {
       const checklist = getChecklistDetail(checklistId);
+      console.log('[debug185] desktop READ branch', { checklistId, found: !!checklist });
       setChecklist(checklist);
     } else {
+      console.log('[debug185] desktop ADD branch (checklistId falsy)', { checklistId });
       // Should create checklist id if non exist. A deterministic id (see
       // checklistInstanceId) instead of a fresh random one: this effect
       // re-running before its own setSearchParams below has landed (a

@@ -83,6 +83,12 @@ export const useChecklist = () => {
           if (!existing || new Date(item.updatedAt) > new Date(existing.updatedAt)) {
             merged[item.id] = item;
             changed = true;
+            // TEMP DEBUG — remove once #185 repro is found.
+            console.log('[debug185] mergeFetched changed', {
+              id: item.id,
+              existingUpdatedAt: existing?.updatedAt,
+              newUpdatedAt: item.updatedAt,
+            });
           }
         }
         return changed ? merged : prev;
@@ -290,6 +296,8 @@ export const useChecklist = () => {
 
   const updateChecklist = React.useCallback(
     (checklistToUpdate: Partial<Checklist> & { id: Checklist['id'] }) => {
+      // TEMP DEBUG — remove once #185 repro is found.
+      console.log('[debug185] updateChecklist called', checklistToUpdate);
       const merged: Checklist = {
         ...checklist[checklistToUpdate.id],
         ...checklistToUpdate,
@@ -313,6 +321,8 @@ export const useChecklist = () => {
 
   const addChecklist = React.useCallback(
     (checklistToAdd: Omit<Checklist, 'id' | 'updatedAt'> & { id?: string }) => {
+      // TEMP DEBUG — remove once #185 repro is found.
+      console.log('[debug185] addChecklist called', checklistToAdd);
       // Callers that already know the natural (checklistTemplateId, day) key
       // — detail-task-page's "create today's instance if one doesn't exist
       // yet" effect — pass `checklistInstanceId(...)` explicitly so a

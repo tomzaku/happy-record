@@ -63,6 +63,25 @@ const ChecklistFieldGroup = ({
     }, {}),
   );
 
+  // Keyed by fieldGroup id so each group's `fieldDetails` array keeps the
+  // same reference across renders where `checklistTemplate.fieldGroups`/
+  // `fields` themselves haven't changed — computing it inline inside
+  // `renderBody` below (a fresh `.map().filter()` every render, regardless
+  // of whether anything real changed) fed an unstable array straight into
+  // ChecklistFieldGroupAdd's own `fields` prop, which is a dependency of an
+  // effect there (see that component's own comment) — so *any* unrelated
+  // re-render of this component re-ran that effect too, on every field
+  // group, every time.
+  const fieldDetailsByGroup = React.useMemo(() => {
+    const map: Record<string, RecordField[]> = {};
+    for (const fieldGroup of checklistTemplate.fieldGroups) {
+      map[fieldGroup.id] = fieldGroup.fields
+        .map(fieldId => fields.find(field => field.id === fieldId))
+        .filter((field): field is RecordField => field !== undefined);
+    }
+    return map;
+  }, [checklistTemplate.fieldGroups, fields]);
+
   const toggleCollapse = (fieldGroupId: string) => {
     setCollapsedGroups(prev => ({
       ...prev,
@@ -213,9 +232,7 @@ const ChecklistFieldGroup = ({
         return aActive === bActive ? 0 : aActive ? -1 : 1;
       })
       .map(({ fieldGroup, index }) => {
-        const fieldDetails = fieldGroup.fields
-          .map(fieldId => fields.find(field => field.id === fieldId))
-          .filter((field): field is RecordField => field !== undefined);
+        const fieldDetails = fieldDetailsByGroup[fieldGroup.id] ?? [];
         const isCollapsed = collapsedGroups[fieldGroup.id] || false;
         const isActiveToday = isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay));
 

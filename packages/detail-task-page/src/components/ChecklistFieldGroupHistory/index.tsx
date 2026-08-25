@@ -35,7 +35,7 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
         <Typography.Text className={styles.noRecordText}>No record found</Typography.Text>
       )}
       {Object.entries(records).map(([key, checklistRecords], index) => (
-        <div className={styles.recordContainer}>
+        <div key={key} className={styles.recordContainer}>
           <div className={styles.hrContainer}>
             <div className={cx(styles.hrSide, index === 0 && styles.noHr)} />
 
@@ -69,6 +69,7 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
 
           {checklistRecords.map(checklistRecord => (
             <ChecklistFieldGeneral
+              key={checklistRecord.id}
               record={checklistRecord}
               // `records` is derived from the store — ChecklistFieldGeneral's
               // own `updateChecklistRecord` call already updates it; nothing

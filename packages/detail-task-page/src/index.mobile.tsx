@@ -53,12 +53,21 @@ const DetailTaskPageMobile = () => {
   // another device refreshes this page's own copy.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
+    // TEMP DEBUG — remove once #185 repro is found.
+    console.log('[debug185] mobile create-or-load effect fired', {
+      checklistId,
+      hasChecklistTemplate: !!checklistTemplate,
+      id,
+      currentDay,
+    });
     if (!checklistTemplate) return;
 
     if (checklistId) {
       const checklist = getChecklistDetail(checklistId);
+      console.log('[debug185] mobile READ branch', { checklistId, found: !!checklist });
       setChecklist(checklist);
     } else {
+      console.log('[debug185] mobile ADD branch (checklistId falsy)', { checklistId });
       // Should create checklist id if non exist. Deterministic id — see
       // index.desktop.tsx's matching effect and useChecklists.tsx's
       // checklistInstanceId for why (this effect re-running before its own
@@ -88,14 +97,6 @@ const DetailTaskPageMobile = () => {
         renderLeftComponent={() => <div>{checklistTemplate?.title}</div>}
         renderRightComponent={() => (
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <Icon
-              onClick={() => {
-                setIsFocusZoneOpen(true);
-              }}
-              width={24}
-              icon="material-symbols:psychology"
-              style={{ cursor: 'pointer' }}
-            />
             {isOwner && (
               <Icon
                 onClick={() => setIsAiModalVisible(true)}
