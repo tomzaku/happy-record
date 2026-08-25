@@ -55,6 +55,11 @@ type CardShareProps = {
 const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
   const intl = useIntl();
   const [copied, setCopied] = useState(false);
+  // Generating a share URL round-trips two requests (publish the template,
+  // then create/update the challenge row) before there's anything to show —
+  // without this the "Generate URL" click just sat there with no feedback
+  // until both landed.
+  const [generating, setGenerating] = useState(false);
   const checklistTemplateId = checklistTemplate?.id;
   const { getRecordFieldsByIds } = useRecordField();
   const { updateChecklistTemplate } = useCreateChecklistTemplate();
@@ -111,6 +116,7 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
       return;
     }
 
+    setGenerating(true);
     try {
       // Scoped to active groups only — an archived group's fields have no reason to be marked
       // public just because they're still physically present in the jsonb (see
@@ -138,6 +144,8 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
       handleCopyLink(fullUrl);
     } catch (err) {
       console.error('Failed to generate share URL:', err);
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -276,7 +284,8 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
         )}
         {!isShared && (
           <div>
-            <Button size="md" onClick={handleShareClick}>
+            <Button size="md" onClick={handleShareClick} disabled={generating}>
+              {generating && <Icon icon="svg-spinners:180-ring-with-bg" width={16} className={styles.buttonSpinner} />}
               {intl.formatMessage({
                 id: 'CardShare.generate-url',
                 defaultMessage: 'Generate URL',

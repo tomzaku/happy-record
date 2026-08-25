@@ -23,6 +23,7 @@ const ChecklistTemplateSharedPageDesktop = () => {
     isAnonymous,
     challenge,
     themeId,
+    submitting,
     handleSubmit,
     onClickLeaveIt,
     confirmTakeIt,
@@ -56,10 +57,11 @@ const ChecklistTemplateSharedPageDesktop = () => {
             </Typography.Text>
 
             <div className={styles.ctaColumn}>
-              <button className={styles.primaryButton} onClick={handleSubmit}>
+              <button className={styles.primaryButton} onClick={handleSubmit} disabled={submitting}>
+                {submitting && <Icon icon="svg-spinners:180-ring-with-bg" width={18} />}
                 Take the Challenge
               </button>
-              <button className={styles.textLink} onClick={onClickLeaveIt}>
+              <button className={styles.textLink} onClick={onClickLeaveIt} disabled={submitting}>
                 Maybe later
               </button>
             </div>
@@ -93,11 +95,16 @@ const ChecklistTemplateSharedPageDesktop = () => {
           <Input value={displayName} onChange={e => setDisplayName(e.target.value)} renderRightInput={() => <></>} />
           <button
             className={styles.primaryButton}
+            disabled={submitting}
             onClick={() => {
-              setDialogJoinOpen(false);
+              // Left open, disabled + spinning, until the request actually
+              // resolves — closing it immediately (as this used to) left the
+              // click with no visible feedback at all while the join/sign-in
+              // request was still in flight.
               joinTheChallenge(displayName.trim() || targetName);
             }}
           >
+            {submitting && <Icon icon="svg-spinners:180-ring-with-bg" width={18} />}
             {isAnonymous ? 'Sign in with Google' : 'Join'}
           </button>
         </div>

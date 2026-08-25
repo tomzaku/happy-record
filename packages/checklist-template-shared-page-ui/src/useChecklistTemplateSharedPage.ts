@@ -45,6 +45,13 @@ export function useChecklistTemplateSharedPage() {
   );
   const [dialogJoinOpen, setDialogJoinOpen] = React.useState(false);
   const [displayName, setDisplayName] = React.useState(targetName);
+  // Covers every real network wait this page has (taking it plain, joining
+  // a challenge) so the primary/Join buttons can show a spinner instead of
+  // just sitting there — a slow request otherwise looks identical to a
+  // broken button, and it's the whole reason someone clicked twice or two
+  // templates ended up joined (see useJoinChallenge.tsx's own note on the
+  // duplicate this used to cause for an unrelated reason).
+  const [submitting, setSubmitting] = React.useState(false);
 
   // The plain, pre-challenge "Take it": forks the shared template into a
   // brand-new row this device owns outright (its own id, never public, no
@@ -53,11 +60,16 @@ export function useChecklistTemplateSharedPage() {
   // still what happens for a share with neither challenge option on.
   const takeItPlain = async () => {
     if (!data) return;
-    const existingFields = await getRecordFieldsByIds(data.fields.map(f => f.id));
-    const newFields = data.fields.filter(f => !existingFields.find(existing => existing.id === f.id));
-    if (newFields.length) mergeRecordFields(newFields);
-    addChecklistTemplate({ ...data.checklistTemplate, visibility: 'private', flagId: undefined });
-    navigate('/');
+    setSubmitting(true);
+    try {
+      const existingFields = await getRecordFieldsByIds(data.fields.map(f => f.id));
+      const newFields = data.fields.filter(f => !existingFields.find(existing => existing.id === f.id));
+      if (newFields.length) mergeRecordFields(newFields);
+      addChecklistTemplate({ ...data.checklistTemplate, visibility: 'private', flagId: undefined });
+      navigate('/');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Joining a challenge never forks — see useJoinChallenge — and requires a
@@ -72,21 +84,26 @@ export function useChecklistTemplateSharedPage() {
   // awaited here.
   const joinTheChallenge = async (name: string) => {
     if (!id || !challenge) return;
-    if (isAnonymous) {
-      savePendingChallengeJoin({ challengeId: challenge.id, checklistTemplateId: id, displayName: name });
-      await signInWithGoogle();
-      return;
+    setSubmitting(true);
+    try {
+      if (isAnonymous) {
+        savePendingChallengeJoin({ challengeId: challenge.id, checklistTemplateId: id, displayName: name });
+        await signInWithGoogle();
+        return;
+      }
+      const joined = await acceptChallenge(id, challenge.id, name);
+      // detail-task-page requires `currentDay` in the query string (see
+      // ChecklistToday/SearchDialog) — without it the page bails out empty.
+      if (joined) navigate(`/task/${joined.id}?currentDay=${new Date().toISOString()}`);
+    } finally {
+      setSubmitting(false);
     }
-    const joined = await acceptChallenge(id, challenge.id, name);
-    // detail-task-page requires `currentDay` in the query string (see
-    // ChecklistToday/SearchDialog) — without it the page bails out empty.
-    if (joined) navigate(`/task/${joined.id}?currentDay=${new Date().toISOString()}`);
   };
 
   const confirmTakeIt = (name: string) => (isChallenge ? joinTheChallenge(name) : takeItPlain());
 
   const handleSubmit = () => {
-    if (!data) return;
+    if (!data || submitting) return;
     if (getChecklistTemplate(data.checklistTemplate.id)) {
       alert("You've have this task!!!");
       return;
@@ -128,6 +145,7 @@ export function useChecklistTemplateSharedPage() {
     // 'classic'; a template shared before themes existed, or a share
     // whose challenge row hasn't loaded yet, gets that same default.
     themeId: challenge?.theme ?? 'classic',
+    submitting,
     handleSubmit,
     onClickLeaveIt,
     confirmTakeIt,

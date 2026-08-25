@@ -16,10 +16,11 @@ export function toChallengeParticipant(r: Record<string, unknown>) {
 export function fromChallengeParticipant(e: Record<string, unknown>) {
   if (typeof e.id !== 'string' || !e.id) throw new Error('Missing id.');
   if (typeof e.challengeId !== 'string' || !e.challengeId) throw new Error('Missing challengeId.');
-  // Which template this participant's own checklists are recorded against
-  // (their own fork of the shared template — see useJoinChallenge.tsx). The
-  // peer-read policies on checklists/submissions key off this column, so a
-  // join with no value would silently never show up on the dashboard.
+  // Which template this participant's own checklists are recorded against —
+  // the challenge's own template id directly; joining never forks (see
+  // useJoinChallenge.tsx). The peer-read policies on checklists/submissions
+  // key off this column, so a join with no value would silently never show
+  // up on the dashboard.
   if (typeof e.checklistTemplateId !== 'string' || !e.checklistTemplateId) {
     throw new Error('Missing checklistTemplateId.');
   }

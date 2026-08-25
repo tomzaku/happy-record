@@ -8,6 +8,11 @@
   gap: $spacing-sm;
 }
 
+.buttonSpinner {
+  margin-right: $spacing-xs;
+  vertical-align: middle;
+}
+
 .ranking {
   display: flex;
   flex-direction: column;

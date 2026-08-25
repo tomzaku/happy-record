@@ -23,6 +23,7 @@ const ChecklistTemplateSharedPageMobile = () => {
     isAnonymous,
     challenge,
     themeId,
+    submitting,
     handleSubmit,
     onClickLeaveIt,
     confirmTakeIt,
@@ -59,10 +60,11 @@ const ChecklistTemplateSharedPageMobile = () => {
           card's own content happened to end, off-screen behind however many
           fields the template has. */}
       <div className={styles.stickyBar}>
-        <button className={styles.primaryButton} onClick={handleSubmit}>
+        <button className={styles.primaryButton} onClick={handleSubmit} disabled={submitting}>
+          {submitting && <Icon icon="svg-spinners:180-ring-with-bg" width={16} />}
           Take the Challenge
         </button>
-        <button className={styles.textLink} onClick={onClickLeaveIt}>
+        <button className={styles.textLink} onClick={onClickLeaveIt} disabled={submitting}>
           Maybe later
         </button>
       </div>
@@ -89,11 +91,14 @@ const ChecklistTemplateSharedPageMobile = () => {
           <Input value={displayName} onChange={e => setDisplayName(e.target.value)} renderRightInput={() => <></>} />
           <button
             className={styles.primaryButton}
+            disabled={submitting}
             onClick={() => {
-              setDialogJoinOpen(false);
+              // Left open, disabled + spinning, until the request actually
+              // resolves — see index.desktop.tsx's matching button.
               joinTheChallenge(displayName.trim() || targetName);
             }}
           >
+            {submitting && <Icon icon="svg-spinners:180-ring-with-bg" width={16} />}
             {isAnonymous ? 'Sign in with Google' : 'Join'}
           </button>
         </div>

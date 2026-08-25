@@ -75,11 +75,13 @@ async function getDashboard({ url, db }: Ctx, id: string) {
 
   const userIds = [...new Set(participants.map(p => p.userId))];
 
-  // Each participant now records against their own forked template (see
-  // useJoinChallenge.tsx), not the challenge's literal checklist_template_id
-  // — so this widens to every id in play. Still can't cross-attribute one
-  // participant's rows to another: each forked template is owned by exactly
-  // one participant, and both queries also filter `user_id in (userIds)`.
+  // Every participant records against the challenge's own template id
+  // directly (joining never forks — see useJoinChallenge.tsx), so this is
+  // just `[challenge.checklistTemplateId]` in practice. Still widened to
+  // every `checklist_template_id` on the roster, not hardcoded to the one
+  // value, so a participant who joined back when this *did* fork (a
+  // pre-existing `challenge_participants` row pointing at their own old
+  // fork) still shows up correctly instead of silently dropping out.
   const templateIds = [
     ...new Set([challenge.checklistTemplateId, ...participants.map(p => p.checklistTemplateId)]),
   ];
@@ -167,6 +169,15 @@ type Target = {
  * peer-read policies the 20260825000000_challenge_targets.sql migration
  * added — an untargeted field (a personal note, a metric with no goal set)
  * is never touched.
+ *
+ * Joining a challenge no longer forks the template or its fields (see
+ * useJoinChallenge.tsx) — every participant, owner included, records
+ * against the exact same field id a target is keyed by, so attribution is
+ * just "whoever's `user_id` is actually on the row." The one wrinkle:
+ * `resolveFieldId` still resolves a *pre-existing* fork's id back to the
+ * target it counts toward, so a participant who joined before that change
+ * shipped doesn't lose their already-recorded contributions — nothing new
+ * ever creates a fork to resolve here.
  */
 async function getTargets(
   db: SupabaseClient,
@@ -177,55 +188,41 @@ async function getTargets(
   const targetFieldIds = Object.keys(challenge.fieldTargets);
   if (!targetFieldIds.length) return [];
 
-  // Resolve each participant's own field id per target: the original id
-  // directly (the owner never forks their own fields — see save() below),
-  // or a fork whose copied_from_id points back at it (see the migration).
-  // Two queries instead of one `.or()` string to avoid hand-building a
-  // PostgREST filter expression out of ids.
-  const [{ data: originalFieldRows, error: originalError }, { data: forkedFieldRows, error: forkedError }] =
-    await Promise.all([
-      db.from('fields').select('id, user_id, title, unit').in('id', targetFieldIds),
-      db
-        .from('fields')
-        .select('id, copied_from_id, user_id')
-        .in('user_id', userIds)
-        .in('copied_from_id', targetFieldIds),
-    ]);
-  if (originalError) throw new Error(originalError.message);
+  const [{ data: fieldRows, error: fieldError }, { data: forkedFieldRows, error: forkedError }] = await Promise.all([
+    db.from('fields').select('id, title, unit').in('id', targetFieldIds),
+    db
+      .from('fields')
+      .select('id, copied_from_id')
+      .in('user_id', userIds)
+      .in('copied_from_id', targetFieldIds),
+  ]);
+  if (fieldError) throw new Error(fieldError.message);
   if (forkedError) throw new Error(forkedError.message);
 
-  // resolvedFieldId (whatever's actually on checklist_records.field_id for
-  // that person) -> which target it counts toward + whose contribution it is.
-  const resolution = new Map<string, { originalFieldId: string; userId: string }>();
   const fieldMeta = new Map<string, { title: string; unit: string }>();
-  for (const row of (originalFieldRows ?? []) as Record<string, unknown>[]) {
-    const id = row.id as string;
-    resolution.set(id, { originalFieldId: id, userId: row.user_id as string });
-    fieldMeta.set(id, { title: row.title as string, unit: (row.unit as string) ?? '' });
+  for (const row of (fieldRows ?? []) as Record<string, unknown>[]) {
+    fieldMeta.set(row.id as string, { title: row.title as string, unit: (row.unit as string) ?? '' });
   }
+  // A legacy fork's id -> the target id it counts toward.
+  const resolveFieldId = new Map<string, string>();
   for (const row of (forkedFieldRows ?? []) as Record<string, unknown>[]) {
-    resolution.set(row.id as string, {
-      originalFieldId: row.copied_from_id as string,
-      userId: row.user_id as string,
-    });
+    resolveFieldId.set(row.id as string, row.copied_from_id as string);
   }
 
-  const resolvedFieldIds = [...resolution.keys()];
-  const { data: recordRows, error: recordError } = resolvedFieldIds.length
-    ? await db
-        .from('checklist_records')
-        .select('field_id, value_number')
-        .in('field_id', resolvedFieldIds)
-        .in('user_id', userIds)
-        .limit(MAX_ROWS)
-    : { data: [] as Record<string, unknown>[], error: null };
+  const resolvedFieldIds = [...new Set([...targetFieldIds, ...resolveFieldId.keys()])];
+  const { data: recordRows, error: recordError } = await db
+    .from('checklist_records')
+    .select('field_id, user_id, value_number')
+    .in('field_id', resolvedFieldIds)
+    .in('user_id', userIds)
+    .limit(MAX_ROWS);
   if (recordError) throw new Error(recordError.message);
 
-  const totals = new Map<string, number>(); // `${originalFieldId}:${userId}` -> sum
+  const totals = new Map<string, number>(); // `${targetFieldId}:${userId}` -> sum
   for (const row of (recordRows ?? []) as Record<string, unknown>[]) {
-    const resolved = resolution.get(row.field_id as string);
-    if (!resolved || typeof row.value_number !== 'number') continue;
-    const key = `${resolved.originalFieldId}:${resolved.userId}`;
+    if (typeof row.value_number !== 'number') continue;
+    const targetFieldId = resolveFieldId.get(row.field_id as string) ?? (row.field_id as string);
+    const key = `${targetFieldId}:${row.user_id}`;
     totals.set(key, (totals.get(key) ?? 0) + row.value_number);
   }
 

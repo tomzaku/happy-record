@@ -7,6 +7,7 @@ import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
+import Icon from '@moon-ui/icon/Icon';
 import styles from './index.module.scss';
 
 const RANGE_DAYS = 30;
@@ -103,7 +104,22 @@ const ChallengeDashboardPageUi = () => {
     );
   }
 
-  if (!dashboard || !dashboard.challenge) return null;
+  // The one GET this page makes (getChallengeDashboard) isn't quiet — a
+  // real failure sets `error` above — so `!dashboard` here means only one
+  // thing: still in flight. Blank space during that wait otherwise looks
+  // exactly like "this challenge doesn't exist" for however long the
+  // request takes.
+  if (!dashboard) {
+    return (
+      <div>
+        <AppHeader />
+        <Card className={styles.card}>
+          <Icon icon="svg-spinners:180-ring-with-bg" width={24} />
+        </Card>
+      </div>
+    );
+  }
+  if (!dashboard.challenge) return null;
 
   return (
     <div>
@@ -257,6 +273,7 @@ const ChallengeDashboardPageUi = () => {
               renderRightInput={() => <></>}
             />
             <Button size="md" onClick={handlePostComment} disabled={posting}>
+              {posting && <Icon icon="svg-spinners:180-ring-with-bg" width={16} className={styles.buttonSpinner} />}
               {intl.formatMessage({ id: 'ChallengeDashboard.post', defaultMessage: 'Post' })}
             </Button>
           </div>
