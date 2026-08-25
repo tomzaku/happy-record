@@ -3,12 +3,23 @@
 -- decisions only.
 --
 -- A challenge is created (or reused — `checklist_template_id` is unique) the
--- moment the owner turns on either option in CardShare. Joining does *not*
--- fork the template — a participant's own checklists/records reference the
--- owner's exact `checklist_template_id` directly (checklists/checklist_records
--- RLS only cares who owns the checklist row, not who owns the template it
--- points at, so this is already legal without any extra grant). That's also
--- why `challenge_participants` doesn't need its own template-id column: the
+-- moment the owner turns on either option in CardShare.
+--
+-- UPDATED by 20260824010000_field_defaults_and_forking.sql: joining now
+-- *does* fork the template (and its fields) into the joiner's own owned
+-- rows instead of the "everyone references the owner's exact id" shape
+-- described below — see that migration and useJoinChallenge.tsx.
+-- `challenge_participants` gained its own `checklist_template_id` column
+-- for exactly that reason, and the peer-read policies further down this
+-- file were superseded there too. Left as originally written for the
+-- history of why this table looks the way it does.
+--
+-- (Original comment:) Joining does *not* fork the template — a
+-- participant's own checklists/records reference the owner's exact
+-- `checklist_template_id` directly (checklists/checklist_records RLS only
+-- cares who owns the checklist row, not who owns the template it points
+-- at, so this is already legal without any extra grant). That's also why
+-- `challenge_participants` doesn't need its own template-id column: the
 -- one template id lives on `challenges` itself, and applies to everyone.
 create table if not exists challenges (
   id text primary key,

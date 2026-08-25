@@ -23,6 +23,13 @@ export function fetchChallengeDashboard(
   participants: ChallengeParticipant[];
   completions: { userId: string; date: string }[];
   ranking: { userId: string; count: number }[];
+  targets: {
+    fieldId: string;
+    title: string;
+    unit: string;
+    target: number;
+    contributions: { userId: string; total: number }[];
+  }[];
 }> {
   return request.get('/challenges', { params: { id, from, to } });
 }
@@ -32,6 +39,7 @@ export function saveChallenge(challenge: {
   checklistTemplateId: string;
   shareRecords: boolean;
   commentsEnabled: boolean;
+  fieldTargets: Record<string, number>;
 }): Promise<{ challenge: Challenge } | null> {
   return request.post('/challenges', { challenge }, { quiet: true });
 }

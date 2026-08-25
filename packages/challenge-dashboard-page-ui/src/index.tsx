@@ -23,11 +23,20 @@ const buildDays = (count: number) => {
   return days;
 };
 
+type Target = {
+  fieldId: string;
+  title: string;
+  unit: string;
+  target: number;
+  contributions: { userId: string; total: number }[];
+};
+
 type Dashboard = {
   challenge: Challenge | null;
   participants: ChallengeParticipant[];
   completions: { userId: string; date: string }[];
   ranking: { userId: string; count: number }[];
+  targets: Target[];
 };
 
 const ChallengeDashboardPageUi = () => {
@@ -156,6 +165,59 @@ const ChallengeDashboardPageUi = () => {
           </>
         )}
       </Card>
+
+      {dashboard.challenge.shareRecords && !!dashboard.targets.length && (
+        <Card className={styles.card}>
+          <Typography.Title level={4} noMargin>
+            {intl.formatMessage({ id: 'ChallengeDashboard.targets', defaultMessage: 'Targets' })}
+          </Typography.Title>
+          <div className={styles.targetList}>
+            {dashboard.targets.map(t => {
+              const total = t.contributions.reduce((sum, c) => sum + c.total, 0);
+              const pct = t.target > 0 ? Math.min(100, Math.round((total / t.target) * 100)) : 0;
+              return (
+                <div key={t.fieldId} className={styles.target}>
+                  <div className={styles.targetHeader}>
+                    <Typography.Text className={styles.targetTitle}>{t.title}</Typography.Text>
+                    <Typography.Text className={styles.targetProgress}>
+                      {total} / {t.target} {t.unit}
+                    </Typography.Text>
+                  </div>
+                  <div className={styles.progressBar}>
+                    <div className={styles.progressFill} style={{ width: `${pct}%` }} />
+                  </div>
+                  <ol className={styles.contributionList}>
+                    {t.contributions
+                      .filter(c => c.total > 0)
+                      .map(c => {
+                        const participant = dashboard.participants.find(p => p.userId === c.userId);
+                        return (
+                          <li key={c.userId} className={styles.contributionRow}>
+                            <span className={styles.contributionName}>
+                              {participant?.displayName || 'Anonymous'}
+                              {c.userId === userId ? ' (you)' : ''}
+                            </span>
+                            <span className={styles.contributionTotal}>
+                              {c.total} {t.unit}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    {!t.contributions.some(c => c.total > 0) && (
+                      <Typography.Text>
+                        {intl.formatMessage({
+                          id: 'ChallengeDashboard.no-contributions',
+                          defaultMessage: 'No contributions yet.',
+                        })}
+                      </Typography.Text>
+                    )}
+                  </ol>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {dashboard.challenge.commentsEnabled && (
         <Card className={styles.card}>

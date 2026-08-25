@@ -9,6 +9,9 @@ export function toChallenge(r: Record<string, unknown>) {
     ownerId: r.owner_id as string,
     shareRecords: !!r.share_records,
     commentsEnabled: !!r.comments_enabled,
+    // Keyed by the challenge's own (the owner's) field id — see the
+    // 20260825000000_challenge_targets.sql migration.
+    fieldTargets: (r.field_targets as Record<string, number>) ?? {},
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
   };
@@ -21,11 +24,21 @@ export function fromChallenge(e: Record<string, unknown>) {
     throw new Error('Missing checklistTemplateId.');
   }
 
+  let fieldTargets: Record<string, number> = {};
+  if (e.fieldTargets && typeof e.fieldTargets === 'object') {
+    for (const [fieldId, target] of Object.entries(e.fieldTargets as Record<string, unknown>)) {
+      if (typeof target === 'number' && Number.isFinite(target) && target > 0) {
+        fieldTargets[fieldId] = target;
+      }
+    }
+  }
+
   return {
     id: e.id,
     checklist_template_id: e.checklistTemplateId,
     share_records: !!e.shareRecords,
     comments_enabled: !!e.commentsEnabled,
+    field_targets: fieldTargets,
     // Postgres only fills the default on insert, not update — an upsert
     // has to set this explicitly every time.
     updated_at: new Date().toISOString(),

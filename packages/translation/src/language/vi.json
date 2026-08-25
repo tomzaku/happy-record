@@ -116,6 +116,8 @@
   "CardShare.option-share-records": "Chia sẻ lượt hoàn thành lên bảng chung",
   "CardShare.option-comments": "Cho phép bình luận trong thử thách này",
   "CardShare.view-dashboard": "Xem Bảng Điều Khiển",
+  "CardShare.targets-label": "Mục tiêu nhóm (tùy chọn)",
+  "CardShare.no-target": "Không có mục tiêu",
   "ChallengeDashboard.title": "Bảng Điều Khiển Thử Thách",
   "ChallengeDashboard.no-participants": "Chưa có ai tham gia thử thách này.",
   "ChallengeDashboard.not-found": "Không thể tải thử thách này.",
@@ -124,6 +126,8 @@
   "ChallengeDashboard.your-name": "Tên của bạn",
   "ChallengeDashboard.write-comment": "Viết gì đó…",
   "ChallengeDashboard.post": "Đăng",
+  "ChallengeDashboard.targets": "Mục Tiêu",
+  "ChallengeDashboard.no-contributions": "Chưa có đóng góp nào.",
   "ChecklistToday.public-badge": "Công khai",
   "DetailTaskPage.view-challenge-dashboard": "Thuộc một thử thách — Xem Bảng Điều Khiển"
 }

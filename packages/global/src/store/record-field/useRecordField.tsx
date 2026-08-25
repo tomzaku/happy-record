@@ -30,6 +30,22 @@ export type RecordField = {
    * treated the same as 'private'.
    */
   visibility?: 'public' | 'private';
+  /**
+   * Metric-only. Pre-fills the daily submit screen's input for this field
+   * (ChecklistFieldGroupAdd's getEmptyFieldRecord) instead of starting
+   * blank — still fully editable. Set through the Edit Field form
+   * (CoreFieldRecord) by whoever owns this row, which is exactly what makes
+   * a per-person override work for a field that started as someone else's:
+   * see `copiedFromId` below.
+   */
+  defaultValue?: number;
+  /**
+   * Lineage only, set once at fork time — see useJoinChallenge.tsx.
+   * A joiner's own copy of a shared field (title/icon/unit/defaultValue all
+   * copied as a starting point, then independently editable) points back
+   * at the original via this, never read for access control.
+   */
+  copiedFromId?: string;
   updatedAt: string;
 };
 

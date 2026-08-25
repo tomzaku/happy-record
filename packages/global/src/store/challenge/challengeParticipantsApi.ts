@@ -12,6 +12,7 @@ export function joinChallengeApi(participant: {
   id: string;
   challengeId: string;
   displayName: string;
+  checklistTemplateId: string;
 }): Promise<{ participant: ChallengeParticipant }> {
   return request.post('/challenge-participants', { participant });
 }

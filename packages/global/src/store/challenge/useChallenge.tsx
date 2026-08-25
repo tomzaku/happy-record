@@ -20,6 +20,15 @@ export type Challenge = {
   ownerId: string;
   shareRecords: boolean;
   commentsEnabled: boolean;
+  /**
+   * A shared, collective goal per metric field — `{ [fieldId]: target }`,
+   * keyed by the owner's own field id (never a participant's forked copy —
+   * see useJoinChallenge.tsx and the challenge_targets migration). Owner-only
+   * to set, "before or after share" (CardShare). Text fields are out of
+   * scope on purpose — no sensible numeric goal for one; the streak
+   * grid/ranking already covers "did they contribute" for those.
+   */
+  fieldTargets: Record<string, number>;
   createdAt: string;
   updatedAt: string;
 };
@@ -59,7 +68,7 @@ export const useChallenge = () => {
   /** Owner-only (RLS-enforced); upserts on checklistTemplateId, so re-sharing reuses the same challenge. */
   const setChallengeOptions = async (
     checklistTemplateId: string,
-    options: { shareRecords: boolean; commentsEnabled: boolean },
+    options: { shareRecords: boolean; commentsEnabled: boolean; fieldTargets: Record<string, number> },
   ) => {
     const existing = challenges[checklistTemplateId];
     const optimistic: Challenge = {

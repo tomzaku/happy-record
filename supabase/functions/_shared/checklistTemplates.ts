@@ -43,6 +43,7 @@ export function toChecklistTemplate(r: Record<string, unknown>) {
     visibility: (r.visibility as string) ?? 'private',
     updatedAt: r.updated_at as string,
     ...(r.flag_id ? { flagId: r.flag_id as string } : {}),
+    ...(r.copied_from_id ? { copiedFromId: r.copied_from_id as string } : {}),
   };
 }
 
@@ -84,6 +85,9 @@ export function patchChecklistTemplate(e: Record<string, unknown>): Record<strin
   }
   if ('flagId' in e) {
     patch.flag_id = str(e.flagId);
+  }
+  if ('copiedFromId' in e) {
+    patch.copied_from_id = str(e.copiedFromId);
   }
 
   // Postgres only fills the default on insert, not update — every write
@@ -134,6 +138,9 @@ export function fromChecklistTemplate(e: Record<string, unknown>) {
     tags: Array.isArray(e.tags) ? e.tags.filter((t): t is string => typeof t === 'string') : [],
     visibility: e.visibility === 'public' ? 'public' : 'private',
     flag_id: str(e.flagId),
+    // Lineage only, set once at fork time (see useJoinChallenge.tsx) — never
+    // read for access control.
+    copied_from_id: str(e.copiedFromId),
     created_at: str(e.createdAt) ?? new Date().toISOString(),
     // Postgres only fills the default on insert, not update — an upsert
     // has to set this explicitly every time.

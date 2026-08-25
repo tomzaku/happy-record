@@ -120,6 +120,12 @@ export type ChecklistTemplate = {
   visibility?: 'public' | 'private';
   /** One flag groups many templates ("Gym" for Push-ups + Pull-ups) — see packages/global/src/store/flag. */
   flagId?: string;
+  /**
+   * Lineage only, set once at fork time when this template was created by
+   * joining a challenge (see useJoinChallenge.tsx) — never read for access
+   * control.
+   */
+  copiedFromId?: string;
   updatedAt: string;
 };
 

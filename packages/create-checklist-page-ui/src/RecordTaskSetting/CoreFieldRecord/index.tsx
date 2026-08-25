@@ -20,6 +20,8 @@ export type FormState = {
   unit: string;
   description: string;
   visibility: 'public' | 'private';
+  /** Metric-only — pre-fills the daily submit screen's input for this field. */
+  defaultValue?: number;
 };
 
 type Props = {
@@ -137,6 +139,36 @@ const CoreFieldRecord = ({
             value={form.unit}
             border="dash"
             onChange={e => setForm({ ...form, unit: e.target.value })}
+            className={styles.descriptionInput}
+            placeholder=""
+          />
+        </div>
+      )}
+      {form.type !== 'metric' ? null : (
+        <div className={styles.descriptionContainer}>
+          <List.ItemMeta
+            noPaddingHorizontal
+            className={styles.itemMeta}
+            logo={<Icon width={24} icon="solar:target-linear" />}
+            title={intl.formatMessage({
+              defaultMessage: 'Default Value',
+              id: 'label-record-custom.default-value.label',
+            })}
+            description={intl.formatMessage({
+              defaultMessage: 'Pre-fills this field when you submit — still editable, optional',
+              id: 'label-record-custom.default-value.description',
+            })}
+          />
+          <Input
+            value={form.defaultValue === undefined ? '' : String(form.defaultValue)}
+            border="dash"
+            type="number"
+            onChange={e =>
+              setForm({
+                ...form,
+                defaultValue: e.target.value === '' ? undefined : Number(e.target.value),
+              })
+            }
             className={styles.descriptionInput}
             placeholder=""
           />

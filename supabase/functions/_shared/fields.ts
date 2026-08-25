@@ -16,6 +16,10 @@ export function toRecordField(r: Record<string, unknown>) {
     type: r.type as string,
     unit: (r.unit as string) ?? '',
     visibility: (r.visibility as string) ?? 'private',
+    ...(r.default_value_number !== null && r.default_value_number !== undefined
+      ? { defaultValue: Number(r.default_value_number) }
+      : {}),
+    ...(r.copied_from_id ? { copiedFromId: r.copied_from_id as string } : {}),
     updatedAt: r.updated_at as string,
   };
 }
@@ -34,6 +38,13 @@ export function fromRecordField(e: Record<string, unknown>) {
     type: e.type,
     unit: typeof e.unit === 'string' ? e.unit : '',
     visibility: e.visibility === 'public' ? 'public' : 'private',
+    // Metric-only in practice (the client only shows this input for
+    // type: 'metric') but not enforced here — a stray value on a note field
+    // is harmless, just never read.
+    default_value_number: typeof e.defaultValue === 'number' ? e.defaultValue : null,
+    // Lineage only, set once at fork time (see useJoinChallenge.tsx) — never
+    // read for access control, so no validation beyond "is it a string".
+    copied_from_id: typeof e.copiedFromId === 'string' ? e.copiedFromId : null,
     // Postgres only fills `updated_at`'s default on insert, not update —
     // an upsert has to set it explicitly every time.
     updated_at: new Date().toISOString(),

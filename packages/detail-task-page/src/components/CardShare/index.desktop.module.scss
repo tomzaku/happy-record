@@ -69,3 +69,35 @@
   color: #00aaff;
 }
 
+.targets {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+  margin: $spacing-xs 0;
+  padding: $spacing-xs;
+  border: 1px dashed var(--input-border);
+  border-radius: 6px;
+}
+
+.targetsLabel {
+  font-size: toRem(11px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+  text-transform: uppercase;
+}
+
+.targetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-xs;
+}
+
+.targetFieldName {
+  font-size: toRem(12px);
+}
+
+.targetInput {
+  width: 110px;
+}
+

@@ -113,3 +113,71 @@
   flex-direction: column;
   gap: $spacing-xs;
 }
+
+.targetList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.target {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+}
+
+.targetHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.targetTitle {
+  font-weight: 600;
+  font-size: toRem(13px);
+}
+
+.targetProgress {
+  font-size: toRem(12px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.progressBar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--input-background);
+  border: 1px solid var(--input-border);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #00aaff, #0088cc);
+  transition: width 0.3s ease;
+}
+
+.contributionList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: $spacing-xxs 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contributionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: toRem(12px);
+  padding: 2px $spacing-xs;
+}
+
+.contributionName {
+  color: var(--text-color);
+}
+
+.contributionTotal {
+  font-weight: 600;
+  color: var(--text-color);
+}

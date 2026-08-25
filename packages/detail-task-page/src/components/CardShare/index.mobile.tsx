@@ -4,9 +4,11 @@ import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button';
 import Checkbox from '@moon-ui/checkbox';
+import Input from '@moon-ui/input';
 import Icon from '@moon-ui/icon/Icon';
 import { Link } from 'react-router-dom';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
+import type { RecordField } from '@dreamer/global/src/store/record-field';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
 import {
   getActiveFieldGroups,
@@ -40,12 +42,27 @@ const CardShareMobile = ({
   const challenge = getChallengeForTemplate(checklistTemplateId);
   const [shareRecords, setShareRecords] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(false);
+  const [fieldTargets, setFieldTargets] = useState<Record<string, number>>({});
   React.useEffect(() => {
     if (challenge) {
       setShareRecords(challenge.shareRecords);
       setCommentsEnabled(challenge.commentsEnabled);
+      setFieldTargets(challenge.fieldTargets);
     }
   }, [challenge]);
+
+  // The template's own metric fields — see index.desktop.tsx's matching
+  // effect for why (a target only makes sense for a number).
+  const [metricFields, setMetricFields] = useState<RecordField[]>([]);
+  React.useEffect(() => {
+    const checklistTemplate = getChecklistTemplate(checklistTemplateId);
+    const fieldIds = checklistTemplate
+      ? getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(group => group.fields)
+      : [];
+    if (!fieldIds.length) return;
+    getRecordFieldsByIds(fieldIds).then(fields => setMetricFields(fields.filter(f => f.type === 'metric')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checklistTemplateId]);
 
   const handleShareClick = async () => {
     if (!isShared) {
@@ -90,7 +107,7 @@ const CardShareMobile = ({
         ),
       };
       const result = await updateChecklistTemplate(data);
-      await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled });
+      await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets });
       const fullUrl = getSharedChecklistTemplateUrl(result.id);
       setShareUrl(fullUrl);
       handleCopyLink(fullUrl);
@@ -103,11 +120,22 @@ const CardShareMobile = ({
   // for another "Generate URL" click that won't happen again.
   const handleToggleShareRecords = (checked: boolean) => {
     setShareRecords(checked);
-    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords: checked, commentsEnabled });
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords: checked, commentsEnabled, fieldTargets });
   };
   const handleToggleComments = (checked: boolean) => {
     setCommentsEnabled(checked);
-    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled: checked });
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled: checked, fieldTargets });
+  };
+  const handleTargetChange = (fieldId: string, value: string) => {
+    const next = { ...fieldTargets };
+    if (value.trim() === '') {
+      delete next[fieldId];
+    } else {
+      const num = Number(value);
+      if (Number.isFinite(num) && num > 0) next[fieldId] = num;
+    }
+    setFieldTargets(next);
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets: next });
   };
 
   const handleCopyLink = async (url?: string) => {
@@ -167,6 +195,31 @@ const CardShareMobile = ({
             </Typography.Text>
           </label>
         </div>
+        {!!metricFields.length && (
+          <div className={styles.targets}>
+            <Typography.Text className={styles.targetsLabel}>
+              {intl.formatMessage({
+                id: 'CardShare.targets-label',
+                defaultMessage: 'Group targets (optional)',
+              })}
+            </Typography.Text>
+            {metricFields.map(field => (
+              <div key={field.id} className={styles.targetRow}>
+                <Typography.Text className={styles.targetFieldName}>{field.title}</Typography.Text>
+                <Input
+                  value={fieldTargets[field.id] ?? ''}
+                  border="dash"
+                  type="number"
+                  placeholder={intl.formatMessage({ id: 'CardShare.no-target', defaultMessage: 'No target' })}
+                  onChange={e => handleTargetChange(field.id, e.target.value)}
+                  className={styles.targetInput}
+                  suffix={field.unit || undefined}
+                  renderRightInput={() => <></>}
+                />
+              </div>
+            ))}
+          </div>
+        )}
         {isShared && shareUrl && (
           <div className={styles.urlContainer}>
             <span className={styles.url}>{shareUrl}</span>

@@ -52,11 +52,15 @@ const ChecklistFieldGroupAdd = ({
   currentDay,
   onSubmit,
 }: Props) => {
+  // Pre-fills a metric field's own default value (set via the Edit Field
+  // form — see CoreFieldRecord) instead of always starting blank; still
+  // fully editable, and a field with no default set stays blank exactly as
+  // before.
   const getEmptyFieldRecord = () => {
     return fields.reduce(
-      (acc, { id }) => ({
+      (acc, { id, defaultValue }) => ({
         ...acc,
-        [id]: undefined,
+        [id]: defaultValue,
       }),
       {},
     );

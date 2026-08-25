@@ -4,9 +4,11 @@ import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button';
 import Checkbox from '@moon-ui/checkbox';
+import Input from '@moon-ui/input';
 import Icon from '@moon-ui/icon/Icon';
 import { Link } from 'react-router-dom';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
+import type { RecordField } from '@dreamer/global/src/store/record-field';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
 import {
   ChecklistTemplate,
@@ -35,13 +37,15 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
   const challenge = getChallengeForTemplate(checklistTemplateId);
   // Local until the first share (there's nothing to persist yet); once a
   // challenge row exists it's the source of truth, so this only seeds from
-  // it — a later toggle writes straight through instead of drifting.
+  // it — a later toggle/edit writes straight through instead of drifting.
   const [shareRecords, setShareRecords] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(false);
+  const [fieldTargets, setFieldTargets] = useState<Record<string, number>>({});
   React.useEffect(() => {
     if (challenge) {
       setShareRecords(challenge.shareRecords);
       setCommentsEnabled(challenge.commentsEnabled);
+      setFieldTargets(challenge.fieldTargets);
     }
   }, [challenge]);
   const [shareUrl, setShareUrl] = useState(
@@ -49,6 +53,18 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
       ? getSharedChecklistTemplateUrl(checklistTemplateId)
       : '',
   );
+
+  // The template's own metric fields — a target is a shared goal ("100
+  // push-ups"), which only makes sense for a number. Fetched once per
+  // template (not gated on being already shared, since targets can be set
+  // "before or after share" — see CLAUDE.md's challenge_targets migration).
+  const [metricFields, setMetricFields] = useState<RecordField[]>([]);
+  React.useEffect(() => {
+    const fieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(group => group.fields);
+    if (!fieldIds.length) return;
+    getRecordFieldsByIds(fieldIds).then(fields => setMetricFields(fields.filter(f => f.type === 'metric')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checklistTemplate.fieldGroups]);
 
   const handleShareClick = async () => {
     if (!shareUrl) {
@@ -84,7 +100,7 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
       };
       const result = await updateChecklistTemplate(data);
       updateChecklistTemplateLocal(data.checklistTemplate);
-      await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled });
+      await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets });
       const fullUrl = getSharedChecklistTemplateUrl(result.id);
       setShareUrl(fullUrl);
       handleCopyLink(fullUrl);
@@ -93,15 +109,26 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
     }
   };
 
-  // Already shared: a toggle writes straight through instead of waiting
-  // for another "Generate URL" click that won't happen again.
+  // Already shared: a toggle/edit writes straight through instead of
+  // waiting for another "Generate URL" click that won't happen again.
   const handleToggleShareRecords = (checked: boolean) => {
     setShareRecords(checked);
-    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords: checked, commentsEnabled });
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords: checked, commentsEnabled, fieldTargets });
   };
   const handleToggleComments = (checked: boolean) => {
     setCommentsEnabled(checked);
-    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled: checked });
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled: checked, fieldTargets });
+  };
+  const handleTargetChange = (fieldId: string, value: string) => {
+    const next = { ...fieldTargets };
+    if (value.trim() === '') {
+      delete next[fieldId];
+    } else {
+      const num = Number(value);
+      if (Number.isFinite(num) && num > 0) next[fieldId] = num;
+    }
+    setFieldTargets(next);
+    if (isShared) setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets: next });
   };
 
   const handleCopyLink = async (url?: string) => {
@@ -160,6 +187,31 @@ const CardShareDesktop = ({ checklistTemplate }: CardShareProps) => {
             </Typography.Text>
           </label>
         </div>
+        {!!metricFields.length && (
+          <div className={styles.targets}>
+            <Typography.Text className={styles.targetsLabel}>
+              {intl.formatMessage({
+                id: 'CardShare.targets-label',
+                defaultMessage: 'Group targets (optional)',
+              })}
+            </Typography.Text>
+            {metricFields.map(field => (
+              <div key={field.id} className={styles.targetRow}>
+                <Typography.Text className={styles.targetFieldName}>{field.title}</Typography.Text>
+                <Input
+                  value={fieldTargets[field.id] ?? ''}
+                  border="dash"
+                  type="number"
+                  placeholder={intl.formatMessage({ id: 'CardShare.no-target', defaultMessage: 'No target' })}
+                  onChange={e => handleTargetChange(field.id, e.target.value)}
+                  className={styles.targetInput}
+                  suffix={field.unit || undefined}
+                  renderRightInput={() => <></>}
+                />
+              </div>
+            ))}
+          </div>
+        )}
         {!isShared && (
           <div>
             <Button size="md" onClick={handleShareClick}>

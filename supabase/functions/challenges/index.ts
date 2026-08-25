@@ -2,14 +2,18 @@
 // template into something joinable. See CLAUDE.md.
 //
 //   GET  /challenges  ?checklistTemplateId=          → { challenge }        owner's or a public template's, null if none yet
-//   GET  /challenges  ?id=&from=&to=                 → { challenge, participants, completions, ranking }
-//     the dashboard read — from/to default to the last 30 days. `completions`
+//   GET  /challenges  ?id=&from=&to=                 → { challenge, participants, completions, ranking, targets }
+//     the dashboard read — from/to default to the last 30 days (targets are
+//     all-time, not scoped to this range — see getTargets). `completions`
 //     is sparse (completed days only); the client fills the grid. `ranking`
-//     is participants sorted by completions-in-range descending. Peers'
-//     completion comes back through the `checklists`/`submissions` peer-read
-//     RLS policies (see the migration) — this function's own `db` client is
-//     still the caller's RLS-scoped one, nothing here is service-role.
-//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), also enrolls the owner as a participant when shareRecords is on
+//     is participants sorted by completions-in-range descending. `targets`
+//     is one entry per field the owner set a goal for (`challenge.fieldTargets`),
+//     each with every participant's real contributed total. Peers' data
+//     comes back through the `checklists`/`submissions`/`fields`/
+//     `checklist_records` peer-read RLS policies (see the migrations) — this
+//     function's own `db` client is still the caller's RLS-scoped one,
+//     nothing here is service-role.
+//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), also enrolls the owner as a participant when shareRecords is on. `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids.
 //
 // Deploy: `supabase functions deploy challenges`
 
@@ -50,7 +54,7 @@ async function getDashboard({ url, db }: Ctx, id: string) {
     .eq('id', id)
     .maybeSingle();
   if (challengeError) throw new Error(challengeError.message);
-  if (!challengeRow) return { challenge: null, participants: [], completions: [], ranking: [] };
+  if (!challengeRow) return { challenge: null, participants: [], completions: [], ranking: [], targets: [] };
   const challenge = toChallenge(challengeRow as Record<string, unknown>);
 
   const { data: participantRows, error: participantError } = await db
@@ -61,7 +65,7 @@ async function getDashboard({ url, db }: Ctx, id: string) {
     .limit(MAX_PARTICIPANTS);
   if (participantError) throw new Error(participantError.message);
   const participants = ((participantRows ?? []) as Record<string, unknown>[]).map(toChallengeParticipant);
-  if (!participants.length) return { challenge, participants: [], completions: [], ranking: [] };
+  if (!participants.length) return { challenge, participants: [], completions: [], ranking: [], targets: [] };
 
   const now = new Date();
   const to = url.searchParams.get('to') || now.toISOString();
@@ -71,16 +75,21 @@ async function getDashboard({ url, db }: Ctx, id: string) {
 
   const userIds = [...new Set(participants.map(p => p.userId))];
 
-  // Everyone in the challenge shares the same checklist_template_id (no
-  // per-participant fork to pair up — see the migration), so this is a
-  // single `.eq` instead of the `.in(templateIds)` wide net an earlier
-  // version needed.
+  // Each participant now records against their own forked template (see
+  // useJoinChallenge.tsx), not the challenge's literal checklist_template_id
+  // — so this widens to every id in play. Still can't cross-attribute one
+  // participant's rows to another: each forked template is owned by exactly
+  // one participant, and both queries also filter `user_id in (userIds)`.
+  const templateIds = [
+    ...new Set([challenge.checklistTemplateId, ...participants.map(p => p.checklistTemplateId)]),
+  ];
+
   const [{ data: checklistRows, error: checklistError }, { data: submissionRows, error: submissionError }] =
     await Promise.all([
       db
         .from('checklists')
         .select('id, user_id, started_at, completed_at')
-        .eq('checklist_template_id', challenge.checklistTemplateId)
+        .in('checklist_template_id', templateIds)
         .in('user_id', userIds)
         .gte('started_at', from)
         .lte('started_at', to)
@@ -88,7 +97,7 @@ async function getDashboard({ url, db }: Ctx, id: string) {
       db
         .from('submissions')
         .select('user_id, checklist_id, created_at')
-        .eq('checklist_template_id', challenge.checklistTemplateId)
+        .in('checklist_template_id', templateIds)
         .in('user_id', userIds)
         .gte('created_at', from)
         .lte('created_at', to)
@@ -137,7 +146,98 @@ async function getDashboard({ url, db }: Ctx, id: string) {
     .map(([userId, count]) => ({ userId, count }))
     .sort((a, b) => b.count - a.count);
 
-  return { challenge, participants, completions, ranking };
+  const targets = await getTargets(db, challenge, participants, userIds);
+
+  return { challenge, participants, completions, ranking, targets };
+}
+
+type Target = {
+  fieldId: string;
+  title: string;
+  unit: string;
+  target: number;
+  contributions: { userId: string; total: number }[];
+};
+
+/**
+ * A shared goal per metric field, with a per-person breakdown — all-time,
+ * not scoped to the dashboard's date range (a collective goal accumulates
+ * over the challenge's whole life, not just the visible window). Only
+ * fields with a target ever get their real values read here, via the
+ * peer-read policies the 20260825000000_challenge_targets.sql migration
+ * added — an untargeted field (a personal note, a metric with no goal set)
+ * is never touched.
+ */
+async function getTargets(
+  db: SupabaseClient,
+  challenge: ReturnType<typeof toChallenge>,
+  participants: ReturnType<typeof toChallengeParticipant>[],
+  userIds: string[],
+): Promise<Target[]> {
+  const targetFieldIds = Object.keys(challenge.fieldTargets);
+  if (!targetFieldIds.length) return [];
+
+  // Resolve each participant's own field id per target: the original id
+  // directly (the owner never forks their own fields — see save() below),
+  // or a fork whose copied_from_id points back at it (see the migration).
+  // Two queries instead of one `.or()` string to avoid hand-building a
+  // PostgREST filter expression out of ids.
+  const [{ data: originalFieldRows, error: originalError }, { data: forkedFieldRows, error: forkedError }] =
+    await Promise.all([
+      db.from('fields').select('id, user_id, title, unit').in('id', targetFieldIds),
+      db
+        .from('fields')
+        .select('id, copied_from_id, user_id')
+        .in('user_id', userIds)
+        .in('copied_from_id', targetFieldIds),
+    ]);
+  if (originalError) throw new Error(originalError.message);
+  if (forkedError) throw new Error(forkedError.message);
+
+  // resolvedFieldId (whatever's actually on checklist_records.field_id for
+  // that person) -> which target it counts toward + whose contribution it is.
+  const resolution = new Map<string, { originalFieldId: string; userId: string }>();
+  const fieldMeta = new Map<string, { title: string; unit: string }>();
+  for (const row of (originalFieldRows ?? []) as Record<string, unknown>[]) {
+    const id = row.id as string;
+    resolution.set(id, { originalFieldId: id, userId: row.user_id as string });
+    fieldMeta.set(id, { title: row.title as string, unit: (row.unit as string) ?? '' });
+  }
+  for (const row of (forkedFieldRows ?? []) as Record<string, unknown>[]) {
+    resolution.set(row.id as string, {
+      originalFieldId: row.copied_from_id as string,
+      userId: row.user_id as string,
+    });
+  }
+
+  const resolvedFieldIds = [...resolution.keys()];
+  const { data: recordRows, error: recordError } = resolvedFieldIds.length
+    ? await db
+        .from('checklist_records')
+        .select('field_id, value_number')
+        .in('field_id', resolvedFieldIds)
+        .in('user_id', userIds)
+        .limit(MAX_ROWS)
+    : { data: [] as Record<string, unknown>[], error: null };
+  if (recordError) throw new Error(recordError.message);
+
+  const totals = new Map<string, number>(); // `${originalFieldId}:${userId}` -> sum
+  for (const row of (recordRows ?? []) as Record<string, unknown>[]) {
+    const resolved = resolution.get(row.field_id as string);
+    if (!resolved || typeof row.value_number !== 'number') continue;
+    const key = `${resolved.originalFieldId}:${resolved.userId}`;
+    totals.set(key, (totals.get(key) ?? 0) + row.value_number);
+  }
+
+  return targetFieldIds.map(fieldId => ({
+    fieldId,
+    title: fieldMeta.get(fieldId)?.title ?? '',
+    unit: fieldMeta.get(fieldId)?.unit ?? '',
+    target: challenge.fieldTargets[fieldId],
+    contributions: participants
+      .map(p => ({ userId: p.userId, total: totals.get(`${fieldId}:${p.userId}`) ?? 0 }))
+      .sort((a, b) => b.total - a.total),
+  }));
 }
 
 async function list(ctx: Ctx) {
@@ -172,13 +272,16 @@ async function save({ req, db, userId }: Ctx) {
   const challenge = toChallenge(data as Record<string, unknown>);
 
   // The sharer shows up on their own dashboard once records-sharing is on —
-  // their own template *is* the challenge's canonical checklist_template_id.
+  // their own template *is* the challenge's canonical checklist_template_id
+  // (the owner never forks their own template the way a joiner does — see
+  // useJoinChallenge.tsx — so their participant row just points at it directly).
   if (challenge.shareRecords) {
     const { error: participantError } = await db.from('challenge_participants').upsert(
       {
         id: `${challenge.id}:${userId}`,
         challenge_id: challenge.id,
         user_id: userId,
+        checklist_template_id: challenge.checklistTemplateId,
       },
       { onConflict: 'challenge_id,user_id', ignoreDuplicates: true },
     );
