@@ -136,5 +136,11 @@
   "ChallengeDashboard.targets": "Mục Tiêu",
   "ChallengeDashboard.no-contributions": "Chưa có đóng góp nào.",
   "ChecklistToday.public-badge": "Công khai",
-  "DetailTaskPage.view-challenge-dashboard": "Thuộc một thử thách — Xem Bảng Điều Khiển"
+  "DetailTaskPage.view-challenge-dashboard": "Thuộc một thử thách — Xem Bảng Điều Khiển",
+  "DetailTaskPage.leave-challenge": "Rời Thử Thách",
+  "DetailTaskPage.leave-challenge-confirm-title": "Rời thử thách này?",
+  "DetailTaskPage.leave-challenge-confirm-message": "Bạn sẽ không còn hiện trên bảng điều khiển chung và nhiệm vụ này sẽ rời khỏi danh sách của bạn. Những gì bạn đã ghi lại vẫn thuộc về bạn.",
+  "DetailTaskPage.leave-challenge-confirm-ok": "Rời đi",
+  "DetailTaskPage.leave-challenge-confirm-ok-loading": "Đang rời…",
+  "DetailTaskPage.leave-challenge-confirm-cancel": "Hủy"
 }

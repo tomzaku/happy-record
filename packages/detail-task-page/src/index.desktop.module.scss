@@ -16,6 +16,12 @@
   margin: 0 auto;
 }
 
+.challengeActions {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
 .challengeLink {
   display: block;
   padding: $spacing-md;
@@ -24,6 +30,10 @@
   text-align: center;
   border: 1px dashed #00aaff;
   border-radius: 8px;
+}
+
+.leaveChallengeButton {
+  align-self: center;
 }
 
 .header {

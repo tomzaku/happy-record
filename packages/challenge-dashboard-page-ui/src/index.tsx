@@ -1,13 +1,21 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
-import { Challenge, ChallengeParticipant, useChallenge, useChallengeComments, useSession } from '@dreamer/global';
+import {
+  Challenge,
+  ChallengeParticipant,
+  useChallenge,
+  useChallengeComments,
+  useLeaveChallenge,
+  useSession,
+} from '@dreamer/global';
 import AppHeader from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
 import Icon from '@moon-ui/icon/Icon';
+import WarningModal from '@moon-ui/modal/src/WarningModal';
 import styles from './index.module.scss';
 
 const RANGE_DAYS = 30;
@@ -46,12 +54,16 @@ const ChallengeDashboardPageUi = () => {
   const { userId } = useSession();
   const { getChallengeDashboard } = useChallenge();
   const { getComments, postComment } = useChallengeComments();
+  const { leaveTheChallenge } = useLeaveChallenge();
+  const navigate = useNavigate();
 
   const [dashboard, setDashboard] = React.useState<Dashboard | null>(null);
   const [error, setError] = React.useState(false);
   const [commentBody, setCommentBody] = React.useState('');
   const [commentName, setCommentName] = React.useState('');
   const [posting, setPosting] = React.useState(false);
+  const [leaveModalVisible, setLeaveModalVisible] = React.useState(false);
+  const [leaving, setLeaving] = React.useState(false);
 
   React.useEffect(() => {
     if (!id) return;
@@ -74,6 +86,22 @@ const ChallengeDashboardPageUi = () => {
   React.useEffect(() => {
     if (me && !commentName) setCommentName(me.displayName);
   }, [me]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Only a participant leaves — the owner has no "leave" of their own
+  // challenge (they'd delete/unshare it via CardShare instead).
+  const isOwner = !!dashboard?.challenge && dashboard.challenge.ownerId === userId;
+
+  const confirmLeaveChallenge = async () => {
+    if (!id || !dashboard?.challenge?.checklistTemplateId || leaving) return;
+    setLeaving(true);
+    try {
+      await leaveTheChallenge(id, dashboard.challenge.checklistTemplateId);
+      navigate('/');
+    } finally {
+      setLeaving(false);
+      setLeaveModalVisible(false);
+    }
+  };
 
   const handlePostComment = async () => {
     if (!id || !commentBody.trim() || !commentName.trim() || posting) return;
@@ -125,9 +153,16 @@ const ChallengeDashboardPageUi = () => {
     <div>
       <AppHeader />
       <Card className={styles.card}>
-        <Typography.Title level={3} noMargin>
-          {intl.formatMessage({ id: 'ChallengeDashboard.title', defaultMessage: 'Challenge Dashboard' })}
-        </Typography.Title>
+        <div className={styles.titleRow}>
+          <Typography.Title level={3} noMargin>
+            {intl.formatMessage({ id: 'ChallengeDashboard.title', defaultMessage: 'Challenge Dashboard' })}
+          </Typography.Title>
+          {!isOwner && me && (
+            <Button type="ghost" size="sm" onClick={() => setLeaveModalVisible(true)}>
+              {intl.formatMessage({ id: 'DetailTaskPage.leave-challenge', defaultMessage: 'Leave Challenge' })}
+            </Button>
+          )}
+        </div>
 
         {!dashboard.challenge.shareRecords ? null : !dashboard.participants.length ? (
           <Typography.Text>
@@ -279,6 +314,33 @@ const ChallengeDashboardPageUi = () => {
           </div>
         </Card>
       )}
+
+      <WarningModal
+        visible={leaveModalVisible}
+        title={intl.formatMessage({
+          id: 'DetailTaskPage.leave-challenge-confirm-title',
+          defaultMessage: 'Leave this challenge?',
+        })}
+        content={
+          <Typography.Text>
+            {intl.formatMessage({
+              id: 'DetailTaskPage.leave-challenge-confirm-message',
+              defaultMessage: "You'll stop showing up on the group dashboard and this task will leave your list. Anything you've already recorded stays yours.",
+            })}
+          </Typography.Text>
+        }
+        primaryButtonText={
+          leaving
+            ? intl.formatMessage({ id: 'DetailTaskPage.leave-challenge-confirm-ok-loading', defaultMessage: 'Leaving…' })
+            : intl.formatMessage({ id: 'DetailTaskPage.leave-challenge-confirm-ok', defaultMessage: 'Leave' })
+        }
+        primaryButtonOnClick={confirmLeaveChallenge}
+        secondaryButtonText={intl.formatMessage({
+          id: 'DetailTaskPage.leave-challenge-confirm-cancel',
+          defaultMessage: 'Cancel',
+        })}
+        secondaryButtonClick={() => setLeaveModalVisible(false)}
+      />
     </div>
   );
 };

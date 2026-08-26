@@ -6,12 +6,16 @@ import {
   useChallenge,
   useChecklist,
   useChecklistTemplates,
+  useLeaveChallenge,
   useSession,
   useSyncedSelector,
 } from '@dreamer/global';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
+import { useIntl } from '@dreamer/translation';
+import Typography from '@moon-ui/typography';
+import WarningModal from '@moon-ui/modal/src/WarningModal';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import AiChecklistGenerate from './components/AiChecklistGenerate';
@@ -24,7 +28,9 @@ const DetailTaskPageMobile = () => {
   const { addChecklist, getChecklistDetail } = useChecklist();
   const { getAllRecordFields } = useRecordField();
   const { getChallengeForTemplate } = useChallenge();
+  const { leaveTheChallenge } = useLeaveChallenge();
   const { userId } = useSession();
+  const intl = useIntl();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
 
@@ -41,6 +47,8 @@ const DetailTaskPageMobile = () => {
   const isOwner = !challenge || challenge.ownerId === userId;
   const [checklist, setChecklist] = React.useState<Checklist>();
   const [isAiModalVisible, setIsAiModalVisible] = React.useState(false);
+  const [leaveModalVisible, setLeaveModalVisible] = React.useState(false);
+  const [leaving, setLeaving] = React.useState(false);
   // Guards the "create if missing" branch below against #185 (see
   // index.desktop.tsx's matching ref for the full mechanism): `getChecklistDetail`'s
   // identity changes on every write to the `checklist` store — including
@@ -95,6 +103,19 @@ const DetailTaskPageMobile = () => {
   }, [checklistTemplate, checklistId, id, currentDay, getChecklistDetail]);
 
   const navigate = useNavigate();
+
+  const confirmLeaveChallenge = async () => {
+    if (!challenge || !id || leaving) return;
+    setLeaving(true);
+    try {
+      await leaveTheChallenge(challenge.id, id);
+      navigate('/');
+    } finally {
+      setLeaving(false);
+      setLeaveModalVisible(false);
+    }
+  };
+
   if (!checklistId || !checklist || !checklistTemplate) {
     return null;
   }
@@ -121,6 +142,22 @@ const DetailTaskPageMobile = () => {
                 icon="solar:pen-new-square-linear"
               />
             )}
+            {!isOwner && challenge && (
+              <Icon
+                onClick={() => navigate(`/challenge/${challenge.id}`)}
+                width={24}
+                icon="solar:round-graph-outline"
+                style={{ cursor: 'pointer' }}
+              />
+            )}
+            {!isOwner && challenge && (
+              <Icon
+                onClick={() => setLeaveModalVisible(true)}
+                width={24}
+                icon="solar:logout-3-outline"
+                style={{ cursor: 'pointer' }}
+              />
+            )}
           </div>
         )}
         onClickLeftButton={() => navigate('/')}
@@ -145,6 +182,33 @@ const DetailTaskPageMobile = () => {
         onDismiss={() => setIsAiModalVisible(false)}
         mode="existing"
         existingTemplate={checklistTemplate}
+      />
+
+      <WarningModal
+        visible={leaveModalVisible}
+        title={intl.formatMessage({
+          id: 'DetailTaskPage.leave-challenge-confirm-title',
+          defaultMessage: 'Leave this challenge?',
+        })}
+        content={
+          <Typography.Text>
+            {intl.formatMessage({
+              id: 'DetailTaskPage.leave-challenge-confirm-message',
+              defaultMessage: "You'll stop showing up on the group dashboard and this task will leave your list. Anything you've already recorded stays yours.",
+            })}
+          </Typography.Text>
+        }
+        primaryButtonText={
+          leaving
+            ? intl.formatMessage({ id: 'DetailTaskPage.leave-challenge-confirm-ok-loading', defaultMessage: 'Leaving…' })
+            : intl.formatMessage({ id: 'DetailTaskPage.leave-challenge-confirm-ok', defaultMessage: 'Leave' })
+        }
+        primaryButtonOnClick={confirmLeaveChallenge}
+        secondaryButtonText={intl.formatMessage({
+          id: 'DetailTaskPage.leave-challenge-confirm-cancel',
+          defaultMessage: 'Cancel',
+        })}
+        secondaryButtonClick={() => setLeaveModalVisible(false)}
       />
 
       {/* <FocusZoneModal */}

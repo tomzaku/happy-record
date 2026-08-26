@@ -13,6 +13,13 @@
   vertical-align: middle;
 }
 
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+}
+
 .ranking {
   display: flex;
   flex-direction: column;
