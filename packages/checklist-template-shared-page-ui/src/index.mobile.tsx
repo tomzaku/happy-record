@@ -1,6 +1,5 @@
 import { BackHeader } from '@dreamer/header';
 import Typography from '@moon-ui/typography';
-import Input from '@moon-ui/input';
 import Drawer from '@moon-ui/drawer';
 import Icon from '@moon-ui/icon/Icon';
 import TaskSharedCard from './components/task-shared-card';
@@ -14,20 +13,13 @@ const ChecklistTemplateSharedPageMobile = () => {
     data,
     userName,
     targetName,
-    displayName,
-    setDisplayName,
-    dialogJoinOpen,
-    setDialogJoinOpen,
     dialogRejectOpen,
     setDialogRejectOpen,
-    isAnonymous,
-    challenge,
     themeId,
     submitting,
     handleSubmit,
     onClickLeaveIt,
     confirmTakeIt,
-    joinTheChallenge,
   } = useChecklistTemplateSharedPage();
 
   useApplyChallengeTheme(themeId);
@@ -70,41 +62,6 @@ const ChecklistTemplateSharedPageMobile = () => {
       </div>
 
       <Drawer
-        visible={dialogJoinOpen}
-        className={styles.drawerContainer}
-        onBlur={() => setDialogJoinOpen(false)}
-      >
-        <div>
-          <div className={styles.drawerHeader}>
-            <Typography.Title noMargin level={2}>
-              Join the challenge
-            </Typography.Title>
-            <Icon width={32} icon="material-symbols:close-rounded" onClick={() => setDialogJoinOpen(false)} />
-          </div>
-          <Typography.Text>
-            {isAnonymous
-              ? "Sign in with Google to join — you'll show up on the leaderboard as:"
-              : challenge?.shareRecords
-                ? "You'll show up on the group dashboard as:"
-                : 'What name should your comments show?'}
-          </Typography.Text>
-          <Input value={displayName} onChange={e => setDisplayName(e.target.value)} renderRightInput={() => <></>} />
-          <button
-            className={styles.primaryButton}
-            disabled={submitting}
-            onClick={() => {
-              // Left open, disabled + spinning, until the request actually
-              // resolves — see index.desktop.tsx's matching button.
-              joinTheChallenge(displayName.trim() || targetName);
-            }}
-          >
-            {submitting && <Icon icon="svg-spinners:180-ring-with-bg" width={16} />}
-            {isAnonymous ? 'Sign in with Google' : 'Join'}
-          </button>
-        </div>
-      </Drawer>
-
-      <Drawer
         visible={dialogRejectOpen}
         className={styles.drawerContainer}
         onBlur={() => setDialogRejectOpen(false)}
@@ -120,7 +77,7 @@ const ChecklistTemplateSharedPageMobile = () => {
           <Typography.Text>
             I know you’re not scared of this challenge, so I’ll take it for you in 10 seconds.
           </Typography.Text>
-          <Timer duration={10000} onFinish={() => confirmTakeIt(displayName.trim() || targetName)} autoStart />
+          <Timer duration={10000} onFinish={() => confirmTakeIt(targetName)} autoStart />
         </div>
       </Drawer>
     </div>

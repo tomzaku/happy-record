@@ -43,8 +43,6 @@ export function useChecklistTemplateSharedPage() {
   const [data, setData] = React.useState<{ checklistTemplate: ChecklistTemplate; fields: RecordField[] } | null>(
     null,
   );
-  const [dialogJoinOpen, setDialogJoinOpen] = React.useState(false);
-  const [displayName, setDisplayName] = React.useState(targetName);
   // Covers every real network wait this page has (taking it plain, joining
   // a challenge) so the primary/Join buttons can show a spinner instead of
   // just sitting there — a slow request otherwise looks identical to a
@@ -108,13 +106,13 @@ export function useChecklistTemplateSharedPage() {
       alert("You've have this task!!!");
       return;
     }
-    // Only ask for a name (and possibly a sign-in) when there's actually a
-    // challenge to join — otherwise this behaves exactly as it always has.
-    if (isChallenge) {
-      setDialogJoinOpen(true);
-      return;
-    }
-    takeItPlain();
+    // No name-entry dialog in between: a signed-in user just sees the
+    // button's own spinner (`submitting`) while joinTheChallenge/takeItPlain
+    // runs; an anonymous one is sent straight into the Google sign-in
+    // redirect from inside joinTheChallenge. There's no more UI to collect a
+    // display name, so this always joins/takes it as `targetName` (the
+    // greeting's "to" query param).
+    confirmTakeIt(targetName);
   };
 
   const onClickLeaveIt = () => {
@@ -131,14 +129,8 @@ export function useChecklistTemplateSharedPage() {
     data,
     userName,
     targetName,
-    displayName,
-    setDisplayName,
-    dialogJoinOpen,
-    setDialogJoinOpen,
     dialogRejectOpen,
     setDialogRejectOpen,
-    isAnonymous,
-    challenge,
     isChallenge,
     // Every challenge row (created the moment a link is generated — see
     // CardShare's generateShareUrl) carries a theme, defaulting to
@@ -149,6 +141,5 @@ export function useChecklistTemplateSharedPage() {
     handleSubmit,
     onClickLeaveIt,
     confirmTakeIt,
-    joinTheChallenge,
   };
 }
