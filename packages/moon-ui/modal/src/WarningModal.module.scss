@@ -20,8 +20,12 @@
   padding: $spacing-md;
   display: flex;
   flex-direction: column;
-  max-width: 80%;
-  min-width: 60%;
+  // A percentage width (the old max-width: 80%/min-width: 60%) scales with the
+  // viewport, which is the point on a narrow phone screen but balloons into an
+  // oversized dialog on desktop — this is a short confirm/cancel prompt, not
+  // content that needs the room. Capped in px instead, still shrinking to fit
+  // a small screen via the vw side of min().
+  width: min(92vw, 420px);
   min-height: 180px;
   background: var(--card-background);
   box-shadow: 0px 8px 25px var(--card-shadow);
@@ -36,47 +40,41 @@
 .footer {
   display: flex;
   padding-top: $spacing-md;
-  justify-content: flex-end;
+  // Matches the old margin-left/margin-right: $spacing-sm each side (8px + 8px)
+  // the two buttons used before switching to gap.
+  gap: $spacing-lg;
 }
 
 .button {
   margin-left: $spacing-sm;
 }
 
+// Icon sits inline next to the title instead of the old oversized badge
+// floating above it (110x80px box, half hanging outside the modal) — that
+// read fine as a big centered splash on a phone-width dialog, but on the
+// desktop-capped width it's disproportionate. A small icon on the same row
+// carries the same "this needs attention" signal at a scale that matches
+// the rest of the dialog.
 .header {
-  padding-top: 40px;
-  position: relative;
-}
-
-.logo {
-  box-shadow: 0px 8px 25px var(--card-shadow);
-  position: absolute;
-  width: 110px;
-  height: 80px;
-  background: var(--modal-logo-warning);
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  top: -50px;
-  left: 50%;
-  transform: translate(-50%, 0);
+  gap: $spacing-sm;
 }
 
 .icon {
-  width: 70px;
-  height: 70px;
-  fill: var(--icon-color-revert);
+  width: 24px;
+  height: 24px;
+  fill: var(--modal-logo-warning);
+  flex-shrink: 0;
 }
 
 .title {
-  text-align: center;
+  text-align: left;
 }
 
 .primaryButton {
   background: var(--modal-button-primary);
   color: white;
-  margin-left: $spacing-sm;
   flex: 1;
 }
 
@@ -85,5 +83,4 @@
   background: transparent;
   color: var(--modal-button-secondary);
   border: 2px solid var(--modal-button-secondary);
-  margin-right: $spacing-sm;
 }

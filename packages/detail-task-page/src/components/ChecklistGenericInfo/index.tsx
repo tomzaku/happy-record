@@ -1,4 +1,5 @@
 import React from 'react';
+import cx from 'classnames';
 import {
   ChecklistTemplate,
   FieldGroup,
@@ -261,6 +262,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
           <div className={styles.content}>
             {/* Icon & Color */}
             <List.ItemMeta
+              className={styles.settingRow}
               logo={<Icon width={24} icon="tdesign:icon" />}
               title="Icon & Color"
               description="Customize appearance"
@@ -294,6 +296,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
 
             {/* Schedule */}
             <List.ItemMeta
+              className={styles.settingRow}
               logo={<Icon width={24} icon="solar:calendar-date-line-duotone" />}
               title="Schedule"
               description={
@@ -339,6 +342,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
 
             {/* Tags */}
             <List.ItemMeta
+              className={styles.settingRow}
               logo={<Icon width={24} icon="solar:tag-outline" />}
               title="Tags"
               description={formatDisplayTags()}
@@ -364,6 +368,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
             {/* Archived Groups — only shown once there's something to restore */}
             {archivedFieldGroups.length > 0 && (
               <List.ItemMeta
+                className={styles.settingRow}
                 logo={<Icon width={24} icon="solar:trash-bin-2-linear" />}
                 title="Archived Groups"
                 description={`${archivedFieldGroups.length} deleted group${archivedFieldGroups.length === 1 ? '' : 's'}`}
@@ -378,7 +383,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
                 owner; a challenge participant never gets onDelete at all. */}
             {onDelete && (
               <List.ItemMeta
-                className={styles.deleteRow}
+                className={cx(styles.settingRow, styles.deleteRow)}
                 logo={<Icon width={24} icon="solar:trash-bin-trash-linear" color="#ff4d4f" />}
                 title="Delete Task"
                 description="Permanently remove this task and its history"

@@ -11,16 +11,10 @@
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  border-bottom: 1px solid var(--color-divider);
 
-  &:hover {
-    background-color: var(--color-surface-1);
-  }
   @include media.media('>=tablet') {
     padding: 15px 0px;
   }
-
 }
 
 .titleSection {
@@ -48,7 +42,7 @@
 }
 
 .modalContainer {
-  background: var(--color-white);
+  background: var(--card-background);
   border-radius: 20px 20px 0 0;
   display: flex;
   flex-direction: column;
@@ -106,8 +100,8 @@
   padding: 20px 24px;
   display: flex;
   gap: 12px;
-  border-top: 1px solid var(--color-divider);
-  background: var(--color-surface-1);
+  border-top: 1px solid var(--division-color);
+  background: var(--surface-secondary);
 }
 
 .cancelButton {
@@ -141,17 +135,20 @@
   }
 }
 
-// List item meta overrides for consistent spacing
-:global(.list-item-meta) {
-  padding: 12px 0 !important;
+// Every row in this card (Icon & Color, Schedule, Tags, Archived Groups,
+// Delete) is clickable, so it needs to look and act clickable too. This used
+// to target :global(.list-item-meta), a class List.ItemMeta's own container
+// never actually renders — the rule never matched anything, so every row was
+// clickable with no hover feedback and the default cursor. Applied via each
+// row's own `className` prop instead, which List.ItemMeta does forward.
+.settingRow {
+  padding: 12px !important;
   cursor: pointer;
   transition: background-color 0.2s ease;
   border-radius: 8px;
-  padding-left: 12px !important;
-  padding-right: 12px !important;
   margin: 0 -12px;
 
   &:hover {
-    background-color: var(--color-surface-1);
+    background-color: var(--surface-secondary);
   }
 }

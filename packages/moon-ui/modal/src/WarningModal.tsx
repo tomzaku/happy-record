@@ -33,9 +33,7 @@ export default function WarningModal({
     <div className={styles.overlay}>
       <div className={styles.container}>
         <div className={styles.header}>
-          <div className={styles.logo}>
-            <IconWarning className={styles.icon} />
-          </div>
+          <IconWarning className={styles.icon} />
           <Typography.Title className={styles.title} level={3} noMargin>
             {title}
           </Typography.Title>
@@ -44,7 +42,7 @@ export default function WarningModal({
         <div className={styles.content}>{content}</div>
         <div className={styles.footer}>
           <Button
-            size="lg"
+            size="md"
             type="ghost"
             className={styles.secondaryButton}
             onClick={secondaryButtonClick}
@@ -53,7 +51,7 @@ export default function WarningModal({
           </Button>
           <Button
             onClick={primaryButtonOnClick}
-            size="lg"
+            size="md"
             className={styles.primaryButton}
           >
             {primaryButtonText}
