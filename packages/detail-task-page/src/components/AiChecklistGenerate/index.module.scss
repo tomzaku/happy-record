@@ -1,23 +1,64 @@
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/color' as *;
 
-.container {
-  display: flex;
-  flex-direction: column;
-  background: var(--card-background);
-  border-radius: 12px;
+// Passed as Modal's own `className` (merged onto its .container — see Modal.tsx) rather
+// than wrapping `content` in a second box of our own: this header needs its gradient to
+// reach the real modal corners, which a nested inner box can't do since Modal's own
+// container always has its own padding around whatever `content` it's given. Overriding
+// the one true box directly, instead of fighting it from inside, is the actual fix — the
+// props this needs to win over Modal's defaults (padding, width) get `!important`; the
+// rest (background/radius/shadow/min-width/min-height/flex) it already provides and this
+// header/body/footer layout was designed to sit flush inside.
+.modalShell {
+  padding: 0 !important;
   width: 100%;
   max-width: 560px;
   max-height: 80vh;
   overflow: hidden;
 }
 
+// BottomModal's own .sheet has no padding, width, or max-height of its own (unlike Modal's
+// .container) — it's just a plain full-width surface content sits directly in, sized to
+// that content. This caps how tall the sheet grows (a long review list shouldn't push above
+// the top of the screen) and lets .body's own overflow-y: auto do its job once capped.
+.mobileSheet {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: $spacing-lg $spacing-lg $spacing-md;
-  border-bottom: 1px solid var(--division-color);
+  padding: $spacing-lg;
+  // A faint wash of the same gradient the trigger button/badge use, so the
+  // modal reads as a continuation of that button rather than a plain generic
+  // dialog that happens to open from it. That color shift is already enough
+  // separation from the body below — a hard ruled line under it (previously
+  // a border-bottom, edge-to-edge now that this box has no side padding of
+  // its own) just added a harsh stripe on top of it.
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+// The same gradient badge as the trigger button's icon (index.desktop.module.scss's
+// .aiButton) — small here since it sits inline with the title, not on its own line.
+.badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
 }
 
 .closeIcon {
@@ -47,20 +88,27 @@
 }
 
 .promptInput {
+  // Without this, `width: 100%` plus this element's own padding/border add on top of that
+  // 100% (this app has no global box-sizing reset), so the textarea rendered wider than its
+  // container — visible as the box overhanging the modal's own edge. border-box makes
+  // padding/border count inward instead.
+  box-sizing: border-box;
   width: 100%;
   resize: vertical;
   min-height: 90px;
   padding: $spacing-sm $spacing-md;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--division-color);
   background: var(--background);
   color: var(--text-color);
   font-size: 14px;
   font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &:focus {
     outline: none;
-    border-color: var(--icon-primary);
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
   }
 }
 
@@ -69,9 +117,27 @@
   font-size: 13px;
 }
 
-.upsellIcon {
-  color: var(--icon-primary);
+.loadingRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.loadingText {
+  font-size: 13px;
+  color: var(--text-description-color);
+}
+
+.upsellBadge {
   align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  box-shadow: 0 6px 18px rgba(168, 85, 247, 0.4);
 }
 
 .upsellText {
@@ -197,14 +263,33 @@
   display: flex;
   justify-content: flex-end;
   gap: $spacing-sm;
-  padding: $spacing-md $spacing-lg $spacing-lg;
-  border-top: 1px solid var(--division-color);
+  // No border-top to match — same reasoning as .header: a full-bleed hard rule looked out
+  // of place once this box lost its own side padding. Extra top padding (in place of the
+  // border) keeps the buttons from crowding the content above.
+  padding: $spacing-lg;
 }
 
 .secondaryButton {
   padding: $spacing-sm $spacing-lg;
 }
 
-.primaryButton {
+// Same gradient family as the trigger button (index.desktop.module.scss's .aiButton) —
+// no shimmer sweep here, one animated button per screen is plenty before it stops reading
+// as "special" and starts reading as busy.
+.gradientButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: $spacing-sm $spacing-lg;
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  box-shadow: 0 3px 10px rgba(168, 85, 247, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(168, 85, 247, 0.45);
+    filter: brightness(1.06);
+  }
 }

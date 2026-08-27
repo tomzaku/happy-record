@@ -4,11 +4,12 @@ import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button';
 import Checkbox from '@moon-ui/checkbox';
 import Toggle from '@moon-ui/toggle';
-import { Modal } from '@moon-ui/modal';
+import { Modal, BottomModal } from '@moon-ui/modal';
 import { useIntl } from '@dreamer/translation';
 import {
   ApiError,
   ChecklistTemplate,
+  useIsMobile,
   useIsPro,
   useRecordField,
   useApplyAiChecklistTemplate,
@@ -45,6 +46,7 @@ const AiChecklistGenerate = ({
   onApplied,
 }: AiChecklistGenerateProps) => {
   const intl = useIntl();
+  const isMobile = useIsMobile();
   const { isPro } = useIsPro();
   const { getAllRecordFields } = useRecordField();
   const { applyAsNewTemplate, applyToExistingTemplate } = useApplyAiChecklistTemplate();
@@ -171,15 +173,22 @@ const AiChecklistGenerate = ({
   };
 
   const content = !isPro ? (
-    <div className={styles.container}>
+    <>
       <div className={styles.header}>
-        <Typography.Title level={4} noMargin>
-          {intl.formatMessage({ id: 'ai-checklist-generate.pro-title', defaultMessage: 'AI Generation is a Pro feature' })}
-        </Typography.Title>
+        <div className={styles.headerTitle}>
+          <div className={styles.badge}>
+            <Icon width={18} icon="solar:magic-stick-3-bold-duotone" color="#fff" />
+          </div>
+          <Typography.Title level={4} noMargin>
+            {intl.formatMessage({ id: 'ai-checklist-generate.pro-title', defaultMessage: 'AI Generation is a Pro feature' })}
+          </Typography.Title>
+        </div>
         <Icon onClick={handleDismiss} width={20} icon="basil:close-outline" className={styles.closeIcon} />
       </div>
       <div className={styles.body}>
-        <Icon width={48} icon="solar:magic-stick-3-bold-duotone" className={styles.upsellIcon} />
+        <div className={styles.upsellBadge}>
+          <Icon width={32} icon="solar:magic-stick-3-bold-duotone" color="#fff" />
+        </div>
         <Typography.Text className={styles.upsellText}>
           {intl.formatMessage({
             id: 'ai-checklist-generate.pro-description',
@@ -187,13 +196,18 @@ const AiChecklistGenerate = ({
           })}
         </Typography.Text>
       </div>
-    </div>
+    </>
   ) : (
-    <div className={styles.container}>
+    <>
       <div className={styles.header}>
-        <Typography.Title level={4} noMargin>
-          {intl.formatMessage({ id: 'ai-checklist-generate.title', defaultMessage: 'Generate with AI' })}
-        </Typography.Title>
+        <div className={styles.headerTitle}>
+          <div className={styles.badge}>
+            <Icon width={18} icon="solar:magic-stick-3-bold-duotone" color="#fff" />
+          </div>
+          <Typography.Title level={4} noMargin>
+            {intl.formatMessage({ id: 'ai-checklist-generate.title', defaultMessage: 'Generate with AI' })}
+          </Typography.Title>
+        </div>
         <Icon onClick={handleDismiss} width={20} icon="basil:close-outline" className={styles.closeIcon} />
       </div>
 
@@ -222,6 +236,14 @@ const AiChecklistGenerate = ({
               rows={4}
               disabled={phase === 'loading'}
             />
+            {phase === 'loading' && (
+              <div className={styles.loadingRow}>
+                <Icon width={18} icon="svg-spinners:180-ring" color="#a855f7" />
+                <Typography.Text className={styles.loadingText}>
+                  {intl.formatMessage({ id: 'ai-checklist-generate.generating-body', defaultMessage: 'Thinking through groups, fields, and a schedule…' })}
+                </Typography.Text>
+              </div>
+            )}
             {phase === 'error' && <Typography.Text className={styles.errorText}>{error}</Typography.Text>}
           </>
         )}
@@ -318,9 +340,8 @@ const AiChecklistGenerate = ({
             </Button>
             <Button
               onClick={handleApply}
-              type="primary"
               disabled={includedGroups.size === 0 || isRevising}
-              className={styles.primaryButton}
+              className={styles.gradientButton}
             >
               {mode === 'new'
                 ? intl.formatMessage({ id: 'ai-checklist-generate.apply-new', defaultMessage: 'Create Task' })
@@ -334,10 +355,12 @@ const AiChecklistGenerate = ({
             </Button>
             <Button
               onClick={handleGenerate}
-              type="primary"
               disabled={!prompt.trim() || phase === 'loading'}
-              className={styles.primaryButton}
+              className={styles.gradientButton}
             >
+              {phase !== 'loading' && (
+                <Icon width={16} icon="solar:magic-stick-3-bold-duotone" color="#fff" />
+              )}
               {phase === 'loading'
                 ? intl.formatMessage({ id: 'ai-checklist-generate.generating', defaultMessage: 'Generating…' })
                 : intl.formatMessage({ id: 'ai-checklist-generate.generate', defaultMessage: 'Generate' })}
@@ -345,10 +368,28 @@ const AiChecklistGenerate = ({
           </>
         )}
       </div>
-    </div>
+    </>
   );
 
-  return <Modal visible={visible} onDismiss={handleDismiss} content={content} />;
+  // The centered floating card (@moon-ui/modal's Modal) works fine on desktop, where there's
+  // room around it — on a phone screen it left cramped side margins and sat awkwardly
+  // mid-viewport instead of behaving like every other mobile sheet in this app. BottomModal
+  // (already how ChecklistGenericInfo's own Icon/Schedule/Tags edits behave on mobile) gives
+  // it the native full-width, slide-up-from-bottom, swipe-to-dismiss treatment instead.
+  return isMobile ? (
+    <BottomModal
+      visible={visible}
+      onDismiss={handleDismiss}
+      content={<div className={styles.mobileSheet}>{content}</div>}
+    />
+  ) : (
+    <Modal
+      visible={visible}
+      onDismiss={handleDismiss}
+      content={content}
+      className={styles.modalShell}
+    />
+  );
 };
 
 const DAY_NAMES: Record<string, string> = {

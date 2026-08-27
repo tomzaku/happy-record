@@ -6,6 +6,7 @@ import {
   useChallenge,
   useChecklist,
   useChecklistTemplates,
+  useIsPro,
   useLeaveChallenge,
   useSession,
   useSyncedSelector,
@@ -34,6 +35,7 @@ const DetailTaskPageDesktop = () => {
   const { getChallengeForTemplate } = useChallenge();
   const { leaveTheChallenge } = useLeaveChallenge();
   const { userId } = useSession();
+  const { isPro } = useIsPro();
   const intl = useIntl();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
@@ -228,12 +230,16 @@ const DetailTaskPageDesktop = () => {
             {isOwner && (
               <div className={styles.headerActions}>
                 <Button
-                  type="ghost"
                   onClick={() => setIsAiModalVisible(true)}
-                  className={styles.actionButton}
+                  className={styles.aiButton}
                 >
-                  <Icon icon="solar:magic-stick-3-bold-duotone" width={20} />
+                  <Icon icon="solar:magic-stick-3-bold-duotone" width={20} color="#fff" className={styles.aiIcon} />
                   {intl.formatMessage({ id: 'DetailTaskPage.generate-with-ai', defaultMessage: 'Generate with AI' })}
+                  {/* The button itself isn't the Pro gate — AiChecklistGenerate's own upsell
+                      screen is (see its `!isPro` branch). This is just a heads-up so a non-Pro
+                      user isn't surprised by the paywall a click away; hidden once they have
+                      access, since it'd just be redundant noise at that point. */}
+                  {!isPro && <span className={styles.proBadge}>PRO</span>}
                 </Button>
               </div>
             )}

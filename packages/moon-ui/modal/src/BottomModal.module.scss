@@ -35,6 +35,10 @@
   background: var(--card-background);
   touch-action: none;
   bottom: 0;
+  // Content renders directly into this rounded surface with no wrapping box of its own —
+  // without this, content with its own edge-to-edge background (a colored header banner,
+  // say) would square off past the rounded top corners instead of being clipped by them.
+  overflow: hidden;
 }
 
 .overlayVisible {
