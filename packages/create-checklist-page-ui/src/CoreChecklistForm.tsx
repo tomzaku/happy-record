@@ -5,7 +5,10 @@ import SchedulingGroup from './SchedulingGroup';
 import { Day } from '@dreamer/tasks-page-common';
 import IconPicker from './IconPicker';
 import Hr from './hr';
-import { FieldGroup } from './RecordTaskSetting';
+// The real (global) FieldGroup shape, not RecordTaskSetting's own local copy — that component
+// is dead code today (see the commented-out render below); SchedulingGroup is what actually
+// builds/edits `fieldGroups` in this form, and it's always used the global type.
+import { FieldGroup } from '@dreamer/global';
 import TagInput from './TagInput';
 import cx from 'classnames';
 

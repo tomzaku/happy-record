@@ -99,7 +99,7 @@ const AiChecklistGenerate = ({
             fieldGroups: existingTemplate.fieldGroups.map(g => ({
               title: g.title,
               fields: g.fields
-                .map(id => allFields.find(f => f.id === id)?.title)
+                .map(({ fieldId }) => allFields.find(f => f.id === fieldId)?.title)
                 .filter((title): title is string => !!title),
             })),
           },

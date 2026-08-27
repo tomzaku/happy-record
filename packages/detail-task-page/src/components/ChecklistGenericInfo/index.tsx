@@ -39,6 +39,10 @@ type Props = {
   // at all, since a non-owner shouldn't see a delete affordance for someone
   // else's task in the first place.
   onDelete?: () => void;
+  // Extra rows rendered in this same card, after Archived Groups and before Delete Task
+  // (the one destructive row stays last on purpose) — CardShare is the one caller today,
+  // so Share reads as part of General Settings instead of a second card floating below it.
+  children?: React.ReactNode;
 };
 
 enum EditModal {
@@ -49,7 +53,7 @@ enum EditModal {
   Archived,
 }
 
-const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed, onDelete }: Props) => {
+const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed, onDelete, children }: Props) => {
   const intl = useIntl();
   const [isCollapsed, setIsCollapsed] = React.useState(isDefaultCollapsed);
   const [activeModal, setActiveModal] = React.useState<EditModal>(
@@ -374,6 +378,8 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
                 onClick={() => setActiveModal(EditModal.Archived)}
               />
             )}
+
+            {children}
 
             {/* Delete — permanent, unlike Archived Groups above (which is a
                 recoverable soft-delete of a group). Only rendered for the

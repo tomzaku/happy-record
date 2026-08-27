@@ -264,32 +264,30 @@ const DetailTaskPageDesktop = () => {
                 checklistTemplate={checklistTemplate}
                 onUpdate={isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}}
                 onDelete={isOwner ? handleDeleteTask : undefined}
-              />
+              >
+                {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
+              </ChecklistGenericInfo>
 
-              {isOwner ? (
-                <CardShare checklistTemplate={checklistTemplate} />
-              ) : (
-                challenge && (
-                  <div className={styles.challengeActions}>
-                    <Link to={`/challenge/${challenge.id}`} className={styles.challengeLink}>
-                      {intl.formatMessage({
-                        id: 'DetailTaskPage.view-challenge-dashboard',
-                        defaultMessage: 'Part of a challenge — View Dashboard',
-                      })}
-                    </Link>
-                    <Button
-                      type="ghost"
-                      size="sm"
-                      onClick={() => setLeaveModalVisible(true)}
-                      className={styles.leaveChallengeButton}
-                    >
-                      {intl.formatMessage({
-                        id: 'DetailTaskPage.leave-challenge',
-                        defaultMessage: 'Leave Challenge',
-                      })}
-                    </Button>
-                  </div>
-                )
+              {!isOwner && challenge && (
+                <div className={styles.challengeActions}>
+                  <Link to={`/challenge/${challenge.id}`} className={styles.challengeLink}>
+                    {intl.formatMessage({
+                      id: 'DetailTaskPage.view-challenge-dashboard',
+                      defaultMessage: 'Part of a challenge — View Dashboard',
+                    })}
+                  </Link>
+                  <Button
+                    type="ghost"
+                    size="sm"
+                    onClick={() => setLeaveModalVisible(true)}
+                    className={styles.leaveChallengeButton}
+                  >
+                    {intl.formatMessage({
+                      id: 'DetailTaskPage.leave-challenge',
+                      defaultMessage: 'Leave Challenge',
+                    })}
+                  </Button>
+                </div>
               )}
             </div>
           </div>

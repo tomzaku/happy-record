@@ -48,7 +48,9 @@ const ChecklistFieldGroupAddGroupDesktop = ({
       const newGroup: FieldGroup = {
         id: `group-${Date.now()}`,
         title: tempGroupName.trim(),
-        fields: tempSelectedFields,
+        // No overrides on creation — Select Fields' own "Customize" panel (ChecklistFieldGroupMenu)
+        // is where those get set, once the group actually exists.
+        fields: tempSelectedFields.map(fieldId => ({ fieldId })),
         note: null,
         defaultTab: ChecklistFieldGroupTab.Add,
         activeTabs: [ChecklistFieldGroupTab.Add, ChecklistFieldGroupTab.Config],

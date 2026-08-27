@@ -165,8 +165,9 @@ const DetailTaskPageMobile = () => {
         checklistTemplate={checklistTemplate}
         onUpdate={isOwner ? (updatedTemplate) => updateChecklistTemplate(updatedTemplate) : () => {}}
         onDelete={isOwner ? handleDeleteTask : undefined}
-      />
-      {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
+      >
+        {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
+      </ChecklistGenericInfo>
       <ChecklistFieldGroup
         checklist={checklist}
         checklistTemplate={checklistTemplate}

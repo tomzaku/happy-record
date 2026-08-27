@@ -59,7 +59,7 @@ const TasksSharedPage = () => {
     // Only which *fields* get marked public is scoped to the active groups — no reason to
     // publicize a deleted group's fields just because they're still in the jsonb.
     const checklistTemplateFieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(
-      group => group.fields,
+      group => group.fields.map(f => f.fieldId),
     );
     const allFields = await getRecordFieldsByIds(checklistTemplateFieldIds);
     const data = {

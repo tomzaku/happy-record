@@ -32,6 +32,16 @@ type Props = {
   submitButtonText?: string;
 };
 
+// A row's icon in the same rounded badge the Select Fields list uses for its own field rows
+// (ChecklistFieldGroupMenu.module.scss's `.fieldIconBadge`) — this form is the thing that list's
+// own "Add Field" button opens, so its rows read as more of the same picker rather than a
+// visually separate old-style form bolted on next to it.
+const RowIcon = ({ icon }: { icon: string }) => (
+  <div className={styles.rowIconBadge}>
+    <Icon width={18} icon={icon} />
+  </div>
+);
+
 const CoreFieldRecord = ({
   className,
   initialValues = {},
@@ -59,142 +69,156 @@ const CoreFieldRecord = ({
   };
 
   return (
-    <div className={cx(className)}>
-      <div className={styles.descriptionContainer}>
-        <List.ItemMeta
-          noPaddingHorizontal
-          className={styles.itemMeta}
-          logo={<Icon width={24} icon="solar:text-field-linear" />}
-          title={intl.formatMessage({
-            defaultMessage: 'Field Name',
-            id: 'label-record-custom.name.label',
-          })}
-          description={intl.formatMessage({
-            defaultMessage: 'Ex: Push-ups, Squats',
-            id: 'label-record-custom.name.description',
-          })}
-        />
-        <Input
-          value={form.title}
-          onChange={e => setForm({ ...form, title: e.target.value })}
-          placeholder="Enter your field name"
-          border="dash"
-          className={styles.descriptionInput}
-        />
-      </div>
-      <div className={styles.descriptionContainer}>
-        <List.ItemMeta
-          noPaddingHorizontal
-          className={styles.itemMeta}
-          logo={<Icon width={24} icon="solar:info-circle-bold" />}
-          title={intl.formatMessage({
-            defaultMessage: 'Description',
-            id: 'label-record-custom.description.label',
-          })}
-        />
-        <Input
-          value={form.description}
-          border="dash"
-          placeholder="More information of the field"
-          className={styles.descriptionInput}
-          onChange={e => setForm({ ...form, description: e.target.value })}
-        />
-      </div>
-      <List.ItemMeta
-        noPaddingHorizontal
-        className={styles.marginBottom}
-        logo={<Icon width={24} icon="solar:box-minimalistic-outline" />}
-        title={intl.formatMessage({
-          defaultMessage: 'Type',
-          id: 'label-record-custom.type.label',
-        })}
-        rightComponent={
-          <Radio
-            isButton
-            value={form.type}
-            onChangeValue={type => setForm({ ...form, type })}
-            options={[
-              { label: 'Metric', value: 'metric' },
-              { label: 'Note', value: 'note' },
-            ]}
-          />
-        }
-      />
-      {form.type !== 'metric' ? null : (
-        <div className={styles.descriptionContainer}>
+    <div className={cx(styles.container, className)}>
+      {/* One bordered card, one divider per row — same shell as the Select Fields list this
+          opens from, rather than a loose stack of labels with no visual grouping. */}
+      <div className={styles.formCard}>
+        <div className={styles.formRow}>
           <List.ItemMeta
             noPaddingHorizontal
             className={styles.itemMeta}
-            logo={<Icon width={24} icon="lsicon:number-filled" />}
+            logo={<RowIcon icon="solar:text-field-linear" />}
             title={intl.formatMessage({
-              defaultMessage: 'Field Unit',
-              id: 'label-record-custom.unit.label',
+              defaultMessage: 'Field Name',
+              id: 'label-record-custom.name.label',
             })}
             description={intl.formatMessage({
-              defaultMessage: 'Ex: minutes, hours, reps, kg',
-              id: 'label-record-custom.unit.description',
+              defaultMessage: 'Ex: Push-ups, Squats',
+              id: 'label-record-custom.name.description',
             })}
           />
           <Input
-            value={form.unit}
+            value={form.title}
+            onChange={e => setForm({ ...form, title: e.target.value })}
+            placeholder="Enter your field name"
             border="dash"
-            onChange={e => setForm({ ...form, unit: e.target.value })}
-            className={styles.descriptionInput}
-            placeholder=""
+            className={styles.rowInput}
           />
         </div>
-      )}
-      {form.type !== 'metric' ? null : (
-        <div className={styles.descriptionContainer}>
+
+        <div className={styles.formRow}>
           <List.ItemMeta
             noPaddingHorizontal
             className={styles.itemMeta}
-            logo={<Icon width={24} icon="solar:target-linear" />}
+            logo={<RowIcon icon="solar:info-circle-bold" />}
             title={intl.formatMessage({
-              defaultMessage: 'Default Value',
-              id: 'label-record-custom.default-value.label',
-            })}
-            description={intl.formatMessage({
-              defaultMessage: 'Pre-fills this field when you submit — still editable, optional',
-              id: 'label-record-custom.default-value.description',
+              defaultMessage: 'Description',
+              id: 'label-record-custom.description.label',
             })}
           />
           <Input
-            value={form.defaultValue === undefined ? '' : String(form.defaultValue)}
+            value={form.description}
             border="dash"
-            type="number"
-            onChange={e =>
-              setForm({
-                ...form,
-                defaultValue: e.target.value === '' ? undefined : Number(e.target.value),
-              })
-            }
-            className={styles.descriptionInput}
-            placeholder=""
+            placeholder="More information of the field"
+            className={styles.rowInput}
+            onChange={e => setForm({ ...form, description: e.target.value })}
           />
         </div>
-      )}
-      <List.ItemMeta
-        noPaddingHorizontal
-        className={styles.marginBottom}
-        logo={<Icon width={24} icon="solar:users-group-rounded-linear" />}
-        title={intl.formatMessage({
-          defaultMessage: 'Public',
-          id: 'label-record-custom.visibility.label',
-        })}
-        description={intl.formatMessage({
-          defaultMessage: 'Other users can use this field in their own checklists',
-          id: 'label-record-custom.visibility.description',
-        })}
-        rightComponent={
-          <Checkbox
-            checked={form.visibility === 'public'}
-            onChange={e =>
-              setForm({ ...form, visibility: e.target.checked ? 'public' : 'private' })
+
+        <div className={styles.formRow}>
+          <List.ItemMeta
+            noPaddingHorizontal
+            className={styles.itemMeta}
+            logo={<RowIcon icon="solar:box-minimalistic-outline" />}
+            title={intl.formatMessage({
+              defaultMessage: 'Type',
+              id: 'label-record-custom.type.label',
+            })}
+            rightComponent={
+              <Radio
+                isButton
+                value={form.type}
+                onChangeValue={type => setForm({ ...form, type })}
+                options={[
+                  { label: 'Metric', value: 'metric' },
+                  { label: 'Note', value: 'note' },
+                ]}
+              />
             }
           />
-        }
-      />
+        </div>
+
+        {form.type === 'metric' && (
+          <div className={styles.formRow}>
+            <List.ItemMeta
+              noPaddingHorizontal
+              className={styles.itemMeta}
+              logo={<RowIcon icon="lsicon:number-filled" />}
+              title={intl.formatMessage({
+                defaultMessage: 'Field Unit',
+                id: 'label-record-custom.unit.label',
+              })}
+              description={intl.formatMessage({
+                defaultMessage: 'Ex: minutes, hours, reps, kg',
+                id: 'label-record-custom.unit.description',
+              })}
+            />
+            <Input
+              value={form.unit}
+              border="dash"
+              onChange={e => setForm({ ...form, unit: e.target.value })}
+              className={styles.rowInput}
+              placeholder=""
+            />
+          </div>
+        )}
+
+        {form.type === 'metric' && (
+          <div className={styles.formRow}>
+            <List.ItemMeta
+              noPaddingHorizontal
+              className={styles.itemMeta}
+              logo={<RowIcon icon="solar:target-linear" />}
+              title={intl.formatMessage({
+                defaultMessage: 'Default Value',
+                id: 'label-record-custom.default-value.label',
+              })}
+              description={intl.formatMessage({
+                defaultMessage: 'Pre-fills this field when you submit — still editable, optional',
+                id: 'label-record-custom.default-value.description',
+              })}
+            />
+            <Input
+              value={form.defaultValue === undefined ? '' : String(form.defaultValue)}
+              border="dash"
+              type="number"
+              onChange={e =>
+                setForm({
+                  ...form,
+                  defaultValue: e.target.value === '' ? undefined : Number(e.target.value),
+                })
+              }
+              className={styles.rowInput}
+              placeholder=""
+            />
+          </div>
+        )}
+
+        <div className={cx(styles.formRow, styles.formRowLast)}>
+          <List.ItemMeta
+            noPaddingHorizontal
+            className={styles.itemMeta}
+            logo={<RowIcon icon="solar:users-group-rounded-linear" />}
+            title={intl.formatMessage({
+              defaultMessage: 'Public',
+              id: 'label-record-custom.visibility.label',
+            })}
+            description={intl.formatMessage({
+              defaultMessage: 'Other users can use this field in their own checklists',
+              id: 'label-record-custom.visibility.description',
+            })}
+            rightComponent={
+              <Checkbox
+                checked={form.visibility === 'public'}
+                onChange={e =>
+                  setForm({ ...form, visibility: e.target.checked ? 'public' : 'private' })
+                }
+              />
+            }
+          />
+        </div>
+      </div>
+
       <IconPicker
         selectedIcon={form.icon}
         setSelectedIcon={icon => setForm({ ...form, icon })}
@@ -205,10 +229,10 @@ const CoreFieldRecord = ({
       />
       <div className={styles.addFieldButtonContainer}>
         {onCancel && (
-          <Button 
-            block 
-            size="lg" 
-            type="ghost" 
+          <Button
+            block
+            size="lg"
+            type="ghost"
             onClick={onCancel}
             className={styles.cancelButton}
           >

@@ -1,18 +1,63 @@
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/color' as *;
 
-.customeFieldInput {
-  height: 24px;
-  width: 100px;
-  padding: 2px $spacing-sm;
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
 }
 
-.title {
-  padding: 0 $spacing-md;
+// One bordered card grouping every row — same shell as the Select Fields list this form opens
+// from (ChecklistFieldGroupMenu.module.scss's `.fieldsList`), so "Add Field" reads as a
+// continuation of that picker instead of a visually separate form bolted on next to it.
+.formCard {
+  border: 1px solid var(--division-color);
+  border-radius: 8px;
+  background: var(--background);
+  overflow: hidden;
+}
+
+.formRow {
+  padding: $spacing-md;
+  border-bottom: 1px solid var(--division-color);
+}
+
+.formRowLast {
+  border-bottom: none;
+}
+
+// Matches ChecklistFieldGroupMenu's `.fieldIconBadge` (same size/shape/background) — every
+// "field row" in the app, whether picking an existing field or filling in a new one, uses the
+// same icon treatment now.
+.rowIconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--card-group-background);
+  color: var(--text-description-color);
+}
+
+.itemMeta {
+  align-items: flex-start;
+}
+
+// Full width of the row, not indented under the badge/title — an input this narrow (the row
+// minus the badge) had no real reason to give up that space once the row itself is already
+// full-width inside its own bordered card. Input's own `.inputWrapper` (what this className
+// actually lands on — see moon-ui/input) is `display: inline-block` with no width of its own,
+// so its child `<input>`'s `width: 100%` was only ever 100% of that shrink-to-fit box; this is
+// what has to stretch for the input to actually reach the row's edge.
+.rowInput {
+  display: block;
+  width: 100%;
+  margin-top: $spacing-xs;
 }
 
 .addFieldButtonContainer {
-  margin-top: $spacing-lg;
   display: flex;
   flex-direction: column;
   gap: $spacing-sm;
@@ -20,26 +65,4 @@
 
 .cancelButton {
   margin-bottom: $spacing-xs;
-}
-
-.customeFieldInput {
-  padding: $spacing-xs $spacing-md;
-}
-
-.descriptionInput {
-  margin: 0 0 0 30px;
-}
-
-.descriptionContainer {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: $spacing-md;
-}
-
-.itemMeta {
-  align-items: flex-start;
-}
-
-.marginBottom {
-  margin-bottom: $spacing-md;
 }

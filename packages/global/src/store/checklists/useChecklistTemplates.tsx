@@ -5,6 +5,7 @@ import { useLocalStorage } from '../../hook/useLocalStorage';
 import { useSessionStore } from '../../hook/useSessionStore';
 import { useSession } from '../../hook/useSession';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
+import type { FieldOverrides } from '../record-field/useRecordField';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
@@ -20,10 +21,31 @@ import {
 const CHECKLIST_TEMPLATE_KEY = 'checklist_template';
 const SELECTED_CHECKLISTS_TEMPLATE_KEY = 'selected_checklist_templates';
 
+/**
+ * A field the group includes, plus whatever this group overrides about how it's shown/prefilled
+ * — see FieldOverrides' own doc comment (useRecordField.tsx) for why this is a small named
+ * subset rather than a full field fork. `overrides` absent (or empty) means "show this field
+ * exactly as it is globally," same as before this existed.
+ */
+export type FieldGroupField = {
+  fieldId: string;
+  overrides?: FieldOverrides;
+};
+
+/**
+ * `fieldGroups` is jsonb (see FieldGroup's own note below), so a template saved before this
+ * shipped still has `fields` as plain `RecordField` id strings — this is the one normalizer
+ * every fetched template goes through (mergeTemplates below) so nothing downstream has to
+ * special-case the legacy shape.
+ */
+export const normalizeFieldGroupFields = (
+  fields: (string | FieldGroupField)[] | undefined | null,
+): FieldGroupField[] => (fields ?? []).map(f => (typeof f === 'string' ? { fieldId: f } : f));
+
 export type FieldGroup = {
   id: string;
   title: string;
-  fields: string[];
+  fields: FieldGroupField[];
   note: unknown;
   defaultTab?: number;
   activeTabs?: number[];
@@ -217,11 +239,23 @@ export const useChecklistTemplates = () => {
   const mergeTemplates = React.useCallback(
     (fetched: ChecklistTemplate[]) => {
       if (!fetched.length) return;
+      // A row saved before FieldGroupField existed still has `fields` as plain id strings — see
+      // normalizeFieldGroupFields' own comment. Every fetch path (one id, all mine, a shared
+      // template) funnels through here, so this is the one place that needs to know that.
+      const normalized = fetched.map(template => ({
+        ...template,
+        fieldGroups: (template.fieldGroups ?? []).map(group => ({
+          ...group,
+          fields: normalizeFieldGroupFields(
+            group.fields as unknown as (string | FieldGroupField)[],
+          ),
+        })),
+      }));
       const newIds: string[] = [];
       setChecklistTemplate(prev => {
         const merged = { ...prev };
         let changed = false;
-        for (const template of fetched) {
+        for (const template of normalized) {
           const existing = merged[template.id];
           // Last-write-wins by `updatedAt` — cheap safety even though a
           // direct scoped fetch makes a real conflict rare.

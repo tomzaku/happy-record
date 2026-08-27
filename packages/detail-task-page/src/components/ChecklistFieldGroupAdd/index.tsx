@@ -275,6 +275,9 @@ const ChecklistFieldGroupAdd = ({
                       border="dash"
                       className={styles.input}
                       type="number"
+                      // Only ever set via a group's own override (see getEffectiveFieldDisplay
+                      // in ChecklistFieldGroup) — a field has no placeholder of its own.
+                      placeholder={field.placeholder}
                     />
                     {/* <Typography.Text className={styles.unit}> {field.unit} */}
                     {/* </Typography.Text> */}

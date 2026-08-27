@@ -46,8 +46,50 @@ export type RecordField = {
    * at the original via this, never read for access control.
    */
   copiedFromId?: string;
+  /**
+   * Never actually persisted on a field's own row — there's no placeholder input on the global
+   * Add/Edit Field form (CoreFieldRecord). This only ever appears on the merged object
+   * `getEffectiveFieldDisplay` below returns, carrying a group's own override through so a
+   * consumer (ChecklistFieldGroupAdd's submit input) can read it off a plain `RecordField`
+   * without a second, wider type. Present here purely so that merge has somewhere to put it.
+   */
+  placeholder?: string;
   updatedAt: string;
 };
+
+/**
+ * A field group can override a handful of a field's own display properties for just that group
+ * — see FieldGroupField in useChecklistTemplates.tsx and its own doc comment for why (the same
+ * "Duration" field meaning 10 minutes in a Push group and 20 in a Cardio group, without forking
+ * the field itself). Deliberately a small, named subset of RecordField rather than
+ * `Partial<RecordField>` — `type`/`unit`/`visibility`/`copiedFromId` describe the field itself,
+ * not how one group happens to show it, and letting a group override them would let two groups
+ * disagree about what kind of field this even is.
+ */
+export type FieldOverrides = {
+  title?: string;
+  icon?: string;
+  /** Metric-only, same as RecordField.defaultValue itself. */
+  defaultValue?: number;
+  placeholder?: string;
+};
+
+/**
+ * Merges a group's own per-field overrides onto the field's global values — override wins when
+ * set, else the field's own value, same shape either way so every consumer (the group's own
+ * Select Fields editor, and the actual submit/history/metric rendering in ChecklistFieldGroup)
+ * reads through this one function instead of re-implementing the "which value wins" check.
+ */
+export const getEffectiveFieldDisplay = (
+  field: RecordField,
+  overrides?: FieldOverrides,
+): RecordField => ({
+  ...field,
+  title: overrides?.title ?? field.title,
+  icon: overrides?.icon ?? field.icon,
+  defaultValue: overrides?.defaultValue ?? field.defaultValue,
+  placeholder: overrides?.placeholder,
+});
 
 // `updatedAt: epoch` on purpose — these three are a bootstrap fallback only
 // (never written to storage until something actually persists them), so

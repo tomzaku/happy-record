@@ -69,52 +69,151 @@
   color: var(--error-color, #e5484d);
 }
 
-.modalContainer {
-  background: var(--card-background);
-  border-radius: 16px 16px 0 0;
+// Every dialog opened from the menu above shares this one shell (SettingsDialog in the .tsx) —
+// same header/body/footer split as AiChecklistGenerate's and CardShare's own modals, just a
+// slate badge/gradient instead of their purple/pink or blue, since this is generic group
+// settings rather than a marquee feature with its own "signature" color to carry. See
+// AiChecklistGenerate/index.module.scss's own .modalShell comment for why this is passed as
+// Modal's `className` rather than wrapped in a second box.
+.modalShell {
+  padding: 0 !important;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+// BottomModal's own `.sheet` has no padding, width, or max-height of its own (unlike Modal's
+// `.container`) — this caps how tall the sheet grows (the Fields sheet's Add/Customize views, a
+// full CoreFieldRecord form plus an icon grid, are tall enough to otherwise run off the top of
+// the viewport) and lets `.body`'s own `overflow-y: auto` do its job once capped.
+.mobileSheet {
   display: flex;
   flex-direction: column;
+  max-height: 85vh;
 }
 
-.modalHeader {
+.header {
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: $spacing-md $spacing-lg $spacing-sm $spacing-lg;
-  background: var(--card-background);
-  border-radius: 16px 16px 0 0;
-  position: relative;
-  border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  justify-content: space-between;
+  padding: $spacing-lg;
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.1) 0%, rgba(51, 65, 85, 0.1) 100%);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
   flex-shrink: 0;
-  min-height: 50px;
+  background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
+  box-shadow: 0 2px 8px rgba(71, 85, 105, 0.4);
 }
 
-// Not a "Save" — every control here already saved the instant it changed, this just dismisses.
-.doneButton {
-  min-width: 60px;
-  padding: $spacing-sm $spacing-md;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-color);
-  background: transparent;
+// Drill-down back arrow (Fields sheet's Add/Customize sub-views) — sits where `.badge` normally
+// does, in `.headerTitle`, rather than absolutely positioned: this header lays its title out
+// left-aligned next to whatever leads it, not centered.
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
   border: 0;
+  background: transparent;
   border-radius: 8px;
-  position: absolute;
-  right: $spacing-lg;
-  top: 50%;
-  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--text-color);
+  flex-shrink: 0;
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
 }
 
-.modalContent {
-  padding: $spacing-sm $spacing-lg $spacing-xl;
+.closeIcon {
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  color: var(--text-description-color);
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.body {
+  flex: 1;
+  padding: $spacing-lg;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
 }
 
-.dialogDescription {
-  font-size: 12px;
+.description {
+  font-size: 13px;
   color: var(--text-description-color);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+}
+
+.secondaryButton {
+  padding: $spacing-sm $spacing-lg;
+}
+
+.gradientButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: $spacing-sm $spacing-lg;
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
+  box-shadow: 0 3px 10px rgba(71, 85, 105, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(71, 85, 105, 0.45);
+    filter: brightness(1.06);
+  }
+}
+
+// Same gradient as .gradientButton, sized to sit in the header next to the title instead of
+// spanning the footer — this is what "Done" moved into once every single-button-footer dialog
+// stopped needing a footer at all.
+.headerDoneButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: $spacing-xs $spacing-md;
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
+  box-shadow: 0 2px 8px rgba(71, 85, 105, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(71, 85, 105, 0.45);
+    filter: brightness(1.06);
+  }
 }
 
 .tabList {
@@ -185,20 +284,21 @@
 }
 
 .fieldsList {
-  max-height: 300px;
+  max-height: 360px;
   overflow-y: auto;
   border: 1px solid var(--division-color);
   border-radius: 8px;
   background: var(--background);
 }
 
+// Bigger than the old plain checkbox+icon+label row on purpose — a badge-wrapped icon plus a
+// real subtitle (see getFieldSummary) so a row actually says what the field is, not just its
+// name, without opening Customize just to check.
 .fieldItem {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  padding: $spacing-sm $spacing-md;
+  padding: $spacing-md;
   border-bottom: 1px solid var(--division-color);
   transition: background-color 0.2s ease;
+  cursor: pointer;
 
   &:last-child {
     border-bottom: none;
@@ -209,19 +309,23 @@
   }
 }
 
-.fieldCheckbox {
+.fieldIconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
-}
-
-.fieldIcon {
-  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--card-group-background);
   color: var(--text-description-color);
 }
 
-.fieldLabel {
-  flex: 1;
-  font-size: 14px;
-  color: var(--text-color);
+.fieldRowActions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  cursor: default;
 }
 
 .emptyState {
@@ -243,54 +347,48 @@
   font-size: 14px;
 }
 
-.addFieldPanel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+// The pencil on a selected row in Select Fields, opening that field's own customize panel —
+// same look as .defaultToggle above, just a different trigger.
+.fieldEditButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1002;
-}
-
-.addFieldPanelContent {
-  background: var(--card-background);
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--card-border);
-  box-shadow: 0 4px 12px var(--card-shadow);
-}
-
-.addFieldPanelHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: $spacing-lg $spacing-lg $spacing-md;
-  border-bottom: 1px solid var(--division-color);
-}
-
-.addFieldPanelContent > div:last-child {
-  flex: 1;
-  padding: $spacing-lg;
-  overflow-y: auto;
-}
-
-.closeIcon {
-  cursor: pointer;
   padding: $spacing-xs;
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
   color: var(--text-description-color);
+  flex-shrink: 0;
 
   &:hover {
     background-color: var(--surface-secondary);
   }
+}
+
+// Same card/row/badge shell as CoreFieldRecord's Add/Edit Field form (see its own module doc) —
+// the Customize sub-view is editing a field too, just scoped to this group's own overrides.
+.formCard {
+  border: 1px solid var(--division-color);
+  border-radius: 8px;
+  background: var(--background);
+  overflow: hidden;
+}
+
+.formRow {
+  padding: $spacing-md;
+  border-bottom: 1px solid var(--division-color);
+}
+
+.formRowLast {
+  border-bottom: none;
+}
+
+// Full width of the row, not indented under the badge/title — see CoreFieldRecord's own
+// `.rowInput` comment for why `display: block; width: 100%` is needed here (Input's own
+// `.inputWrapper`, what this className lands on, is `inline-block` with no width of its own).
+.rowInput {
+  display: block;
+  width: 100%;
+  margin-top: $spacing-xs;
 }

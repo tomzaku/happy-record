@@ -118,7 +118,10 @@ export const useApplyAiChecklistTemplate = () => {
       id: v4(),
       title: group.title,
       note: buildNoteFromBlocks(group.note),
-      fields: resolveFieldIds(group.fields),
+      // No overrides — an AI-generated group's fields start exactly as the (possibly reused)
+      // field itself already is; overriding is a manual per-group customization, not something
+      // the AI proposes.
+      fields: resolveFieldIds(group.fields).map(fieldId => ({ fieldId })),
       ...(group.repeat ? { repeat: group.repeat } : {}),
     }));
 

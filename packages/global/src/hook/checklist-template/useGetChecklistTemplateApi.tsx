@@ -16,7 +16,7 @@ export const useGetChecklistTemplateApi = () => {
     // and "no such id" look the same from here, on purpose.
     if (!checklistTemplate) return null;
 
-    const fieldIds = checklistTemplate.fieldGroups.flatMap(group => group.fields);
+    const fieldIds = checklistTemplate.fieldGroups.flatMap(group => group.fields.map(f => f.fieldId));
     const fieldsResult = await fetchRecordFieldsByIds(fieldIds);
     return { checklistTemplate, fields: fieldsResult?.fields ?? [] };
   };

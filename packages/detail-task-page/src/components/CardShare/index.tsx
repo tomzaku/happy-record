@@ -22,7 +22,7 @@ import {
   useChecklistTemplates,
   useIsMobile,
 } from '@dreamer/global';
-import { SettingsCard, SettingsRow } from '../SettingsCard';
+import { SettingsRow } from '../SettingsCard';
 import styles from './index.module.scss';
 
 // Copy for each theme — kept here (translated via intl) rather than beside
@@ -50,18 +50,16 @@ const THEME_COPY: Record<ChallengeThemeId, { labelId: string; label: string; des
 
 type CardShareProps = {
   checklistTemplate: ChecklistTemplate;
-  className?: string;
 };
 
 /**
- * One row, styled like every other row in the task detail page's General Settings card
- * (ChecklistGenericInfo — icon left, title + description, an action on the right) rather
- * than the bespoke big-card-with-a-decorative-blob treatment this used to have on desktop
- * (and a differently-laid-out duplicate on mobile). One component now, not a desktop/mobile
- * pair — the row itself doesn't need to look any different by device, only the config modal
- * it opens does (Modal vs BottomModal, same reasoning as AiChecklistGenerate).
+ * One row, meant to be rendered as a child of ChecklistGenericInfo (inside its own General
+ * Settings card, among its other rows) rather than in a card of its own — see that
+ * component's own `children` slot. Not a desktop/mobile pair either: the row itself doesn't
+ * need to look any different by device, only the config modal it opens does (Modal vs
+ * BottomModal, same reasoning as AiChecklistGenerate).
  */
-const CardShare = ({ checklistTemplate, className }: CardShareProps) => {
+const CardShare = ({ checklistTemplate }: CardShareProps) => {
   const intl = useIntl();
   const isMobile = useIsMobile();
   const [copied, setCopied] = useState(false);
@@ -109,7 +107,9 @@ const CardShare = ({ checklistTemplate, className }: CardShareProps) => {
   // challenge_targets migration).
   const [metricFields, setMetricFields] = useState<RecordField[]>([]);
   React.useEffect(() => {
-    const fieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(group => group.fields);
+    const fieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(group =>
+      group.fields.map(f => f.fieldId),
+    );
     if (!fieldIds.length) return;
     getRecordFieldsByIds(fieldIds).then(fields => setMetricFields(fields.filter(f => f.type === 'metric')));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,7 +130,7 @@ const CardShare = ({ checklistTemplate, className }: CardShareProps) => {
       // `fieldGroups` array unmodified — this call writes back to the owner's own row, and
       // dropping archived groups from it here would permanently lose them.
       const checklistTemplateFieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(
-        group => group.fields,
+        group => group.fields.map(f => f.fieldId),
       );
       const allFields = await getRecordFieldsByIds(checklistTemplateFieldIds);
       const data = {
@@ -305,49 +305,53 @@ const CardShare = ({ checklistTemplate, className }: CardShareProps) => {
 
   return (
     <>
-      <SettingsCard className={className}>
-        <SettingsRow
-          logo={<Icon width={24} icon="solar:share-line-duotone" />}
-          title={intl.formatMessage({ id: 'CardShare.share-button', defaultMessage: 'Share' })}
-          description={
-            isShared ? (
-              <span className={styles.urlText}>{shareUrl}</span>
-            ) : (
-              intl.formatMessage({
-                id: 'CardShare.share-description',
-                defaultMessage: 'Generate a shareable link',
-              })
-            )
-          }
-          rightComponent={
-            isShared ? (
-              <Icon
-                width={16}
-                icon={copied ? 'solar:check-circle-bold' : 'solar:copy-line-duotone'}
-                className={styles.editIcon}
-                onClick={e => {
-                  e.stopPropagation();
-                  handleCopyLink();
-                }}
-              />
-            ) : (
-              // The whole row already opens the config modal (onClick below) — a "Share"
-              // button here was a second, redundant way to do the exact same thing. A plain
-              // chevron just says "this opens something," same as Archived Groups' own row.
-              <Icon width={16} icon="solar:alt-arrow-right-linear" />
-            )
-          }
-          clickable={!isShared}
-          onClick={() => {
-            if (!isShared) setModalVisible(true);
-          }}
-        />
-        {showDashboardLink && (
-          <Link to={`/challenge/${challenge!.id}`} className={styles.dashboardLink}>
-            {intl.formatMessage({ id: 'CardShare.view-dashboard', defaultMessage: 'View Dashboard' })}
-          </Link>
-        )}
-      </SettingsCard>
+      {/* No SettingsCard of its own — this row lives inside General Settings' own card now
+          (ChecklistGenericInfo renders it as one of its own rows, via its `children` slot),
+          not as a second card floating below it. */}
+      <SettingsRow
+        // Fixed hex, not a theme var like --icon-primary — that one shifts to teal in dark
+        // mode, and the point here is specifically blue (matching the Share modal's own
+        // badge/gradient), same reasoning Delete Task already hardcodes its red for.
+        logo={<Icon width={24} icon="solar:share-line-duotone" color="#0b7dc2" />}
+        title={intl.formatMessage({ id: 'CardShare.share-button', defaultMessage: 'Share' })}
+        description={
+          isShared ? (
+            <span className={styles.urlText}>{shareUrl}</span>
+          ) : (
+            intl.formatMessage({
+              id: 'CardShare.share-description',
+              defaultMessage: 'Generate a shareable link',
+            })
+          )
+        }
+        rightComponent={
+          isShared ? (
+            <Icon
+              width={16}
+              icon={copied ? 'solar:check-circle-bold' : 'solar:copy-line-duotone'}
+              className={styles.editIcon}
+              onClick={e => {
+                e.stopPropagation();
+                handleCopyLink();
+              }}
+            />
+          ) : (
+            // The whole row already opens the config modal (onClick below) — a "Share"
+            // button here was a second, redundant way to do the exact same thing. A plain
+            // chevron just says "this opens something," same as Archived Groups' own row.
+            <Icon width={16} icon="solar:alt-arrow-right-linear" />
+          )
+        }
+        clickable={!isShared}
+        onClick={() => {
+          if (!isShared) setModalVisible(true);
+        }}
+      />
+      {showDashboardLink && (
+        <Link to={`/challenge/${challenge!.id}`} className={styles.dashboardLink}>
+          {intl.formatMessage({ id: 'CardShare.view-dashboard', defaultMessage: 'View Dashboard' })}
+        </Link>
+      )}
 
       {/* Share config — only reachable pre-share; once shared the row above collapses to
           just the url + copy, so there's nothing left to reopen this for. Same header/body/

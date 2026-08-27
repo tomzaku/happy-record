@@ -6,23 +6,40 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import Input from '@moon-ui/input';
 import Checkbox from '@moon-ui/checkbox';
 import Typography from '@moon-ui/typography';
-import BottomModal from '@moon-ui/modal/src/BottomModal';
+import List from '@moon-ui/list';
+import { Modal, BottomModal } from '@moon-ui/modal';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
 import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
-import { FieldGroup, RecordField } from '@dreamer/global';
+import { FieldGroup, FieldGroupField, FieldOverrides, RecordField, useIsMobile } from '@dreamer/global';
+import { getEffectiveFieldDisplay } from '@dreamer/global/src/store/record-field';
 import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
+import IconPicker from '../../../../create-checklist-page-ui/src/IconPicker';
 
 import styles from './index.module.scss';
 
 interface ChecklistFieldGroupMenuProps {
   fieldGroup: FieldGroup;
   onUpdateFieldGroup: (updatedGroup: FieldGroup) => void;
-  selectedFields?: string[];
-  onSelectedFieldsChange?: (fields: string[]) => void;
   availableFields?: string[];
   allRecordFields?: RecordField[];
   onFieldAdded?: (newField: RecordField) => void;
 }
+
+type OverrideFormState = {
+  title: string;
+  icon: string;
+  iconColor: string;
+  defaultValue?: number;
+  placeholder: string;
+};
+
+const EMPTY_OVERRIDE_FORM: OverrideFormState = {
+  title: '',
+  icon: '',
+  iconColor: '#607d8b',
+  defaultValue: undefined,
+  placeholder: '',
+};
 
 // One entry per tab this group can show. `Config` isn't a real content tab any more (this is
 // its replacement — see the module doc below), so it was never a candidate here to begin with.
@@ -40,6 +57,91 @@ enum Dialog {
   Collapse,
   Fields,
 }
+
+// The Select Fields sheet's own sub-view — Add Field and Customize used to be a second,
+// separately-fixed panel stacked on top of this BottomModal, but BottomModal is portaled to a
+// shared modal root with its own fixed z-index (see BottomModal.module.scss's `$modal-z-index`),
+// so a plain in-tree `position: fixed` panel painted *underneath* it regardless of its own
+// z-index — the two were never going to stack correctly against each other. Sliding these in as
+// views inside the same sheet (drill-down, with Back) sidesteps that instead of chasing z-index:
+// there's only ever one sheet mounted for this flow at a time.
+enum FieldsView {
+  List,
+  Add,
+  Customize,
+}
+
+type SettingsDialogProps = {
+  visible: boolean;
+  onDismiss: () => void;
+  title: string;
+  /** Shows a back arrow instead of the badge, and calls this instead of `onDismiss` — used by
+   *  the Fields sheet's Add/Customize sub-views to return to the list rather than close outright. */
+  onBack?: () => void;
+  /** Replaces the close X with this — every dialog here saves as it goes (see the module doc),
+   *  so "Done" and "close" are the same action; this just puts a labeled button where a plain
+   *  icon used to be, right in the header instead of requiring a scroll to a footer. Falls back
+   *  to the close X when a view has nothing that reads as "Done" (Fields sheet's Add/Customize
+   *  sub-views — Customize keeps its own Reset+Done footer instead). */
+  headerAction?: React.ReactNode;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+};
+
+/**
+ * Same header/body/footer shell as AiChecklistGenerate's and CardShare's own modals — a badge +
+ * gradient-wash header, a close X, Modal on desktop and BottomModal on mobile (see either of
+ * those components for the fuller reasoning on that device split). Every dialog in this menu
+ * goes through this one wrapper rather than each hand-rolling the same Modal/BottomModal
+ * boilerplate, so they stay visually consistent with each other by construction. Slate, not
+ * purple/pink (AI) or blue (Share) — this is generic group settings, not a marquee feature with
+ * its own "signature" color to carry.
+ */
+const SettingsDialog = ({ visible, onDismiss, title, onBack, headerAction, footer, children }: SettingsDialogProps) => {
+  const intl = useIntl();
+  const isMobile = useIsMobile();
+
+  const content = (
+    <>
+      <div className={styles.header}>
+        <div className={styles.headerTitle}>
+          {onBack ? (
+            <button
+              type="button"
+              className={styles.backButton}
+              onClick={onBack}
+              aria-label={intl.formatMessage({ id: 'label-back', defaultMessage: 'Back' })}
+            >
+              <Icon icon="solar:alt-arrow-left-linear" width={20} />
+            </button>
+          ) : (
+            <div className={styles.badge}>
+              <Icon width={18} icon="solar:settings-line-duotone" color="#fff" />
+            </div>
+          )}
+          <Typography.Title level={4} noMargin>
+            {title}
+          </Typography.Title>
+        </div>
+        {headerAction ?? (
+          <Icon onClick={onDismiss} width={20} icon="basil:close-outline" className={styles.closeIcon} />
+        )}
+      </div>
+      <div className={styles.body}>{children}</div>
+      {footer && <div className={styles.footer}>{footer}</div>}
+    </>
+  );
+
+  return isMobile ? (
+    <BottomModal
+      visible={visible}
+      onDismiss={onDismiss}
+      content={<div className={styles.mobileSheet}>{content}</div>}
+    />
+  ) : (
+    <Modal visible={visible} onDismiss={onDismiss} content={content} className={styles.modalShell} />
+  );
+};
 
 /**
  * The group's own settings — a "⋮" menu on the group header (rendered via
@@ -61,8 +163,6 @@ enum Dialog {
 const ChecklistFieldGroupMenu = ({
   fieldGroup,
   onUpdateFieldGroup,
-  selectedFields = [],
-  onSelectedFieldsChange,
   availableFields = [],
   allRecordFields = [],
   onFieldAdded,
@@ -74,7 +174,78 @@ const ChecklistFieldGroupMenu = ({
   );
   const [activeDialog, setActiveDialog] = React.useState<Dialog>(Dialog.None);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = React.useState(false);
-  const [isAddFieldPanelVisible, setIsAddFieldPanelVisible] = React.useState(false);
+  const [fieldsView, setFieldsView] = React.useState<FieldsView>(FieldsView.List);
+
+  // The group's own field list, straight off `fieldGroup` — no separate prop/setter pair for
+  // this one (unlike Name/Tabs/Collapse, which stage into local state first): a field's
+  // selection and its overrides both live on this same array, and toggling/editing either one
+  // saves immediately, same as every other control in this menu.
+  const groupFields = fieldGroup.fields;
+  const selectedFieldIds = React.useMemo(
+    () => groupFields.map(f => f.fieldId),
+    [groupFields],
+  );
+  const updateGroupFields = (newFields: FieldGroupField[]) =>
+    onUpdateFieldGroup({ ...fieldGroup, fields: newFields });
+
+  // Which field the Customize sub-view (FieldsView.Customize) is currently showing.
+  const [editingFieldId, setEditingFieldId] = React.useState<string | null>(null);
+  const [overrideForm, setOverrideForm] = React.useState<OverrideFormState>(EMPTY_OVERRIDE_FORM);
+
+  const openOverrideEditor = (fieldId: string) => {
+    const field = allRecordFields.find(f => f.id === fieldId);
+    if (!field) return;
+    const current = groupFields.find(f => f.fieldId === fieldId)?.overrides;
+    // Text/number inputs start blank (blank = "inherit the field's own value" — see
+    // handleSaveOverride) with the global value shown only as the input's placeholder hint.
+    // The icon picker has no equivalent blank state, so it starts at the *effective* icon
+    // (override, else the field's own) instead.
+    setOverrideForm({
+      title: current?.title ?? '',
+      icon: current?.icon ?? field.icon,
+      iconColor: EMPTY_OVERRIDE_FORM.iconColor,
+      defaultValue: current?.defaultValue,
+      placeholder: current?.placeholder ?? '',
+    });
+    setEditingFieldId(fieldId);
+    setFieldsView(FieldsView.Customize);
+  };
+
+  const closeOverrideEditor = () => {
+    setEditingFieldId(null);
+    setFieldsView(FieldsView.List);
+  };
+
+  const handleSaveOverride = () => {
+    if (!editingFieldId) return;
+    const field = allRecordFields.find(f => f.id === editingFieldId);
+    const overrides: FieldOverrides = {};
+    if (overrideForm.title.trim()) overrides.title = overrideForm.title.trim();
+    if (overrideForm.placeholder.trim()) overrides.placeholder = overrideForm.placeholder.trim();
+    if (overrideForm.defaultValue !== undefined) overrides.defaultValue = overrideForm.defaultValue;
+    // Only carried as a real override when it actually differs from the field's own icon —
+    // otherwise every save through this panel would silently pin an override that just
+    // happens to match the global value today, and stop following it if that ever changes.
+    if (field && overrideForm.icon && overrideForm.icon !== field.icon) {
+      overrides.icon = overrideForm.icon;
+    }
+    updateGroupFields(
+      groupFields.map(f =>
+        f.fieldId === editingFieldId
+          ? { ...f, overrides: Object.keys(overrides).length > 0 ? overrides : undefined }
+          : f,
+      ),
+    );
+    closeOverrideEditor();
+  };
+
+  const handleResetOverride = () => {
+    if (!editingFieldId) return;
+    updateGroupFields(
+      groupFields.map(f => (f.fieldId === editingFieldId ? { ...f, overrides: undefined } : f)),
+    );
+    closeOverrideEditor();
+  };
 
   const [groupName, setGroupName] = React.useState(fieldGroup.title);
   const [defaultTab, setDefaultTab] = React.useState<ChecklistFieldGroupTab>(
@@ -118,7 +289,12 @@ const ChecklistFieldGroupMenu = ({
     else setActiveDialog(dialog);
   };
 
-  const closeDialog = () => setActiveDialog(Dialog.None);
+  // Also resets the Fields sheet back to its list view — otherwise reopening Select Fields
+  // later (after leaving it mid-Customize, say) would jump straight back into that sub-view.
+  const closeDialog = () => {
+    setActiveDialog(Dialog.None);
+    setFieldsView(FieldsView.List);
+  };
 
   const handleNameBlur = () => {
     const trimmed = groupName.trim();
@@ -158,17 +334,15 @@ const ChecklistFieldGroupMenu = ({
   };
 
   const handleFieldToggle = (fieldId: string) => {
-    if (!onSelectedFieldsChange) return;
-
-    const newSelectedFields = selectedFields.includes(fieldId)
-      ? selectedFields.filter(id => id !== fieldId)
-      : [...selectedFields, fieldId];
-    onSelectedFieldsChange(newSelectedFields);
+    const newFields = selectedFieldIds.includes(fieldId)
+      ? groupFields.filter(f => f.fieldId !== fieldId)
+      : [...groupFields, { fieldId }];
+    updateGroupFields(newFields);
   };
 
   const handleFieldPanelSubmit = (newField: RecordField) => {
     onFieldAdded?.(newField);
-    setIsAddFieldPanelVisible(false);
+    setFieldsView(FieldsView.List);
   };
 
   // Soft delete — sets `archivedAt` instead of removing this group from `fieldGroups` (see
@@ -180,12 +354,46 @@ const ChecklistFieldGroupMenu = ({
     setIsDeleteModalVisible(false);
   };
 
-  const getFieldDisplayInfo = (fieldId: string) => {
+  // Shows this group's own effective title/icon for a field (its override, if any, else the
+  // field's own value) — not just the field's global values — so a row that's already been
+  // customized actually reads that way in the list, not just in the editor panel. Returns the
+  // whole effective RecordField (not just {title, icon}) so the Select Fields row below can
+  // also show what kind of field this is — type/unit/description aren't overridable per-group
+  // (see FieldOverrides' own comment), so these always come straight off the base field.
+  const getFieldDisplayInfo = (fieldId: string): RecordField => {
     const field = allRecordFields.find(f => f.id === fieldId);
-    return field
-      ? { title: field.title, icon: field.icon }
-      : { title: fieldId, icon: 'solar:document-linear' };
+    if (!field) {
+      return {
+        id: fieldId,
+        title: fieldId,
+        icon: 'solar:document-linear',
+        description: '',
+        type: 'note',
+        unit: '',
+        updatedAt: '',
+      };
+    }
+    const overrides = groupFields.find(f => f.fieldId === fieldId)?.overrides;
+    return getEffectiveFieldDisplay(field, overrides);
   };
+
+  // The Select Fields row's subtitle — the field's own description when it has one (the most
+  // concrete info about what it actually records), else a plain "what kind of field is this"
+  // fallback so a row is never left with nothing under the title.
+  const getFieldSummary = (field: RecordField) => {
+    if (field.description) return field.description;
+    if (field.type === 'metric') {
+      return field.unit
+        ? intl.formatMessage(
+            { id: 'checklist-field-group-menu.field-summary-metric-unit', defaultMessage: 'Metric · {unit}' },
+            { unit: field.unit },
+          )
+        : intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-metric', defaultMessage: 'Metric' });
+    }
+    return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-note', defaultMessage: 'Note' });
+  };
+
+  const editingField = allRecordFields.find(f => f.id === editingFieldId);
 
   const MENU_ITEMS: {
     dialog: Dialog | 'delete';
@@ -214,18 +422,14 @@ const ChecklistFieldGroupMenu = ({
         defaultMessage: 'Collapse Default',
       }),
     },
-    ...(onSelectedFieldsChange
-      ? [
-          {
-            dialog: Dialog.Fields,
-            icon: 'solar:checklist-minimalistic-line-duotone',
-            label: intl.formatMessage({
-              id: 'checklist-field-group-menu.select-fields',
-              defaultMessage: 'Select Fields',
-            }),
-          },
-        ]
-      : []),
+    {
+      dialog: Dialog.Fields,
+      icon: 'solar:checklist-minimalistic-line-duotone',
+      label: intl.formatMessage({
+        id: 'checklist-field-group-menu.select-fields',
+        defaultMessage: 'Select Fields',
+      }),
+    },
     {
       dialog: 'delete' as const,
       icon: 'solar:trash-bin-trash-linear',
@@ -283,210 +487,356 @@ const ChecklistFieldGroupMenu = ({
       )}
 
       {/* Group Name */}
-      <BottomModal
+      <SettingsDialog
         visible={activeDialog === Dialog.Name}
         onDismiss={closeDialog}
-        content={
-          <div className={styles.modalContainer}>
-            <div className={styles.modalHeader}>
-              <Typography.Title level={3} noMargin>
-                {intl.formatMessage({
-                  id: 'checklist-field-group-menu.group-name',
-                  defaultMessage: 'Group Name',
-                })}
-              </Typography.Title>
-              <Button onClick={closeDialog} className={styles.doneButton}>
-                {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
-              </Button>
-            </div>
-            <div className={styles.modalContent}>
-              <Input
-                value={groupName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setGroupName(e.target.value)
-                }
-                placeholder={intl.formatMessage({
-                  id: 'checklist-field-group-menu.group-name-placeholder',
-                  defaultMessage: 'Enter group name',
-                })}
-                onBlur={handleNameBlur}
-                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
-                  e.key === 'Enter' && (e.target as HTMLInputElement).blur()
-                }
-                renderRightInput={() => <></>}
-              />
-            </div>
-          </div>
+        title={intl.formatMessage({
+          id: 'checklist-field-group-menu.group-name',
+          defaultMessage: 'Group Name',
+        })}
+        headerAction={
+          <Button onClick={closeDialog} size="sm" className={styles.headerDoneButton}>
+            {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
+          </Button>
         }
-      />
+      >
+        <Input
+          value={groupName}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGroupName(e.target.value)}
+          placeholder={intl.formatMessage({
+            id: 'checklist-field-group-menu.group-name-placeholder',
+            defaultMessage: 'Enter group name',
+          })}
+          onBlur={handleNameBlur}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
+            e.key === 'Enter' && (e.target as HTMLInputElement).blur()
+          }
+          renderRightInput={() => <></>}
+        />
+      </SettingsDialog>
 
       {/* Tabs */}
-      <BottomModal
+      <SettingsDialog
         visible={activeDialog === Dialog.Tabs}
         onDismiss={closeDialog}
-        content={
-          <div className={styles.modalContainer}>
-            <div className={styles.modalHeader}>
-              <Typography.Title level={3} noMargin>
-                {intl.formatMessage({ id: 'checklist-field-group-menu.tabs', defaultMessage: 'Tabs' })}
-              </Typography.Title>
-              <Button onClick={closeDialog} className={styles.doneButton}>
-                {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
-              </Button>
-            </div>
-            <div className={styles.modalContent}>
-              <Typography.Text className={styles.dialogDescription}>
-                {intl.formatMessage({
-                  id: 'checklist-field-group-menu.tabs-description',
-                  defaultMessage: 'Which tabs show for this group, and which one opens first.',
-                })}
-              </Typography.Text>
-              <div className={styles.tabList}>
-                {TAB_OPTIONS.map(({ value, label, icon }) => {
-                  const isActive = activeTabs.includes(value);
-                  const isDefault = defaultTab === value;
-                  return (
-                    <div key={value} className={styles.tabRow}>
-                      <Checkbox
-                        checked={isActive}
-                        onChange={() => handleTabToggle(value)}
-                        disabled={isActive && activeTabs.length === 1}
-                      />
-                      <Icon icon={icon} width={16} />
-                      <Typography.Text className={styles.tabRowLabel}>{label}</Typography.Text>
-                      <button
-                        type="button"
-                        className={cx(
-                          styles.defaultToggle,
-                          isDefault && styles.defaultToggleActive,
-                        )}
-                        onClick={() => handleSetDefaultTab(value)}
-                        aria-pressed={isDefault}
-                        aria-label={intl.formatMessage(
-                          {
-                            id: 'checklist-field-group-menu.make-default-tab',
-                            defaultMessage: 'Make {label} the default tab',
-                          },
-                          { label },
-                        )}
-                      >
-                        <Icon
-                          icon={isDefault ? 'solar:star-bold' : 'solar:star-linear'}
-                          width={16}
-                        />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+        title={intl.formatMessage({ id: 'checklist-field-group-menu.tabs', defaultMessage: 'Tabs' })}
+        headerAction={
+          <Button onClick={closeDialog} size="sm" className={styles.headerDoneButton}>
+            {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
+          </Button>
         }
-      />
+      >
+        <Typography.Text className={styles.description}>
+          {intl.formatMessage({
+            id: 'checklist-field-group-menu.tabs-description',
+            defaultMessage: 'Which tabs show for this group, and which one opens first.',
+          })}
+        </Typography.Text>
+        <div className={styles.tabList}>
+          {TAB_OPTIONS.map(({ value, label, icon }) => {
+            const isActive = activeTabs.includes(value);
+            const isDefault = defaultTab === value;
+            return (
+              <div key={value} className={styles.tabRow}>
+                <Checkbox
+                  checked={isActive}
+                  onChange={() => handleTabToggle(value)}
+                  disabled={isActive && activeTabs.length === 1}
+                />
+                <Icon icon={icon} width={16} />
+                <Typography.Text className={styles.tabRowLabel}>{label}</Typography.Text>
+                <button
+                  type="button"
+                  className={cx(styles.defaultToggle, isDefault && styles.defaultToggleActive)}
+                  onClick={() => handleSetDefaultTab(value)}
+                  aria-pressed={isDefault}
+                  aria-label={intl.formatMessage(
+                    {
+                      id: 'checklist-field-group-menu.make-default-tab',
+                      defaultMessage: 'Make {label} the default tab',
+                    },
+                    { label },
+                  )}
+                >
+                  <Icon icon={isDefault ? 'solar:star-bold' : 'solar:star-linear'} width={16} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </SettingsDialog>
 
       {/* Collapse Default */}
-      <BottomModal
+      <SettingsDialog
         visible={activeDialog === Dialog.Collapse}
         onDismiss={closeDialog}
-        content={
-          <div className={styles.modalContainer}>
-            <div className={styles.modalHeader}>
-              <Typography.Title level={3} noMargin>
+        title={intl.formatMessage({
+          id: 'checklist-field-group-menu.collapse-default',
+          defaultMessage: 'Collapse Default',
+        })}
+        headerAction={
+          <Button onClick={closeDialog} size="sm" className={styles.headerDoneButton}>
+            {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
+          </Button>
+        }
+      >
+        <div className={styles.collapseSetting}>
+          <Checkbox checked={collapseDefault} onChange={handleCollapseChange} />
+          <Typography.Text>
+            {intl.formatMessage({
+              id: 'checklist-field-group-menu.collapse-default-description',
+              defaultMessage: 'Start collapsed by default',
+            })}
+          </Typography.Text>
+        </div>
+      </SettingsDialog>
+
+      {/* Select Fields — List/Add/Customize are three views of this one sheet (see FieldsView's
+          own comment for why this isn't three separately-stacked modals). */}
+      <SettingsDialog
+        visible={activeDialog === Dialog.Fields}
+        onDismiss={closeDialog}
+        onBack={fieldsView !== FieldsView.List ? () => setFieldsView(FieldsView.List) : undefined}
+        title={
+          fieldsView === FieldsView.Add
+            ? intl.formatMessage({ id: 'label-add-new-field', defaultMessage: 'Add New Field' })
+            : fieldsView === FieldsView.Customize
+              ? intl.formatMessage(
+                  {
+                    id: 'checklist-field-group-menu.customize-field-title',
+                    defaultMessage: 'Customize {title}',
+                  },
+                  { title: editingField?.title ?? '' },
+                )
+              : intl.formatMessage({
+                  id: 'checklist-field-group-menu.select-fields',
+                  defaultMessage: 'Select Fields',
+                })
+        }
+        headerAction={
+          fieldsView === FieldsView.List ? (
+            <Button onClick={closeDialog} size="sm" className={styles.headerDoneButton}>
+              {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
+            </Button>
+          ) : undefined
+          // Add/Customize fall through to the plain close X — Customize keeps its own
+          // Reset+Done footer below, and Add's own Cancel/Save pair already covers it.
+        }
+        footer={
+          fieldsView === FieldsView.Customize && editingField ? (
+            <>
+              <Button type="ghost" className={styles.secondaryButton} onClick={handleResetOverride}>
                 {intl.formatMessage({
-                  id: 'checklist-field-group-menu.collapse-default',
-                  defaultMessage: 'Collapse Default',
+                  id: 'checklist-field-group-menu.customize-reset',
+                  defaultMessage: 'Reset to Default',
                 })}
-              </Typography.Title>
-              <Button onClick={closeDialog} className={styles.doneButton}>
+              </Button>
+              <Button className={styles.gradientButton} onClick={handleSaveOverride}>
                 {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
               </Button>
-            </div>
-            <div className={styles.modalContent}>
-              <div className={styles.collapseSetting}>
-                <Checkbox checked={collapseDefault} onChange={handleCollapseChange} />
-                <Typography.Text>
-                  {intl.formatMessage({
-                    id: 'checklist-field-group-menu.collapse-default-description',
-                    defaultMessage: 'Start collapsed by default',
-                  })}
-                </Typography.Text>
-              </div>
-            </div>
-          </div>
+            </>
+          ) : undefined
+          // FieldsView.Add has no footer here — CoreFieldRecord (via AddFieldRecordUi) already
+          // renders its own Cancel/Save pair.
         }
-      />
-
-      {/* Select Fields */}
-      {onSelectedFieldsChange && (
-        <BottomModal
-          visible={activeDialog === Dialog.Fields}
-          onDismiss={closeDialog}
-          content={
-            <div className={styles.modalContainer}>
-              <div className={styles.modalHeader}>
-                <Typography.Title level={3} noMargin>
-                  {intl.formatMessage({
-                    id: 'checklist-field-group-menu.select-fields',
-                    defaultMessage: 'Select Fields',
-                  })}
-                </Typography.Title>
-                <Button onClick={closeDialog} className={styles.doneButton}>
-                  {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
-                </Button>
-              </div>
-              <div className={styles.modalContent}>
-                <Button
-                  onClick={() => setIsAddFieldPanelVisible(true)}
-                  className={styles.addFieldButton}
-                  type="ghost"
-                  size="sm"
-                >
-                  <Icon width={16} icon="fe:plus" />
-                  {intl.formatMessage({
-                    id: 'checklist-field-group-menu.add-field',
-                    defaultMessage: 'Add Field',
-                  })}
-                </Button>
-
-                <div className={styles.fieldsList}>
-                  {availableFields.length === 0 ? (
-                    <div className={styles.emptyState}>
-                      <Icon
-                        width={48}
-                        icon="solar:folder-open-line-duotone"
-                        className={styles.emptyIcon}
-                      />
-                      <Typography.Text className={styles.emptyText}>
-                        {intl.formatMessage({
-                          id: 'checklist-field-group-menu.no-fields-available',
-                          defaultMessage: 'No fields available',
-                        })}
-                      </Typography.Text>
-                    </div>
-                  ) : (
-                    availableFields.map(fieldId => {
-                      const { title, icon } = getFieldDisplayInfo(fieldId);
-                      const isChecked = selectedFields.includes(fieldId);
-                      return (
-                        <div key={fieldId} className={styles.fieldItem}>
+      >
+        {fieldsView === FieldsView.List && (
+          <>
+            <div className={styles.fieldsList}>
+              {availableFields.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <Icon width={48} icon="solar:folder-open-line-duotone" className={styles.emptyIcon} />
+                  <Typography.Text className={styles.emptyText}>
+                    {intl.formatMessage({
+                      id: 'checklist-field-group-menu.no-fields-available',
+                      defaultMessage: 'No fields available',
+                    })}
+                  </Typography.Text>
+                </div>
+              ) : (
+                availableFields.map(fieldId => {
+                  const field = getFieldDisplayInfo(fieldId);
+                  const isChecked = selectedFieldIds.includes(fieldId);
+                  return (
+                    <List.ItemMeta
+                      key={fieldId}
+                      className={styles.fieldItem}
+                      onClick={() => handleFieldToggle(fieldId)}
+                      logo={
+                        <div className={styles.fieldIconBadge}>
+                          <Icon width={20} icon={field.icon} />
+                        </div>
+                      }
+                      title={field.title}
+                      description={getFieldSummary(field)}
+                      rightComponent={
+                        // Stops the toggle-on-row-click above from double-firing when the click
+                        // actually landed on the checkbox itself, and keeps the edit pencil from
+                        // toggling the field at all.
+                        <div className={styles.fieldRowActions} onClick={e => e.stopPropagation()}>
                           <Checkbox
                             key={`${fieldId}-${isChecked}`}
                             checked={isChecked}
                             onChange={() => handleFieldToggle(fieldId)}
-                            className={styles.fieldCheckbox}
                           />
-                          <Icon width={16} icon={icon} className={styles.fieldIcon} />
-                          <Typography.Text className={styles.fieldLabel}>{title}</Typography.Text>
+                          {/* Only a field already in the group has anything to customize — an
+                              unselected row has no FieldGroupField entry for its overrides to
+                              live on yet. */}
+                          {isChecked && (
+                            <button
+                              type="button"
+                              className={styles.fieldEditButton}
+                              onClick={() => openOverrideEditor(fieldId)}
+                              aria-label={intl.formatMessage({
+                                id: 'checklist-field-group-menu.customize-field',
+                                defaultMessage: 'Customize for this group',
+                              })}
+                            >
+                              <Icon icon="solar:pen-2-line-duotone" width={16} />
+                            </button>
+                          )}
                         </div>
-                      );
-                    })
-                  )}
+                      }
+                    />
+                  );
+                })
+              )}
+            </div>
+
+            <Button
+              onClick={() => setFieldsView(FieldsView.Add)}
+              className={styles.addFieldButton}
+              type="ghost"
+              size="sm"
+            >
+              <Icon width={16} icon="fe:plus" />
+              {intl.formatMessage({
+                id: 'checklist-field-group-menu.add-field',
+                defaultMessage: 'Add Field',
+              })}
+            </Button>
+          </>
+        )}
+
+        {fieldsView === FieldsView.Add && (
+          <AddFieldRecordUi
+            onSubmit={handleFieldPanelSubmit}
+            onCancel={() => setFieldsView(FieldsView.List)}
+          />
+        )}
+
+        {/* Every value here starts blank (the input's own placeholder shows what the field's
+            own global value is) so "leave it blank" reads as "same as the field," not as "set
+            to empty." Same card/badge/full-width-input shell as CoreFieldRecord's Add/Edit
+            Field form (see its own module doc) — this is editing a field too, just scoped to
+            one group's overrides instead of the field itself. */}
+        {fieldsView === FieldsView.Customize && editingField && (
+          <>
+            <Typography.Text className={styles.description}>
+              {intl.formatMessage({
+                id: 'checklist-field-group-menu.customize-field-description',
+                defaultMessage:
+                  'Only for this group — the field itself, and every other group using it, stays as it is.',
+              })}
+            </Typography.Text>
+
+            <div className={styles.formCard}>
+              <div className={styles.formRow}>
+                <List.ItemMeta
+                  noPaddingHorizontal
+                  logo={
+                    <div className={styles.fieldIconBadge}>
+                      <Icon width={18} icon="solar:text-field-linear" />
+                    </div>
+                  }
+                  title={intl.formatMessage({
+                    id: 'checklist-field-group-menu.customize-name',
+                    defaultMessage: 'Name',
+                  })}
+                />
+                <Input
+                  value={overrideForm.title}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setOverrideForm({ ...overrideForm, title: e.target.value })
+                  }
+                  placeholder={editingField.title}
+                  border="dash"
+                  renderRightInput={() => <></>}
+                  className={styles.rowInput}
+                />
+              </div>
+
+              {editingField.type === 'metric' && (
+                <div className={styles.formRow}>
+                  <List.ItemMeta
+                    noPaddingHorizontal
+                    logo={
+                      <div className={styles.fieldIconBadge}>
+                        <Icon width={18} icon="solar:target-linear" />
+                      </div>
+                    }
+                    title={intl.formatMessage({
+                      id: 'checklist-field-group-menu.customize-default-value',
+                      defaultMessage: 'Default Value',
+                    })}
+                  />
+                  <Input
+                    type="number"
+                    value={overrideForm.defaultValue === undefined ? '' : String(overrideForm.defaultValue)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setOverrideForm({
+                        ...overrideForm,
+                        defaultValue: e.target.value === '' ? undefined : Number(e.target.value),
+                      })
+                    }
+                    placeholder={
+                      editingField.defaultValue === undefined ? '' : String(editingField.defaultValue)
+                    }
+                    border="dash"
+                    renderRightInput={() => <></>}
+                    className={styles.rowInput}
+                  />
                 </div>
+              )}
+
+              <div className={cx(styles.formRow, styles.formRowLast)}>
+                <List.ItemMeta
+                  noPaddingHorizontal
+                  logo={
+                    <div className={styles.fieldIconBadge}>
+                      <Icon width={18} icon="solar:document-text-linear" />
+                    </div>
+                  }
+                  title={intl.formatMessage({
+                    id: 'checklist-field-group-menu.customize-placeholder',
+                    defaultMessage: 'Placeholder',
+                  })}
+                />
+                <Input
+                  value={overrideForm.placeholder}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setOverrideForm({ ...overrideForm, placeholder: e.target.value })
+                  }
+                  placeholder={intl.formatMessage({
+                    id: 'checklist-field-group-menu.customize-placeholder-hint',
+                    defaultMessage: 'Hint text shown in the submit input',
+                  })}
+                  border="dash"
+                  renderRightInput={() => <></>}
+                  className={styles.rowInput}
+                />
               </div>
             </div>
-          }
-        />
-      )}
+
+            <IconPicker
+              selectedIcon={overrideForm.icon}
+              setSelectedIcon={icon => setOverrideForm({ ...overrideForm, icon })}
+              selectedColor={overrideForm.iconColor}
+              setSelectedColor={iconColor => setOverrideForm({ ...overrideForm, iconColor })}
+            />
+          </>
+        )}
+      </SettingsDialog>
 
       <WarningModal
         visible={isDeleteModalVisible}
@@ -513,28 +863,6 @@ const ChecklistFieldGroupMenu = ({
           { title: fieldGroup.title || 'this group' },
         )}
       />
-
-      {isAddFieldPanelVisible && (
-        <div className={styles.addFieldPanel}>
-          <div className={styles.addFieldPanelHeader}>
-            <Typography.Title level={4} noMargin>
-              {intl.formatMessage({ defaultMessage: 'Add New Field', id: 'label-add-new-field' })}
-            </Typography.Title>
-            <Icon
-              onClick={() => setIsAddFieldPanelVisible(false)}
-              width={20}
-              icon="basil:close-outline"
-              className={styles.closeIcon}
-            />
-          </div>
-          <div className={styles.addFieldPanelContent}>
-            <AddFieldRecordUi
-              onSubmit={handleFieldPanelSubmit}
-              onCancel={() => setIsAddFieldPanelVisible(false)}
-            />
-          </div>
-        </div>
-      )}
     </>
   );
 };

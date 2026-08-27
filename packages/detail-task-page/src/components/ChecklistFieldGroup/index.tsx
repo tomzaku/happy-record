@@ -8,7 +8,7 @@ import {
   isFieldGroupActiveOnDay,
   useChecklist,
 } from '@dreamer/global';
-import { RecordField } from '@dreamer/global/src/store/record-field';
+import { getEffectiveFieldDisplay, RecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
 import ChecklistFieldGroupHeader, {
   ChecklistFieldGroupTab,
@@ -76,7 +76,13 @@ const ChecklistFieldGroup = ({
     const map: Record<string, RecordField[]> = {};
     for (const fieldGroup of checklistTemplate.fieldGroups) {
       map[fieldGroup.id] = fieldGroup.fields
-        .map(fieldId => fields.find(field => field.id === fieldId))
+        .map(({ fieldId, overrides }) => {
+          const field = fields.find(f => f.id === fieldId);
+          // Merged here, once, so every tab that reads these fields (History, Metric, and
+          // Add's own submit-input prefill) sees this group's own title/icon/defaultValue/
+          // placeholder without each one re-implementing the override merge itself.
+          return field ? getEffectiveFieldDisplay(field, overrides) : undefined;
+        })
         .filter((field): field is RecordField => field !== undefined);
     }
     return map;
@@ -281,10 +287,6 @@ const ChecklistFieldGroup = ({
                 <ChecklistFieldGroupMenu
                   fieldGroup={fieldGroup}
                   onUpdateFieldGroup={updatedGroup => updateFieldGroupAt(index, updatedGroup)}
-                  selectedFields={fieldGroup.fields}
-                  onSelectedFieldsChange={selectedFields =>
-                    updateFieldGroupAt(index, { ...fieldGroup, fields: selectedFields })
-                  }
                   availableFields={fields.map(f => f.id)}
                   allRecordFields={fields}
                   onFieldAdded={onFieldAdded}
