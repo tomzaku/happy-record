@@ -23,7 +23,7 @@ import AiChecklistGenerate from './components/AiChecklistGenerate';
 const DetailTaskPageMobile = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
-  const { getChecklistTemplate, updateChecklistTemplate } =
+  const { getChecklistTemplate, updateChecklistTemplate, deleteChecklistTemplate } =
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
   const { getAllRecordFields } = useRecordField();
@@ -104,6 +104,12 @@ const DetailTaskPageMobile = () => {
 
   const navigate = useNavigate();
 
+  const handleDeleteTask = () => {
+    if (!id) return;
+    deleteChecklistTemplate(id);
+    navigate('/');
+  };
+
   const confirmLeaveChallenge = async () => {
     if (!challenge || !id || leaving) return;
     setLeaving(true);
@@ -157,6 +163,7 @@ const DetailTaskPageMobile = () => {
         isDefaultCollapsed
         checklistTemplate={checklistTemplate}
         onUpdate={isOwner ? (updatedTemplate) => updateChecklistTemplate(updatedTemplate) : () => {}}
+        onDelete={isOwner ? handleDeleteTask : undefined}
       />
       <ChecklistFieldGroup
         checklist={checklist}

@@ -94,6 +94,14 @@
   color: var(--text-color);
 }
 
+// Destructive row — red title/description like the icon next to it, so
+// "Delete Task" reads as dangerous even at a glance, not just on its icon.
+.deleteRow {
+  p {
+    color: #ff4d4f;
+  }
+}
+
 .modalFooter {
   padding: 20px 24px;
   display: flex;

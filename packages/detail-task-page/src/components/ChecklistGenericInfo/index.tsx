@@ -13,6 +13,7 @@ import List from '@moon-ui/list';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import BottomModal from '@moon-ui/modal/src/BottomModal';
+import WarningModal from '@moon-ui/modal/src/WarningModal';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Division from '@moon-ui/division';
 import { motion } from 'motion/react';
@@ -33,6 +34,12 @@ type Props = {
   checklistTemplate: ChecklistTemplate;
   onUpdate: (template: ChecklistTemplate) => void;
   isDefaultCollapsed: boolean;
+  // Omitted entirely (not just a no-op) for a challenge participant who isn't the
+  // template's owner — same "isOwner" gate index.desktop.tsx/index.mobile.tsx
+  // already apply to onUpdate, but here it also decides whether the row renders
+  // at all, since a non-owner shouldn't see a delete affordance for someone
+  // else's task in the first place.
+  onDelete?: () => void;
 };
 
 enum EditModal {
@@ -43,12 +50,13 @@ enum EditModal {
   Archived,
 }
 
-const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed }: Props) => {
+const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed, onDelete }: Props) => {
   const intl = useIntl();
   const [isCollapsed, setIsCollapsed] = React.useState(isDefaultCollapsed);
   const [activeModal, setActiveModal] = React.useState<EditModal>(
     EditModal.None,
   );
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = React.useState(false);
 
   // Form states for editing
   const [tempIcon, setTempIcon] = React.useState(
@@ -364,6 +372,20 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
                 onClick={() => setActiveModal(EditModal.Archived)}
               />
             )}
+
+            {/* Delete — permanent, unlike Archived Groups above (which is a
+                recoverable soft-delete of a group). Only rendered for the
+                owner; a challenge participant never gets onDelete at all. */}
+            {onDelete && (
+              <List.ItemMeta
+                className={styles.deleteRow}
+                logo={<Icon width={24} icon="solar:trash-bin-trash-linear" color="#ff4d4f" />}
+                title="Delete Task"
+                description="Permanently remove this task and its history"
+                noPaddingHorizontal
+                onClick={() => setDeleteConfirmVisible(true)}
+              />
+            )}
           </div>
         </motion.div>
       </Card>
@@ -476,6 +498,25 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed 
             </div>
           </div>
         }
+      />
+
+      {/* Delete confirmation — the actual delete is the parent's own onDelete
+          (deleteChecklistTemplate + navigate away), this just gates it. */}
+      <WarningModal
+        visible={deleteConfirmVisible}
+        title="Delete this task?"
+        content={
+          <Typography.Text>
+            {`Permanently delete "${checklistTemplate.title}" and its history. This can't be undone.`}
+          </Typography.Text>
+        }
+        primaryButtonText="Delete"
+        primaryButtonOnClick={() => {
+          setDeleteConfirmVisible(false);
+          onDelete?.();
+        }}
+        secondaryButtonText="Cancel"
+        secondaryButtonClick={() => setDeleteConfirmVisible(false)}
       />
     </>
   );

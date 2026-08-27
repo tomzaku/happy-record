@@ -27,7 +27,7 @@ import { Link } from 'react-router-dom';
 const DetailTaskPageDesktop = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
-  const { getChecklistTemplate, updateChecklistTemplate } =
+  const { getChecklistTemplate, updateChecklistTemplate, deleteChecklistTemplate } =
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
   const { getAllRecordFields } = useRecordField();
@@ -158,6 +158,12 @@ const DetailTaskPageDesktop = () => {
 
   const navigate = useNavigate();
 
+  const handleDeleteTask = () => {
+    if (!id) return;
+    deleteChecklistTemplate(id);
+    navigate('/');
+  };
+
   const confirmLeaveChallenge = async () => {
     if (!challenge || !id || leaving) return;
     setLeaving(true);
@@ -251,6 +257,7 @@ const DetailTaskPageDesktop = () => {
                 isDefaultCollapsed={false}
                 checklistTemplate={checklistTemplate}
                 onUpdate={isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}}
+                onDelete={isOwner ? handleDeleteTask : undefined}
               />
 
               {isOwner ? (
