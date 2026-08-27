@@ -144,3 +144,16 @@
   width: 110px;
 }
 
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding: $spacing-md;
+  min-width: 320px;
+}
+
+.modalShareButton {
+  align-self: flex-start;
+  margin-top: $spacing-xs;
+}
+

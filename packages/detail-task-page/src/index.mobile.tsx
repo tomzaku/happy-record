@@ -133,15 +133,6 @@ const DetailTaskPageMobile = () => {
                 style={{ cursor: 'pointer' }}
               />
             )}
-            {isOwner && (
-              <Icon
-                onClick={() => {
-                  navigate(`/edit-checklist/${id}`);
-                }}
-                width={24}
-                icon="solar:pen-new-square-linear"
-              />
-            )}
             {!isOwner && challenge && (
               <Icon
                 onClick={() => navigate(`/challenge/${challenge.id}`)}

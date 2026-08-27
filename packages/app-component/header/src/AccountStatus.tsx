@@ -58,6 +58,7 @@ const AccountStatus = ({ variant, collapsed = false, className }: Props) => {
       className={cx(styles.drawerRow, collapsed && styles.collapsed, className)}
       onClick={handleClick}
       title={collapsed ? label : undefined}
+      aria-label={label}
     >
       <div className={styles.iconBox}>
         <Icon width={20} icon={iconName} />

@@ -96,7 +96,6 @@ const DesktopDrawer = () => {
         </button>
       </div>
       <nav className={styles.navigationMenu}>
-        <TaskSearch variant="drawer" collapsed={isMinimized} />
         {navigationItems.map((item) => (
           <button
             key={item.id}
@@ -107,6 +106,7 @@ const DesktopDrawer = () => {
             )}
             onClick={() => handleNavigationClick(item.id)}
             title={isMinimized ? item.label : undefined}
+            aria-label={item.label}
           >
             <div className={cx(
               styles.navigationIcon,
@@ -128,6 +128,7 @@ const DesktopDrawer = () => {
         ))}
       </nav>
       <div className={styles.drawerFooter}>
+        <TaskSearch variant="drawer" collapsed={isMinimized} />
         <AccountStatus variant="drawer" collapsed={isMinimized} />
       </div>
     </div>

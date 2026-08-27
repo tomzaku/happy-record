@@ -229,16 +229,6 @@ const DetailTaskPageDesktop = () => {
                   <Icon icon="solar:magic-stick-3-bold-duotone" width={20} />
                   {intl.formatMessage({ id: 'DetailTaskPage.generate-with-ai', defaultMessage: 'Generate with AI' })}
                 </Button>
-                <Button
-                  type="ghost"
-                  onClick={() => {
-                    navigate(`/edit-checklist/${id}`);
-                  }}
-                  className={styles.actionButton}
-                >
-                  <Icon icon="solar:pen-new-square-linear" width={20} />
-                  Edit Task
-                </Button>
               </div>
             )}
           </div>

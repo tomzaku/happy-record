@@ -6,6 +6,7 @@
   "CardShare.no-target": "No target",
   "CardShare.option-comments": "Allow comments on this challenge",
   "CardShare.option-share-records": "Share everyone's check-ins on a group dashboard",
+  "CardShare.share-button": "Share",
   "CardShare.share-description": "Generate a shareable link",
   "CardShare.share-url-label": "Share URL:",
   "CardShare.targets-label": "Group targets (optional)",

@@ -33,6 +33,7 @@ const TaskSearch = ({ variant, collapsed = false, className }: Props) => {
           className={cx(styles.drawerRow, collapsed && styles.collapsed, className)}
           onClick={() => setVisible(true)}
           title={collapsed ? 'Search' : undefined}
+          aria-label="Search"
         >
           <div className={styles.iconBox}>
             <Icon width={20} icon="solar:magnifer-linear" />
