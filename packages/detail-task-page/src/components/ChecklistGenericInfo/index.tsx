@@ -1,5 +1,4 @@
 import React from 'react';
-import cx from 'classnames';
 import {
   ChecklistTemplate,
   FieldGroup,
@@ -10,9 +9,8 @@ import {
   getArchivedFieldGroups,
 } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
-import List from '@moon-ui/list';
-import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
+import { SettingsCard, SettingsRow } from '../SettingsCard';
 import BottomModal from '@moon-ui/modal/src/BottomModal';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
 import Button from '@moon-ui/button/src/DefaultButton';
@@ -222,30 +220,37 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
 
   return (
     <>
-      <Card className={styles.cardContainer}>
-        <div
-          className={styles.header}
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          <div className={styles.titleSection}>
+      <SettingsCard>
+        <SettingsRow
+          logo={
             <Icon
               width={24}
               icon={checklistTemplate.avatar?.name || 'solar:settings-linear'}
               color={checklistTemplate.avatar?.color || '#607d8b'}
             />
+          }
+          title={
             <Typography.Title level={4} noMargin>
               General Settings
             </Typography.Title>
-          </div>
-          <Icon
-            width={20}
-            icon={
-              isCollapsed
-                ? 'solar:alt-arrow-down-linear'
-                : 'solar:alt-arrow-up-linear'
-            }
-          />
-        </div>
+          }
+          rightComponent={
+            <Icon
+              width={20}
+              icon={
+                isCollapsed
+                  ? 'solar:alt-arrow-down-linear'
+                  : 'solar:alt-arrow-up-linear'
+              }
+            />
+          }
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          // Still clickable (collapses/expands, cursor stays a pointer), but deliberately no
+          // hover fill — this is the card's own title, not a list item, and an earlier pass
+          // already removed that highlight on purpose (it read as one more actionable row
+          // rather than the section heading it is).
+          hoverBackground={false}
+        />
 
         <motion.div
           initial={false}
@@ -261,8 +266,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
         >
           <div className={styles.content}>
             {/* Icon & Color */}
-            <List.ItemMeta
-              className={styles.settingRow}
+            <SettingsRow
               logo={<Icon width={24} icon="tdesign:icon" />}
               title="Icon & Color"
               description="Customize appearance"
@@ -287,7 +291,6 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
                   />
                 </div>
               }
-              noPaddingHorizontal
               onClick={() => {
                 resetModalStates();
                 setActiveModal(EditModal.Icon);
@@ -295,8 +298,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
             />
 
             {/* Schedule */}
-            <List.ItemMeta
-              className={styles.settingRow}
+            <SettingsRow
               logo={<Icon width={24} icon="solar:calendar-date-line-duotone" />}
               title="Schedule"
               description={
@@ -333,7 +335,6 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
                   />
                 </div>
               }
-              noPaddingHorizontal
               onClick={() => {
                 resetModalStates();
                 setActiveModal(EditModal.Schedule);
@@ -341,8 +342,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
             />
 
             {/* Tags */}
-            <List.ItemMeta
-              className={styles.settingRow}
+            <SettingsRow
               logo={<Icon width={24} icon="solar:tag-outline" />}
               title="Tags"
               description={formatDisplayTags()}
@@ -358,7 +358,6 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
                   }}
                 />
               }
-              noPaddingHorizontal
               onClick={() => {
                 resetModalStates();
                 setActiveModal(EditModal.Tags);
@@ -367,13 +366,11 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
 
             {/* Archived Groups — only shown once there's something to restore */}
             {archivedFieldGroups.length > 0 && (
-              <List.ItemMeta
-                className={styles.settingRow}
+              <SettingsRow
                 logo={<Icon width={24} icon="solar:trash-bin-2-linear" />}
                 title="Archived Groups"
                 description={`${archivedFieldGroups.length} deleted group${archivedFieldGroups.length === 1 ? '' : 's'}`}
                 rightComponent={<Icon width={16} icon="solar:alt-arrow-right-linear" />}
-                noPaddingHorizontal
                 onClick={() => setActiveModal(EditModal.Archived)}
               />
             )}
@@ -382,18 +379,17 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
                 recoverable soft-delete of a group). Only rendered for the
                 owner; a challenge participant never gets onDelete at all. */}
             {onDelete && (
-              <List.ItemMeta
-                className={cx(styles.settingRow, styles.deleteRow)}
+              <SettingsRow
                 logo={<Icon width={24} icon="solar:trash-bin-trash-linear" color="#ff4d4f" />}
                 title="Delete Task"
                 description="Permanently remove this task and its history"
-                noPaddingHorizontal
+                danger
                 onClick={() => setDeleteConfirmVisible(true)}
               />
             )}
           </div>
         </motion.div>
-      </Card>
+      </SettingsCard>
 
       {/* Icon & Color Edit Modal */}
       <BottomModal

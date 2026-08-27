@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 
 import Button from '@moon-ui/button';
 import IconWarning from '@moon-ui/icon/IconWarning';
-import Division from '@moon-ui/division';
 import { getModalRoot } from './modalRoot';
 
 import styles from './WarningModal.module.scss';
@@ -29,17 +28,24 @@ export default function WarningModal({
   title,
 }: Props) {
   if (!visible) return null;
+  // Same header/body/footer shell as AiChecklistGenerate/CardShare's modals — a small icon
+  // badge inline with the title on an edge-to-edge tinted header, no hard divider line
+  // underneath it. Warning gets its own amber wash (the theme's existing
+  // --modal-logo-warning/--modal-button-primary/-secondary) rather than either of those
+  // components' own gradients, which are that specific feature's own signature color, not a
+  // "nice modal" look to copy verbatim onto a generic confirm/cancel dialog.
   return createPortal(
     <div className={styles.overlay}>
       <div className={styles.container}>
         <div className={styles.header}>
-          <IconWarning className={styles.icon} />
-          <Typography.Title className={styles.title} level={3} noMargin>
+          <div className={styles.badge}>
+            <IconWarning className={styles.icon} />
+          </div>
+          <Typography.Title level={4} noMargin>
             {title}
           </Typography.Title>
         </div>
-        <Division />
-        <div className={styles.content}>{content}</div>
+        <div className={styles.body}>{content}</div>
         <div className={styles.footer}>
           <Button
             size="md"

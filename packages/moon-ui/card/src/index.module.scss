@@ -11,6 +11,11 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  // Only matters when this Card itself sits in a flex/grid parent (a sidebar column, say) —
+  // without it, wide-enough content inside (long unbreakable text, a wide table) can force
+  // this whole Card, and the track holding it, wider instead of the content just wrapping or
+  // clipping. Doesn't change anything about Card's own internal layout.
+  min-width: 0;
 
   // @include media.media('<=tablet') {
   //   margin-left: 12px;

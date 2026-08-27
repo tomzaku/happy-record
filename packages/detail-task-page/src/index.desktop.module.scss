@@ -198,7 +198,12 @@
 
 .mainContent {
   display: grid;
-  grid-template-columns: 2.5fr 1fr;
+  // minmax(0, ...), not plain fr — a grid track's implicit min width is its content's
+  // min-content by default (the same rule that made the Share row force its own row wide
+  // before its min-width: 0 fix), so any wide-enough content in either column could still
+  // force that whole track past its 2.5fr/1fr share instead of the column just clipping/
+  // wrapping it. minmax(0, ...) is what actually lets the fr sizing win.
+  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr);
   align-items: start;
 }
 

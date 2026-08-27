@@ -1,0 +1,208 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+.urlText {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: monospace;
+  font-size: toRem(12px);
+}
+
+.editIcon {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.dashboardLink {
+  display: inline-block;
+  margin: 0 12px $spacing-sm;
+  font-size: toRem(12px);
+  color: var(--icon-primary);
+}
+
+.buttonSpinner {
+  margin-right: $spacing-xs;
+  vertical-align: middle;
+}
+
+// Same header/body/footer shell as AiChecklistGenerate's own modal (see that component's
+// .modalShell/.header/.badge for the fuller reasoning) — this one just uses a blue gradient
+// instead of purple/pink, since that combination is specifically the AI feature's own
+// signature, not a generic "nice modal" look to copy verbatim onto every dialog in the app.
+.modalShell {
+  padding: 0 !important;
+  width: 100%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.mobileSheet {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(11, 125, 194, 0.1) 100%);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 50%, #0b7dc2 100%);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding: $spacing-lg;
+  min-width: 320px;
+  overflow-y: auto;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+}
+
+.secondaryButton {
+  padding: $spacing-sm $spacing-lg;
+}
+
+.gradientButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: $spacing-sm $spacing-lg;
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 50%, #0b7dc2 100%);
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(37, 99, 235, 0.45);
+    filter: brightness(1.06);
+  }
+}
+
+.closeIcon {
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  color: var(--text-description-color);
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+  margin: $spacing-xs 0;
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  cursor: pointer;
+}
+
+.themePicker {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+  margin: $spacing-xs 0;
+}
+
+.themeLabel {
+  font-size: toRem(11px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+  text-transform: uppercase;
+}
+
+.themeSwatches {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.themeSwatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--card-shadow);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.themeSwatchSelected {
+  border-color: var(--text-color);
+}
+
+.targets {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+  margin: $spacing-xs 0;
+  padding: $spacing-xs;
+  border: 1px dashed var(--input-border);
+  border-radius: 6px;
+}
+
+.targetsLabel {
+  font-size: toRem(11px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+  text-transform: uppercase;
+}
+
+.targetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-xs;
+}
+
+.targetFieldName {
+  font-size: toRem(12px);
+}
+
+.targetInput {
+  width: 110px;
+}

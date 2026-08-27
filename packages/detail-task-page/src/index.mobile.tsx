@@ -19,6 +19,7 @@ import WarningModal from '@moon-ui/modal/src/WarningModal';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import AiChecklistGenerate from './components/AiChecklistGenerate';
+import CardShare from './components/CardShare';
 
 const DetailTaskPageMobile = () => {
   const { id } = useParams<{ id: string }>();
@@ -165,6 +166,7 @@ const DetailTaskPageMobile = () => {
         onUpdate={isOwner ? (updatedTemplate) => updateChecklistTemplate(updatedTemplate) : () => {}}
         onDelete={isOwner ? handleDeleteTask : undefined}
       />
+      {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
       <ChecklistFieldGroup
         checklist={checklist}
         checklistTemplate={checklistTemplate}

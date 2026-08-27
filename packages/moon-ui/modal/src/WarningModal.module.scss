@@ -17,7 +17,7 @@
 }
 
 .container {
-  padding: $spacing-md;
+  padding: 0;
   display: flex;
   flex-direction: column;
   // A percentage width (the old max-width: 80%/min-width: 60%) scales with the
@@ -30,46 +30,47 @@
   background: var(--card-background);
   box-shadow: 0px 8px 25px var(--card-shadow);
   border-radius: 10px;
+  overflow: hidden;
 }
 
-.content {
+.header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+  // $warning (#feb000) is the same literal value in both themes (see
+  // --modal-logo-warning), so a hardcoded wash is fine here without a light/dark pair.
+  background: rgba(254, 176, 0, 0.1);
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: var(--modal-logo-warning);
+  box-shadow: 0 2px 8px rgba(254, 176, 0, 0.4);
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  fill: var(--icon-color-revert);
+}
+
+.body {
   flex: 1;
+  padding: $spacing-lg;
   color: var(--text-color);
 }
 
 .footer {
   display: flex;
-  padding-top: $spacing-md;
-  // Matches the old margin-left/margin-right: $spacing-sm each side (8px + 8px)
-  // the two buttons used before switching to gap.
   gap: $spacing-lg;
-}
-
-.button {
-  margin-left: $spacing-sm;
-}
-
-// Icon sits inline next to the title instead of the old oversized badge
-// floating above it (110x80px box, half hanging outside the modal) — that
-// read fine as a big centered splash on a phone-width dialog, but on the
-// desktop-capped width it's disproportionate. A small icon on the same row
-// carries the same "this needs attention" signal at a scale that matches
-// the rest of the dialog.
-.header {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-}
-
-.icon {
-  width: 24px;
-  height: 24px;
-  fill: var(--modal-logo-warning);
-  flex-shrink: 0;
-}
-
-.title {
-  text-align: left;
+  padding: 0 $spacing-lg $spacing-lg;
 }
 
 .primaryButton {

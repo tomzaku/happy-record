@@ -8,6 +8,10 @@
   display: flex;
   padding: $spacing-sm;
   justify-content: space-between;
+  // This row is itself a flex/grid item somewhere in whatever renders it — min-width: 0 so
+  // its own content (ultimately .left/.body's, which no longer forces *their* width — see
+  // below) can't propagate a large min-content size up into that ancestor either.
+  min-width: 0;
   // @include media.media('<=tablet') {
   //   // padding: $spacing-sm $spacing-md;
   //   padding: $spacing-sm 0;
@@ -21,7 +25,13 @@
 
 .body {
   display: flex;
-  // flex: 1;
+  // flex: 1 alone (the old commented-out attempt here) isn't enough — a flex item's
+  // default min-width is auto (its content's own width), so unbreakable content (a long
+  // URL with white-space: nowrap, say) still forces this box, and everything above it,
+  // wider than the row instead of shrinking/truncating. min-width: 0 is what actually lets
+  // it shrink below that; flex: 1 is just what makes it claim the space .right leaves.
+  flex: 1;
+  min-width: 0;
   flex-direction: column;
   margin-left: $spacing-sm;
   margin-right: $spacing-sm;
@@ -30,8 +40,13 @@
 .left {
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 0;
 }
 
 .right {
   display: flex;
+  // Never yield space to .left/.body — a button or icon here shouldn't get squeezed just
+  // because the title/description next to it is long.
+  flex-shrink: 0;
 }
