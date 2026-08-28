@@ -21,7 +21,9 @@ import ChecklistFieldGroupAdd from '../ChecklistFieldGroupAdd';
 import ChecklistFieldGroupHistory from '../ChecklistFieldGroupHistory';
 import ChecklistFieldGroupView from '../ChecklistFieldGroupView';
 import ChecklistFieldMetric from '../ChecklistFieldMetric';
-import ChecklistFieldGroupMenu from '../ChecklistFieldGroupMenu';
+import ChecklistFieldGroupMenu, {
+  ChecklistFieldGroupMenuHandle,
+} from '../ChecklistFieldGroupMenu';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import ChecklistFieldGroupAddGroup from '../ChecklistFieldGroupAddGroup';
 
@@ -44,6 +46,11 @@ const ChecklistFieldGroup = ({
 }: Props) => {
   const { updateChecklist } = useChecklist();
   const intl = useIntl();
+  // Keyed by fieldGroup id — the Submit tab's own "Select Fields" button (see
+  // ChecklistFieldGroupAdd's onOpenFieldSettings) reaches into this same group's settings menu
+  // rather than duplicating the Select Fields dialog, so it stays the one place that dialog
+  // actually lives.
+  const menuRefs = React.useRef<Record<string, ChecklistFieldGroupMenuHandle | null>>({});
   const [activeTab, setActiveTab] = React.useState<
     Record<string, ChecklistFieldGroupTab>
   >(
@@ -201,6 +208,7 @@ const ChecklistFieldGroup = ({
             checklistTemplate={checklistTemplate}
             checklist={checklist}
             currentDay={currentDay}
+            onOpenFieldSettings={() => menuRefs.current[fieldGroup.id]?.openFieldsDialog()}
             onSubmit={() => {
               // setActiveTab({
               //   ...activeTab,
@@ -312,6 +320,9 @@ const ChecklistFieldGroup = ({
               renderStatus={() => renderScheduleStatus(fieldGroup)}
               renderMenu={() => (
                 <ChecklistFieldGroupMenu
+                  ref={handle => {
+                    menuRefs.current[fieldGroup.id] = handle;
+                  }}
                   fieldGroup={fieldGroup}
                   onUpdateFieldGroup={updatedGroup => updateFieldGroupAt(index, updatedGroup)}
                   availableFields={fields.map(f => f.id)}

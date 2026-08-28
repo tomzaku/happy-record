@@ -37,8 +37,30 @@
 
 .footerCenter {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   margin-top: $spacing-lg;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+// Deliberately quiet — plain text, no border/background — since this tab's job is filling
+// fields and hitting Submit, not managing the group's field list. Sits opposite Submit rather
+// than competing with it for attention above the fields.
+.fieldSettingsLink {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-description-color);
+  font-size: toRem(13px);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-color);
+  }
 }
 
 .submitBtn {

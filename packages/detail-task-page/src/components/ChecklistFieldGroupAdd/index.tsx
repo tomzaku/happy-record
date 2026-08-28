@@ -32,6 +32,10 @@ type Props = {
   checklist: Checklist;
   currentDay: string;
   onSubmit?: () => void;
+  // Opens this group's own Select Fields dialog (ChecklistFieldGroupMenu, via
+  // ChecklistFieldGroup's ref map) — lets someone filling out the Submit tab jump straight to
+  // adding/removing fields without first finding the "⋮" settings menu on the group header.
+  onOpenFieldSettings?: () => void;
 };
 
 // A metric record's `value` can be null/undefined/a non-numeric string —
@@ -51,6 +55,7 @@ const ChecklistFieldGroupAdd = ({
   checklist,
   currentDay,
   onSubmit,
+  onOpenFieldSettings,
 }: Props) => {
   // Pre-fills a metric field's own default value (set via the Edit Field
   // form — see CoreFieldRecord) instead of always starting blank; still
@@ -314,6 +319,23 @@ const ChecklistFieldGroupAdd = ({
         }
       })}
       <div className={styles.footerCenter}>
+        {onOpenFieldSettings ? (
+          <button
+            type="button"
+            className={styles.fieldSettingsLink}
+            onClick={onOpenFieldSettings}
+          >
+            {intl.formatMessage({
+              id: 'checklist-field-group-add.field-settings',
+              defaultMessage: 'Field Settings',
+            })}
+          </button>
+        ) : (
+          // Keeps Submit pinned to the right even when this group has no onOpenFieldSettings —
+          // footerCenter is `space-between` now, not `flex-end`, so it needs something on the
+          // left to push against.
+          <span />
+        )}
         <Button
           size="lg"
           className={styles.submitBtn}

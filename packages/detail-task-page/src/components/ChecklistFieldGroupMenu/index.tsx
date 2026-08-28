@@ -25,6 +25,13 @@ interface ChecklistFieldGroupMenuProps {
   onFieldAdded?: (newField: RecordField) => void;
 }
 
+// What a caller outside this menu (the Submit tab's own "Select Fields" button — see
+// ChecklistFieldGroupAdd) can reach through a ref, since the Select Fields dialog's visibility
+// is state private to this component, not a prop.
+export type ChecklistFieldGroupMenuHandle = {
+  openFieldsDialog: () => void;
+};
+
 type OverrideFormState = {
   title: string;
   icon: string;
@@ -88,13 +95,16 @@ enum FieldsView {
  * isn't edited here at all — see the template's own Edit Schedule modal (GroupScheduleList),
  * which edits every group's schedule in one place.
  */
-const ChecklistFieldGroupMenu = ({
+const ChecklistFieldGroupMenu = React.forwardRef<
+  ChecklistFieldGroupMenuHandle,
+  ChecklistFieldGroupMenuProps
+>(({
   fieldGroup,
   onUpdateFieldGroup,
   availableFields = [],
   allRecordFields = [],
   onFieldAdded,
-}: ChecklistFieldGroupMenuProps) => {
+}: ChecklistFieldGroupMenuProps, ref) => {
   const intl = useIntl();
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(
@@ -103,6 +113,10 @@ const ChecklistFieldGroupMenu = ({
   const [activeDialog, setActiveDialog] = React.useState<Dialog>(Dialog.None);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = React.useState(false);
   const [fieldsView, setFieldsView] = React.useState<FieldsView>(FieldsView.List);
+
+  React.useImperativeHandle(ref, () => ({
+    openFieldsDialog: () => setActiveDialog(Dialog.Fields),
+  }));
 
   // The group's own field list, straight off `fieldGroup` — no separate prop/setter pair for
   // this one (unlike Name/Tabs/Collapse, which stage into local state first): a field's
@@ -859,6 +873,8 @@ const ChecklistFieldGroupMenu = ({
       />
     </>
   );
-};
+});
+
+ChecklistFieldGroupMenu.displayName = 'ChecklistFieldGroupMenu';
 
 export default ChecklistFieldGroupMenu;
