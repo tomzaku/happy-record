@@ -69,108 +69,15 @@
   color: var(--error-color, #e5484d);
 }
 
-// Every dialog opened from the menu above shares this one shell (SettingsDialog in the .tsx) —
-// same header/body/footer split as AiChecklistGenerate's and CardShare's own modals, just a
-// slate badge/gradient instead of their purple/pink or blue, since this is generic group
-// settings rather than a marquee feature with its own "signature" color to carry. See
-// AiChecklistGenerate/index.module.scss's own .modalShell comment for why this is passed as
-// Modal's `className` rather than wrapped in a second box.
-.modalShell {
-  padding: 0 !important;
-  width: 100%;
-  max-width: 480px;
-  max-height: 80vh;
-  overflow: hidden;
-}
-
-// BottomModal's own `.sheet` has no padding, width, or max-height of its own (unlike Modal's
-// `.container`) — this caps how tall the sheet grows (the Fields sheet's Add/Customize views, a
-// full CoreFieldRecord form plus an icon grid, are tall enough to otherwise run off the top of
-// the viewport) and lets `.body`'s own `overflow-y: auto` do its job once capped.
-.mobileSheet {
-  display: flex;
-  flex-direction: column;
-  max-height: 85vh;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: $spacing-lg;
-  background: linear-gradient(135deg, rgba(100, 116, 139, 0.1) 0%, rgba(51, 65, 85, 0.1) 100%);
-}
-
-.headerTitle {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-}
-
-.badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
-  box-shadow: 0 2px 8px rgba(71, 85, 105, 0.4);
-}
-
-// Drill-down back arrow (Fields sheet's Add/Customize sub-views) — sits where `.badge` normally
-// does, in `.headerTitle`, rather than absolutely positioned: this header lays its title out
-// left-aligned next to whatever leads it, not centered.
-.backButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: 0;
-  background: transparent;
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--text-color);
-  flex-shrink: 0;
-
-  &:hover {
-    background-color: var(--surface-secondary);
-  }
-}
-
-.closeIcon {
-  cursor: pointer;
-  padding: $spacing-xs;
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
-  color: var(--text-description-color);
-
-  &:hover {
-    background-color: var(--surface-secondary);
-  }
-}
-
-.body {
-  flex: 1;
-  padding: $spacing-lg;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-md;
-}
-
+// Every dialog opened from the menu above shares SettingsDialog's own shell (badge, gradient
+// header, Modal-vs-BottomModal split — see packages/detail-task-page/src/components/
+// SettingsDialog for that). What's still here is only what this file's own JSX passes *into*
+// that shell (footer/headerAction content, description text) — a CSS module's `styles` object
+// only resolves classes defined in its own file, so those have to stay defined here too even
+// though SettingsDialog defines the identical-looking shell classes for its own JSX.
 .description {
   font-size: 13px;
   color: var(--text-description-color);
-}
-
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: $spacing-sm;
-  padding: $spacing-lg;
 }
 
 .secondaryButton {
@@ -184,34 +91,40 @@
   padding: $spacing-sm $spacing-lg;
   border: 0;
   color: #fff;
-  background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
-  box-shadow: 0 3px 10px rgba(71, 85, 105, 0.35);
+  // The app's real primary/accent color (same token every other primary fill uses, so it
+  // follows dark mode's own shift to teal) — see SettingsDialog's own `.badge` comment.
+  background: var(--icon-primary);
+  box-shadow: 0 3px 10px rgba(11, 125, 194, 0.35);
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 5px 16px rgba(71, 85, 105, 0.45);
+    box-shadow: 0 5px 16px rgba(11, 125, 194, 0.45);
     filter: brightness(1.06);
   }
 }
 
-// Same gradient as .gradientButton, sized to sit in the header next to the title instead of
+// Same fill as .gradientButton, sized to sit in the header next to the title instead of
 // spanning the footer — this is what "Done" moved into once every single-button-footer dialog
-// stopped needing a footer at all.
+// stopped needing a footer at all. Sized like a real button, not a compact chip — this is the
+// dialog's one primary action, not a secondary label next to the title.
 .headerDoneButton {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: $spacing-xs $spacing-md;
+  padding: $spacing-sm $spacing-lg;
   border: 0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
   color: #fff;
-  background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
-  box-shadow: 0 2px 8px rgba(71, 85, 105, 0.35);
+  background: var(--icon-primary);
+  box-shadow: 0 2px 8px rgba(11, 125, 194, 0.35);
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(71, 85, 105, 0.45);
+    box-shadow: 0 4px 12px rgba(11, 125, 194, 0.45);
     filter: brightness(1.06);
   }
 }

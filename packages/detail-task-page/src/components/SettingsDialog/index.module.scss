@@ -1,0 +1,118 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+
+// Passed as Modal's own `className` (merged onto its .container — see Modal.tsx) rather than
+// wrapping `content` in a second box of our own: the header's gradient needs to reach the real
+// modal corners, which a nested inner box can't do since Modal's own container always has its
+// own padding around whatever `content` it's given. See AiChecklistGenerate/index.module.scss's
+// own `.modalShell` comment for the fuller version of this reasoning.
+.modalShell {
+  padding: 0 !important;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+// BottomModal's own `.sheet` has no padding, width, or max-height of its own (unlike Modal's
+// `.container`) — this caps how tall the sheet grows (a full form, an icon grid, is tall enough
+// to otherwise run off the top of the viewport) and lets `.body`'s own `overflow-y: auto` do its
+// job once capped.
+.mobileSheet {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  // A faint wash of the same color the badge uses, so the header reads as one piece with it
+  // rather than a plain generic dialog title bar. `#0b7dc2` is `$primary` from
+  // @moon-ui/app-scss's theme/common-color.scss — an internal path this package doesn't `@use`
+  // directly (only color.scss/metric.scss/function.scss are its public entry points, and
+  // color.scss itself doesn't `@forward` $primary out), so this is the literal value, not the
+  // variable, same as every other hardcoded palette in this app (AI's purple/pink, Share's
+  // blue). Light mode's own value only — doesn't chase dark mode's teal the way `.badge`'s
+  // `var(--icon-primary)` fill does, same as AI's/Share's own fixed header washes don't either.
+  background: rgba(11, 125, 194, 0.08);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  // The app's real primary/accent color, not an invented "settings" palette — `var(--icon-primary)`
+  // is the same token every other primary-colored icon/fill in the app already uses, so it
+  // follows dark mode's own shift to teal instead of staying a fixed hex regardless of theme.
+  background: var(--icon-primary);
+  box-shadow: 0 2px 8px rgba(11, 125, 194, 0.4);
+}
+
+// Drill-down back arrow — sits where `.badge` normally does, in `.headerTitle`, rather than
+// absolutely positioned: this header lays its title out left-aligned next to whatever leads it,
+// not centered.
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-color);
+  flex-shrink: 0;
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.closeIcon {
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  color: var(--text-description-color);
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.body {
+  flex: 1;
+  padding: $spacing-lg;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+}
+
+// Deliberately no `.description`/`.secondaryButton`/`.gradientButton`/`.headerDoneButton` here:
+// `children`/`footer`/`headerAction` are React elements the *caller* builds, so their
+// `className` always resolves against the caller's own CSS module, never this one — a copy of
+// those classes here would just be dead weight this component never actually applies itself.
+// ChecklistFieldGroupMenu's and ChecklistGenericInfo's own `index.module.scss` each keep the
+// real, applied copy (same fill/sizing, described where they're defined) for exactly that reason.

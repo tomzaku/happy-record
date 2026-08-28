@@ -11,17 +11,15 @@ import {
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 import { SettingsCard, SettingsRow } from '../SettingsCard';
-import BottomModal from '@moon-ui/modal/src/BottomModal';
+import SettingsDialog from '../SettingsDialog';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
 import Button from '@moon-ui/button/src/DefaultButton';
-import Division from '@moon-ui/division';
 import { motion } from 'motion/react';
 import { useIntl } from '@dreamer/translation';
 import { Day } from '@dreamer/tasks-page-common';
 
 // Import existing components for editing
 import IconPicker from '@pregnant/create-checklist-page-ui/src/IconPicker';
-import ColorPicker from '@pregnant/create-checklist-page-ui/src/ColorPicker';
 import TagInput from '@pregnant/create-checklist-page-ui/src/TagInput';
 import { getDaysFromRepeat } from '@pregnant/create-checklist-page-ui/src/getDayFromRepeat';
 import { calculateRepeat } from '@pregnant/create-checklist-page-ui/src/calculateRepeat';
@@ -398,114 +396,107 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
       </SettingsCard>
 
       {/* Icon & Color Edit Modal */}
-      <BottomModal
+      <SettingsDialog
         visible={activeModal === EditModal.Icon}
         onDismiss={handleModalClose}
-        content={
-          <div className={styles.modalContainer}>
-            <div className={styles.modalHeader}>
-              <Typography.Title level={3} noMargin>
-                Edit Icon & Color
-              </Typography.Title>
-              <Button onClick={handleSaveIcon} className={styles.saveButton}>
-                Save
-              </Button>
-            </div>
-            <div className={styles.modalContent}>
-              <IconPicker
-                selectedIcon={tempIcon}
-                setSelectedIcon={setTempIcon}
-                selectedColor={tempColor}
-                setSelectedColor={setTempColor}
-                layout="two-line"
-              />
-            </div>
-          </div>
+        icon="tdesign:icon"
+        title={intl.formatMessage({
+          id: 'checklist-generic-info.edit-icon-color-title',
+          defaultMessage: 'Edit Icon & Color',
+        })}
+        headerAction={
+          <Button onClick={handleSaveIcon} className={styles.headerSaveButton}>
+            {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+          </Button>
         }
-      />
+      >
+        <IconPicker
+          selectedIcon={tempIcon}
+          setSelectedIcon={setTempIcon}
+          selectedColor={tempColor}
+          setSelectedColor={setTempColor}
+          layout="two-line"
+        />
+      </SettingsDialog>
 
       {/* Schedule Edit Modal */}
-      <BottomModal
+      <SettingsDialog
         visible={activeModal === EditModal.Schedule}
         onDismiss={handleModalClose}
-        content={
-          <div className={styles.modalContainer}>
-            <div className={styles.modalHeader}>
-              <Typography.Title level={3} noMargin>
-                Edit Schedule
-              </Typography.Title>
-              <Button
-                onClick={handleSaveSchedule}
-                className={styles.saveButton}
-              >
-                Save
-              </Button>
-            </div>
-            <ScheduleModalContent
-              tempWeeklyHobbies={tempWeeklyHobbies}
-              setTempWeeklyHobbies={setTempWeeklyHobbies}
-              tempDate={tempStartDay}
-              setTempDate={setTempStartDay}
-              tempTime={tempTime}
-              setTempTime={setTempTime}
-              isDesktop={false}
-              fieldGroups={tempFieldGroups}
-              onFieldGroupsChange={setTempFieldGroups}
-            />
-          </div>
+        icon="solar:calendar-date-line-duotone"
+        title={intl.formatMessage({
+          id: 'checklist-generic-info.edit-schedule-title',
+          defaultMessage: 'Edit Schedule',
+        })}
+        headerAction={
+          <Button onClick={handleSaveSchedule} className={styles.headerSaveButton}>
+            {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+          </Button>
         }
-      />
+        // ScheduleModalContent already brings its own outer padding (it's shared with
+        // SchedulingGroup's own modal, which has no padding of its own to double up on) — this
+        // drops SettingsDialog's own so the two don't stack.
+        bodyClassName={styles.noBodyPadding}
+      >
+        <ScheduleModalContent
+          tempWeeklyHobbies={tempWeeklyHobbies}
+          setTempWeeklyHobbies={setTempWeeklyHobbies}
+          tempDate={tempStartDay}
+          setTempDate={setTempStartDay}
+          tempTime={tempTime}
+          setTempTime={setTempTime}
+          fieldGroups={tempFieldGroups}
+          onFieldGroupsChange={setTempFieldGroups}
+        />
+      </SettingsDialog>
 
       {/* Tags Edit Modal */}
-      <BottomModal
+      <SettingsDialog
         visible={activeModal === EditModal.Tags}
         onDismiss={handleModalClose}
-        content={
-          <div className={styles.modalContainer}>
-            <div className={styles.modalHeader}>
-              <Typography.Title level={3} noMargin>
-                Edit Tags
-              </Typography.Title>
-              <Button onClick={handleSaveTags} className={styles.saveButton}>
-                Save
-              </Button>
-            </div>
-            <div className={styles.modalContent}>
-              <TagInput tags={tempTags} setTags={setTempTags} />
-              <div style={{ height: 100 }} />
-            </div>
-          </div>
+        icon="solar:tag-outline"
+        title={intl.formatMessage({
+          id: 'checklist-generic-info.edit-tags-title',
+          defaultMessage: 'Edit Tags',
+        })}
+        headerAction={
+          <Button onClick={handleSaveTags} className={styles.headerSaveButton}>
+            {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+          </Button>
         }
-      />
+      >
+        <TagInput tags={tempTags} setTags={setTempTags} />
+      </SettingsDialog>
 
       {/* Archived Groups — restore, one at a time. No "delete forever" here on purpose: this
           screen exists specifically to make a soft delete recoverable; a permanent-delete action
-          belongs somewhere that says so explicitly, not folded into a restore list. */}
-      <BottomModal
+          belongs somewhere that says so explicitly, not folded into a restore list. No header
+          Save action — a restore applies immediately per row (see handleRestoreGroup), same as
+          every other instantly-saving control elsewhere in this app. */}
+      <SettingsDialog
         visible={activeModal === EditModal.Archived}
         onDismiss={handleModalClose}
-        content={
-          <div className={styles.modalContainer}>
-            <div className={styles.modalHeader}>
-              <Typography.Title level={3} noMargin>
-                Archived Groups
-              </Typography.Title>
-            </div>
-            <div className={styles.modalContent}>
-              {archivedFieldGroups.map(group => (
-                <div key={group.id} className={styles.archivedGroupRow}>
-                  <Typography.Text className={styles.archivedGroupTitle}>
-                    {group.title || 'Untitled group'}
-                  </Typography.Text>
-                  <Button onClick={() => handleRestoreGroup(group.id)} type="ghost" size="sm">
-                    Restore
-                  </Button>
-                </div>
-              ))}
-            </div>
+        icon="solar:trash-bin-2-linear"
+        title={intl.formatMessage({
+          id: 'checklist-generic-info.archived-groups-title',
+          defaultMessage: 'Archived Groups',
+        })}
+      >
+        {archivedFieldGroups.map(group => (
+          <div key={group.id} className={styles.archivedGroupRow}>
+            <Typography.Text className={styles.archivedGroupTitle}>
+              {group.title ||
+                intl.formatMessage({
+                  id: 'checklist-generic-info.untitled-group',
+                  defaultMessage: 'Untitled group',
+                })}
+            </Typography.Text>
+            <Button onClick={() => handleRestoreGroup(group.id)} type="ghost" size="sm">
+              {intl.formatMessage({ id: 'checklist-generic-info.restore-group', defaultMessage: 'Restore' })}
+            </Button>
           </div>
-        }
-      />
+        ))}
+      </SettingsDialog>
 
       {/* Delete confirmation — the actual delete is the parent's own onDelete
           (deleteChecklistTemplate + navigate away), this just gates it. */}

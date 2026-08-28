@@ -7,13 +7,13 @@ import Input from '@moon-ui/input';
 import Checkbox from '@moon-ui/checkbox';
 import Typography from '@moon-ui/typography';
 import List from '@moon-ui/list';
-import { Modal, BottomModal } from '@moon-ui/modal';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
 import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
-import { FieldGroup, FieldGroupField, FieldOverrides, RecordField, useIsMobile } from '@dreamer/global';
+import { FieldGroup, FieldGroupField, FieldOverrides, RecordField } from '@dreamer/global';
 import { getEffectiveFieldDisplay } from '@dreamer/global/src/store/record-field';
 import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
 import IconPicker from '../../../../create-checklist-page-ui/src/IconPicker';
+import SettingsDialog from '../SettingsDialog';
 
 import styles from './index.module.scss';
 
@@ -70,78 +70,6 @@ enum FieldsView {
   Add,
   Customize,
 }
-
-type SettingsDialogProps = {
-  visible: boolean;
-  onDismiss: () => void;
-  title: string;
-  /** Shows a back arrow instead of the badge, and calls this instead of `onDismiss` — used by
-   *  the Fields sheet's Add/Customize sub-views to return to the list rather than close outright. */
-  onBack?: () => void;
-  /** Replaces the close X with this — every dialog here saves as it goes (see the module doc),
-   *  so "Done" and "close" are the same action; this just puts a labeled button where a plain
-   *  icon used to be, right in the header instead of requiring a scroll to a footer. Falls back
-   *  to the close X when a view has nothing that reads as "Done" (Fields sheet's Add/Customize
-   *  sub-views — Customize keeps its own Reset+Done footer instead). */
-  headerAction?: React.ReactNode;
-  footer?: React.ReactNode;
-  children: React.ReactNode;
-};
-
-/**
- * Same header/body/footer shell as AiChecklistGenerate's and CardShare's own modals — a badge +
- * gradient-wash header, a close X, Modal on desktop and BottomModal on mobile (see either of
- * those components for the fuller reasoning on that device split). Every dialog in this menu
- * goes through this one wrapper rather than each hand-rolling the same Modal/BottomModal
- * boilerplate, so they stay visually consistent with each other by construction. Slate, not
- * purple/pink (AI) or blue (Share) — this is generic group settings, not a marquee feature with
- * its own "signature" color to carry.
- */
-const SettingsDialog = ({ visible, onDismiss, title, onBack, headerAction, footer, children }: SettingsDialogProps) => {
-  const intl = useIntl();
-  const isMobile = useIsMobile();
-
-  const content = (
-    <>
-      <div className={styles.header}>
-        <div className={styles.headerTitle}>
-          {onBack ? (
-            <button
-              type="button"
-              className={styles.backButton}
-              onClick={onBack}
-              aria-label={intl.formatMessage({ id: 'label-back', defaultMessage: 'Back' })}
-            >
-              <Icon icon="solar:alt-arrow-left-linear" width={20} />
-            </button>
-          ) : (
-            <div className={styles.badge}>
-              <Icon width={18} icon="solar:settings-line-duotone" color="#fff" />
-            </div>
-          )}
-          <Typography.Title level={4} noMargin>
-            {title}
-          </Typography.Title>
-        </div>
-        {headerAction ?? (
-          <Icon onClick={onDismiss} width={20} icon="basil:close-outline" className={styles.closeIcon} />
-        )}
-      </div>
-      <div className={styles.body}>{children}</div>
-      {footer && <div className={styles.footer}>{footer}</div>}
-    </>
-  );
-
-  return isMobile ? (
-    <BottomModal
-      visible={visible}
-      onDismiss={onDismiss}
-      content={<div className={styles.mobileSheet}>{content}</div>}
-    />
-  ) : (
-    <Modal visible={visible} onDismiss={onDismiss} content={content} className={styles.modalShell} />
-  );
-};
 
 /**
  * The group's own settings — a "⋮" menu on the group header (rendered via
@@ -490,12 +418,13 @@ const ChecklistFieldGroupMenu = ({
       <SettingsDialog
         visible={activeDialog === Dialog.Name}
         onDismiss={closeDialog}
+        icon="solar:pen-2-line-duotone"
         title={intl.formatMessage({
           id: 'checklist-field-group-menu.group-name',
           defaultMessage: 'Group Name',
         })}
         headerAction={
-          <Button onClick={closeDialog} size="sm" className={styles.headerDoneButton}>
+          <Button onClick={closeDialog} className={styles.headerDoneButton}>
             {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
           </Button>
         }
@@ -511,6 +440,11 @@ const ChecklistFieldGroupMenu = ({
           onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
             e.key === 'Enter' && (e.target as HTMLInputElement).blur()
           }
+          // Input has no border at all by default (just the background) — without this it read
+          // as plain text, not an editable field, same reasoning as every other text input in
+          // this menu (the Customize sub-view's own Name/Placeholder/Default Value) already
+          // using `border="dash"`.
+          border="dash"
           renderRightInput={() => <></>}
         />
       </SettingsDialog>
@@ -519,9 +453,10 @@ const ChecklistFieldGroupMenu = ({
       <SettingsDialog
         visible={activeDialog === Dialog.Tabs}
         onDismiss={closeDialog}
+        icon="solar:widget-5-line-duotone"
         title={intl.formatMessage({ id: 'checklist-field-group-menu.tabs', defaultMessage: 'Tabs' })}
         headerAction={
-          <Button onClick={closeDialog} size="sm" className={styles.headerDoneButton}>
+          <Button onClick={closeDialog} className={styles.headerDoneButton}>
             {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
           </Button>
         }
@@ -570,12 +505,13 @@ const ChecklistFieldGroupMenu = ({
       <SettingsDialog
         visible={activeDialog === Dialog.Collapse}
         onDismiss={closeDialog}
+        icon="solar:alt-arrow-down-line-duotone"
         title={intl.formatMessage({
           id: 'checklist-field-group-menu.collapse-default',
           defaultMessage: 'Collapse Default',
         })}
         headerAction={
-          <Button onClick={closeDialog} size="sm" className={styles.headerDoneButton}>
+          <Button onClick={closeDialog} className={styles.headerDoneButton}>
             {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
           </Button>
         }
@@ -596,6 +532,9 @@ const ChecklistFieldGroupMenu = ({
       <SettingsDialog
         visible={activeDialog === Dialog.Fields}
         onDismiss={closeDialog}
+        // Only actually shows when `onBack` is unset (List) — Add/Customize show the back arrow
+        // in its place instead.
+        icon="solar:checklist-minimalistic-line-duotone"
         onBack={fieldsView !== FieldsView.List ? () => setFieldsView(FieldsView.List) : undefined}
         title={
           fieldsView === FieldsView.Add
@@ -615,7 +554,7 @@ const ChecklistFieldGroupMenu = ({
         }
         headerAction={
           fieldsView === FieldsView.List ? (
-            <Button onClick={closeDialog} size="sm" className={styles.headerDoneButton}>
+            <Button onClick={closeDialog} className={styles.headerDoneButton}>
               {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
             </Button>
           ) : undefined

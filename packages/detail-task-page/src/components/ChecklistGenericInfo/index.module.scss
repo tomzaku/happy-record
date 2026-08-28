@@ -1,5 +1,4 @@
 @use '@moon-ui/app-scss/color' as *;
-@use 'include-media/dist/include-media' as media;
 @use '@moon-ui/app-scss/metric' as *;
 
 // No horizontal padding here — SettingsRow's own padding (shared with the header row right
@@ -23,33 +22,45 @@
   transition: color 0.2s ease;
 }
 
-.modalContainer {
-  background: var(--card-background);
-  border-radius: 20px 20px 0 0;
-  display: flex;
-  flex-direction: column;
-}
+// Every dialog below shares SettingsDialog's own shell (badge, gradient header, Modal-vs-
+// BottomModal split — see packages/detail-task-page/src/components/SettingsDialog). What's
+// still here is only what this file's own JSX passes *into* that shell.
 
-.modalHeader {
+// Same fill as SettingsDialog's own `.gradientButton`/`.headerDoneButton` (the app's real
+// primary/accent color, not an invented one — see that component's `.badge` comment), sized to
+// sit in the header next to the title like a real button, not a compact chip. "Save" here (not
+// "Done"): unlike SettingsDialog's other consumers, these dialogs stage edits into `temp*`
+// state and only persist on this click, discarding them on dismiss (see handleModalClose) —
+// worth its own label, not just "close."
+.headerSaveButton {
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: $spacing-md $spacing-lg $spacing-sm $spacing-lg;
-  background: var(--card-background);
-  border-radius: 16px 16px 0 0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
-  position: relative;
-  flex-shrink: 0;
-  min-height: 50px;
+  gap: 6px;
+  padding: $spacing-sm $spacing-lg;
+  border: 0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--icon-primary);
+  box-shadow: 0 2px 8px rgba(11, 125, 194, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(11, 125, 194, 0.45);
+    filter: brightness(1.06);
+  }
 }
 
-.modalContent {
-  padding: 0 $spacing-lg $spacing-xl;
-  flex: 1;
-  overflow-y: visible;
+// ScheduleModalContent brings its own outer padding already (shared with SchedulingGroup's own
+// modal, which has none of its own to double up on) — zeroes SettingsDialog's `.body` padding
+// for that one dialog so the two don't stack into extra whitespace around the schedule form.
+// `!important` because CSS Modules gives both classes equal specificity — without it, which one
+// actually wins depends on unpredictable stylesheet load order, not the class list here (same
+// reasoning as `.modalShell`'s own `!important` in SettingsDialog/AiChecklistGenerate/CardShare).
+.noBodyPadding {
+  padding: 0 !important;
 }
 
 .archivedGroupRow {
@@ -68,43 +79,4 @@
 .archivedGroupTitle {
   font-size: 14px;
   color: var(--text-color);
-}
-
-.modalFooter {
-  padding: 20px 24px;
-  display: flex;
-  gap: 12px;
-  border-top: 1px solid var(--division-color);
-  background: var(--surface-secondary);
-}
-
-.cancelButton {
-  flex: 1;
-}
-
-.saveButton {
-  min-width: 70px;
-  padding: $spacing-sm $spacing-md;
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-  background: var(--primary-color, #007aff);
-  border: 0;
-  border-radius: 8px;
-  position: absolute;
-  right: $spacing-lg;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 11;
-
-  &:hover {
-    background: var(--primary-color-hover, #005bb5);
-  }
-
-  @include media.media('>tablet') {
-    position: absolute;
-    right: $spacing-lg;
-    top: 50%;
-    transform: translateY(-50%);
-  }
 }
