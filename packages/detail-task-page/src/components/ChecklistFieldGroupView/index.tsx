@@ -1,7 +1,7 @@
 import React from 'react';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 
-import { Checklist, ChecklistTemplate, FieldGroup } from '@dreamer/global';
+import { Checklist, ChecklistTemplate, FieldGroup, useAiNoteGenerate } from '@dreamer/global';
 
 import styles from './index.module.scss';
 import NoteEditor from '@moon-ui/note-editor';
@@ -28,6 +28,8 @@ const ChecklistFieldGroupView = ({
   React.useEffect(() => {
     setIsEditing(false);
   }, [fieldGroup.id]);
+  // "/ai" inside the editor below — see add-note-page-ui's own AddNotePage for the same wiring.
+  const { isPro, generate } = useAiNoteGenerate();
 
   return (
     <div className={styles.container}>
@@ -53,6 +55,7 @@ const ChecklistFieldGroupView = ({
         setValue={onUpdateNote}
         readOnly={!isEditing}
         withoutBorder
+        ai={{ isPro, generate }}
       />
     </div>
   );

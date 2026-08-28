@@ -203,8 +203,16 @@ export default class AiWriteTool {
     return { title: 'AI Write', icon: SPARKLE_ICON };
   }
 
+  // Must be `true`, not just "this tool happens to be usable while read-only" (it isn't — the
+  // toolbox that offers "/ai" is already hidden by Editor.js itself whenever readOnly is on, so
+  // this block type is never reachable then anyway). Editor.js checks this at *construction*
+  // time: if the editor starts in read-only mode (every note here does, until its own Edit
+  // toggle flips readOnly off — see ChecklistFieldGroupView, note-detail's per-note edit, etc.)
+  // and ANY registered tool reports `false` here, it throws a critical error and the whole editor
+  // fails to mount — not just this tool. That's what broke viewing/editing every note once `ai`
+  // was wired into those read-by-default editors.
   static get isReadOnlySupported() {
-    return false;
+    return true;
   }
 
   private api: API;

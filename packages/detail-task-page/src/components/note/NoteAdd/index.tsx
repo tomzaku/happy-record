@@ -7,6 +7,7 @@ import Select from '@moon-ui/select';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { useChecklistRecord } from '@dreamer/global/src/store/checklist-record';
+import { useAiNoteGenerate } from '@dreamer/global/src/hook';
 
 const NoteAdd = ({
   fields,
@@ -34,6 +35,8 @@ const NoteAdd = ({
   // ChecklistFieldGroupAdd does for the same reason.
   const [resetKey, setResetKey] = React.useState(v4());
   const { addChecklistRecord } = useChecklistRecord();
+  // "/ai" inside the editor below — see add-note-page-ui's own AddNotePage for the same wiring.
+  const { isPro, generate } = useAiNoteGenerate();
   return (
     <div>
       {fields.length > 1 ? (
@@ -58,6 +61,7 @@ const NoteAdd = ({
         key={resetKey}
         value={form.value}
         setValue={value => setForm({ ...form, value })}
+        ai={{ isPro, generate }}
       />
       <div className={styles.footerCenter}>
         <Button

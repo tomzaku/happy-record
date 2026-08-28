@@ -13,6 +13,7 @@ import Input from '@moon-ui/input';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
 import cx from 'classnames';
+import { useAiNoteGenerate } from '@dreamer/global/src/hook';
 
 type Props = {
   record: ChecklistRecord;
@@ -27,6 +28,9 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
   const [activeRecord, setActiveRecord] = React.useState<ChecklistRecord>();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [resetKey, setResetKey] = React.useState('original');
+  // "/ai" inside the note-type editor below — see add-note-page-ui's own AddNotePage for the
+  // same wiring.
+  const { isPro, generate } = useAiNoteGenerate();
 
   switch (field.type) {
     case 'metric': {
@@ -173,6 +177,7 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
                 value,
               });
             }}
+            ai={{ isPro, generate }}
           />
         </div>
       );

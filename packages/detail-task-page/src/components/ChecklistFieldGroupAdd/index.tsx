@@ -9,7 +9,7 @@ import { v4 } from 'uuid';
 
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
-import { Checklist, ChecklistTemplate } from '@dreamer/global';
+import { Checklist, ChecklistTemplate, useAiNoteGenerate } from '@dreamer/global';
 import {
   ChecklistRecord,
   useChecklistRecord,
@@ -77,6 +77,9 @@ const ChecklistFieldGroupAdd = ({
   // their `value` prop once, at mount (see @moon-ui/input, @moon-ui/note-editor),
   // so resetting `fieldRecord` alone doesn't clear what's already on screen.
   const [newNoteKey, setNewNoteKey] = React.useState(v4());
+  // "/ai" inside the note-type field editor below — see add-note-page-ui's own AddNotePage for
+  // the same wiring.
+  const { isPro, generate } = useAiNoteGenerate();
 
   // Add ref to track previous records for shake animation
   const prevRecordsRef = React.useRef<ChecklistRecord[]>([]);
@@ -303,6 +306,7 @@ const ChecklistFieldGroupAdd = ({
                       [field.id]: value,
                     });
                   }}
+                  ai={{ isPro, generate }}
                 />
               </React.Fragment>
             );

@@ -4,6 +4,7 @@ import Drawer from '@moon-ui/drawer';
 import Typography from '@moon-ui/typography';
 import Icon from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
+import { useAiNoteGenerate } from '@dreamer/global';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
 
@@ -17,6 +18,8 @@ type Props = {
 const AddNoteDrawer = ({ visible, onClose, onSubmit, note }: Props) => {
   const [value, setValue] = React.useState(note);
   const intl = useIntl();
+  // "/ai" inside the editor below — see add-note-page-ui's own AddNotePage for the same wiring.
+  const { isPro, generate } = useAiNoteGenerate();
   return (
     <Drawer
       className={styles.container}
@@ -42,6 +45,7 @@ const AddNoteDrawer = ({ visible, onClose, onSubmit, note }: Props) => {
           value={value}
           setValue={setValue}
           withoutBorder
+          ai={{ isPro, generate }}
           classes={{
             container: styles.editor,
           }}

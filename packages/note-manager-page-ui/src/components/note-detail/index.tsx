@@ -1,6 +1,7 @@
 import NoteEditor from '@moon-ui/note-editor';
 import { ChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
+import { useAiNoteGenerate } from '@dreamer/global/src/hook';
 
 import styles from './index.module.scss';
 import Typography from '@moon-ui/typography';
@@ -19,6 +20,8 @@ type Props = {
 
 const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, defaultFieldId }: Props) => {
   const { updateNote } = useNoteRecords();
+  // "/ai" inside both editors below — see add-note-page-ui's own AddNotePage for the same wiring.
+  const { isPro, generate } = useAiNoteGenerate();
   const [isCreatingNote, setIsCreatingNote] = React.useState(false);
   const [newNoteValue, setNewNoteValue] = React.useState<string | number | undefined>();
   // Existing notes open in view (read-only) mode by default; editing one is opt-in via its own
@@ -95,9 +98,10 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
             </div>
           </div>
           <div className={styles.newNoteContent}>
-            <NoteEditor 
-              value={newNoteValue} 
+            <NoteEditor
+              value={newNoteValue}
               setValue={(value) => startTransition(() => setNewNoteValue(value))}
+              ai={{ isPro, generate }}
             />
           </div>
         </div>
@@ -146,6 +150,7 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
                 value={note.value}
                 setValue={(value: string | number) => startTransition(() => handleNoteValueChange(note, value))}
                 readOnly={!isEditingNote}
+                ai={{ isPro, generate }}
               />
             </div>
           </div>

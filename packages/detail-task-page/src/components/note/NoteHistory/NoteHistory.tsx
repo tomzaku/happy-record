@@ -9,6 +9,7 @@ import NoteEditor from '@moon-ui/note-editor';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Typography from '@moon-ui/typography';
+import { useAiNoteGenerate } from '@dreamer/global/src/hook';
 
 const NoteHistory = ({
   fields,
@@ -22,6 +23,8 @@ const NoteHistory = ({
   currentDay: string;
 }) => {
   const { getChecklistRecords, updateChecklistRecord } = useChecklistRecord();
+  // "/ai" inside each editor below — see add-note-page-ui's own AddNotePage for the same wiring.
+  const { isPro, generate } = useAiNoteGenerate();
   const [records, setRecords] = React.useState<
     Record<string, ChecklistRecord[]>
   >({});
@@ -72,6 +75,7 @@ const NoteHistory = ({
                         value,
                       }))
                     }
+                    ai={{ isPro, generate }}
                     shouldShowSaveButton
                     readOnly={!isActive}
                     onClickSave={() => {

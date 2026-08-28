@@ -77,7 +77,11 @@ Return ONLY this JSON, no markdown, no extra text:
   return {
     system: 'You write clear, well-organized notes for a personal note-taking app. Return ONLY valid JSON matching the requested schema — no markdown fences, no commentary.',
     messages: [{ role: 'user', content: prompt_ }],
-    maxTokens: 1500,
+    // Up to 10 blocks, each with real content (a checklist/list block alone can carry 8 items),
+    // easily runs past a smaller cap — a response cut off mid-block leaves invalid JSON (an
+    // unterminated string), not just short content. 1500 was too tight for all 4 options at once;
+    // matches ai-checklist-template's own budget for a similarly-sized structured response.
+    maxTokens: 3000,
   };
 }
 
@@ -168,7 +172,16 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const text = await callProvider(built.system, built.messages, built.maxTokens);
-    const parsed = JSON.parse(stripFences(text));
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(stripFences(text));
+    } catch (parseErr) {
+      // Almost always the response got cut off mid-string by `maxTokens`, not genuinely
+      // malformed JSON — a raw "Unterminated string in JSON at position…" means nothing to the
+      // composer's user-facing error text, so surface something actionable instead.
+      console.error('[ai-note] JSON.parse failed', parseErr, text.slice(-200));
+      throw new Error("That note came out too long and got cut off — try a shorter prompt or fewer options, then try again.");
+    }
     const p = (parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {});
     return jsonResponse(200, { blocks: validateBlocks(p.blocks) });
   } catch (err) {
