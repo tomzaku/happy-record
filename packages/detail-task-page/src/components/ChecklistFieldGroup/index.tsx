@@ -171,6 +171,7 @@ const ChecklistFieldGroup = ({
             onUpdateNote={value =>
               updateFieldGroupAt(index, { ...checklistTemplate.fieldGroups[index], note: value })
             }
+            checklistTemplateId={checklistTemplate.id}
           />
         );
         break;
@@ -221,6 +222,7 @@ const ChecklistFieldGroup = ({
             onUpdateNote={value =>
               updateFieldGroupAt(index, { ...checklistTemplate.fieldGroups[index], note: value })
             }
+            checklistTemplateId={checklistTemplate.id}
           />
         );
         break;

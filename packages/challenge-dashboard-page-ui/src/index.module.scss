@@ -250,6 +250,81 @@
   color: var(--text-color-secondary, var(--text-color));
 }
 
+// A CSS-only tooltip (no JS/positioning library) explaining what a %-of-goal
+// score is actually made of — see challengeRanking.ts's own `targetPct`
+// comment for why that number isn't self-explanatory the way a plain
+// check-in count was. `:focus-within` alongside `:hover` so a keyboard user
+// (tabbed onto the wrapper's own `tabIndex={0}`) gets the same reveal a
+// mouse hover does.
+.scoreTooltipWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  cursor: help;
+  outline: none;
+}
+
+.scoreTooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  width: max-content;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  background: var(--card-background);
+  border: 1px solid var(--division-color);
+  border-radius: 10px;
+  box-shadow: 0 8px 25px var(--card-shadow);
+  padding: $spacing-sm;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.scoreTooltipWrapper:hover .scoreTooltip,
+.scoreTooltipWrapper:focus-within .scoreTooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.scoreTooltipTitle {
+  display: block;
+  font-weight: 700;
+  font-size: toRem(11px);
+}
+
+.scoreTooltipRow {
+  display: flex;
+  flex-direction: column;
+}
+
+.scoreTooltipRowTitle {
+  font-weight: 600;
+  font-size: toRem(11px);
+}
+
+.scoreTooltipRowValue {
+  font-size: toRem(11px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.scoreTooltipFooter {
+  display: block;
+  font-size: toRem(10px);
+  color: var(--text-color-secondary, var(--text-color));
+  border-top: 1px solid var(--division-color);
+  padding-top: 4px;
+  margin-top: 2px;
+}
+
 // ─── Activity card: stat blocks + charts ───
 
 .statBlockRow {

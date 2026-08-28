@@ -9,3 +9,5 @@ export { useSession } from './useSession';
 export { useSyncedSelector } from './useSyncedSelector';
 export { useApplyAiChecklistTemplate } from './useApplyAiChecklistTemplate';
 export { useAiNoteGenerate } from './useAiNoteGenerate';
+export { useAiFieldGroupNoteGenerate } from './useAiFieldGroupNoteGenerate';
+export { useAiChecklistRecordNoteGenerate } from './useAiChecklistRecordNoteGenerate';

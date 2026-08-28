@@ -3,6 +3,14 @@
 // tool calls — that package has no dependency on @dreamer/global or the network, by design (see
 // its own AiWriteTool.tsx), so the actual API call and Pro check live here instead and get passed
 // in as the editor's `ai` prop. See add-note-page-ui's AddNotePage for the call site.
+//
+// No note-context awareness here on purpose — this is the plain, context-less generator, used
+// by every "/ai" placeholder with no real, persisted note/record/field-group to resolve context
+// from yet (a brand-new, not-yet-saved note or record). The two cases that do have something to
+// draw context from use their own separate hooks instead — useAiFieldGroupNoteGenerate.ts and
+// useAiChecklistRecordNoteGenerate.ts — each backed by its own edge function that resolves
+// context server-side from a position the client sends, not client-sent text (see either of
+// those edge functions' own comments for why).
 
 import { useIsPro } from '../store/pro/useProStatus';
 import { generateNote, type AiNoteOption } from '../store/note/aiNoteApi';

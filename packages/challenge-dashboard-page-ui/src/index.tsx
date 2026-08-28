@@ -6,6 +6,8 @@ import { useIntl } from '@dreamer/translation';
 import {
   Challenge,
   ChallengeParticipant,
+  computeStreaksByUser,
+  rankChallengeParticipants,
   useChallenge,
   useChallengeComments,
   useChecklistTemplates,
@@ -51,20 +53,6 @@ const buildDays = (count: number) => {
 const formatShortDate = (iso: string) => {
   const [, m, d] = iso.split('-').map(Number);
   return `${MONTH_ABBR[m - 1]} ${d}`;
-};
-
-const daysBetween = (a: string, b: string) => Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
-
-/** Consecutive days ending at `datesDesc[0]` — most-recent-first, no gaps. */
-const runLength = (datesDesc: string[]) => {
-  let streak = 0;
-  let cursor: string | null = null;
-  for (const date of datesDesc) {
-    if (cursor !== null && daysBetween(date, cursor) !== 1) break;
-    streak += 1;
-    cursor = date;
-  }
-  return streak;
 };
 
 type Target = {
@@ -160,25 +148,13 @@ const ChallengeDashboardPageUi = () => {
 
   const days = React.useMemo(() => buildDays(RANGE_DAYS), []);
 
-  // Each participant's current streak — consecutive days ending at their
-  // most recent completion, only "current" if that completion was today or
-  // yesterday (a day-old grace period, same idea as the app's own
-  // ChecklistFieldMetric streak). Only ever counts within the dashboard's
-  // own 30-day fetch window, same caveat as everything else scoped to it.
-  const streaksByUser = React.useMemo(() => {
-    const result = new Map<string, number>();
-    if (!dashboard) return result;
-    const datesByUser = new Map<string, string[]>();
-    dashboard.completions.forEach(c => {
-      datesByUser.set(c.userId, [...(datesByUser.get(c.userId) ?? []), c.date]);
-    });
-    const today = new Date().toISOString().slice(0, 10);
-    datesByUser.forEach((dates, uid) => {
-      const desc = [...dates].sort().reverse();
-      result.set(uid, daysBetween(desc[0], today) <= 1 ? runLength(desc) : 0);
-    });
-    return result;
-  }, [dashboard]);
+  // See challengeRanking.ts's own comment for what "current" means here —
+  // shared with MiniChallengeDashboard for exactly the reason that file
+  // exists at all (this one used to have its own private copy).
+  const streaksByUser = React.useMemo(
+    () => (dashboard ? computeStreaksByUser(dashboard.completions) : new Map<string, number>()),
+    [dashboard],
+  );
 
   const myStreak = streaksByUser.get(userId ?? '') ?? 0;
   const bestStreak = Math.max(0, ...streaksByUser.values());
@@ -186,6 +162,20 @@ const ChallengeDashboardPageUi = () => {
     () => dashboard?.ranking.reduce((sum, r) => sum + r.count, 0) ?? 0,
     [dashboard],
   );
+
+  // The leaderboard's real order — see challengeRanking.ts (packages/global)
+  // for why this isn't just `dashboard.ranking` (raw check-in count)
+  // anymore, and shared with MiniChallengeDashboard's own preview so the
+  // two never disagree on who's "winning."
+  const rankedParticipants = React.useMemo(() => {
+    if (!dashboard) return [];
+    return rankChallengeParticipants({
+      ranking: dashboard.ranking,
+      targets: dashboard.targets,
+      streaksByUser,
+    });
+  }, [dashboard, streaksByUser]);
+  const hasChallengeTargets = !!dashboard?.targets.some(t => t.target > 0);
 
   // Group check-ins per calendar day — the "Words per day"-style trend
   // line: how active the group is over time, as opposed to the breakdown
@@ -734,10 +724,15 @@ const ChallengeDashboardPageUi = () => {
                 )}
               </div>
               <Typography.Text className={styles.sectionHeaderSubtitle}>
-                {intl.formatMessage({
-                  id: 'ChallengeDashboard.ranked-caption',
-                  defaultMessage: 'Ranked by check-ins over the last 30 days.',
-                })}
+                {hasChallengeTargets
+                  ? intl.formatMessage({
+                      id: 'ChallengeDashboard.ranked-caption-targets',
+                      defaultMessage: "Ranked by % of the group's goals contributed, then streak.",
+                    })
+                  : intl.formatMessage({
+                      id: 'ChallengeDashboard.ranked-caption',
+                      defaultMessage: 'Ranked by check-ins over the last 30 days.',
+                    })}
               </Typography.Text>
             </div>
 
@@ -751,10 +746,9 @@ const ChallengeDashboardPageUi = () => {
                 </Typography.Text>
               ) : (
                 <ol className={styles.rankList}>
-                  {dashboard.ranking.map(({ userId: rankedUserId, count }, index) => {
+                  {rankedParticipants.map(({ userId: rankedUserId, checkins, streak, targetPct, targetBreakdown }, index) => {
                     const participant = dashboard.participants.find(p => p.userId === rankedUserId);
                     const name = participant?.displayName || 'Anonymous';
-                    const streak = streaksByUser.get(rankedUserId) ?? 0;
                     const isYou = rankedUserId === userId;
                     return (
                       <li key={rankedUserId} className={styles.rankRow} data-you={isYou}>
@@ -775,10 +769,56 @@ const ChallengeDashboardPageUi = () => {
                           </span>
                         </div>
                         <div className={styles.rankScoreCol}>
-                          <span className={styles.rankScoreValue}>{count}</span>
-                          <span className={styles.rankScoreLabel}>
-                            {intl.formatMessage({ id: 'ChallengeDashboard.checkins-unit', defaultMessage: 'check-ins' })}
-                          </span>
+                          {/* Ranked by % of goal when the challenge has one
+                              (see challengeRanking.ts) — the score shown
+                              here matches what actually decided the order,
+                              not a number the order secretly ignores.
+                              Falls back to raw check-ins, unchanged, for a
+                              challenge with no targets to contribute toward. */}
+                          {targetPct !== null ? (
+                            // tabIndex so :focus-within (keyboard) shows the
+                            // same tooltip :hover does — a mouse-only hover
+                            // affordance would leave keyboard users with a
+                            // number and no way to see what it means.
+                            <div className={styles.scoreTooltipWrapper} tabIndex={0}>
+                              <span className={styles.rankScoreValue}>{Math.round(targetPct)}%</span>
+                              <span className={styles.rankScoreLabel}>
+                                {intl.formatMessage({ id: 'ChallengeDashboard.of-goal-unit', defaultMessage: 'of goal' })}
+                              </span>
+                              <div className={styles.scoreTooltip} role="tooltip">
+                                <Typography.Text className={styles.scoreTooltipTitle}>
+                                  {intl.formatMessage({
+                                    id: 'ChallengeDashboard.score-tooltip-title',
+                                    defaultMessage: 'Average % across every target',
+                                  })}
+                                </Typography.Text>
+                                {targetBreakdown.map(t => (
+                                  <div key={t.fieldId} className={styles.scoreTooltipRow}>
+                                    <span className={styles.scoreTooltipRowTitle}>{t.title}</span>
+                                    <span className={styles.scoreTooltipRowValue}>
+                                      {t.contributed} / {t.target} {t.unit} — {Math.round(t.pct)}%
+                                      {t.contributed > t.target
+                                        ? ` (${intl.formatMessage({ id: 'ChallengeDashboard.capped', defaultMessage: 'capped' })})`
+                                        : ''}
+                                    </span>
+                                  </div>
+                                ))}
+                                <Typography.Text className={styles.scoreTooltipFooter}>
+                                  {intl.formatMessage({
+                                    id: 'ChallengeDashboard.score-tooltip-tiebreak',
+                                    defaultMessage: 'Ties broken by streak, then check-ins.',
+                                  })}
+                                </Typography.Text>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <span className={styles.rankScoreValue}>{checkins}</span>
+                              <span className={styles.rankScoreLabel}>
+                                {intl.formatMessage({ id: 'ChallengeDashboard.checkins-unit', defaultMessage: 'check-ins' })}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </li>
                     );

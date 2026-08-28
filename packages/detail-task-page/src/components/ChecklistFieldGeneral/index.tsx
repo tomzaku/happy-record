@@ -13,7 +13,7 @@ import Input from '@moon-ui/input';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
 import cx from 'classnames';
-import { useAiNoteGenerate } from '@dreamer/global/src/hook';
+import { useAiChecklistRecordNoteGenerate } from '@dreamer/global/src/hook';
 
 type Props = {
   record: ChecklistRecord;
@@ -28,9 +28,12 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
   const [activeRecord, setActiveRecord] = React.useState<ChecklistRecord>();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [resetKey, setResetKey] = React.useState('original');
-  // "/ai" inside the note-type editor below — see add-note-page-ui's own AddNotePage for the
-  // same wiring.
-  const { isPro, generate } = useAiNoteGenerate();
+  // "/ai" inside the note-type editor below — see useAiChecklistRecordNoteGenerate.ts for why
+  // this (not the plain useAiNoteGenerate) is what this specific editor uses: `record.id` lets
+  // it resolve this record's own real note-type value server-side instead of generating with
+  // zero awareness of it. Called unconditionally (same as the hooks above it) even though only
+  // the 'note' branch below ever actually renders NoteEditor — harmless/inert otherwise.
+  const { isPro, generate } = useAiChecklistRecordNoteGenerate(record.id);
 
   switch (field.type) {
     case 'metric': {

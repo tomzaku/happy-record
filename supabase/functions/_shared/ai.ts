@@ -201,6 +201,17 @@ export function reqStr(params: Record<string, unknown>, key: string, maxLen: num
   return trimmed.slice(0, maxLen);
 }
 
+/** Same as `reqStr`, but a missing/empty value is legitimate (returns `''`) rather than a 400 —
+ * for a field that's genuinely optional, not just one the caller forgot to send. Not currently
+ * used by any `ai-*` function (each of ai-field-group-note/ai-checklist-record-note's own
+ * optional id/position params reads `p` directly instead, since a missing one there means "no
+ * position, skip context resolution," not "empty string is a valid value") — kept for whichever
+ * next one needs a plain optional string. */
+export function optStr(params: Record<string, unknown>, key: string, maxLen: number): string {
+  const v = params[key];
+  return typeof v === 'string' ? v.trim().slice(0, maxLen) : '';
+}
+
 /** Strip ```json fences the model sometimes wraps JSON in. */
 export function stripFences(text: string): string {
   return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();

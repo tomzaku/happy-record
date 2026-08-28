@@ -1,5 +1,6 @@
 export * from './useChallenge';
 export * from './challengeThemes';
+export * from './challengeRanking';
 export * from './useChallengeParticipants';
 export * from './useChallengeComments';
 export * from './useJoinChallenge';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useChallenge } from '@dreamer/global';
+import { computeStreaksByUser, rankChallengeParticipants, useChallenge } from '@dreamer/global';
 import { useIntl } from '@dreamer/translation';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
@@ -46,8 +46,16 @@ const MiniChallengeDashboard = ({ challengeId, userId }: Props) => {
   }, [challengeId, getChallengeDashboard]);
 
   if (!dashboard?.challenge) return null;
-  const { challenge, participants, ranking } = dashboard;
+  const { challenge, participants, ranking, targets, completions } = dashboard;
   const hasRoster = challenge.shareRecords && !!participants.length;
+  // Same ranking the real dashboard uses (challengeRanking.ts) — a mini
+  // preview that ordered people differently from the page it's previewing
+  // would be worse than not showing an order at all.
+  const rankedParticipants = rankChallengeParticipants({
+    ranking,
+    targets,
+    streaksByUser: computeStreaksByUser(completions),
+  });
 
   return (
     <Card className={styles.card}>
@@ -68,10 +76,18 @@ const MiniChallengeDashboard = ({ challengeId, userId }: Props) => {
 
       {hasRoster ? (
         <ol className={styles.rankList}>
-          {ranking.slice(0, TOP_N).map(({ userId: rankedUserId, count }, index) => {
+          {rankedParticipants.slice(0, TOP_N).map(({ userId: rankedUserId, checkins, targetPct, targetBreakdown }, index) => {
             const participant = participants.find(p => p.userId === rankedUserId);
             const name = participant?.displayName || 'Anonymous';
             const isYou = rankedUserId === userId;
+            // A plain native tooltip, not the full dashboard's own custom
+            // one (that page's real estate/hover affordance makes sense
+            // for a whole tooltip card; this is a compact preview, a
+            // one-line `title` answers "why" without building the same
+            // thing twice).
+            const scoreTitle = targetBreakdown
+              .map(t => `${t.title}: ${t.contributed}/${t.target} ${t.unit} (${Math.round(t.pct)}%)`)
+              .join(' · ');
             return (
               <li key={rankedUserId} className={styles.rankRow} data-you={isYou}>
                 <span className={styles.rankIndex}>{['🥇', '🥈', '🥉'][index] ?? index + 1}</span>
@@ -79,7 +95,12 @@ const MiniChallengeDashboard = ({ challengeId, userId }: Props) => {
                   {name}
                   {isYou ? ' (you)' : ''}
                 </Typography.Text>
-                <span className={styles.rankCount}>{count}</span>
+                {/* % of goal when the challenge has one (same ranking basis
+                    as the real dashboard — see challengeRanking.ts),
+                    otherwise the raw check-in count, unchanged. */}
+                <span className={styles.rankCount} title={targetPct !== null ? scoreTitle : undefined}>
+                  {targetPct !== null ? `${Math.round(targetPct)}%` : checkins}
+                </span>
               </li>
             );
           })}

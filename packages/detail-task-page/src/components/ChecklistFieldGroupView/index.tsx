@@ -1,7 +1,7 @@
 import React from 'react';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 
-import { Checklist, ChecklistTemplate, FieldGroup, useAiNoteGenerate } from '@dreamer/global';
+import { Checklist, ChecklistTemplate, FieldGroup, useAiFieldGroupNoteGenerate } from '@dreamer/global';
 
 import styles from './index.module.scss';
 import NoteEditor from '@moon-ui/note-editor';
@@ -15,11 +15,16 @@ type Props = {
   fieldGroup: FieldGroup;
   // currentDay: string;
   onUpdateNote: (value: unknown) => void;
+  /** Threaded down from ChecklistFieldGroup/index.tsx — needed so "/ai" here can resolve this
+   * group's own real note content server-side (see useAiFieldGroupNoteGenerate.ts) instead of
+   * generating with zero awareness of it. */
+  checklistTemplateId: string;
 };
 
 const ChecklistFieldGroupView = ({
   fieldGroup,
   onUpdateNote,
+  checklistTemplateId,
 }: Props) => {
   // View mode by default — editable only once the user asks for it via the Edit button. Reset
   // to view whenever a different group's note is shown (e.g. switching field groups) rather
@@ -28,8 +33,9 @@ const ChecklistFieldGroupView = ({
   React.useEffect(() => {
     setIsEditing(false);
   }, [fieldGroup.id]);
-  // "/ai" inside the editor below — see add-note-page-ui's own AddNotePage for the same wiring.
-  const { isPro, generate } = useAiNoteGenerate();
+  // "/ai" inside the editor below — see useAiFieldGroupNoteGenerate.ts for why this (not the
+  // plain useAiNoteGenerate) is what this specific editor uses.
+  const { isPro, generate } = useAiFieldGroupNoteGenerate(checklistTemplateId, fieldGroup.id);
 
   return (
     <div className={styles.container}>
