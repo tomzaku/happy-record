@@ -15,7 +15,6 @@ import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 import AppHeader from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
-import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
 import Icon from '@moon-ui/icon/Icon';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
@@ -99,6 +98,14 @@ const ChallengeDashboardPageUi = () => {
   const [commentBody, setCommentBody] = React.useState('');
   const [commentName, setCommentName] = React.useState('');
   const [posting, setPosting] = React.useState(false);
+  // `@moon-ui/input`'s Input only ever reads its `value` prop once, at
+  // mount (`useState(value ?? '')`) — it never syncs to that prop changing
+  // later, so `setCommentBody('')` below updates the *state* but not what's
+  // actually still sitting in the rendered `<input>`. Bumping this and
+  // keying the Input on it forces a real remount, which is the only way to
+  // reset it from outside without changing the shared component itself
+  // (used all over the app; not a change to make just for this one screen).
+  const [messageInputResetKey, setMessageInputResetKey] = React.useState(0);
   const [leaveModalVisible, setLeaveModalVisible] = React.useState(false);
   const [leaving, setLeaving] = React.useState(false);
   // Which series the "Breakdown by participant" chart is showing —
@@ -289,6 +296,7 @@ const ChallengeDashboardPageUi = () => {
     try {
       await postComment(id, commentBody.trim(), authorName);
       setCommentBody('');
+      setMessageInputResetKey(k => k + 1);
     } catch (err) {
       console.error('Failed to post comment:', err);
     } finally {
@@ -684,17 +692,12 @@ const ChallengeDashboardPageUi = () => {
                   )}
                 </div>
                 <div className={styles.commentForm}>
-                  {knownName ? (
-                    <div className={styles.postingAs}>
-                      <ParticipantAvatar name={knownName} avatarUrl={me?.avatarUrl} size={18} />
-                      <Typography.Text>
-                        {intl.formatMessage(
-                          { id: 'ChallengeDashboard.posting-as', defaultMessage: 'Posting as {{name}}' },
-                          { name: knownName },
-                        )}
-                      </Typography.Text>
-                    </div>
-                  ) : (
+                  {/* Only asked for at all when there's no known identity yet
+                      (no participant row — a comments-only, not-shareRecords
+                      challenge's owner is the one real case) — a known name
+                      needs no confirmation row of its own, same as the
+                      message bubbles above never re-labeling your own name. */}
+                  {!knownName && (
                     <Input
                       value={commentName}
                       onChange={e => setCommentName(e.target.value)}
@@ -705,16 +708,36 @@ const ChallengeDashboardPageUi = () => {
                   <Input
                     value={commentBody}
                     onChange={e => setCommentBody(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !posting && commentBody.trim() && authorName) handlePostComment();
+                    }}
                     placeholder={intl.formatMessage({
                       id: 'ChallengeDashboard.write-comment',
                       defaultMessage: 'Say something…',
                     })}
-                    renderRightInput={() => <></>}
+                    classes={{ wrapper: styles.messageInputWrapper, input: styles.messageInput }}
+                    renderRightInput={() => (
+                      <button
+                        type="button"
+                        className={styles.sendButton}
+                        onClick={handlePostComment}
+                        disabled={posting || !commentBody.trim() || !authorName}
+                        aria-label={intl.formatMessage({ id: 'ChallengeDashboard.post', defaultMessage: 'Post' })}
+                      >
+                        {posting ? (
+                          <Icon icon="svg-spinners:180-ring-with-bg" width={14} />
+                        ) : (
+                          // Inline, not the Iconify-backed <Icon> — same reasoning as
+                          // Input's own clear button (index.module.scss's .clearIcon):
+                          // guaranteed to render regardless of which icon sets happen
+                          // to be loaded, for a glyph small/simple enough not to need one.
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 20l18-8L3 4v6l12 2-12 2z" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
                   />
-                  <Button size="md" onClick={handlePostComment} disabled={posting || !commentBody.trim() || !authorName}>
-                    {posting && <Icon icon="svg-spinners:180-ring-with-bg" width={16} className={styles.buttonSpinner} />}
-                    {intl.formatMessage({ id: 'ChallengeDashboard.post', defaultMessage: 'Post' })}
-                  </Button>
                 </div>
               </div>
             </Card>
