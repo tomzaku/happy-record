@@ -317,177 +317,6 @@ const ChallengeDashboardPageUi = () => {
           desktop page is responsible for its own max-width, same as
           detail-task-page's own `.content`. */}
       <div className={styles.page}>
-        <Card className={styles.card}>
-          <div className={styles.cardHeaderRow}>
-            <div className={styles.cardHeaderTitle}>
-              <Icon icon="solar:cup-star-bold-duotone" width={22} color="#eda100" />
-              <Typography.Title level={4} noMargin>
-                {intl.formatMessage({ id: 'ChallengeDashboard.title', defaultMessage: 'Leaderboard' })}
-              </Typography.Title>
-              {hasRoster && (
-                <span className={styles.memberPill}>
-                  {intl.formatMessage(
-                    { id: 'ChallengeDashboard.member-count', defaultMessage: '{count} joined' },
-                    { count: dashboard.participants.length },
-                  )}
-                </span>
-              )}
-            </div>
-            {!isOwner && me && (
-              <button type="button" className={styles.leaveLink} onClick={() => setLeaveModalVisible(true)}>
-                {intl.formatMessage({ id: 'DetailTaskPage.leave-challenge-short', defaultMessage: 'Leave' })}
-              </button>
-            )}
-          </div>
-
-          {!dashboard.challenge.shareRecords ? null : !dashboard.participants.length ? (
-            <Typography.Text>
-              {intl.formatMessage({
-                id: 'ChallengeDashboard.no-participants',
-                defaultMessage: 'Nobody has joined this challenge yet.',
-              })}
-            </Typography.Text>
-          ) : (
-            <>
-              <ol className={styles.rankList}>
-                {dashboard.ranking.map(({ userId: rankedUserId, count }, index) => {
-                  const participant = dashboard.participants.find(p => p.userId === rankedUserId);
-                  const name = participant?.displayName || 'Anonymous';
-                  const streak = streaksByUser.get(rankedUserId) ?? 0;
-                  const isYou = rankedUserId === userId;
-                  return (
-                    <li key={rankedUserId} className={styles.rankRow} data-you={isYou}>
-                      <span className={styles.rankMedal}>{['🥇', '🥈', '🥉'][index] ?? index + 1}</span>
-                      <ParticipantAvatar name={name} size={40} />
-                      <div className={styles.rankInfo}>
-                        <div className={styles.rankNameRow}>
-                          <span className={styles.rankName}>{name}</span>
-                          {isYou && <span className={styles.youBadge}>you</span>}
-                        </div>
-                        <span className={styles.rankSubtext}>
-                          {streak > 0
-                            ? intl.formatMessage(
-                                { id: 'ChallengeDashboard.day-streak', defaultMessage: '🔥 {streak} day streak' },
-                                { streak },
-                              )
-                            : intl.formatMessage({ id: 'ChallengeDashboard.no-streak', defaultMessage: 'No active streak' })}
-                        </span>
-                      </div>
-                      <div className={styles.rankScoreCol}>
-                        <span className={styles.rankScoreValue}>{count}</span>
-                        <span className={styles.rankScoreLabel}>
-                          {intl.formatMessage({ id: 'ChallengeDashboard.checkins-unit', defaultMessage: 'check-ins' })}
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-              <Typography.Text className={styles.footerCaption}>
-                {intl.formatMessage({
-                  id: 'ChallengeDashboard.ranked-caption',
-                  defaultMessage: 'Ranked by check-ins over the last 30 days.',
-                })}
-              </Typography.Text>
-            </>
-          )}
-        </Card>
-
-        {hasRoster && (
-          <Card className={styles.card}>
-            <div className={styles.statBlockRow}>
-              <div className={styles.statBlock}>
-                <Icon icon="solar:fire-bold-duotone" width={26} color="#eb6834" />
-                <Typography.Title level={3} noMargin className={styles.statBlockValue} style={{ color: '#eb6834' }}>
-                  {myStreak}
-                </Typography.Title>
-                <Typography.Text className={styles.statBlockLabel}>
-                  {intl.formatMessage({ id: 'ChallengeDashboard.stat-your-streak', defaultMessage: 'your streak' })}
-                </Typography.Text>
-              </div>
-              <div className={styles.statBlock}>
-                <Icon icon="solar:cup-star-bold-duotone" width={26} color="#eda100" />
-                <Typography.Title level={3} noMargin className={styles.statBlockValue} style={{ color: '#eda100' }}>
-                  {bestStreak}
-                </Typography.Title>
-                <Typography.Text className={styles.statBlockLabel}>
-                  {intl.formatMessage({ id: 'ChallengeDashboard.stat-best-streak', defaultMessage: 'best streak' })}
-                </Typography.Text>
-              </div>
-              <div className={styles.statBlock}>
-                <Icon icon="solar:check-circle-bold-duotone" width={26} color="#1baf7a" />
-                <Typography.Title level={3} noMargin className={styles.statBlockValue} style={{ color: '#1baf7a' }}>
-                  {totalCheckIns}
-                </Typography.Title>
-                <Typography.Text className={styles.statBlockLabel}>
-                  {intl.formatMessage({ id: 'ChallengeDashboard.stat-checkins', defaultMessage: 'check-ins (30d)' })}
-                </Typography.Text>
-              </div>
-            </div>
-
-            <hr className={styles.sectionDivider} />
-
-            <div className={styles.sectionHeaderRow}>
-              <div>
-                <Typography.Text className={styles.sectionHeaderTitle}>
-                  {intl.formatMessage({ id: 'ChallengeDashboard.daily-activity', defaultMessage: 'Check-ins per day' })}
-                </Typography.Text>
-                <Typography.Text className={styles.sectionHeaderSubtitle}>
-                  {intl.formatMessage(
-                    {
-                      id: 'ChallengeDashboard.daily-activity-caption',
-                      defaultMessage: '{average} on average · best {best}',
-                    },
-                    { average: dailyActivity.average, best: dailyActivity.best },
-                  )}
-                </Typography.Text>
-              </div>
-            </div>
-            <Chart
-              options={dailyChartOptions}
-              series={[{ name: 'Check-ins', data: dailyActivity.data }]}
-              type="bar"
-              height={160}
-            />
-            <div className={styles.chartAxisEnds}>
-              <span>{formatShortDate(days[0])}</span>
-              <span>{formatShortDate(days[days.length - 1])}</span>
-            </div>
-
-            {metricTabs.length > 0 && breakdown && (
-              <>
-                <hr className={styles.sectionDivider} />
-                <div className={styles.sectionHeaderRow}>
-                  <Typography.Text className={styles.sectionHeaderTitle}>
-                    {intl.formatMessage({ id: 'ChallengeDashboard.breakdown', defaultMessage: 'Breakdown by participant' })}
-                  </Typography.Text>
-                  {metricTabs.length > 1 && (
-                    <div className={styles.tabRow}>
-                      {metricTabs.map(tab => (
-                        <button
-                          key={tab.key}
-                          type="button"
-                          className={styles.tabPill}
-                          data-active={tab.key === activeTab?.key}
-                          onClick={() => setMetricTab(tab.key)}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <Chart
-                  options={breakdownOptions}
-                  series={[{ name: activeTab?.label, data: breakdown.data }]}
-                  type="bar"
-                  height={Math.max(160, breakdown.categories.length * 46)}
-                />
-              </>
-            )}
-          </Card>
-        )}
-
         {dashboard.challenge.shareRecords && !!dashboard.targets.length && (
           <Card className={styles.card}>
             <div className={styles.cardHeaderTitle}>
@@ -554,6 +383,177 @@ const ChallengeDashboardPageUi = () => {
           </Card>
         )}
 
+        {hasRoster && (
+          <Card className={styles.card}>
+            <div className={styles.statBlockRow}>
+              <div className={styles.statBlock}>
+                <Icon icon="solar:fire-bold-duotone" width={26} color="#eb6834" />
+                <Typography.Title level={3} noMargin className={styles.statBlockValue} style={{ color: '#eb6834' }}>
+                  {myStreak}
+                </Typography.Title>
+                <Typography.Text className={styles.statBlockLabel}>
+                  {intl.formatMessage({ id: 'ChallengeDashboard.stat-your-streak', defaultMessage: 'your streak' })}
+                </Typography.Text>
+              </div>
+              <div className={styles.statBlock}>
+                <Icon icon="solar:cup-star-bold-duotone" width={26} color="#eda100" />
+                <Typography.Title level={3} noMargin className={styles.statBlockValue} style={{ color: '#eda100' }}>
+                  {bestStreak}
+                </Typography.Title>
+                <Typography.Text className={styles.statBlockLabel}>
+                  {intl.formatMessage({ id: 'ChallengeDashboard.stat-best-streak', defaultMessage: 'best streak' })}
+                </Typography.Text>
+              </div>
+              <div className={styles.statBlock}>
+                <Icon icon="solar:check-circle-bold-duotone" width={26} color="#1baf7a" />
+                <Typography.Title level={3} noMargin className={styles.statBlockValue} style={{ color: '#1baf7a' }}>
+                  {totalCheckIns}
+                </Typography.Title>
+                <Typography.Text className={styles.statBlockLabel}>
+                  {intl.formatMessage({ id: 'ChallengeDashboard.stat-checkins', defaultMessage: 'check-ins (30d)' })}
+                </Typography.Text>
+              </div>
+            </div>
+
+            <hr className={styles.sectionDivider} />
+
+            <div className={styles.sectionHeaderRow}>
+              <div>
+                <Typography.Text className={styles.sectionHeaderTitle}>
+                  {intl.formatMessage({ id: 'ChallengeDashboard.daily-activity', defaultMessage: 'Check-ins per day' })}
+                </Typography.Text>
+                <Typography.Text className={styles.sectionHeaderSubtitle}>
+                  {intl.formatMessage(
+                    {
+                      id: 'ChallengeDashboard.daily-activity-caption',
+                      defaultMessage: '{{average}} on average · best {{best}}',
+                    },
+                    { average: dailyActivity.average, best: dailyActivity.best },
+                  )}
+                </Typography.Text>
+              </div>
+            </div>
+            <Chart
+              options={dailyChartOptions}
+              series={[{ name: 'Check-ins', data: dailyActivity.data }]}
+              type="bar"
+              height={160}
+            />
+            <div className={styles.chartAxisEnds}>
+              <span>{formatShortDate(days[0])}</span>
+              <span>{formatShortDate(days[days.length - 1])}</span>
+            </div>
+
+            {metricTabs.length > 0 && breakdown && (
+              <>
+                <hr className={styles.sectionDivider} />
+                <div className={styles.sectionHeaderRow}>
+                  <Typography.Text className={styles.sectionHeaderTitle}>
+                    {intl.formatMessage({ id: 'ChallengeDashboard.breakdown', defaultMessage: 'Breakdown by participant' })}
+                  </Typography.Text>
+                  {metricTabs.length > 1 && (
+                    <div className={styles.tabRow}>
+                      {metricTabs.map(tab => (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          className={styles.tabPill}
+                          data-active={tab.key === activeTab?.key}
+                          onClick={() => setMetricTab(tab.key)}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <Chart
+                  options={breakdownOptions}
+                  series={[{ name: activeTab?.label, data: breakdown.data }]}
+                  type="bar"
+                  height={Math.max(160, breakdown.categories.length * 46)}
+                />
+              </>
+            )}
+          </Card>
+        )}
+
+        <Card className={styles.card}>
+          <div className={styles.cardHeaderRow}>
+            <div className={styles.cardHeaderTitle}>
+              <Icon icon="solar:cup-star-bold-duotone" width={22} color="#eda100" />
+              <Typography.Title level={4} noMargin>
+                {intl.formatMessage({ id: 'ChallengeDashboard.title', defaultMessage: 'Leaderboard' })}
+              </Typography.Title>
+              {hasRoster && (
+                <span className={styles.memberPill}>
+                  {intl.formatMessage(
+                    { id: 'ChallengeDashboard.member-count', defaultMessage: '{{count}} joined' },
+                    { count: dashboard.participants.length },
+                  )}
+                </span>
+              )}
+            </div>
+            {!isOwner && me && (
+              <button type="button" className={styles.leaveLink} onClick={() => setLeaveModalVisible(true)}>
+                {intl.formatMessage({ id: 'DetailTaskPage.leave-challenge-short', defaultMessage: 'Leave' })}
+              </button>
+            )}
+          </div>
+
+          {!dashboard.challenge.shareRecords ? null : !dashboard.participants.length ? (
+            <Typography.Text>
+              {intl.formatMessage({
+                id: 'ChallengeDashboard.no-participants',
+                defaultMessage: 'Nobody has joined this challenge yet.',
+              })}
+            </Typography.Text>
+          ) : (
+            <>
+              <ol className={styles.rankList}>
+                {dashboard.ranking.map(({ userId: rankedUserId, count }, index) => {
+                  const participant = dashboard.participants.find(p => p.userId === rankedUserId);
+                  const name = participant?.displayName || 'Anonymous';
+                  const streak = streaksByUser.get(rankedUserId) ?? 0;
+                  const isYou = rankedUserId === userId;
+                  return (
+                    <li key={rankedUserId} className={styles.rankRow} data-you={isYou}>
+                      <span className={styles.rankMedal}>{['🥇', '🥈', '🥉'][index] ?? index + 1}</span>
+                      <ParticipantAvatar name={name} avatarUrl={participant?.avatarUrl} size={40} />
+                      <div className={styles.rankInfo}>
+                        <div className={styles.rankNameRow}>
+                          <span className={styles.rankName}>{name}</span>
+                          {isYou && <span className={styles.youBadge}>you</span>}
+                        </div>
+                        <span className={styles.rankSubtext}>
+                          {streak > 0
+                            ? intl.formatMessage(
+                                { id: 'ChallengeDashboard.day-streak', defaultMessage: '🔥 {{streak}} day streak' },
+                                { streak },
+                              )
+                            : intl.formatMessage({ id: 'ChallengeDashboard.no-streak', defaultMessage: 'No active streak' })}
+                        </span>
+                      </div>
+                      <div className={styles.rankScoreCol}>
+                        <span className={styles.rankScoreValue}>{count}</span>
+                        <span className={styles.rankScoreLabel}>
+                          {intl.formatMessage({ id: 'ChallengeDashboard.checkins-unit', defaultMessage: 'check-ins' })}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+              <Typography.Text className={styles.footerCaption}>
+                {intl.formatMessage({
+                  id: 'ChallengeDashboard.ranked-caption',
+                  defaultMessage: 'Ranked by check-ins over the last 30 days.',
+                })}
+              </Typography.Text>
+            </>
+          )}
+        </Card>
+
         {dashboard.challenge.commentsEnabled && (
           <Card className={styles.card}>
             <div className={styles.cardHeaderTitle}>
@@ -563,15 +563,26 @@ const ChallengeDashboardPageUi = () => {
               </Typography.Title>
             </div>
             <div className={styles.comments}>
-              {comments.map(c => (
-                <div key={c.id} className={styles.comment}>
-                  <div className={styles.commentHeader}>
-                    <ParticipantAvatar name={c.displayName || 'Anonymous'} size={18} />
-                    <Typography.Text className={styles.commentAuthor}>{c.displayName || 'Anonymous'}</Typography.Text>
+              {comments.map(c => {
+                // A comment has no photo of its own (challenge_comments has
+                // no avatar column) — the author's roster entry does, so
+                // this looks it up by userId instead of adding a column
+                // that would just duplicate what's already on their
+                // participant row. Misses only for a comment from the owner
+                // of a comments-only, not-shareRecords challenge — they
+                // have no participant row at all, so it falls back to
+                // initials same as anyone else with no photo.
+                const author = dashboard.participants.find(p => p.userId === c.userId);
+                return (
+                  <div key={c.id} className={styles.comment}>
+                    <div className={styles.commentHeader}>
+                      <ParticipantAvatar name={c.displayName || 'Anonymous'} avatarUrl={author?.avatarUrl} size={18} />
+                      <Typography.Text className={styles.commentAuthor}>{c.displayName || 'Anonymous'}</Typography.Text>
+                    </div>
+                    <Typography.Text>{c.body}</Typography.Text>
                   </div>
-                  <Typography.Text>{c.body}</Typography.Text>
-                </div>
-              ))}
+                );
+              })}
               {!comments.length && (
                 <Typography.Text>
                   {intl.formatMessage({
@@ -584,10 +595,10 @@ const ChallengeDashboardPageUi = () => {
             <div className={styles.commentForm}>
               {knownName ? (
                 <div className={styles.postingAs}>
-                  <ParticipantAvatar name={knownName} size={18} />
+                  <ParticipantAvatar name={knownName} avatarUrl={me?.avatarUrl} size={18} />
                   <Typography.Text>
                     {intl.formatMessage(
-                      { id: 'ChallengeDashboard.posting-as', defaultMessage: 'Posting as {name}' },
+                      { id: 'ChallengeDashboard.posting-as', defaultMessage: 'Posting as {{name}}' },
                       { name: knownName },
                     )}
                   </Typography.Text>

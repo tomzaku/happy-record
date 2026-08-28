@@ -42,8 +42,26 @@ export type Challenge = {
   fieldTargets: Record<string, number>;
   /** Owner-picked in CardShare; applied by the shared page for every visitor, not just participants. */
   theme: ChallengeThemeId;
+  /**
+   * Owner-set in CardShare, a plain http(s) URL (not an upload — this app
+   * has no file-storage pipeline) shown behind the shared page in place of
+   * the theme's own background. `null` for every challenge that hasn't set
+   * one — see 20260828000000_challenge_background_image.sql.
+   */
+  backgroundImageUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Not a `challenges` column — the owner's own `challenge_participants`
+   * name/photo, straight from their Google identity (see useSession.ts's
+   * `displayName`/`avatarUrl` and CardShare), only present when
+   * `GET /challenges?checklistTemplateId=` finds one (RLS-gated to a
+   * publicly shared challenge — see
+   * 20260828010000_challenge_owner_name_public.sql). Used by the shared
+   * page's greeting in place of a generic "Someone".
+   */
+  ownerDisplayName?: string;
+  ownerAvatarUrl?: string;
 };
 
 // Keyed by templateId (not "all mine") — CardShare and the shared page each
@@ -86,14 +104,16 @@ export const useChallenge = () => {
       commentsEnabled: boolean;
       fieldTargets: Record<string, number>;
       theme: ChallengeThemeId;
-      /** The owner's own name on the group dashboard — see saveChallenge. */
+      backgroundImageUrl: string | null;
+      /** The owner's own name/photo on the group dashboard — see saveChallenge. */
       ownerDisplayName?: string;
+      ownerAvatarUrl?: string;
     },
   ) => {
-    // Not a Challenge field (it's the owner's participant row, not this
+    // Not Challenge fields (they're the owner's participant row, not this
     // one) — kept out of `optimistic` for that reason, passed to
     // saveChallenge separately below.
-    const { ownerDisplayName, ...challengeFields } = options;
+    const { ownerDisplayName, ownerAvatarUrl, ...challengeFields } = options;
     const existing = challenges[checklistTemplateId];
     const optimistic: Challenge = {
       id: existing?.id ?? uniqueId(),

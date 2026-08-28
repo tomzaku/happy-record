@@ -26,7 +26,7 @@ export const pipe =
  * owner, so they ride along as query params rather than anything persisted
  * server-side (see useCreateChecklistTemplateApi.tsx).
  */
-export function getSharedChecklistTemplateUrl(checklistTemplateId: string, from = 'You', to = 'Friend') {
+export function getSharedChecklistTemplateUrl(checklistTemplateId: string, from = '', to = '') {
   const params = new URLSearchParams({ from, to });
   return `${window.location.origin}${import.meta.env.BASE_URL}checklist-template/shared/${checklistTemplateId}?${params}`;
 }

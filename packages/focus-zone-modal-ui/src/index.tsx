@@ -39,6 +39,10 @@ interface FocusZoneModalProps {
   taskTitle?: string;
   onDismiss: () => void;
   onOpenModal: () => void;
+  // The shared-challenge landing page (checklist-template-shared-page-ui) is
+  // a one-off invite screen someone can land on signed out, mid-onboarding —
+  // the floating timer button has no business appearing over it.
+  hideFab?: boolean;
 }
 
 // This will be created dynamically using global config
@@ -48,7 +52,8 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
   taskId,
   taskTitle: propTaskTitle,
   onDismiss,
-  onOpenModal
+  onOpenModal,
+  hideFab
 }) => {
   const { theme, setTheme, pomodoro, shortBreak, longBreak } = usePomodoroGlobalConfig();
   const { getChecklistTemplate } = useChecklistTemplates();
@@ -253,7 +258,7 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
   return (
     <>
       {/* FAB - Show when modal is closed */}
-      {!visible && (
+      {!visible && !hideFab && (
         <FocusZoneFAB
           timerMode={timerMode}
           stopwatchTime={stopwatchTime}

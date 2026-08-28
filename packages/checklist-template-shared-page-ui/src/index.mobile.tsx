@@ -16,12 +16,16 @@ const ChecklistTemplateSharedPageMobile = () => {
     dialogRejectOpen,
     setDialogRejectOpen,
     themeId,
+    backgroundImageUrl,
     submitting,
     handleSubmit,
     onClickLeaveIt,
     confirmTakeIt,
   } = useChecklistTemplateSharedPage();
 
+  // Mobile renders backgroundImageUrl as a real <img> below TaskSharedCard
+  // (see below), not through the CSS var useApplyChallengeTheme's second
+  // arg sets — that's desktop's .hero-background mechanism only, see theme.ts.
   useApplyChallengeTheme(themeId);
 
   if (!data) return null;
@@ -38,13 +42,21 @@ const ChecklistTemplateSharedPageMobile = () => {
           className={styles.headline}
           style={{ color: 'var(--ct-heading-color)' }}
         >
-          {`${userName} just challenged you, ${targetName}!`}
+          {/* No hardcoded "you" here — targetName already defaults to 'you'
+              (see useChecklistTemplateSharedPage), so a literal "you" plus
+              targetName duplicated into "challenged you, you!" whenever the
+              link's own ?to= was left blank, which is every link CardShare
+              generates today (it never collects a target name). */}
+          {`${userName} just challenged ${targetName}!`}
         </Typography.Title>
         <Typography.Text className={styles.subtext} style={{ color: 'var(--ct-body-text)' }}>
           Complete this checklist together and see who keeps the streak alive.
         </Typography.Text>
 
         <TaskSharedCard checklistTemplate={data.checklistTemplate} fields={data.fields} />
+        {/* Owner's optional CardShare photo — see theme.ts's useApplyChallengeTheme
+            for why desktop instead paints this as a .hero background. */}
+        {backgroundImageUrl && <img src={backgroundImageUrl} alt="" className={styles.heroImage} />}
       </div>
 
       {/* Pinned to the bottom of the viewport instead of at the end of the
@@ -77,7 +89,7 @@ const ChecklistTemplateSharedPageMobile = () => {
           <Typography.Text>
             I know you’re not scared of this challenge, so I’ll take it for you in 10 seconds.
           </Typography.Text>
-          <Timer duration={10000} onFinish={() => confirmTakeIt(targetName)} autoStart />
+          <Timer duration={10000} onFinish={() => confirmTakeIt()} autoStart />
         </div>
       </Drawer>
     </div>

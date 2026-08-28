@@ -1,7 +1,6 @@
 // Components
 import AppRouter from '@dreamer/route';
 import PwaInstallation from '@dreamer/pwa';
-import FocusZoneModal from '@dreamer/focus-zone-modal-ui';
 
 // Hooks
 import {
@@ -55,18 +54,10 @@ function App() {
   // Anonymous sign-in so the device has a Supabase session to sync through —
   // no-op when no backend is configured (VITE_SUPABASE_URL unset).
   useSession();
-  // Focus Zone Modal state
-  const [isFocusZoneOpen, setIsFocusZoneOpen] = React.useState(false);
   return (
     <ErrorBoundary>
       <div className={styles.container} data-theme={theme}>
         <div className={styles.body}>
-          <FocusZoneModal
-
-            visible={isFocusZoneOpen}
-            onDismiss={() => setIsFocusZoneOpen(false)}
-            onOpenModal={() => setIsFocusZoneOpen(true)}
-          />
           <AppRouter />
           <PwaInstallation />
         </div>

@@ -285,6 +285,22 @@ export const useSession = () => {
     isAnonymous: session?.user.is_anonymous ?? false,
     /** Set once a real identity (Google, email, ...) is linked. */
     email: session?.user.email,
+    /**
+     * The name Google itself already gave us on sign-in — GoTrue puts it in
+     * `user_metadata` as `full_name` (or `name`, depending on provider/flow;
+     * kept as a fallback rather than assumed). `undefined` for an anonymous
+     * session, same as `email` above — there's still no other name concept
+     * in this app (see CLAUDE.md), so anything that used to ask the user to
+     * type their own name (CardShare's old "Your name, shown on the
+     * dashboard" input) should prefer this instead of asking again.
+     */
+    displayName: (session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name) as
+      | string
+      | undefined,
+    /** Same idea as `displayName` — GoTrue puts Google's profile photo in `user_metadata` as `avatar_url` (or `picture`). */
+    avatarUrl: (session?.user.user_metadata?.avatar_url ?? session?.user.user_metadata?.picture) as
+      | string
+      | undefined,
     signInWithGoogle,
     signOut,
     /** Whether a backend is configured at all — independent of `session`. */

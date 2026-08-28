@@ -47,6 +47,19 @@
   line-height: 1.55;
 }
 
+// The owner's optional CardShare photo (backgroundImageUrl) — a real <img>
+// below TaskSharedCard rather than a page-wide background the way desktop's
+// .hero does it: mobile is a single column with no "corner" to anchor a
+// decorative accent to, so it reads better as its own block in the flow.
+.heroImage {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: calc(var(--ct-card-radius) - 6px);
+  margin-top: $spacing-lg;
+}
+
 .stickyBar {
   position: fixed;
   left: 0;

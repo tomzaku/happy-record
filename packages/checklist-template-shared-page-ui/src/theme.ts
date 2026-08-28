@@ -130,15 +130,38 @@ export const CHALLENGE_PAGE_THEMES: Record<ChallengeThemeId, ChallengeThemeVars>
  * on a wrapper div here would never reach the Join/Leave drawers. Root-level
  * custom properties cascade to both. Cleans up on unmount so another page
  * mounted right after doesn't inherit a stale theme.
+ *
+ * `backgroundImageUrl` is optional — the owner's CardShare photo (a plain
+ * http(s) URL — see 20260828000000_challenge_background_image.sql) — and is
+ * desktop-only here: index.desktop.tsx passes it through, and `.hero`
+ * (index.desktop.module.scss) reads the resulting `var(--ct-page-bg-image,
+ * none)` anchored `right bottom` at a fixed size, so it reads as a
+ * decorative accent behind the card column rather than fighting the
+ * headline text on the left. `none` as the fallback means a challenge with
+ * no photo renders exactly as before. Set via `style.setProperty`, a DOM
+ * API that assigns a CSS custom property's *value*, not a string that gets
+ * parsed as CSS/HTML — an owner-supplied URL here can't break out of the
+ * `url(...)` it's wrapped in the way it could if this were template-string
+ * HTML.
+ *
+ * Mobile doesn't use this mechanism: index.mobile.tsx calls this with just
+ * `themeId` and instead renders `backgroundImageUrl` as a real `<img>`
+ * below TaskSharedCard (`.heroImage`, index.mobile.module.scss) — a
+ * single-column layout has no "corner" for a background accent to anchor
+ * to, so it reads better as its own block in the flow than as a backdrop.
  */
-export function useApplyChallengeTheme(themeId: ChallengeThemeId) {
+export function useApplyChallengeTheme(themeId: ChallengeThemeId, backgroundImageUrl?: string | null) {
   React.useEffect(() => {
     const vars = CHALLENGE_PAGE_THEMES[themeId] ?? CHALLENGE_PAGE_THEMES.classic;
     const root = document.documentElement;
     const entries = Object.entries(vars) as [string, string][];
     entries.forEach(([key, value]) => root.style.setProperty(key, value));
+    if (backgroundImageUrl) {
+      root.style.setProperty('--ct-page-bg-image', `url("${backgroundImageUrl}")`);
+    }
     return () => {
       entries.forEach(([key]) => root.style.removeProperty(key));
+      root.style.removeProperty('--ct-page-bg-image');
     };
-  }, [themeId]);
+  }, [themeId, backgroundImageUrl]);
 }

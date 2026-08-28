@@ -16,22 +16,21 @@ const ChecklistTemplateSharedPageDesktop = () => {
     dialogRejectOpen,
     setDialogRejectOpen,
     themeId,
+    backgroundImageUrl,
     submitting,
     handleSubmit,
     onClickLeaveIt,
     confirmTakeIt,
   } = useChecklistTemplateSharedPage();
 
-  useApplyChallengeTheme(themeId);
+  useApplyChallengeTheme(themeId, backgroundImageUrl);
 
   if (!data) return null;
 
   return (
     <div className={styles.page}>
       <div className={styles.sheet}>
-        <div className={styles.nav}>
-          <BackHeader renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>} />
-        </div>
+        <BackHeader renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>} />
 
         <div className={styles.hero}>
           <div className={styles.intro}>
@@ -42,7 +41,9 @@ const ChecklistTemplateSharedPageDesktop = () => {
               className={styles.headline}
               style={{ color: 'var(--ct-heading-color)' }}
             >
-              {`${userName} just challenged you, ${targetName}!`}
+              {/* See index.mobile.tsx's twin line — no hardcoded "you" here,
+                  targetName already defaults to it. */}
+              {`${userName} just challenged ${targetName}!`}
             </Typography.Title>
             <Typography.Text className={styles.subtext} style={{ color: 'var(--ct-body-text)' }}>
               Complete this checklist together and see who keeps the streak alive.
@@ -81,7 +82,7 @@ const ChecklistTemplateSharedPageDesktop = () => {
           <Typography.Text>
             I know you’re not scared of this challenge, so I’ll take it for you in 10 seconds.
           </Typography.Text>
-          <Timer duration={10000} onFinish={() => confirmTakeIt(targetName)} autoStart />
+          <Timer duration={10000} onFinish={() => confirmTakeIt()} autoStart />
         </div>
       </Drawer>
     </div>

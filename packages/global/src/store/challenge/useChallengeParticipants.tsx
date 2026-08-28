@@ -18,6 +18,8 @@ export type ChallengeParticipant = {
   challengeId: string;
   userId: string;
   displayName: string;
+  /** Google's own profile photo (see useSession.ts) — absent pre-Google or pre-this-field. */
+  avatarUrl?: string;
   checklistTemplateId: string;
   joinedAt: string;
 };
@@ -35,8 +37,13 @@ export const useChallengeParticipants = () => {
    * reached, not here (see checklist-template-shared-page-ui and
    * useResumePendingChallengeJoin).
    */
-  const joinChallenge = (challengeId: string, displayName: string, checklistTemplateId: string) => {
-    return joinChallengeApi({ id: uniqueId(), challengeId, displayName, checklistTemplateId });
+  const joinChallenge = (
+    challengeId: string,
+    displayName: string,
+    checklistTemplateId: string,
+    avatarUrl?: string,
+  ) => {
+    return joinChallengeApi({ id: uniqueId(), challengeId, displayName, checklistTemplateId, avatarUrl });
   };
 
   const leaveChallenge = (challengeId: string) => {

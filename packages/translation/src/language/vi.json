@@ -145,6 +145,8 @@
   "CardShare.theme-ignite-description": "Mạnh mẽ, đầy tính cạnh tranh",
   "CardShare.theme-playful": "Vui nhộn",
   "CardShare.theme-playful-description": "Vui vẻ, nhẹ nhàng",
+  "CardShare.background-image-label": "Ảnh nền (tùy chọn)",
+  "CardShare.background-image-placeholder": "Dán URL ảnh — hiển thị phía sau giao diện",
   "ChallengeDashboard.title": "Bảng Điều Khiển Thử Thách",
   "ChallengeDashboard.no-participants": "Chưa có ai tham gia thử thách này.",
   "ChallengeDashboard.not-found": "Không thể tải thử thách này.",

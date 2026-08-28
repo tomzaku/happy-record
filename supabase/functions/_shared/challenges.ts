@@ -19,6 +19,10 @@ export function toChallenge(r: Record<string, unknown>) {
     // is the real guarantee this is always one of the three; the cast here
     // is just so the client type isn't a bare `string`.
     theme: (r.theme as ChallengeTheme) ?? 'classic',
+    // See 20260828000000_challenge_background_image.sql — null for every
+    // challenge that hasn't set one, same as most rows never having a theme
+    // override.
+    backgroundImageUrl: (r.background_image_url as string | null) ?? null,
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
   };
@@ -46,6 +50,17 @@ export function fromChallenge(e: Record<string, unknown>) {
   // toggling shareRecords via a stale payload) shouldn't 400 over it.
   const theme = CHALLENGE_THEMES.includes(e.theme as ChallengeTheme) ? (e.theme as ChallengeTheme) : 'classic';
 
+  // Same "fall back rather than throw" treatment as theme above — the DB's
+  // own CHECK is the real guard. Anything that isn't a plausible http(s)
+  // URL just clears the background instead of 400ing the whole save, so a
+  // typo in this one optional field doesn't block saving the rest of the
+  // share config.
+  const backgroundImageUrlRaw = typeof e.backgroundImageUrl === 'string' ? e.backgroundImageUrl.trim() : '';
+  const backgroundImageUrl =
+    backgroundImageUrlRaw && /^https?:\/\//.test(backgroundImageUrlRaw) && backgroundImageUrlRaw.length <= 2000
+      ? backgroundImageUrlRaw
+      : null;
+
   return {
     id: e.id,
     checklist_template_id: e.checklistTemplateId,
@@ -53,6 +68,7 @@ export function fromChallenge(e: Record<string, unknown>) {
     comments_enabled: !!e.commentsEnabled,
     field_targets: fieldTargets,
     theme,
+    background_image_url: backgroundImageUrl,
     // Postgres only fills the default on insert, not update — an upsert
     // has to set this explicitly every time.
     updated_at: new Date().toISOString(),

@@ -9,7 +9,6 @@ const PENDING_CHALLENGE_JOIN_KEY = 'pending_challenge_join';
 export type PendingChallengeJoin = {
   challengeId: string;
   checklistTemplateId: string;
-  displayName: string;
 };
 
 /**
@@ -36,7 +35,7 @@ export const usePendingChallengeJoin = () => {
 };
 
 export const useResumePendingChallengeJoin = () => {
-  const { ready, isAnonymous } = useSession();
+  const { ready, isAnonymous, displayName, avatarUrl } = useSession();
   const { pending, clearPendingChallengeJoin } = usePendingChallengeJoin();
   const { acceptChallenge } = useJoinChallenge();
   const navigate = useNavigate();
@@ -45,7 +44,12 @@ export const useResumePendingChallengeJoin = () => {
   React.useEffect(() => {
     if (!ready || isAnonymous || !pending || resolvingRef.current) return;
     resolvingRef.current = true;
-    acceptChallenge(pending.checklistTemplateId, pending.challengeId, pending.displayName)
+    // Read fresh off the now-real session rather than whatever was saved
+    // before the redirect — by the time this runs the sign-in that just
+    // completed is exactly what populated `displayName`/`avatarUrl` in the
+    // first place, so there's nothing stale to worry about, and one less
+    // thing to have carried across the round trip.
+    acceptChallenge(pending.checklistTemplateId, pending.challengeId, displayName ?? '', avatarUrl)
       .then(template => {
         clearPendingChallengeJoin();
         // detail-task-page requires `currentDay` in the query string (see
@@ -63,5 +67,5 @@ export const useResumePendingChallengeJoin = () => {
     // in practice, but the real guard against a double-run is `pending`
     // itself going null once resolved — re-running this effect on their
     // identity changing is harmless (resolvingRef blocks overlap).
-  }, [ready, isAnonymous, pending, acceptChallenge, clearPendingChallengeJoin, navigate]);
+  }, [ready, isAnonymous, pending, displayName, avatarUrl, acceptChallenge, clearPendingChallengeJoin, navigate]);
 };

@@ -21,6 +21,7 @@ import {
   useChallenge,
   useChecklistTemplates,
   useIsMobile,
+  useSession,
 } from '@dreamer/global';
 import { SettingsRow } from '../SettingsCard';
 import styles from './index.module.scss';
@@ -78,27 +79,33 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
   const { updateChecklistTemplate: updateChecklistTemplateLocal } = useChecklistTemplates();
   const { getChallengeForTemplate, setChallengeOptions } = useChallenge();
   const challenge = getChallengeForTemplate(checklistTemplateId);
+  // The owner's name/photo on the group dashboard, straight from Google
+  // (see useSession.ts) — no reason to ask them to type it again. Both
+  // `undefined` for an anonymous owner (shareRecords doesn't itself require
+  // signing in), same as before this existed: the participant row just
+  // gets saved with no name/photo.
+  const { displayName, avatarUrl } = useSession();
   // Local until the first share (there's nothing to persist yet); once a challenge row
   // exists it's the source of truth, so this only seeds from it — a later toggle/edit
   // writes straight through instead of drifting.
   const [shareRecords, setShareRecords] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(false);
   const [fieldTargets, setFieldTargets] = useState<Record<string, number>>({});
-  // The owner's own name on the group dashboard the checkbox above turns on
-  // — nothing else in the app knows it (no profile/display-name concept
-  // exists here otherwise), so it's asked for right where shareRecords is
-  // turned on, the same way a joiner is asked on the shared page.
-  const [ownerDisplayName, setOwnerDisplayName] = useState('');
   // Applies to every share link, not only a "real" challenge (shareRecords/commentsEnabled
   // on) — generateShareUrl below always writes a challenges row, so theme is always there
   // to pick even for a plain "take it" share.
   const [theme, setTheme] = useState<ChallengeThemeId>('classic');
+  // A plain URL, not an upload (this app has no file-storage pipeline) — an
+  // already-hosted photo shown behind the shared page in place of the
+  // theme's own background. Optional; empty string means "use the theme".
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   React.useEffect(() => {
     if (challenge) {
       setShareRecords(challenge.shareRecords);
       setCommentsEnabled(challenge.commentsEnabled);
       setFieldTargets(challenge.fieldTargets);
       setTheme(challenge.theme);
+      setBackgroundImageUrl(challenge.backgroundImageUrl ?? '');
     }
   }, [challenge]);
   const [shareUrl, setShareUrl] = useState(
@@ -155,7 +162,9 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         commentsEnabled,
         fieldTargets,
         theme,
-        ownerDisplayName: shareRecords ? ownerDisplayName.trim() : undefined,
+        backgroundImageUrl: backgroundImageUrl.trim() || null,
+        ownerDisplayName: shareRecords ? displayName : undefined,
+        ownerAvatarUrl: shareRecords ? avatarUrl : undefined,
       });
       const fullUrl = getSharedChecklistTemplateUrl(result.id);
       setShareUrl(fullUrl);
@@ -237,18 +246,6 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
               })}
             </Typography.Text>
           </label>
-          {shareRecords && (
-            <Input
-              value={ownerDisplayName}
-              onChange={e => setOwnerDisplayName(e.target.value)}
-              placeholder={intl.formatMessage({
-                id: 'CardShare.your-name',
-                defaultMessage: 'Your name, shown on the dashboard',
-              })}
-              className={styles.ownerNameInput}
-              renderRightInput={() => <></>}
-            />
-          )}
           <label className={styles.optionRow}>
             <Checkbox
               checked={commentsEnabled}
@@ -283,6 +280,23 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
               );
             })}
           </div>
+        </div>
+        <div className={styles.themePicker}>
+          <Typography.Text className={styles.themeLabel}>
+            {intl.formatMessage({
+              id: 'CardShare.background-image-label',
+              defaultMessage: 'Background photo (optional)',
+            })}
+          </Typography.Text>
+          <Input
+            value={backgroundImageUrl}
+            onChange={e => setBackgroundImageUrl(e.target.value)}
+            placeholder={intl.formatMessage({
+              id: 'CardShare.background-image-placeholder',
+              defaultMessage: 'Paste an image URL — shown behind the theme',
+            })}
+            renderRightInput={() => <></>}
+          />
         </div>
         {!!metricFields.length && (
           <div className={styles.targets}>
@@ -322,7 +336,7 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         </Button>
         <Button
           onClick={generateShareUrl}
-          disabled={generating || (shareRecords && !ownerDisplayName.trim())}
+          disabled={generating}
           className={styles.gradientButton}
         >
           {generating && <Icon icon="svg-spinners:180-ring-with-bg" width={16} className={styles.buttonSpinner} />}

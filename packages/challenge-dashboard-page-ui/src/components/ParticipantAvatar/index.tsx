@@ -8,7 +8,10 @@ import styles from './index.module.scss';
 // is a per-person badge, not a metric series, so there's no adjacent-pair
 // CVD concern to validate against. Exported so the targets breakdown bar
 // can color each participant's segment the same as their avatar — same
-// entity, same color, wherever it shows up.
+// entity, same color, wherever it shows up. Still the fallback even now
+// that a real photo can be shown (see `avatarUrl` below) — a broken/expired
+// image URL, or a participant who was never signed in with Google, still
+// needs something to render.
 const AVATAR_COLORS = ['#2a78d6', '#c9550f', '#188a63', '#8a4fd1', '#c23a63', '#0f8f8f', '#a86a00', '#5a67c9'];
 
 const hashString = (s: string) => {
@@ -24,11 +27,37 @@ const initialOf = (name: string) => {
   return trimmed ? trimmed[0].toUpperCase() : '?';
 };
 
-/** No photo anywhere in this domain (no avatar_url, no Google metadata captured) — an initial on a per-name color stands in for one everywhere a participant's identity shows up. */
-const ParticipantAvatar = ({ name, size = 22 }: { name: string; size?: number }) => (
-  <span className={styles.avatar} style={{ width: size, height: size, fontSize: size * 0.5, background: getAvatarColor(name) }}>
-    {initialOf(name)}
-  </span>
-);
+/**
+ * A real photo when the participant has one — Google's own profile picture,
+ * saved onto their `challenge_participants` row at join/share time (see
+ * useSession.ts's `avatarUrl`) — else the initials-on-a-hashed-color badge
+ * this always was. `React.useState` (not a plain `onError` prop swap)
+ * because the fallback needs to persist for this element's lifetime: an
+ * `<img>` that failed once keeps re-firing `onError` if left in the DOM
+ * with the same broken `src`, so this stops rendering the `<img>` at all
+ * rather than trying to reset it.
+ */
+const ParticipantAvatar = ({ name, avatarUrl, size = 22 }: { name: string; avatarUrl?: string; size?: number }) => {
+  const [broken, setBroken] = React.useState(false);
+  const showPhoto = !!avatarUrl && !broken;
+
+  return (
+    <span
+      className={styles.avatar}
+      style={{
+        width: size,
+        height: size,
+        fontSize: size * 0.5,
+        background: showPhoto ? undefined : getAvatarColor(name),
+      }}
+    >
+      {showPhoto ? (
+        <img src={avatarUrl} alt="" className={styles.photo} onError={() => setBroken(true)} />
+      ) : (
+        initialOf(name)
+      )}
+    </span>
+  );
+};
 
 export default ParticipantAvatar;

@@ -41,8 +41,10 @@ export function saveChallenge(challenge: {
   commentsEnabled: boolean;
   fieldTargets: Record<string, number>;
   theme: Challenge['theme'];
-  /** Not a `challenges` column — see the edge function. Only matters while shareRecords is on. */
+  backgroundImageUrl: Challenge['backgroundImageUrl'];
+  /** Neither is a `challenges` column — see the edge function. Only matters while shareRecords is on. */
   ownerDisplayName?: string;
+  ownerAvatarUrl?: string;
 }): Promise<{ challenge: Challenge } | null> {
   return request.post('/challenges', { challenge }, { quiet: true });
 }

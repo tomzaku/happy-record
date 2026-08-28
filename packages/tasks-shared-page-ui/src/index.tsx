@@ -69,7 +69,7 @@ const TasksSharedPage = () => {
       ),
     };
     const result = await updateChecklistTemplate(data);
-    const fullUrl = getSharedChecklistTemplateUrl(result.id, userName || 'You', targetName || 'Friend');
+    const fullUrl = getSharedChecklistTemplateUrl(result.id, userName, targetName);
     setUrl(fullUrl);
     handleCopy(fullUrl);
   };

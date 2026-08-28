@@ -40,14 +40,19 @@ export const useJoinChallenge = () => {
    * one before calling this (see checklist-template-shared-page-ui and
    * useResumePendingChallengeJoin).
    */
-  const acceptChallenge = async (checklistTemplateId: string, challengeId: string, displayName: string) => {
+  const acceptChallenge = async (
+    checklistTemplateId: string,
+    challengeId: string,
+    displayName: string,
+    avatarUrl?: string,
+  ) => {
     const data = await getChecklistTemplateApi(checklistTemplateId);
     if (!data) return null;
 
     mergeRecordFields(data.fields);
     mergeTemplates([data.checklistTemplate]);
 
-    await joinChallenge(challengeId, displayName, checklistTemplateId);
+    await joinChallenge(challengeId, displayName, checklistTemplateId, avatarUrl);
     return { id: checklistTemplateId };
   };
 

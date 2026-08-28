@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@dreamer/focus-zone-modal-ui": "^1.0.0",
     "@dreamer/global-tool-common": "^1.0.0",
     "@dreamer/header": "^1.0.0",
     "@dreamer/music-controller-mobile": "^1.0.0",

@@ -24,6 +24,7 @@ import LocalStorageEditor from './local-storage-editor';
 import TasksSharedPage from '@happy-record/tasks-shared-page-ui';
 import ChecklistTemplateSharedPageUi from '@happy-record/checklist-template-shared-page-ui';
 import ChallengeDashboardPageUi from '@happy-record/challenge-dashboard-page-ui';
+import FocusZoneModal from '@dreamer/focus-zone-modal-ui';
 import { useIsMobile, useResumePendingChallengeJoin } from '@dreamer/global';
 
 const AnimationRoute = ({ children }: { children: React.ReactNode }) => {
@@ -49,132 +50,146 @@ const AppRouter = () => {
   // always lands back on "/", not on that page.
   useResumePendingChallengeJoin();
 
-  return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route
-          path="/"
-          element={
-            <AnimationRoute>
-              <RecordPage />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/task/:id"
-          element={
-            <AnimationRoute>
-              {isMobile ? <DetailTaskPage /> : <DetailTaskPageDesktop />}
-            </AnimationRoute>
-          }
-        />
+  // Focus Zone Modal state — rendered here rather than in web/src/App.tsx
+  // so it can read the current route (App.tsx sits outside the Router) and
+  // hide its FAB on the shared-challenge landing page.
+  const [isFocusZoneOpen, setIsFocusZoneOpen] = React.useState(false);
+  const isSharedChallengePage = location.pathname.startsWith('/checklist-template/shared');
 
-        <Route
-          path="/task/:id/share"
-          element={
-            <AnimationRoute>
-              <TasksSharedPage />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/checklist-template/shared"
-          element={
-            <AnimationRoute>
-              <ChecklistTemplateSharedPageUi />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/checklist-template/shared/:id"
-          element={
-            <AnimationRoute>
-              <ChecklistTemplateSharedPageUi />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/challenge/:id"
-          element={
-            <AnimationRoute>
-              <ChallengeDashboardPageUi />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/create-checklist"
-          element={
-            <AnimationRoute>
-              <CreateChecklistForm />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/edit-checklist/:id"
-          element={
-            <AnimationRoute>
-              <EditChecklistForm />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/checklist-template"
-          element={
-            <AnimationRoute>
-              <ChecklistTemplatePageUi />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/setting"
-          element={
-            <AnimationRoute>
-              {isMobile ? <SettingPage /> : <SettingPageDesktop />}
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/story"
-          element={
-            <AnimationRoute>
-              <StoryPageUi />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/audio"
-          element={
-            <AnimationRoute>
-              <Audio />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/setting/local-storage-editor"
-          element={
-            <AnimationRoute>
-              <LocalStorageEditor />
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/notes"
-          element={
-            <AnimationRoute>
-              {isMobile ? <NoteManagerPage /> : <NoteManagerPageDesktop />}
-            </AnimationRoute>
-          }
-        />
-        <Route
-          path="/notes/add"
-          element={
-            <AnimationRoute>
-              <AddNotePage />
-            </AnimationRoute>
-          }
-        />
-      </Routes>
-    </AnimatePresence>
+  return (
+    <>
+      <FocusZoneModal
+        visible={isFocusZoneOpen}
+        onDismiss={() => setIsFocusZoneOpen(false)}
+        onOpenModal={() => setIsFocusZoneOpen(true)}
+        hideFab={isSharedChallengePage}
+      />
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route
+            path="/"
+            element={
+              <AnimationRoute>
+                <RecordPage />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/task/:id"
+            element={
+              <AnimationRoute>
+                {isMobile ? <DetailTaskPage /> : <DetailTaskPageDesktop />}
+              </AnimationRoute>
+            }
+          />
+
+          <Route
+            path="/task/:id/share"
+            element={
+              <AnimationRoute>
+                <TasksSharedPage />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/checklist-template/shared"
+            element={
+              <AnimationRoute>
+                <ChecklistTemplateSharedPageUi />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/checklist-template/shared/:id"
+            element={
+              <AnimationRoute>
+                <ChecklistTemplateSharedPageUi />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/challenge/:id"
+            element={
+              <AnimationRoute>
+                <ChallengeDashboardPageUi />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/create-checklist"
+            element={
+              <AnimationRoute>
+                <CreateChecklistForm />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/edit-checklist/:id"
+            element={
+              <AnimationRoute>
+                <EditChecklistForm />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/checklist-template"
+            element={
+              <AnimationRoute>
+                <ChecklistTemplatePageUi />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/setting"
+            element={
+              <AnimationRoute>
+                {isMobile ? <SettingPage /> : <SettingPageDesktop />}
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/story"
+            element={
+              <AnimationRoute>
+                <StoryPageUi />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/audio"
+            element={
+              <AnimationRoute>
+                <Audio />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/setting/local-storage-editor"
+            element={
+              <AnimationRoute>
+                <LocalStorageEditor />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/notes"
+            element={
+              <AnimationRoute>
+                {isMobile ? <NoteManagerPage /> : <NoteManagerPageDesktop />}
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/notes/add"
+            element={
+              <AnimationRoute>
+                <AddNotePage />
+              </AnimationRoute>
+            }
+          />
+        </Routes>
+      </AnimatePresence>
+    </>
   );
 };
 

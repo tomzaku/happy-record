@@ -414,10 +414,36 @@ primary key, the exact bug the `duration`/`push-ups`/`note` system fields hit fi
 Accepting also strips `visibility`/`flagId` off the copy: the recipient didn't choose to publish
 their own copy, and a flag id copied verbatim would point at a flag only the sharer can see.
 `userName`/`targetName` (the "Hey, X — Y challenged you!" greeting) are carried as `?from=&to=`
-query params on the share link itself, not stored server-side — there's no real owner for that
-data, just per-link display text. `useFirebase.ts` is gone; `useStorageSync.ts` (a separate,
+query params on the share link itself, not stored server-side — there's no real per-link owner
+data, just per-link display text. `from` isn't the only source of `userName` though: CardShare's
+current share flow never fills in `?from=` at all (only the older tasks-shared-page-ui form ever
+did), so `useChecklistTemplateSharedPage.ts` falls back to `challenge.ownerDisplayName` before
+falling back further to a generic "Someone" — see the identity paragraph below for where that
+comes from. `useFirebase.ts` is gone; `useStorageSync.ts` (a separate,
 unrelated whole-`localStorage` backup/restore debug tool behind `local-storage-editor`) still
 uses the `firebase` package directly and is out of scope here. `tags` is local-only.
+
+**A challenge participant's name/photo come from Google, never typed in.** `useSession.ts`
+exposes `displayName`/`avatarUrl` straight off the signed-in Google identity's own
+`user_metadata` (`full_name`/`name`, `avatar_url`/`picture` — both `undefined` for an anonymous
+session, since there's still no other profile concept in this app). Both the owner
+(`CardShare`, when "Share everyone's check-ins" is on — `useSession().displayName`/`avatarUrl`,
+sent as `ownerDisplayName`/`ownerAvatarUrl`) and a joiner (`useJoinChallenge.tsx`'s
+`acceptChallenge`, called from `useChecklistTemplateSharedPage.ts` once already signed in, or
+from `useResumePendingChallengeJoin.tsx` once the post-redirect session lands) use this same
+pair — there used to be a manual "Your name, shown on the dashboard" `CardShare` input, and
+joining used to write the shared link's own `?to=` text as the participant's name; both were
+replaced with the real identity once it existed. Stored on `challenge_participants.display_name`/
+`avatar_url` (the row written at join, or at share time for the owner's own auto-enrolled row —
+see `challenges/index.ts`'s `save()`), which is where the group dashboard's `ParticipantAvatar`
+(`challenge-dashboard-page-ui`) reads a real photo from, falling back to its original
+initials-on-a-hashed-color badge for anyone with none (never signed in with Google, or joined
+before this existed). `GET /challenges?checklistTemplateId=` also surfaces the owner's own
+name/photo as `challenge.ownerDisplayName`/`ownerAvatarUrl` for the shared page's own greeting,
+gated by `20260828010000_challenge_owner_name_public.sql`'s policy on `challenge_participants`
+(readable for the owner's own row specifically, on a publicly-shared challenge, so an anonymous
+visitor who hasn't joined yet can still see it — everyone else's row stays roster-only, same as
+before).
 
 `baby`, `body-metric` (and the routes/packages built on them — `pregnant-intro` at `/intro`,
 `pregnant-weight-record` at `/weight-record`, `baby-card`/`body-metric-card` on the home page)

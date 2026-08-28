@@ -21,9 +21,6 @@ import type { RecordField } from '@dreamer/global/src/store/record-field';
 export function useChecklistTemplateSharedPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
-  // Just greeting text, carried in the URL rather than fetched — see
-  // util.ts's getSharedChecklistTemplateUrl and useCreateChecklistTemplateApi.tsx.
-  const userName = searchParams.get('from') || 'Someone';
   const targetName = searchParams.get('to') || 'you';
   const { getRecordFieldsByIds, mergeRecordFields } = useRecordField();
   const [dialogRejectOpen, setDialogRejectOpen] = React.useState(false);
@@ -31,11 +28,18 @@ export function useChecklistTemplateSharedPage() {
   const { getChallengeForTemplate } = useChallenge();
   const { acceptChallenge } = useJoinChallenge();
   const { savePendingChallengeJoin } = usePendingChallengeJoin();
-  const { isAnonymous, signInWithGoogle } = useSession();
+  const { isAnonymous, signInWithGoogle, displayName, avatarUrl } = useSession();
   // `id` here is the *owner's* template id (the challenge's canonical
   // checklist_template_id), not any local copy — exactly what
   // getChallengeForTemplate expects.
   const challenge = getChallengeForTemplate(id);
+  // Greeting text: the link's own ?from= wins when the sharer typed one in
+  // (the old tasks-shared-page-ui flow); CardShare's current share flow
+  // never sets it, so this falls back to the challenge owner's own name
+  // (challenge.ownerDisplayName — see useChallenge.tsx and
+  // 20260828010000_challenge_owner_name_public.sql) once that's loaded, and
+  // only to the generic "Someone" before/without either.
+  const userName = searchParams.get('from') || challenge?.ownerDisplayName || 'Someone';
   const isChallenge = !!challenge && (challenge.shareRecords || challenge.commentsEnabled);
   const navigate = useNavigate();
   const { getChecklistTemplateApi } = useGetChecklistTemplateApi();
@@ -72,24 +76,29 @@ export function useChecklistTemplateSharedPage() {
 
   // Joining a challenge never forks — see useJoinChallenge — and requires a
   // real (Google) sign-in, since an anonymous identity is throwaway and
-  // wouldn't mean anything on a leaderboard. `signInWithGoogle` redirects
-  // away entirely — `redirectTo` is pinned to the app's base URL, not this
-  // page (see useSession.ts, and why: a per-route redirect target needs a
-  // wildcard entry in GoTrue's Redirect URL allow-list, and a mismatch there
-  // silently falls back to the project's Site URL instead of erroring —
-  // that's a real production bug this app hit once already) — so the intent
-  // has to be saved first and picked back up after the redirect, not
-  // awaited here.
-  const joinTheChallenge = async (name: string) => {
+  // wouldn't mean anything on a leaderboard. That sign-in is also where the
+  // participant's name/avatar come from now (`useSession`'s `displayName`/
+  // `avatarUrl`, straight off the Google profile) — no more asking, and
+  // nothing left to carry through `savePendingChallengeJoin` for it (see
+  // useResumePendingChallengeJoin.tsx, which reads the same two off the
+  // session fresh once the redirect below actually lands). `signInWithGoogle`
+  // redirects away entirely — `redirectTo` is pinned to the app's base URL,
+  // not this page (see useSession.ts, and why: a per-route redirect target
+  // needs a wildcard entry in GoTrue's Redirect URL allow-list, and a
+  // mismatch there silently falls back to the project's Site URL instead of
+  // erroring — that's a real production bug this app hit once already) — so
+  // the intent has to be saved first and picked back up after the redirect,
+  // not awaited here.
+  const joinTheChallenge = async () => {
     if (!id || !challenge) return;
     setSubmitting(true);
     try {
       if (isAnonymous) {
-        savePendingChallengeJoin({ challengeId: challenge.id, checklistTemplateId: id, displayName: name });
+        savePendingChallengeJoin({ challengeId: challenge.id, checklistTemplateId: id });
         await signInWithGoogle();
         return;
       }
-      const joined = await acceptChallenge(id, challenge.id, name);
+      const joined = await acceptChallenge(id, challenge.id, displayName ?? '', avatarUrl);
       // detail-task-page requires `currentDay` in the query string (see
       // ChecklistToday/SearchDialog) — without it the page bails out empty.
       if (joined) navigate(`/task/${joined.id}?currentDay=${new Date().toISOString()}`);
@@ -98,7 +107,7 @@ export function useChecklistTemplateSharedPage() {
     }
   };
 
-  const confirmTakeIt = (name: string) => (isChallenge ? joinTheChallenge(name) : takeItPlain());
+  const confirmTakeIt = () => (isChallenge ? joinTheChallenge() : takeItPlain());
 
   const handleSubmit = () => {
     if (!data || submitting) return;
@@ -109,10 +118,8 @@ export function useChecklistTemplateSharedPage() {
     // No name-entry dialog in between: a signed-in user just sees the
     // button's own spinner (`submitting`) while joinTheChallenge/takeItPlain
     // runs; an anonymous one is sent straight into the Google sign-in
-    // redirect from inside joinTheChallenge. There's no more UI to collect a
-    // display name, so this always joins/takes it as `targetName` (the
-    // greeting's "to" query param).
-    confirmTakeIt(targetName);
+    // redirect from inside joinTheChallenge.
+    confirmTakeIt();
   };
 
   const onClickLeaveIt = () => {
@@ -137,6 +144,9 @@ export function useChecklistTemplateSharedPage() {
     // 'classic'; a template shared before themes existed, or a share
     // whose challenge row hasn't loaded yet, gets that same default.
     themeId: challenge?.theme ?? 'classic',
+    // Owner-set in CardShare — see theme.ts's useApplyChallengeTheme. `null`
+    // for any challenge that hasn't set one, same "not loaded yet" default.
+    backgroundImageUrl: challenge?.backgroundImageUrl ?? null,
     submitting,
     handleSubmit,
     onClickLeaveIt,

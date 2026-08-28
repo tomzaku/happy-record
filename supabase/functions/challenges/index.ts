@@ -1,7 +1,10 @@
 // The `challenges` resource — the record that turns a shared checklist
 // template into something joinable. See CLAUDE.md.
 //
-//   GET  /challenges  ?checklistTemplateId=          → { challenge }        owner's or a public template's, null if none yet
+//   GET  /challenges  ?checklistTemplateId=          → { challenge }        owner's or a public template's, null if none yet.
+//     `challenge.ownerDisplayName`/`ownerAvatarUrl` ride along when the owner
+//     has them saved (see 20260828010000_challenge_owner_name_public.sql) —
+//     the shared page's greeting uses them in place of a generic fallback.
 //   GET  /challenges  ?id=&from=&to=                 → { challenge, participants, completions, ranking, targets }
 //     the dashboard read — from/to default to the last 30 days (targets are
 //     all-time, not scoped to this range — see getTargets). `completions`
@@ -13,7 +16,7 @@
 //     `checklist_records` peer-read RLS policies (see the migrations) — this
 //     function's own `db` client is still the caller's RLS-scoped one,
 //     nothing here is service-role.
-//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), also enrolls the owner as a participant when shareRecords is on — `challenge.ownerDisplayName`, if given, becomes that participant row's name (not a `challenges` column; omit it on a re-save that isn't touching the name and the stored one is left alone). `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids. `challenge.theme` is one of CHALLENGE_THEMES (_shared/challenges.ts), falls back to 'classic' if omitted/invalid.
+//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), also enrolls the owner as a participant when shareRecords is on — `challenge.ownerDisplayName`/`ownerAvatarUrl`, if given, become that participant row's name/photo (neither is a `challenges` column; omit either on a re-save that isn't touching it and the stored one is left alone). `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids. `challenge.theme` is one of CHALLENGE_THEMES (_shared/challenges.ts), falls back to 'classic' if omitted/invalid. `challenge.backgroundImageUrl` is a plain http(s) URL (an already-hosted photo, not an upload) shown behind the shared page instead of/over the theme's own background; anything that isn't a plausible http(s) URL clears it to null rather than failing the save.
 //
 // Deploy: `supabase functions deploy challenges`
 
@@ -44,7 +47,35 @@ async function getByTemplateId(db: SupabaseClient, templateId: string) {
     .eq('checklist_template_id', templateId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return { challenge: data ? toChallenge(data as Record<string, unknown>) : null };
+  if (!data) return { challenge: null };
+  const challenge = toChallenge(data as Record<string, unknown>);
+
+  // The shared page's own greeting ("X just challenged you!") wants the
+  // real creator's name/photo instead of a generic fallback — the owner's
+  // own `challenge_participants` row, straight off their Google identity
+  // (see CardShare and useSession.ts's `displayName`/`avatarUrl`). Only
+  // readable here at all once
+  // 20260828010000_challenge_owner_name_public.sql's policy opened it up
+  // for a publicly-readable challenge's owner row specifically — any other
+  // visitor's row still isn't; `maybeSingle` just comes back empty rather
+  // than erroring when RLS denies it (not shared, or the owner's never
+  // signed in with Google).
+  const { data: ownerRow } = await db
+    .from('challenge_participants')
+    .select('display_name, avatar_url')
+    .eq('challenge_id', challenge.id)
+    .eq('user_id', challenge.ownerId)
+    .maybeSingle();
+  const ownerDisplayName = (ownerRow?.display_name as string | undefined)?.trim();
+  const ownerAvatarUrl = (ownerRow?.avatar_url as string | undefined) || undefined;
+
+  return {
+    challenge: {
+      ...challenge,
+      ...(ownerDisplayName ? { ownerDisplayName } : {}),
+      ...(ownerAvatarUrl ? { ownerAvatarUrl } : {}),
+    },
+  };
 }
 
 async function getDashboard({ url, db }: Ctx, id: string) {
@@ -265,6 +296,11 @@ async function save({ req, db, userId }: Ctx) {
   const ownerDisplayNameRaw = (entry as Record<string, unknown>).ownerDisplayName;
   const ownerDisplayName =
     typeof ownerDisplayNameRaw === 'string' && ownerDisplayNameRaw.trim() ? ownerDisplayNameRaw.trim() : undefined;
+  // Same idea, same "omit rather than blank out" handling — the owner's
+  // Google profile photo (see useSession.ts's `avatarUrl`), absent for an
+  // owner who was never signed in with Google.
+  const ownerAvatarUrlRaw = (entry as Record<string, unknown>).ownerAvatarUrl;
+  const ownerAvatarUrl = typeof ownerAvatarUrlRaw === 'string' && ownerAvatarUrlRaw ? ownerAvatarUrlRaw : undefined;
 
   // Owner-only by RLS (`with check (owner_id = auth.uid())`); unique on
   // checklist_template_id so re-sharing the same template reuses this row.
@@ -294,6 +330,7 @@ async function save({ req, db, userId }: Ctx) {
         user_id: userId,
         checklist_template_id: challenge.checklistTemplateId,
         ...(ownerDisplayName ? { display_name: ownerDisplayName } : {}),
+        ...(ownerAvatarUrl ? { avatar_url: ownerAvatarUrl } : {}),
       },
       { onConflict: 'challenge_id,user_id' },
     );
