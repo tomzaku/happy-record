@@ -1,0 +1,21 @@
+.skeleton {
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: 6px;
+  // A wide gradient panned left-to-right, not a plain pulsing opacity — reads
+  // less like "this is broken" and more like a deliberate loading state, the
+  // same shimmer virtually every app with a real skeleton screen uses.
+  background: linear-gradient(90deg, var(--input-background) 25%, var(--surface-secondary) 37%, var(--input-background) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
+}
