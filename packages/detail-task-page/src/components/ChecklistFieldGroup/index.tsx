@@ -14,6 +14,7 @@ import ChecklistFieldGroupHeader, {
   ChecklistFieldGroupTab,
 } from '../ChecklistFieldGroupHeader';
 import { AnimatePresence, motion } from 'motion/react';
+import { useIntl } from '@dreamer/translation';
 
 import styles from './index.module.scss';
 import ChecklistFieldGroupAdd from '../ChecklistFieldGroupAdd';
@@ -42,6 +43,7 @@ const ChecklistFieldGroup = ({
   onFieldAdded,
 }: Props) => {
   const { updateChecklist } = useChecklist();
+  const intl = useIntl();
   const [activeTab, setActiveTab] = React.useState<
     Record<string, ChecklistFieldGroupTab>
   >(
@@ -95,21 +97,43 @@ const ChecklistFieldGroup = ({
     }));
   };
 
-  const renderTitle = (fieldGroup: FieldGroup) => {
+  // Plain title text only now — the schedule status used to be baked into this same return
+  // value (a two-line flex-column sitting inside the header's Typography.Title), which put the
+  // settings cog (a sibling of the whole title block) dead center against *both* lines instead
+  // of next to the title text itself. ChecklistFieldGroupHeader's own `renderStatus` slot is
+  // what that status moved into — see renderScheduleStatus below.
+  const renderTitle = (fieldGroup: FieldGroup) => fieldGroup.title;
+
+  // Always shows something now, not only when the group isn't scheduled today — a group that
+  // *is* active gets its own "Scheduled today" badge instead of the header silently having a
+  // status row some days and not others.
+  const renderScheduleStatus = (fieldGroup: FieldGroup) => {
     if (isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay))) {
-      return fieldGroup.title;
+      return (
+        <span className={styles.scheduledBadge}>
+          {intl.formatMessage({
+            id: 'checklist-field-group.scheduled-today',
+            defaultMessage: 'Scheduled today',
+          })}
+        </span>
+      );
     }
-    // Not hidden outright — just marked, so the settings menu/Add stay reachable regardless of
-    // the day being viewed. See scheduleUtils.ts's isFieldGroupActiveOnDay. The badge sits on
-    // its own line below the title rather than inline next to it — inline pushed the tab
-    // icons/Add button too far right on narrower headers.
+    // See scheduleUtils.ts's isFieldGroupActiveOnDay.
     const nextDayLabel = getNextScheduledDayLabel(fieldGroup.repeat, new Date(currentDay));
     return (
-      <span className={styles.notScheduledTitle}>
-        <span>{fieldGroup.title}</span>
-        <span className={styles.notScheduledBadge}>
-          Not scheduled today{nextDayLabel ? ` · Next ${nextDayLabel}` : ''}
-        </span>
+      <span className={styles.notScheduledBadge}>
+        {nextDayLabel
+          ? intl.formatMessage(
+              {
+                id: 'checklist-field-group.not-scheduled-today-next',
+                defaultMessage: 'Next {{nextDayLabel}}',
+              },
+              { nextDayLabel },
+            )
+          : intl.formatMessage({
+              id: 'checklist-field-group.not-scheduled-today',
+              defaultMessage: 'Not scheduled today',
+            })}
       </span>
     );
   };
@@ -283,6 +307,7 @@ const ChecklistFieldGroup = ({
                 })
               }
               renderTitle={() => renderTitle(fieldGroup)}
+              renderStatus={() => renderScheduleStatus(fieldGroup)}
               renderMenu={() => (
                 <ChecklistFieldGroupMenu
                   fieldGroup={fieldGroup}

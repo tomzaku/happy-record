@@ -22,6 +22,7 @@ const ChecklistFieldGroupHeader = ({
   ],
   renderTitle = () => null,
   renderMenu,
+  renderStatus,
   isCollapsed = false,
   onToggleCollapse,
 }: {
@@ -34,8 +35,13 @@ const ChecklistFieldGroupHeader = ({
   renderTitle?: () => React.ReactNode;
   /** The group's own settings menu (ChecklistFieldGroupMenu) — always reachable regardless of
    * `activeTabs`, since it isn't a content tab any more (see that component's own doc comment
-   * for why `Config` was removed from the tab row entirely). */
+   * for why `Config` was removed from the tab row entirely). Sits right after the title text,
+   * on the title's own row — not vertically centered against the taller block `renderStatus`'s
+   * own row adds below it. */
   renderMenu?: () => React.ReactNode;
+  /** The group's own schedule status ("Scheduled today" / "Not scheduled today · Next Mon") —
+   * its own row under the title, shown either way rather than only when not scheduled. */
+  renderStatus?: () => React.ReactNode;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }) => {
@@ -69,37 +75,48 @@ const ChecklistFieldGroupHeader = ({
     },
   ];
 
-  const buttons = allButtons.filter(button => activeTabs.includes(button.tab));
+  // `activeTabs` is an ordered list, not just a membership set — mapping over it (rather than
+  // filtering `allButtons`' own fixed literal order) is what lets the Tabs dialog's reorder
+  // controls (ChecklistFieldGroupMenu's own up/down buttons) actually change render order here.
+  // Add itself isn't part of `allButtons` at all (it renders as its own dedicated button below,
+  // always last) — reordering only ever applies to Home/History/Metric among each other.
+  const buttonsByValue = new Map(allButtons.map(button => [button.tab, button]));
+  const buttons = activeTabs
+    .map(tab => buttonsByValue.get(tab))
+    .filter((button): button is (typeof allButtons)[number] => button !== undefined);
   const intl = useIntl();
 
   return (
     <>
       <div className={styles.container}>
         <div className={styles.left}>
-          <div onClick={onToggleCollapse} className={styles.titleContainer}>
-            {onToggleCollapse && (
-              <motion.div
-                initial={{ rotate: 0 }}
-                animate={{ rotate: isCollapsed ? -180 : 0 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 300,
-                  damping: 30,
-                }}
-                className={styles.iconGroup}
-              >
-                <Icon
-                  className={styles.collapseIcon}
-                  width={20}
-                  icon="solar:alt-arrow-down-line-duotone"
-                />
-              </motion.div>
-            )}
-            <Typography.Title level={4} noMargin>
-              {renderTitle()}
-            </Typography.Title>
+          <div className={styles.titleRow}>
+            <div onClick={onToggleCollapse} className={styles.titleContainer}>
+              {onToggleCollapse && (
+                <motion.div
+                  initial={{ rotate: 0 }}
+                  animate={{ rotate: isCollapsed ? -180 : 0 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 300,
+                    damping: 30,
+                  }}
+                  className={styles.iconGroup}
+                >
+                  <Icon
+                    className={styles.collapseIcon}
+                    width={20}
+                    icon="solar:alt-arrow-down-line-duotone"
+                  />
+                </motion.div>
+              )}
+              <Typography.Title level={4} noMargin>
+                {renderTitle()}
+              </Typography.Title>
+            </div>
+            {renderMenu?.()}
           </div>
-          {renderMenu?.()}
+          {renderStatus && <div className={styles.statusRow}>{renderStatus()}</div>}
         </div>
         {buttons.map(({ icon, iconActive, onClick, isActive }, index) => (
           <Icon

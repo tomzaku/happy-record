@@ -9,10 +9,21 @@
   background: var(--card-background);
 }
 
+// Column now, not a single row — the schedule status (.statusRow) sits under the title/cog row
+// (.titleRow) instead of being centered against the *whole* title block the way it was when it
+// lived inside the title's own Typography.Title (a plain flex row's `align-items: center` has
+// no way to say "center against just the first line").
 .left {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   flex: 1;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
 .titleContainer {
@@ -21,7 +32,21 @@
   gap: $spacing-xs;
   margin-right: $spacing-lg;
   cursor: pointer;
-  padding: $spacing-sm 0;
+  // Top only — a bottom padding here pushed .statusRow further from the title than intended,
+  // now that the status is its own row right underneath instead of packed into the title's own
+  // Typography.Title.
+  padding: $spacing-sm 0 0;
+}
+
+// The settings cog (renderMenu) plus the schedule status badge both read off the title row now
+// — the cog sits right after the title text (not vertically centered against a taller,
+// two-line block), and the status is its own row underneath, shown for both a scheduled-today
+// and a not-scheduled-today group (see ChecklistFieldGroup's own renderScheduleStatus).
+.statusRow {
+  // Roughly lines up under the title text itself, not the collapse chevron before it (20px icon
+  // + its $spacing-xs gap) — matches where the badge used to sit when it was the second line of
+  // the title's own flex-column, before it moved to its own row.
+  padding-left: calc(20px + #{$spacing-xs});
 }
 
 .collapseIcon {

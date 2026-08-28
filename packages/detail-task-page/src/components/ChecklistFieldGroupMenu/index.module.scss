@@ -152,6 +152,33 @@
   flex: 1;
 }
 
+.reorderButtons {
+  display: flex;
+  // No gap — the two arrows read as one stacked up/down control, not two separate buttons.
+  gap: 0;
+}
+
+.reorderButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xs;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-description-color);
+
+  &:hover:not(:disabled) {
+    background-color: var(--surface-secondary);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
 // The "which tab opens first" marker, folded into the same row as its "is it shown at all"
 // checkbox instead of a separate list.
 .defaultToggle {

@@ -255,6 +255,21 @@ const ChecklistFieldGroupMenu = ({
     saveGroup({ activeTabs: newActiveTabs, defaultTab: tab });
   };
 
+  // `activeTabs`' own array order *is* the tab bar's render order (see
+  // ChecklistFieldGroupHeader's own comment on why it maps over `activeTabs` rather than
+  // filtering a fixed literal) — swapping two entries here is a real reorder, not just bookkeeping.
+  // Only active tabs are reachable through this (an inactive one has no position that means
+  // anything until it's turned on, which appends it to the end — see handleTabToggle).
+  const handleMoveTab = (tab: ChecklistFieldGroupTab, direction: -1 | 1) => {
+    const index = activeTabs.indexOf(tab);
+    const newIndex = index + direction;
+    if (index === -1 || newIndex < 0 || newIndex >= activeTabs.length) return;
+    const newActiveTabs = [...activeTabs];
+    [newActiveTabs[index], newActiveTabs[newIndex]] = [newActiveTabs[newIndex], newActiveTabs[index]];
+    setActiveTabs(newActiveTabs);
+    saveGroup({ activeTabs: newActiveTabs });
+  };
+
   const handleCollapseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setCollapseDefault(checked);
@@ -313,7 +328,7 @@ const ChecklistFieldGroupMenu = ({
     if (field.type === 'metric') {
       return field.unit
         ? intl.formatMessage(
-            { id: 'checklist-field-group-menu.field-summary-metric-unit', defaultMessage: 'Metric · {unit}' },
+            { id: 'checklist-field-group-menu.field-summary-metric-unit', defaultMessage: 'Metric · {{unit}}' },
             { unit: field.unit },
           )
         : intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-metric', defaultMessage: 'Metric' });
@@ -468,9 +483,19 @@ const ChecklistFieldGroupMenu = ({
           })}
         </Typography.Text>
         <div className={styles.tabList}>
-          {TAB_OPTIONS.map(({ value, label, icon }) => {
+          {/* Active tabs first, in `activeTabs`' own order (the tab bar's real render order —
+              see ChecklistFieldGroupHeader's own comment on why), then whatever's still off in
+              TAB_OPTIONS' fixed canonical order — an inactive tab has no position of its own to
+              show yet; turning it on appends it to the end (see handleTabToggle). */}
+          {[
+            ...activeTabs
+              .map(tab => TAB_OPTIONS.find(option => option.value === tab))
+              .filter((option): option is (typeof TAB_OPTIONS)[number] => option !== undefined),
+            ...TAB_OPTIONS.filter(option => !activeTabs.includes(option.value)),
+          ].map(({ value, label, icon }) => {
             const isActive = activeTabs.includes(value);
             const isDefault = defaultTab === value;
+            const activeIndex = activeTabs.indexOf(value);
             return (
               <div key={value} className={styles.tabRow}>
                 <Checkbox
@@ -480,6 +505,36 @@ const ChecklistFieldGroupMenu = ({
                 />
                 <Icon icon={icon} width={16} />
                 <Typography.Text className={styles.tabRowLabel}>{label}</Typography.Text>
+                {/* Reordering only means anything for a tab that's actually shown somewhere —
+                    an inactive row has no position to move. */}
+                {isActive && (
+                  <div className={styles.reorderButtons}>
+                    <button
+                      type="button"
+                      className={styles.reorderButton}
+                      onClick={() => handleMoveTab(value, -1)}
+                      disabled={activeIndex === 0}
+                      aria-label={intl.formatMessage({
+                        id: 'checklist-field-group-menu.move-tab-up',
+                        defaultMessage: 'Move up',
+                      })}
+                    >
+                      <Icon icon="solar:alt-arrow-up-linear" width={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.reorderButton}
+                      onClick={() => handleMoveTab(value, 1)}
+                      disabled={activeIndex === activeTabs.length - 1}
+                      aria-label={intl.formatMessage({
+                        id: 'checklist-field-group-menu.move-tab-down',
+                        defaultMessage: 'Move down',
+                      })}
+                    >
+                      <Icon icon="solar:alt-arrow-down-linear" width={14} />
+                    </button>
+                  </div>
+                )}
                 <button
                   type="button"
                   className={cx(styles.defaultToggle, isDefault && styles.defaultToggleActive)}
@@ -488,7 +543,7 @@ const ChecklistFieldGroupMenu = ({
                   aria-label={intl.formatMessage(
                     {
                       id: 'checklist-field-group-menu.make-default-tab',
-                      defaultMessage: 'Make {label} the default tab',
+                      defaultMessage: 'Make {{label}} the default tab',
                     },
                     { label },
                   )}
@@ -543,7 +598,7 @@ const ChecklistFieldGroupMenu = ({
               ? intl.formatMessage(
                   {
                     id: 'checklist-field-group-menu.customize-field-title',
-                    defaultMessage: 'Customize {title}',
+                    defaultMessage: 'Customize {{title}}',
                   },
                   { title: editingField?.title ?? '' },
                 )
@@ -797,7 +852,7 @@ const ChecklistFieldGroupMenu = ({
           {
             id: 'checklist-field-group-menu.delete-confirm-message',
             defaultMessage:
-              'This hides "{title}" and its fields from the task. Nothing recorded through it is deleted, and you can restore it later from General Settings → Archived Groups.',
+              'This hides "{{title}}" and its fields from the task. Nothing recorded through it is deleted, and you can restore it later from General Settings → Archived Groups.',
           },
           { title: fieldGroup.title || 'this group' },
         )}

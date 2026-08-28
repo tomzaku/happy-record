@@ -12,16 +12,13 @@
   opacity: 0.6;
 }
 
-// Badge sits on its own line below the title instead of inline next to it — inline ate up
-// enough horizontal space to crowd the tab icons/Add button on narrower headers.
-.notScheduledTitle {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-
+// Both render in ChecklistFieldGroupHeader's own `renderStatus` row, under the title — see
+// that component's own module doc for why this is a dedicated row now rather than a second
+// line baked into the title text itself.
 .notScheduledBadge {
+  // Both badges are a `<span>` — inline by default, and margin-top/bottom are no-ops on inline
+  // elements, so the margin-bottom below needs this to actually render.
+  display: inline-block;
   font-size: 11px;
   font-weight: 400;
   color: var(--text-description-color);
@@ -29,6 +26,25 @@
   border-radius: 999px;
   padding: 2px $spacing-sm;
   white-space: nowrap;
+  // A little breathing room under the badge before the Hr/tab content below — only one of this
+  // and .scheduledBadge ever renders at a time (same slot, different day), so both carry it,
+  // not just whichever one was on screen when this was noticed.
+  margin-bottom: $spacing-xs;
+}
+
+// Same pill shape as .notScheduledBadge, colored like the header's own active-tab indicator
+// (ChecklistFieldGroupHeader's `.tab.active`) rather than an unrelated "success green" — this
+// is "on today's schedule," not a pass/fail state.
+.scheduledBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--icon-primary);
+  background: var(--surface-secondary);
+  border-radius: 999px;
+  padding: 2px $spacing-sm;
+  white-space: nowrap;
+  margin-bottom: $spacing-xs;
 }
 
 .hrContainer {

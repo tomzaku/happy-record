@@ -4,10 +4,7 @@
   margin: $spacing-sm;
 }
 
-// Every row — including a card's own header/title row, via SettingsRow — shares this exact
-// padding. That's the whole point: one number, not each section picking its own.
 .settingRow {
-  padding: 12px !important;
   border-radius: 8px;
   transition: background-color 0.2s ease;
 }
