@@ -53,6 +53,23 @@
   padding: $spacing-lg;
 }
 
+// A card with its own full-bleed header (`.cardHeaderWash` below) can't
+// use `.card`'s own uniform padding — the wash needs to reach the card's
+// real edges. A negative margin on the wash to pull it back out over that
+// padding *looked* right but wasn't: bleeding an edge that way only works
+// if the opposite side adds back the exact same amount as padding, and a
+// mismatch there (which is exactly what happened) silently shifts every
+// sibling below it up by the difference instead of just bleeding visually
+// — fragile in a way that's easy to get wrong and hard to spot from the
+// CSS alone. Zeroing the card's own padding instead, so `.cardHeaderWash`
+// and `.cardBody` each supply their own, is the same header/body split
+// Modal already uses for exactly this (SettingsDialog's
+// `.modalShell { padding: 0 !important; }`) — no margin math to get right,
+// just two sections that each own their own spacing.
+.cardNoPadding {
+  padding: 0;
+}
+
 .buttonSpinner {
   margin-right: $spacing-xs;
   vertical-align: middle;
@@ -72,6 +89,31 @@
   display: flex;
   align-items: center;
   gap: $spacing-xs;
+}
+
+// A tinted background strip instead of a divider under the header — same
+// treatment SettingsDialog/CardShare's own modal headers already use (a
+// faint wash of the header's own accent color, not a hairline). Sits flush
+// against a `.cardNoPadding` card's real edges — see that class's own
+// comment for why this doesn't reach for a negative-margin bleed instead.
+.cardHeaderWash {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+  padding: $spacing-lg $spacing-lg $spacing-md;
+  border-radius: 12px 12px 0 0;
+}
+
+// The rest of a `.cardNoPadding` card's content — everything below
+// `.cardHeaderWash`. Horizontal/bottom padding matches `.card`'s own
+// (so the content lines up exactly like every other card's); no
+// padding-top of its own since `.card`'s `gap` already puts space between
+// this and the wash above it.
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: 0 $spacing-lg $spacing-lg;
 }
 
 .memberPill {
@@ -220,16 +262,17 @@
   color: var(--text-color-secondary, var(--text-color));
 }
 
-// A flat full-width `background: var(--input-border)` line read as a harsh
-// ruled-paper edge, especially right under a card header — faded ends
-// instead of a hard edge-to-edge stroke is the usual "premium dashboard"
-// treatment (Linear/Notion-style), and reads as an intentional design
-// choice rather than a leftover `<hr>`.
+// `var(--division-color)` — the same divider token every modal/dialog
+// header in this app already separates itself from its body with
+// (SearchDialog's `.inputRow`, ChecklistGenericInfo/ChecklistFieldGroupMenu's
+// row separators, DesktopDrawer, setting-page-ui's own rows) — not
+// `--input-border`, a different, mismatched token that only reads right on
+// a real form input.
 .sectionDivider {
   height: 1px;
   border: 0;
   margin: $spacing-sm 0;
-  background: linear-gradient(to right, transparent, var(--input-border) 15%, var(--input-border) 85%, transparent);
+  background: var(--division-color);
 }
 
 .sectionHeaderRow {
@@ -301,23 +344,62 @@
   overflow-y: auto;
 }
 
-.comment {
+// ─── Comments: messenger-style bubbles ───
+// A fellow participant's message sits on the left with their avatar/name;
+// this device's own sits on the right in the app's accent color with
+// neither, the same convention every chat app uses (labeling your own
+// message with your own name is just noise) — `data-mine` on both the row
+// (for alignment) and the bubble itself (for its own color/corner flip).
+
+.commentRow {
+  display: flex;
+  align-items: flex-end;
+  gap: $spacing-xs;
+  max-width: 82%;
+
+  &[data-mine='true'] {
+    align-self: flex-end;
+  }
+}
+
+.bubbleCol {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: $spacing-xs 0;
-  border-bottom: 1px solid var(--input-border);
+  min-width: 0;
 }
 
-.commentHeader {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xxs;
+.commentRow[data-mine='true'] .bubbleCol {
+  align-items: flex-end;
 }
 
 .commentAuthor {
   font-weight: 600;
-  font-size: toRem(12px);
+  font-size: toRem(11px);
+  color: var(--text-color-secondary, var(--text-color));
+  padding: 0 2px;
+}
+
+// One corner left square — the "tail" — pointing at that side's own avatar;
+// mirrored for a "mine" bubble on the right instead of the left.
+.bubble {
+  background: var(--input-background);
+  border-radius: 16px 16px 16px 4px;
+  padding: $spacing-xs $spacing-sm;
+  max-width: 100%;
+  word-break: break-word;
+
+  &[data-mine='true'] {
+    background: var(--icon-primary);
+    color: #fff;
+    border-radius: 16px 16px 4px 16px;
+  }
+}
+
+.commentTime {
+  font-size: toRem(10px);
+  color: var(--text-color-secondary, var(--text-color));
+  padding: 0 2px;
 }
 
 .commentForm {
