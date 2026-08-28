@@ -706,6 +706,7 @@ const ChallengeDashboardPageUi = () => {
                     />
                   )}
                   <Input
+                    key={messageInputResetKey}
                     value={commentBody}
                     onChange={e => setCommentBody(e.target.value)}
                     onKeyDown={e => {
