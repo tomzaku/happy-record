@@ -36,7 +36,7 @@ import type {
  * actual iframe src, `source` is the original watch URL kept only for display.
  *
  * An empty note stays `null`, same as a manually created group (see
- * ChecklistFieldGroupAddGroupDesktop's `note: null`).
+ * ChecklistFieldGroupAddGroup's own `note: null`).
  */
 function buildNoteFromBlocks(blocks: AiGeneratedNoteBlock[]): unknown {
   if (blocks.length === 0) return null;
