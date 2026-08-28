@@ -500,15 +500,58 @@
 }
 
 .targetTrack {
-  height: 12px;
+  height: 22px;
   border-radius: 999px;
   background: var(--input-background);
   overflow: hidden;
 }
 
 .targetFill {
+  position: relative;
   display: flex;
   height: 100%;
+  overflow: hidden;
+  // The actual "filling up" animation — TargetFill (index.tsx) sets `width`
+  // to 0 on first paint, then to the real percentage a frame later, and
+  // this is what makes that change animate instead of just jumping.
+  transition: width 0.8s ease-out;
+
+  // Same diagonal light-sweep trick as the AI generate button
+  // (detail-task-page's `.aiButton`) — a `::before` instead of a real
+  // element since it's pure decoration, confined to this element's own
+  // (animating) width via `overflow: hidden` above so it only ever sweeps
+  // across the filled portion, never the empty track behind it. Unlike
+  // `.aiButton`'s hover-triggered one-shot, this loops on its own — a
+  // progress bar has no hover moment to trigger off of — but only actually
+  // sweeps for a small slice of each cycle (the 0%→18% keyframe below) and
+  // sits off-screen for the rest, so it reads as an occasional flash rather
+  // than a constant shimmer (see that same file's own note on why a
+  // continuously-animating surface stops reading as "special" — here it'd
+  // be worse, several bars shimmering non-stop at once).
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.65) 50%, transparent 70%);
+    transform: translateX(-150%);
+    animation: targetFlash 2.6s ease-in-out infinite;
+  }
+
+  & > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@keyframes targetFlash {
+  0% {
+    transform: translateX(-150%);
+  }
+
+  18%,
+  100% {
+    transform: translateX(150%);
+  }
 }
 
 .targetLegendRow {
