@@ -25,10 +25,15 @@ export default function Modal({ visible, content, onDismiss, title, className }:
 
   return createPortal(
     <div className={styles.overlay} onClick={onDismiss}>
-      <div className={cx(styles.container, className)} onClick={e => {
-        e.preventDefault();
-        e.stopPropagation()
-      }}>
+      {/* stopPropagation only — this used to also call preventDefault(), which doesn't do
+          anything useful here (the container itself has no default action) but does cancel
+          the default action of any interactive descendant along the way: a checkbox's own
+          toggle, and a <label>'s click-forwarding to the control it labels, are both
+          cancelable and get suppressed the moment ANY ancestor's bubble-phase listener calls
+          preventDefault() — which is exactly what made checkboxes inside this modal
+          (CardShare's "Share everyone's check-ins"/"Allow comments" rows) silently fail to
+          check/uncheck. */}
+      <div className={cx(styles.container, className)} onClick={e => e.stopPropagation()}>
         {title && (
           <>
             <Typography.Title level={3} className={styles.title} noMargin>

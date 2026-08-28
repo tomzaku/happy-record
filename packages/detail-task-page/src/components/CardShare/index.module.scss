@@ -17,6 +17,14 @@
   transition: color 0.2s ease;
 }
 
+// Wraps the edit pencil + copy icons once a link already exists — before that there's only
+// the single chevron, no wrapper needed.
+.rightIcons {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
 .dashboardLink {
   display: inline-block;
   margin: 0 12px $spacing-sm;

@@ -63,9 +63,10 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
   const intl = useIntl();
   const isMobile = useIsMobile();
   const [copied, setCopied] = useState(false);
-  // The config (checkboxes, theme, targets) only matters before the first share — once
-  // shared this row collapses to just the url + copy, so it lives in a modal opened from
-  // the "Share" button rather than sitting on the row permanently.
+  // The config (checkboxes, theme, targets) is editable both before and after the first
+  // share — the row itself only ever shows the url + copy/edit icons once shared, so the
+  // actual checkboxes/theme picker/target inputs live in this modal, opened from the row
+  // (pre-share) or its edit pencil (post-share) rather than sitting on the row permanently.
   const [modalVisible, setModalVisible] = useState(false);
   // Generating a share URL round-trips two requests (publish the template, then
   // create/update the challenge row) before there's anything to show — without this the
@@ -147,7 +148,11 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
       await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets, theme });
       const fullUrl = getSharedChecklistTemplateUrl(result.id);
       setShareUrl(fullUrl);
-      handleCopyLink(fullUrl);
+      // Only auto-copy on the first share (the point where there's a brand-new link the
+      // owner almost certainly wants on their clipboard right away) — re-opening this modal
+      // afterward to change the theme or a target shouldn't clobber whatever's on the
+      // clipboard just because Save was clicked.
+      if (!isShared) handleCopyLink(fullUrl);
       setModalVisible(false);
     } catch (err) {
       console.error('Failed to generate share URL:', err);
@@ -156,9 +161,9 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
     }
   };
 
-  // These only render inside the pre-share modal (see isShared below), so there's no
-  // "already shared, write straight through" case to handle here — generateShareUrl is
-  // what persists them, on submit.
+  // These only render inside the share config modal (before or after the first share — see
+  // isShared below), so there's no "write straight through" case to handle here either way —
+  // generateShareUrl is what persists them, on submit.
   const handleToggleShareRecords = (checked: boolean) => setShareRecords(checked);
   const handleToggleComments = (checked: boolean) => setCommentsEnabled(checked);
   const handleTargetChange = (fieldId: string, value: string) => {
@@ -294,10 +299,9 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         </Button>
         <Button onClick={generateShareUrl} disabled={generating} className={styles.gradientButton}>
           {generating && <Icon icon="svg-spinners:180-ring-with-bg" width={16} className={styles.buttonSpinner} />}
-          {intl.formatMessage({
-            id: 'CardShare.share-button',
-            defaultMessage: 'Share',
-          })}
+          {isShared
+            ? intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })
+            : intl.formatMessage({ id: 'CardShare.share-button', defaultMessage: 'Share' })}
         </Button>
       </div>
     </>
@@ -326,15 +330,31 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         }
         rightComponent={
           isShared ? (
-            <Icon
-              width={16}
-              icon={copied ? 'solar:check-circle-bold' : 'solar:copy-line-duotone'}
-              className={styles.editIcon}
-              onClick={e => {
-                e.stopPropagation();
-                handleCopyLink();
-              }}
-            />
+            // Edit pencil alongside copy once a link exists — the config (target, theme,
+            // dashboard/comments toggles) stays editable after the first share, not just
+            // before it; only the "generate a link" framing goes away, since there's already
+            // one to keep. See generateShareUrl's own isShared branch for why Save here
+            // doesn't re-copy the link to the clipboard the way the first share does.
+            <div className={styles.rightIcons}>
+              <Icon
+                width={16}
+                icon="solar:pen-2-line-duotone"
+                className={styles.editIcon}
+                onClick={e => {
+                  e.stopPropagation();
+                  setModalVisible(true);
+                }}
+              />
+              <Icon
+                width={16}
+                icon={copied ? 'solar:check-circle-bold' : 'solar:copy-line-duotone'}
+                className={styles.editIcon}
+                onClick={e => {
+                  e.stopPropagation();
+                  handleCopyLink();
+                }}
+              />
+            </div>
           ) : (
             // The whole row already opens the config modal (onClick below) — a "Share"
             // button here was a second, redundant way to do the exact same thing. A plain
@@ -342,10 +362,7 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
             <Icon width={16} icon="solar:alt-arrow-right-linear" />
           )
         }
-        clickable={!isShared}
-        onClick={() => {
-          if (!isShared) setModalVisible(true);
-        }}
+        onClick={() => setModalVisible(true)}
       />
       {showDashboardLink && (
         <Link to={`/challenge/${challenge!.id}`} className={styles.dashboardLink}>
@@ -353,12 +370,14 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         </Link>
       )}
 
-      {/* Share config — only reachable pre-share; once shared the row above collapses to
-          just the url + copy, so there's nothing left to reopen this for. Same header/body/
-          footer layout as AiChecklistGenerate's own modal, including the Modal-vs-BottomModal
-          split by device — just a different (blue, not purple/pink) header gradient, since
-          that combination is specifically the AI feature's own signature, not a generic
-          "this is a nice modal" treatment to reuse verbatim everywhere. */}
+      {/* Share config — reachable both before the first share (row's own onClick) and after
+          (the row's edit pencil, once it exists), since the config itself (target, theme,
+          dashboard/comments toggles) is never done changing just because a link was already
+          generated. Same header/body/footer layout as AiChecklistGenerate's own modal,
+          including the Modal-vs-BottomModal split by device — just a different (blue, not
+          purple/pink) header gradient, since that combination is specifically the AI
+          feature's own signature, not a generic "this is a nice modal" treatment to reuse
+          verbatim everywhere. */}
       {isMobile ? (
         <BottomModal
           visible={modalVisible}

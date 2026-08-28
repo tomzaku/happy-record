@@ -264,6 +264,7 @@ const DetailTaskPageDesktop = () => {
                 checklistTemplate={checklistTemplate}
                 onUpdate={isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}}
                 onDelete={isOwner ? handleDeleteTask : undefined}
+                readOnly={!isOwner}
               >
                 {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
               </ChecklistGenericInfo>

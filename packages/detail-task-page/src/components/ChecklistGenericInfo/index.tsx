@@ -37,6 +37,13 @@ type Props = {
   // at all, since a non-owner shouldn't see a delete affordance for someone
   // else's task in the first place.
   onDelete?: () => void;
+  // Same "isOwner" gate as onDelete above, but for the Icon & Color / Schedule / Tags rows:
+  // index.desktop.tsx/index.mobile.tsx already pass a no-op `onUpdate` for a non-owner, but
+  // without this the pencil icons and row onClicks still opened the edit modals regardless —
+  // a participant could fill out the whole form, hit Save, and have it silently do nothing
+  // (the no-op onUpdate swallowing it), no different-looking from a real save. Hides the edit
+  // affordance instead, same as onDelete already does.
+  readOnly?: boolean;
   // Extra rows rendered in this same card, after Archived Groups and before Delete Task
   // (the one destructive row stays last on purpose) — CardShare is the one caller today,
   // so Share reads as part of General Settings instead of a second card floating below it.
@@ -51,7 +58,7 @@ enum EditModal {
   Archived,
 }
 
-const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed, onDelete, children }: Props) => {
+const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed, onDelete, readOnly, children }: Props) => {
   const intl = useIntl();
   const [isCollapsed, setIsCollapsed] = React.useState(isDefaultCollapsed);
   const [activeModal, setActiveModal] = React.useState<EditModal>(
@@ -282,21 +289,27 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
                     }
                     color={checklistTemplate.avatar?.color || '#607d8b'}
                   />
-                  <Icon
-                    width={16}
-                    icon="solar:pen-2-line-duotone"
-                    className={styles.editIcon}
-                    onClick={() => {
-                      resetModalStates();
-                      setActiveModal(EditModal.Icon);
-                    }}
-                  />
+                  {!readOnly && (
+                    <Icon
+                      width={16}
+                      icon="solar:pen-2-line-duotone"
+                      className={styles.editIcon}
+                      onClick={() => {
+                        resetModalStates();
+                        setActiveModal(EditModal.Icon);
+                      }}
+                    />
+                  )}
                 </div>
               }
-              onClick={() => {
-                resetModalStates();
-                setActiveModal(EditModal.Icon);
-              }}
+              onClick={
+                readOnly
+                  ? undefined
+                  : () => {
+                      resetModalStates();
+                      setActiveModal(EditModal.Icon);
+                    }
+              }
             />
 
             {/* Schedule */}
@@ -325,22 +338,28 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
                   {formatDisplayStartDate() && (
                     <Typography.Text>{formatDisplayStartDate()}</Typography.Text>
                   )}
-                  <Icon
-                    width={16}
-                    icon="solar:pen-2-line-duotone"
-                    className={styles.editIcon}
-                    onClick={e => {
-                      e.stopPropagation();
-                      resetModalStates();
-                      setActiveModal(EditModal.Schedule);
-                    }}
-                  />
+                  {!readOnly && (
+                    <Icon
+                      width={16}
+                      icon="solar:pen-2-line-duotone"
+                      className={styles.editIcon}
+                      onClick={e => {
+                        e.stopPropagation();
+                        resetModalStates();
+                        setActiveModal(EditModal.Schedule);
+                      }}
+                    />
+                  )}
                 </div>
               }
-              onClick={() => {
-                resetModalStates();
-                setActiveModal(EditModal.Schedule);
-              }}
+              onClick={
+                readOnly
+                  ? undefined
+                  : () => {
+                      resetModalStates();
+                      setActiveModal(EditModal.Schedule);
+                    }
+              }
             />
 
             {/* Tags */}
@@ -349,21 +368,27 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
               title="Tags"
               description={formatDisplayTags()}
               rightComponent={
-                <Icon
-                  width={16}
-                  icon="solar:pen-2-line-duotone"
-                  className={styles.editIcon}
-                  onClick={e => {
-                    e.stopPropagation();
-                    resetModalStates();
-                    setActiveModal(EditModal.Tags);
-                  }}
-                />
+                !readOnly && (
+                  <Icon
+                    width={16}
+                    icon="solar:pen-2-line-duotone"
+                    className={styles.editIcon}
+                    onClick={e => {
+                      e.stopPropagation();
+                      resetModalStates();
+                      setActiveModal(EditModal.Tags);
+                    }}
+                  />
+                )
               }
-              onClick={() => {
-                resetModalStates();
-                setActiveModal(EditModal.Tags);
-              }}
+              onClick={
+                readOnly
+                  ? undefined
+                  : () => {
+                      resetModalStates();
+                      setActiveModal(EditModal.Tags);
+                    }
+              }
             />
 
             {/* Archived Groups — only shown once there's something to restore */}
