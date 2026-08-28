@@ -33,9 +33,30 @@
   width: 24px;
 }
 
-.title {
+.titleRow {
   flex: 1;
+  min-width: 0;
   margin-left: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publicBadge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: #00aaff;
+  border: 1px solid #00aaff;
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 .editIcon {

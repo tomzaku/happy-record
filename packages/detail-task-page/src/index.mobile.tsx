@@ -20,6 +20,7 @@ import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import AiChecklistGenerate from './components/AiChecklistGenerate';
 import CardShare from './components/CardShare';
+import MiniChallengeDashboard from './components/MiniChallengeDashboard';
 
 const DetailTaskPageMobile = () => {
   const { id } = useParams<{ id: string }>();
@@ -160,15 +161,12 @@ const DetailTaskPageMobile = () => {
         )}
         onClickLeftButton={() => navigate('/')}
       />
-      <ChecklistGenericInfo
-        isDefaultCollapsed
-        checklistTemplate={checklistTemplate}
-        onUpdate={isOwner ? (updatedTemplate) => updateChecklistTemplate(updatedTemplate) : () => {}}
-        onDelete={isOwner ? handleDeleteTask : undefined}
-        readOnly={!isOwner}
-      >
-        {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
-      </ChecklistGenericInfo>
+      {/* Same widget/condition as index.desktop.tsx's own side column — owner
+          or participant either way, replacing the header's plain dashboard
+          icon (and CardShare's old link) with an actual leaderboard preview. */}
+      {challenge && (challenge.shareRecords || challenge.commentsEnabled) && (
+        <MiniChallengeDashboard challengeId={challenge.id} userId={userId} />
+      )}
       <ChecklistFieldGroup
         checklist={checklist}
         checklistTemplate={checklistTemplate}
@@ -178,6 +176,19 @@ const DetailTaskPageMobile = () => {
           updateChecklistTemplate(updatedTemplate);
         } : () => {}}
       />
+      {/* General Settings — mobile's actual task content (the fields above)
+          is what someone opens this page to see/do; the settings card is
+          metadata about the task, not the task itself, so it reads better
+          at the bottom than pushing the real content below the fold. */}
+      <ChecklistGenericInfo
+        isDefaultCollapsed
+        checklistTemplate={checklistTemplate}
+        onUpdate={isOwner ? (updatedTemplate) => updateChecklistTemplate(updatedTemplate) : () => {}}
+        onDelete={isOwner ? handleDeleteTask : undefined}
+        readOnly={!isOwner}
+      >
+        {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
+      </ChecklistGenericInfo>
 
       <AiChecklistGenerate
         visible={isAiModalVisible}

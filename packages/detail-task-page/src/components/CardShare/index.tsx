@@ -7,7 +7,6 @@ import Checkbox from '@moon-ui/checkbox';
 import Input from '@moon-ui/input';
 import Icon from '@moon-ui/icon/Icon';
 import { Modal, BottomModal } from '@moon-ui/modal';
-import { Link } from 'react-router-dom';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
@@ -211,8 +210,6 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
     }
   };
 
-  const showDashboardLink = isShared && challenge && (challenge.shareRecords || challenge.commentsEnabled);
-
   const modalContent = (
     <>
       <div className={styles.header}>
@@ -405,11 +402,10 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         }
         onClick={() => setModalVisible(true)}
       />
-      {showDashboardLink && (
-        <Link to={`/challenge/${challenge!.id}`} className={styles.dashboardLink}>
-          {intl.formatMessage({ id: 'CardShare.view-dashboard', defaultMessage: 'View Dashboard' })}
-        </Link>
-      )}
+      {/* No plain link here anymore on either device — MiniChallengeDashboard
+          (rendered by index.desktop.tsx/index.mobile.tsx right next to
+          ChecklistGenericInfo) replaces it everywhere with an actual
+          leaderboard preview instead of just a link down to one. */}
 
       {/* Share config — reachable both before the first share (row's own onClick) and after
           (the row's edit pencil, once it exists), since the config itself (target, theme,

@@ -99,7 +99,7 @@ const ChecklistToday = ({
               height={32}
               icon={currentChecklistTemplate?.avatar.name}
             />
-            <Typography.Text
+            <div
               onClick={() => {
                 const baseUrl = `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}`;
                 const checklistIdParam = currentChecklist.clientOnly
@@ -107,10 +107,22 @@ const ChecklistToday = ({
                   : `&checklistId=${currentChecklist.id}`;
                 navigate(baseUrl + checklistIdParam);
               }}
-              className={styles.title}
+              className={styles.titleRow}
             >
-              {currentChecklistTemplate?.title}
-            </Typography.Text>
+              <Typography.Text className={styles.title}>
+                {currentChecklistTemplate?.title}
+              </Typography.Text>
+              {/* Same badge as ChecklistToday.desktop.tsx's own — mobile just
+                  never got it, not a deliberate omission. */}
+              {currentChecklistTemplate?.visibility === 'public' && (
+                <span className={styles.publicBadge}>
+                  {intl.formatMessage({
+                    id: 'ChecklistToday.public-badge',
+                    defaultMessage: 'Public',
+                  })}
+                </span>
+              )}
+            </div>
             <Checkbox
               defaultChecked={Boolean(currentChecklist?.completedAt)}
               className={styles.checkbox}

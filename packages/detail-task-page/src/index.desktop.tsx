@@ -19,11 +19,11 @@ import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import CardShare from './components/CardShare';
 import AiChecklistGenerate from './components/AiChecklistGenerate';
+import MiniChallengeDashboard from './components/MiniChallengeDashboard';
 import styles from './index.desktop.module.scss';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button/src/DefaultButton';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
-import { Link } from 'react-router-dom';
 
 const DetailTaskPageDesktop = () => {
   const { id } = useParams<{ id: string }>();
@@ -269,14 +269,17 @@ const DetailTaskPageDesktop = () => {
                 {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
               </ChecklistGenericInfo>
 
+              {/* Owner or participant, either way — replaces the plain "View
+                  Dashboard" link this used to be (CardShare's own, or the
+                  one that lived right here for a participant) with an
+                  actual leaderboard preview. index.mobile.tsx renders the
+                  same widget in its own single-column flow. */}
+              {challenge && (challenge.shareRecords || challenge.commentsEnabled) && (
+                <MiniChallengeDashboard challengeId={challenge.id} userId={userId} />
+              )}
+
               {!isOwner && challenge && (
                 <div className={styles.challengeActions}>
-                  <Link to={`/challenge/${challenge.id}`} className={styles.challengeLink}>
-                    {intl.formatMessage({
-                      id: 'DetailTaskPage.view-challenge-dashboard',
-                      defaultMessage: 'Part of a challenge — View Dashboard',
-                    })}
-                  </Link>
                   <Button
                     type="ghost"
                     size="sm"
