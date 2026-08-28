@@ -86,8 +86,14 @@ export const useChallenge = () => {
       commentsEnabled: boolean;
       fieldTargets: Record<string, number>;
       theme: ChallengeThemeId;
+      /** The owner's own name on the group dashboard — see saveChallenge. */
+      ownerDisplayName?: string;
     },
   ) => {
+    // Not a Challenge field (it's the owner's participant row, not this
+    // one) — kept out of `optimistic` for that reason, passed to
+    // saveChallenge separately below.
+    const { ownerDisplayName, ...challengeFields } = options;
     const existing = challenges[checklistTemplateId];
     const optimistic: Challenge = {
       id: existing?.id ?? uniqueId(),
@@ -95,7 +101,7 @@ export const useChallenge = () => {
       ownerId: userId ?? '',
       createdAt: existing?.createdAt ?? new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      ...options,
+      ...challengeFields,
     };
     setChallenges(prev => ({ ...prev, [checklistTemplateId]: optimistic }));
 

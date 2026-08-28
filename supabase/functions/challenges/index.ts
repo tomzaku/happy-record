@@ -13,7 +13,7 @@
 //     `checklist_records` peer-read RLS policies (see the migrations) — this
 //     function's own `db` client is still the caller's RLS-scoped one,
 //     nothing here is service-role.
-//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), also enrolls the owner as a participant when shareRecords is on. `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids. `challenge.theme` is one of CHALLENGE_THEMES (_shared/challenges.ts), falls back to 'classic' if omitted/invalid.
+//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), also enrolls the owner as a participant when shareRecords is on — `challenge.ownerDisplayName`, if given, becomes that participant row's name (not a `challenges` column; omit it on a re-save that isn't touching the name and the stored one is left alone). `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids. `challenge.theme` is one of CHALLENGE_THEMES (_shared/challenges.ts), falls back to 'classic' if omitted/invalid.
 //
 // Deploy: `supabase functions deploy challenges`
 
@@ -257,6 +257,14 @@ async function save({ req, db, userId }: Ctx) {
   } catch (err) {
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid challenge.');
   }
+  // Not a `challenges` column — see `fromChallenge`, which only maps real
+  // ones — this is the owner's own display name for the participant row
+  // enrolled below. Optional: an older client (or a re-save that only
+  // touched the theme/targets) just omits it, which must not blank out an
+  // already-good name (see the conditional spread below).
+  const ownerDisplayNameRaw = (entry as Record<string, unknown>).ownerDisplayName;
+  const ownerDisplayName =
+    typeof ownerDisplayNameRaw === 'string' && ownerDisplayNameRaw.trim() ? ownerDisplayNameRaw.trim() : undefined;
 
   // Owner-only by RLS (`with check (owner_id = auth.uid())`); unique on
   // checklist_template_id so re-sharing the same template reuses this row.
@@ -272,6 +280,12 @@ async function save({ req, db, userId }: Ctx) {
   // their own template *is* the challenge's canonical checklist_template_id
   // (the owner never forks their own template the way a joiner does — see
   // useJoinChallenge.tsx — so their participant row just points at it directly).
+  // No `ignoreDuplicates` (unlike this used to be): a re-save with a new
+  // `ownerDisplayName` — someone fixing a blank name from before this field
+  // existed — has to actually reach an existing row, not silently no-op
+  // against it. supabase-js's default upsert resolution merges rather than
+  // clobbering the full row, so omitting `display_name` below (no name given
+  // this time) leaves whatever was already stored untouched.
   if (challenge.shareRecords) {
     const { error: participantError } = await db.from('challenge_participants').upsert(
       {
@@ -279,8 +293,9 @@ async function save({ req, db, userId }: Ctx) {
         challenge_id: challenge.id,
         user_id: userId,
         checklist_template_id: challenge.checklistTemplateId,
+        ...(ownerDisplayName ? { display_name: ownerDisplayName } : {}),
       },
-      { onConflict: 'challenge_id,user_id', ignoreDuplicates: true },
+      { onConflict: 'challenge_id,user_id' },
     );
     if (participantError) throw new Error(participantError.message);
   }

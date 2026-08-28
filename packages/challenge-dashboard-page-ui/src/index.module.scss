@@ -1,11 +1,35 @@
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/function' as *;
+@use 'include-media/dist/include-media' as media;
+
+// App.module.scss's own `.body` only caps width `<=tablet` (see there) — on
+// a real desktop viewport a page gets nothing for free and has to bound its
+// own width, the same way detail-task-page's `.content` does. Without this,
+// every Card below stretches edge-to-edge: a 12px shadow reads as nothing
+// at 1900px, and a layout meant for a phone just looks like a phone layout
+// stretched wide instead of a real desktop page.
+.page {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md $spacing-xl;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  @include media.media('<=tablet') {
+    padding: $spacing-sm;
+  }
+}
 
 .card {
-  margin: $spacing-md;
   display: flex;
   flex-direction: column;
   gap: $spacing-sm;
+  // Card's own default (12px, meant to also work at phone width) reads as
+  // cramped once there's room to breathe — CardSummary overrides the same
+  // way for the same reason.
+  padding: $spacing-lg;
 }
 
 .buttonSpinner {
@@ -13,90 +37,234 @@
   vertical-align: middle;
 }
 
-.titleRow {
+// ─── Shared card-header row (icon + title [+ pill], optional trailing action) ───
+
+.cardHeaderRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: $spacing-sm;
+  flex-wrap: wrap;
 }
 
-.ranking {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-xxs;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: ranking;
-}
-
-.rankingRow {
+.cardHeaderTitle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: $spacing-xs $spacing-sm;
-  border-radius: 6px;
-  background: var(--input-background);
-  counter-increment: ranking;
+  gap: $spacing-xs;
 }
 
-.rankingName {
-  font-size: toRem(13px);
-  color: var(--text-color);
+.memberPill {
+  font-size: toRem(11px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+  background: var(--input-background);
+  padding: 2px 10px;
+  border-radius: 999px;
+}
 
-  &::before {
-    content: counter(ranking) '. ';
-    font-weight: 600;
-    color: #00aaff;
+.leaveLink {
+  border: 0;
+  background: none;
+  padding: $spacing-xs $spacing-xs;
+  font-size: toRem(13px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+  cursor: pointer;
+
+  &:hover {
+    color: #c23a63;
   }
 }
 
-.rankingCount {
-  font-size: toRem(13px);
-  font-weight: 600;
-  color: var(--text-color);
+.footerCaption {
+  font-size: toRem(11px);
+  color: var(--text-color-secondary, var(--text-color));
+  margin-top: $spacing-xs;
 }
 
-.gridScroll {
-  overflow-x: auto;
+// ─── Leaderboard ───
+
+.rankList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.grid {
-  display: grid;
+.rankRow {
+  display: flex;
   align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: 12px;
+  border: 1px solid transparent;
+
+  &[data-you='true'] {
+    background: rgba(42, 120, 214, 0.08);
+    border-color: rgba(42, 120, 214, 0.35);
+  }
+}
+
+.rankMedal {
+  width: 22px;
+  flex-shrink: 0;
+  font-size: toRem(17px);
+  text-align: center;
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.rankInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   gap: 2px;
 }
 
-.headerCell {
-  height: 20px;
+.rankNameRow {
+  display: flex;
+  align-items: baseline;
+  gap: $spacing-xs;
 }
 
-.dayLabel {
-  font-size: toRem(9px);
-  color: var(--text-color-secondary, var(--text-color));
-  text-align: center;
-}
-
-.nameCell {
-  font-size: toRem(12px);
+.rankName {
+  font-weight: 700;
+  font-size: toRem(14px);
   color: var(--text-color);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding-right: $spacing-xs;
 }
 
-.dayCell {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  background: var(--input-background);
-  border: 1px solid var(--input-border);
+.youBadge {
+  font-size: toRem(11px);
+  font-weight: 700;
+  color: #2a78d6;
+  flex-shrink: 0;
+}
 
-  &[data-done='true'] {
-    background: #00aaff;
-    border-color: #00aaff;
+.rankSubtext {
+  font-size: toRem(12px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.rankScoreCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.rankScoreValue {
+  font-weight: 800;
+  font-size: toRem(20px);
+  color: #188a63;
+  line-height: 1.1;
+}
+
+.rankScoreLabel {
+  font-size: toRem(11px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+// ─── Activity card: stat blocks + charts ───
+
+.statBlockRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.statBlock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 $spacing-sm;
+  text-align: center;
+
+  & + & {
+    border-left: 1px solid var(--input-border);
   }
+}
+
+.statBlockValue {
+  font-weight: 800;
+}
+
+.statBlockLabel {
+  font-size: toRem(12px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.sectionDivider {
+  height: 1px;
+  border: 0;
+  margin: $spacing-xs 0;
+  background: var(--input-border);
+}
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-xs;
+}
+
+.sectionHeaderTitle {
+  display: block;
+  font-weight: 700;
+  font-size: toRem(14px);
+  color: var(--text-color);
+}
+
+.sectionHeaderSubtitle {
+  font-size: toRem(12px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.chartAxisEnds {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -$spacing-sm;
+  font-size: toRem(11px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.tabRow {
+  display: flex;
+  gap: $spacing-xxs;
+  flex-wrap: wrap;
+}
+
+.tabPill {
+  border: 1px solid var(--input-border);
+  background: var(--input-background);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: toRem(12px);
+  font-weight: 600;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &[data-active='true'] {
+    background: #2a78d6;
+    border-color: #2a78d6;
+    color: #fff;
+  }
+}
+
+.postingAs {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xxs;
+  font-size: toRem(12px);
+  color: var(--text-color-secondary, var(--text-color));
 }
 
 .comments {
@@ -115,6 +283,12 @@
   border-bottom: 1px solid var(--input-border);
 }
 
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xxs;
+}
+
 .commentAuthor {
   font-weight: 600;
   font-size: toRem(12px);
@@ -125,6 +299,8 @@
   flex-direction: column;
   gap: $spacing-xs;
 }
+
+// ─── Targets ───
 
 .targetList {
   display: flex;
@@ -154,42 +330,36 @@
   color: var(--text-color-secondary, var(--text-color));
 }
 
-.progressBar {
-  height: 8px;
-  border-radius: 4px;
+.targetTrack {
+  height: 12px;
+  border-radius: 999px;
   background: var(--input-background);
-  border: 1px solid var(--input-border);
   overflow: hidden;
 }
 
-.progressFill {
-  height: 100%;
-  background: linear-gradient(90deg, #00aaff, #0088cc);
-  transition: width 0.3s ease;
-}
-
-.contributionList {
+.targetFill {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: $spacing-xxs 0 0;
-  padding: 0;
-  list-style: none;
+  height: 100%;
 }
 
-.contributionRow {
+.targetLegendRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  margin-top: $spacing-xxs;
+}
+
+.targetLegendItem {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 6px;
   font-size: toRem(12px);
-  padding: 2px $spacing-xs;
-}
-
-.contributionName {
   color: var(--text-color);
 }
 
-.contributionTotal {
-  font-weight: 600;
-  color: var(--text-color);
+.legendDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }

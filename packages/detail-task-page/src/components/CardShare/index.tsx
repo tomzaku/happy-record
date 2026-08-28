@@ -84,6 +84,11 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
   const [shareRecords, setShareRecords] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(false);
   const [fieldTargets, setFieldTargets] = useState<Record<string, number>>({});
+  // The owner's own name on the group dashboard the checkbox above turns on
+  // — nothing else in the app knows it (no profile/display-name concept
+  // exists here otherwise), so it's asked for right where shareRecords is
+  // turned on, the same way a joiner is asked on the shared page.
+  const [ownerDisplayName, setOwnerDisplayName] = useState('');
   // Applies to every share link, not only a "real" challenge (shareRecords/commentsEnabled
   // on) — generateShareUrl below always writes a challenges row, so theme is always there
   // to pick even for a plain "take it" share.
@@ -145,7 +150,13 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
       };
       const result = await updateChecklistTemplate(data);
       updateChecklistTemplateLocal(data.checklistTemplate);
-      await setChallengeOptions(checklistTemplateId, { shareRecords, commentsEnabled, fieldTargets, theme });
+      await setChallengeOptions(checklistTemplateId, {
+        shareRecords,
+        commentsEnabled,
+        fieldTargets,
+        theme,
+        ownerDisplayName: shareRecords ? ownerDisplayName.trim() : undefined,
+      });
       const fullUrl = getSharedChecklistTemplateUrl(result.id);
       setShareUrl(fullUrl);
       // Only auto-copy on the first share (the point where there's a brand-new link the
@@ -226,6 +237,18 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
               })}
             </Typography.Text>
           </label>
+          {shareRecords && (
+            <Input
+              value={ownerDisplayName}
+              onChange={e => setOwnerDisplayName(e.target.value)}
+              placeholder={intl.formatMessage({
+                id: 'CardShare.your-name',
+                defaultMessage: 'Your name, shown on the dashboard',
+              })}
+              className={styles.ownerNameInput}
+              renderRightInput={() => <></>}
+            />
+          )}
           <label className={styles.optionRow}>
             <Checkbox
               checked={commentsEnabled}
@@ -297,7 +320,11 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         >
           {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
         </Button>
-        <Button onClick={generateShareUrl} disabled={generating} className={styles.gradientButton}>
+        <Button
+          onClick={generateShareUrl}
+          disabled={generating || (shareRecords && !ownerDisplayName.trim())}
+          className={styles.gradientButton}
+        >
           {generating && <Icon icon="svg-spinners:180-ring-with-bg" width={16} className={styles.buttonSpinner} />}
           {isShared
             ? intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })
