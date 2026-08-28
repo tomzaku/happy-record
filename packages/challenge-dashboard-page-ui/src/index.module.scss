@@ -43,6 +43,29 @@
   gap: $spacing-md;
 }
 
+// A plain flex child stacks fine at `.page`'s mobile/tablet single column
+// for free; at desktop `.page` becomes a 2-column grid (`.mainColumn`/
+// `.sideColumn` filling the two tracks) so this needs `grid-column: 1 / -1`
+// there specifically, or it'd only ever get auto-placed into the first
+// (main) column's own width instead of spanning the whole page.
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xxs;
+  font-size: toRem(13px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+  text-decoration: none;
+
+  &:hover {
+    color: var(--text-color);
+  }
+
+  @include media.media('>tablet') {
+    grid-column: 1 / -1;
+  }
+}
+
 .card {
   display: flex;
   flex-direction: column;

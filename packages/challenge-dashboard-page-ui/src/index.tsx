@@ -1,15 +1,17 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
 import { formatDistanceToNow } from 'date-fns';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 import {
   Challenge,
   ChallengeParticipant,
   useChallenge,
   useChallengeComments,
+  useChecklistTemplates,
   useLeaveChallenge,
   useSession,
+  useSyncedSelector,
 } from '@dreamer/global';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 import AppHeader from '@dreamer/header';
@@ -89,6 +91,7 @@ const ChallengeDashboardPageUi = () => {
   const { getChallengeDashboard } = useChallenge();
   const { getComments, postComment } = useChallengeComments();
   const { leaveTheChallenge } = useLeaveChallenge();
+  const { getChecklistTemplate } = useChecklistTemplates();
   const { theme } = usePomodoroGlobalConfig();
   const isDark = theme === Theme.Dark;
   const navigate = useNavigate();
@@ -278,6 +281,20 @@ const ChallengeDashboardPageUi = () => {
   // challenge (they'd delete/unshare it via CardShare instead).
   const isOwner = !!dashboard?.challenge && dashboard.challenge.ownerId === userId;
 
+  // The breadcrumb back to the task this challenge is for — see the render
+  // below. `useSyncedSelector` (not a hand-picked `useMemo` dep list — see
+  // CLAUDE.md) so this stays correct if the template's title changes after
+  // this page already loaded, not just on the first render. Guarded so it
+  // never calls the real, fetch-triggering `getChecklistTemplate` with an
+  // undefined id during the loading state above (before `dashboard.challenge`
+  // exists) — that would just be a wasted request for a literal "undefined"
+  // scope, not a broken one, but there's no reason to fire it at all.
+  const checklistTemplateId = dashboard?.challenge?.checklistTemplateId;
+  const checklistTemplate = useSyncedSelector(
+    (templateId?: string) => (templateId ? getChecklistTemplate(templateId) : undefined),
+    checklistTemplateId,
+  );
+
   const confirmLeaveChallenge = async () => {
     if (!id || !dashboard?.challenge?.checklistTemplateId || leaving) return;
     setLeaving(true);
@@ -350,6 +367,19 @@ const ChallengeDashboardPageUi = () => {
           desktop page is responsible for its own max-width, same as
           detail-task-page's own `.content`. */}
       <div className={styles.page}>
+        {checklistTemplate && (
+          // Back to the task this challenge is for — `currentDay` is
+          // required by `/task/:id` itself (it bails out empty without
+          // one, see DetailTaskPage), same as every other link into it
+          // built here (useJoinChallenge.tsx, useResumePendingChallengeJoin.tsx).
+          <Link
+            to={`/task/${checklistTemplate.id}?currentDay=${new Date().toISOString()}`}
+            className={styles.breadcrumb}
+          >
+            <Icon icon="solar:arrow-left-outline" width={16} />
+            {checklistTemplate.title}
+          </Link>
+        )}
         <div className={styles.mainColumn}>
           {dashboard.challenge.shareRecords && !!dashboard.targets.length && (
             <Card className={`${styles.card} ${styles.cardNoPadding}`}>
