@@ -11,11 +11,15 @@ import Typography from '@moon-ui/typography';
 import Select from '@moon-ui/select';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
-import { useSyncedSelector } from '@dreamer/global/src/hook';
+import { useSyncedSelector, useAiNoteGenerate } from '@dreamer/global/src/hook';
 
 export const AddNotePage = () => {
   const { addNote, getAllNoteFields } =
     useNoteRecords();
+  // "/ai" inside the note editor below (@moon-ui/note-editor's own AiWriteTool) — this hook is
+  // where the actual edge-function call + Pro check live, since that package has no backend
+  // dependency of its own. See CLAUDE.md's "Data access: go through an edge function".
+  const { isPro, generate } = useAiNoteGenerate();
   const navigate = useNavigate();
   const [selectedField, setSelectedField] = React.useState<RecordField | null>(
     null,
@@ -51,6 +55,7 @@ export const AddNotePage = () => {
                 <NoteEditor
                   value={noteValue}
                   setValue={setNoteValue}
+                  ai={{ isPro, generate }}
                   // withoutBorder
                 />
               </div>

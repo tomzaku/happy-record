@@ -8,3 +8,4 @@ export { useIsMobile } from './useIsMobile';
 export { useSession } from './useSession';
 export { useSyncedSelector } from './useSyncedSelector';
 export { useApplyAiChecklistTemplate } from './useApplyAiChecklistTemplate';
+export { useAiNoteGenerate } from './useAiNoteGenerate';

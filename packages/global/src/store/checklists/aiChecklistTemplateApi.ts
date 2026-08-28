@@ -8,6 +8,9 @@
 // need to reach the caller so the generate UI can show it, not silently do nothing.
 
 import { request } from '../../lib/api';
+import type { AiGeneratedNoteBlock } from '../../lib/editorJsNoteBlocks';
+
+export type { AiGeneratedNoteBlock };
 
 export type AiAvailableField = {
   title: string;
@@ -47,15 +50,13 @@ export type AiGeneratedField = {
 
 // Mirrors supabase/functions/ai-checklist-template's own GeneratedNoteBlock — a short sequence of
 // typed content blocks (not plain text), so the client can build a real multi-block Editor.js
-// document instead of always wrapping text in a single paragraph. See
-// useApplyAiChecklistTemplate.ts's buildNoteFromBlocks for that mapping. `video`'s `videoId` has
-// already been extracted and format-validated server-side — it's shaped like a real YouTube
-// video id, though the server can't confirm the video itself actually exists.
-export type AiGeneratedNoteBlock =
-  | { type: 'heading'; text: string }
-  | { type: 'paragraph'; text: string }
-  | { type: 'quote'; text: string; caption: string }
-  | { type: 'video'; videoId: string; caption: string };
+// document instead of always wrapping text in a single paragraph. `AiGeneratedNoteBlock` itself
+// (re-exported above) lives in lib/editorJsNoteBlocks.ts, shared with ai-note's own note
+// generation — see that file for the block-shape mapping and useApplyAiChecklistTemplate.ts for
+// how this feature uses it. `video`'s `videoId` has already been extracted and format-validated
+// server-side — it's shaped like a real YouTube video id, though the server can't confirm the
+// video itself actually exists. (ai-checklist-template's own prompt never emits the `checklist`/
+// `list` variants that type also allows — those are ai-note-only today.)
 
 export type AiGeneratedGroup = {
   title: string;

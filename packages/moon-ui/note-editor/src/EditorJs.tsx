@@ -12,6 +12,7 @@ import Embed from "@editorjs/embed";
 import styles from './EditorJs.module.scss';
 import editorjsCodecup from '@calumk/editorjs-codecup';
 import cx from 'classnames';
+import AiWriteTool, { DEFAULT_CONFIG, type AiNoteToolConfig } from './AiWriteTool';
 
 
 interface NoteEditorProps {
@@ -22,11 +23,28 @@ interface NoteEditorProps {
   classes?: {
     container?: string;
   };
+  /** Opt-in: wires up the "/ai" block tool (see AiWriteTool.tsx) when present, absent otherwise
+   * — every other NoteEditor consumer is unaffected. Editor.js only constructs its tools once, at
+   * mount, but `isPro`/`generate` can come from a hook whose own state resolves later
+   * (useAiNoteGenerate's `isPro`, often still loading at that exact moment) — bridged to the
+   * already-mounted tool via `aiConfigRef` + `aiListenersRef` below (a `useSyncExternalStore`
+   * source), not just captured once. */
+  ai?: AiNoteToolConfig;
 }
 
-const EditorJs = ({ initialData, setValue, value, classes, readOnly = false }: NoteEditorProps) => {
+const EditorJs = ({ initialData, setValue, value, classes, readOnly = false, ai }: NoteEditorProps) => {
   const editorRef = useRef<EditorJS | null>(null);
   const holderRef = useRef<HTMLDivElement>(null);
+  const aiConfigRef = useRef<AiNoteToolConfig | undefined>(ai);
+  // Who to notify when `ai` changes — see AiWriteTool.tsx's own AiNoteToolLiveConfig for why a
+  // plain ref isn't enough: an already-mounted Composer (e.g. sitting on the non-Pro upsell,
+  // opened before useIsPro's fetch resolved) has nothing that would otherwise make it re-render
+  // once `ai.isPro` actually flips to true.
+  const aiListenersRef = useRef<Set<() => void>>(new Set());
+  useEffect(() => {
+    aiConfigRef.current = ai;
+    aiListenersRef.current.forEach(listener => listener());
+  }, [ai]);
 
   // Handle external value changes
   // useEffect(() => {
@@ -101,7 +119,23 @@ const EditorJs = ({ initialData, setValue, value, classes, readOnly = false }: N
               vimeo: true
             }
           }
-        } as any
+        } as any,
+        // Only registered when a consumer opts in (see NoteEditorProps.ai above) — `ai` here is
+        // this effect's captured-at-mount value (whether the prop was passed at all). The
+        // subscribe/getSnapshot pair below is what actually stays live afterward — see
+        // AiNoteToolLiveConfig's own comment for why a plain ref/getter read isn't enough.
+        ...(ai ? {
+          aiWrite: {
+            class: AiWriteTool,
+            config: {
+              subscribe: (onChange: () => void) => {
+                aiListenersRef.current.add(onChange);
+                return () => aiListenersRef.current.delete(onChange);
+              },
+              getSnapshot: () => aiConfigRef.current ?? DEFAULT_CONFIG,
+            },
+          } as any,
+        } : {}),
       },
     });
 

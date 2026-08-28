@@ -1,0 +1,104 @@
+@use '@moon-ui/app-scss/theme/light.scss' as *;
+@use '@moon-ui/app-scss/theme/dark.scss' as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  // Editor.js's own redactor doesn't apply a border-box reset to arbitrary tool markup — without
+  // this, `.promptInput`'s `width: 100%` sizes to the content box and its own padding+border add
+  // on top, overflowing this card's right edge.
+  box-sizing: border-box;
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.headerIcon {
+  color: #a855f7;
+  flex-shrink: 0;
+}
+
+.headerTitle {
+  font-weight: 600;
+  color: var(--text-title-primary-color);
+}
+
+.description {
+  color: var(--text-description-color);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.promptInput {
+  width: 100%;
+  resize: vertical;
+  min-height: 3.5rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--card-background);
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.9375rem;
+
+  &::placeholder {
+    color: var(--text-description-color);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.optionLabel {
+  font-size: 0.875rem;
+  color: var(--text-color);
+}
+
+.loadingRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #a855f7;
+}
+
+.loadingText {
+  font-size: 0.875rem;
+  color: var(--text-description-color);
+}
+
+.errorText {
+  font-size: 0.875rem;
+  color: var(--error-color, #e5484d);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

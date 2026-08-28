@@ -1,4 +1,5 @@
 import React, { ReactNode, ErrorInfo, Suspense } from 'react';
+import type { AiNoteToolConfig } from './AiWriteTool';
 const EditorJs = React.lazy(() => import('./EditorJs'));
 
 interface ErrorBoundaryProps {
@@ -67,6 +68,9 @@ interface NoteEditorProps {
    * button toggling this back to `false`. See EditorJs.tsx for how this reaches Editor.js's
    * own readOnly API on an already-mounted instance. */
   readOnly?: boolean;
+  /** Opt-in "/ai" block tool — see AiWriteTool.tsx and EditorJs.tsx's own `ai` prop. Omit for
+   * every consumer that doesn't want AI writing available in that editor instance. */
+  ai?: AiNoteToolConfig;
 }
 
 const NoteEditor = (props: NoteEditorProps) => {
