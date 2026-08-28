@@ -188,6 +188,8 @@ type Target = {
   fieldId: string;
   title: string;
   unit: string;
+  /** The field's own Iconify icon (see useRecordField.tsx) — the targets card renders it next to the title. */
+  icon: string;
   target: number;
   contributions: { userId: string; total: number }[];
 };
@@ -220,7 +222,7 @@ async function getTargets(
   if (!targetFieldIds.length) return [];
 
   const [{ data: fieldRows, error: fieldError }, { data: forkedFieldRows, error: forkedError }] = await Promise.all([
-    db.from('fields').select('id, title, unit').in('id', targetFieldIds),
+    db.from('fields').select('id, title, unit, icon').in('id', targetFieldIds),
     db
       .from('fields')
       .select('id, copied_from_id')
@@ -230,9 +232,13 @@ async function getTargets(
   if (fieldError) throw new Error(fieldError.message);
   if (forkedError) throw new Error(forkedError.message);
 
-  const fieldMeta = new Map<string, { title: string; unit: string }>();
+  const fieldMeta = new Map<string, { title: string; unit: string; icon: string }>();
   for (const row of (fieldRows ?? []) as Record<string, unknown>[]) {
-    fieldMeta.set(row.id as string, { title: row.title as string, unit: (row.unit as string) ?? '' });
+    fieldMeta.set(row.id as string, {
+      title: row.title as string,
+      unit: (row.unit as string) ?? '',
+      icon: (row.icon as string) ?? '',
+    });
   }
   // A legacy fork's id -> the target id it counts toward.
   const resolveFieldId = new Map<string, string>();
@@ -261,6 +267,7 @@ async function getTargets(
     fieldId,
     title: fieldMeta.get(fieldId)?.title ?? '',
     unit: fieldMeta.get(fieldId)?.unit ?? '',
+    icon: fieldMeta.get(fieldId)?.icon ?? '',
     target: challenge.fieldTargets[fieldId],
     contributions: participants
       .map(p => ({ userId: p.userId, total: totals.get(`${fieldId}:${p.userId}`) ?? 0 }))

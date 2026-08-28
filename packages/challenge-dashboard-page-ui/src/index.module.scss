@@ -13,6 +13,13 @@
   max-width: 880px;
   margin: 0 auto;
   padding: $spacing-lg $spacing-md $spacing-xl;
+  // Mobile/tablet: a single stacked column, same as before — `.mainColumn`
+  // and `.sideColumn` (Comments) are just its two flex children then, so
+  // they stack in DOM order with the same gap between them as between any
+  // two cards. Desktop only: a real two-column layout, Comments moved into
+  // its own right-hand rail instead of sitting at the bottom of one long
+  // scroll — needs the wider cap below, the 880px single-column width has
+  // no room to spare for a second column.
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
@@ -20,6 +27,20 @@
   @include media.media('<=tablet') {
     padding: $spacing-sm;
   }
+
+  @include media.media('>tablet') {
+    max-width: 1120px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+    align-items: start;
+  }
+}
+
+.mainColumn,
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
 }
 
 .card {
@@ -199,11 +220,16 @@
   color: var(--text-color-secondary, var(--text-color));
 }
 
+// A flat full-width `background: var(--input-border)` line read as a harsh
+// ruled-paper edge, especially right under a card header — faded ends
+// instead of a hard edge-to-edge stroke is the usual "premium dashboard"
+// treatment (Linear/Notion-style), and reads as an intentional design
+// choice rather than a leftover `<hr>`.
 .sectionDivider {
   height: 1px;
   border: 0;
-  margin: $spacing-xs 0;
-  background: var(--input-border);
+  margin: $spacing-sm 0;
+  background: linear-gradient(to right, transparent, var(--input-border) 15%, var(--input-border) 85%, transparent);
 }
 
 .sectionHeaderRow {
@@ -320,6 +346,17 @@
   justify-content: space-between;
 }
 
+.targetTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.targetIcon {
+  color: var(--text-color-secondary, var(--text-color));
+  flex-shrink: 0;
+}
+
 .targetTitle {
   font-weight: 600;
   font-size: toRem(13px);
@@ -355,11 +392,4 @@
   gap: 6px;
   font-size: toRem(12px);
   color: var(--text-color);
-}
-
-.legendDot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
