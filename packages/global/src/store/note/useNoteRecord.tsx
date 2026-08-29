@@ -77,7 +77,8 @@ export const useNoteRecords = () => {
     return field ? [toChecklistRecordShape({ ...field, noteId: created.id }, created)] : [];
   };
 
-  /** The inline editor in NoteDetail — editing a note's own value in place. */
+  /** The inline editor in note-manager-page-ui's own NoteEditorPane — editing a note's own value
+   * in place, live as the user types (no separate save step). */
   const updateNote = (note: ChecklistRecord, value: unknown) => {
     const updated = updateNoteRaw(note.id, { value, folderId: note.folderId });
     if (!updated) return null;
@@ -85,7 +86,7 @@ export const useNoteRecords = () => {
     return field ? toChecklistRecordShape(field, updated) : null;
   };
 
-  /** Same, for the title alone — see NoteDetail's own title input. */
+  /** Same, for the title alone — see NoteEditorPane's own title input. */
   const updateNoteTitle = (note: ChecklistRecord, title: string) => {
     const updated = updateNoteRaw(note.id, { title });
     if (!updated) return null;

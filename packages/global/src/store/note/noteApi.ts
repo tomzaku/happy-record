@@ -12,7 +12,10 @@
 import { request } from '../../lib/api';
 import type { Note } from './useNote';
 
-type WireNote = Omit<Note, 'value'> & { value: string };
+// `value` is absent on the wire entirely for a summary row (a getAllNotes/searchNotes result —
+// see notes/index.ts's own toNoteSummary) rather than sent as `null`/empty, so this has to stay
+// optional, not just nullable — `fromWireNote` below only touches it when it's actually there.
+type WireNote = Omit<Note, 'value'> & { value?: string };
 
 /** Tolerant of a value that was never real JSON to begin with (a legacy plain-text note written
  * before this existed) — kept as-is rather than discarded, same tolerance the server's own
@@ -29,22 +32,26 @@ function toWireNote(note: Note): WireNote {
   return { ...note, value: JSON.stringify(note.value ?? null) };
 }
 
+/** Leaves `value` as `undefined` for a summary row rather than calling parseValue on a value
+ * that was never sent — see WireNote's own comment. */
 function fromWireNote(note: WireNote): Note {
-  return { ...note, value: parseValue(note.value) };
+  return note.value === undefined ? (note as Note) : { ...note, value: parseValue(note.value) };
 }
 
 /** `id` → one note, `ids` → several at once (batched, not one request per id — see
  * useNote.tsx's getNotesByIds), `q` → a title/search_text substring match (see useNote.tsx's
- * searchNotes). A checklist journal entry (a `type: 'note'` field's own value inside a
- * checklist) doesn't come through here at all — that reads/writes through `checklist-records`
- * instead (see checklistRecordApi.ts). */
+ * searchNotes), none of the three → every note this user owns (see useNote.tsx's getAllNotes) —
+ * standalone, a field-group's own Home note, and every checklist journal entry alike, since
+ * they're all just rows in this one table regardless of which surface created them. The `id`/
+ * `ids` shapes return full content (`value` included); `q` and the unscoped "all" shape return
+ * summaries only — see toNoteSummary's own comment. */
 export function fetchNotes(
   opts: {
     id?: string;
     ids?: string[];
     q?: string;
     limit?: number;
-  },
+  } = {},
 ): Promise<{ notes: Note[] } | null> {
   return request
     .get<{ notes: WireNote[] }>('/notes', {

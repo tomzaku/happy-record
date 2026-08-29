@@ -26,15 +26,14 @@ const DesktopDrawer = () => {
       path: '/',
       action: () => navigate('/')
     },
-    // Notes is temporarily hidden while we focus on the task feature — re-enable later.
-    // {
-    //   id: 'note',
-    //   label: 'Notes',
-    //   icon: 'solar:notes-line-duotone',
-    //   description: 'View and create notes',
-    //   path: '/notes',
-    //   action: () => navigate('/notes')
-    // },
+    {
+      id: 'note',
+      label: 'Notes',
+      icon: 'solar:notes-line-duotone',
+      description: 'View and create notes',
+      path: '/notes',
+      action: () => navigate('/notes')
+    },
     // Settings is reachable via the account row in the drawer footer (AccountStatus
     // navigates there once signed in), so no separate settings nav item here.
   ];

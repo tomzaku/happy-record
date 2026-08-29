@@ -3,14 +3,15 @@
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/function' as *;
 
-// Desktop-specific styles
 .desktopContainer {
-  padding-bottom: 80px;
   height: 100vh;
   display: flex;
   background: var(--background);
 }
 
+// The three-pane layout itself — folders | notes list | editor. Each pane owns its own
+// vertical scroll (see the components' own `overflow-y: auto`), so this row never scrolls as a
+// whole the way a single-column page would.
 .desktopBody {
   display: flex;
   flex: 1;
@@ -18,69 +19,36 @@
   position: relative;
 }
 
-.centerContent {
-  display: flex;
-  flex-direction: column;
+// `min-height: 0` on every pane — a flex row's items default to `min-height: auto`, which lets
+// a tall inner list push the whole row (and the page) taller instead of scrolling in place; this
+// is what actually makes each pane's own `overflow-y: auto` create a bounded scrollbar.
+// `min-width: 0` + `overflow: hidden` on the two fixed-width panes for the same reason along the
+// other axis — a flex item's default `min-width: auto` is "big enough to fit my content without
+// wrapping," so a long, `white-space: nowrap` note-list preview (or a long folder name) silently
+// grew `.listPane`/`.sidebarPane` past their own `flex-basis` instead of clipping, which pushed
+// `.editorPane` off the right edge of the viewport entirely — a note really was opening on click
+// (see NoteEditorPane), it just rendered somewhere nobody could see it.
+.sidebarPane {
+  flex: 0 0 220px;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
-  width: 100%;
-  margin: 0 auto;
+  border-right: 1px solid var(--division-color);
+  background: var(--card-selected-background);
 }
 
-.pageHeader {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: $spacing-lg;
-  padding: $spacing-sm $spacing-md;
-}
-
-.pageTitle {
-  margin: 0;
-  color: var(--text-title-primary-color);
-  font-size: toRem(20px);
-  font-weight: 600;
-  letter-spacing: -0.3px;
-}
-
-.addNoteButton {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  padding: $spacing-sm $spacing-lg;
-  background: var(--button-default-background);
-  color: var(--button-ghost-color-invert, white);
-  border: none;
-  border-radius: 10px;
-  font-size: toRem(14px);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px var(--card-shadow);
-
-  &:hover {
-    background: var(--button-action-background);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--card-shadow);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-}
-
-.addIcon {
-  color: var(--button-ghost-color-invert, white);
-  transition: transform 0.2s ease;
-}
-
-.addNoteButton:hover .addIcon {
-  transform: rotate(90deg);
-}
-
-.notesContainer {
-  display: flex;
+.listPane {
+  flex: 0 0 320px;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
-  min-height: 500px;
-  height: 100%;
+  border-right: 1px solid var(--division-color);
+  background: var(--background);
+}
+
+.editorPane {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: var(--card-background);
 }

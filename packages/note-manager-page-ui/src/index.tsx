@@ -1,77 +1,128 @@
 import React from 'react';
-import { BackHeader } from '@dreamer/header';
-import NoteGroup from './components/note-group';
-import styles from './index.module.scss';
-import NoteDetail from './components/note-detail';
-import Button from '@moon-ui/button/src/DefaultButton';
-import Icon from '@moon-ui/icon/Icon';
 import { useNavigate } from 'react-router-dom';
-import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
-import { useIsMobile, useSyncedSelector } from '@dreamer/global/src/hook';
-import cx from 'classnames';
+import { BackHeader } from '@dreamer/header';
+import Icon from '@moon-ui/icon/Icon';
+import Drawer from '@moon-ui/drawer';
 
+import FolderSidebar from './components/folder-sidebar';
+import NoteList from './components/note-list';
+import NoteEditorPane from './components/note-editor-pane';
+import { useNoteManagerState } from './useNoteManagerState';
+import styles from './index.module.scss';
+
+/**
+ * Mobile: a list-then-detail drill-down over the same state index.desktop.tsx renders as three
+ * panes side by side — tapping a note (or starting a new one) swaps the whole screen to
+ * NoteEditorPane with its own back button, rather than showing all three at once. Folders live
+ * behind a full-screen picker (@moon-ui/drawer) instead of a permanent sidebar column there
+ * isn't room for.
+ */
 export const NoteManagerPage = () => {
-  const [isExtended, setIsExtended] = React.useState(false);
-  const { getNotes, getAllNoteFields, deleteNote, addNote } = useNoteRecords();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  const [foldersOpen, setFoldersOpen] = React.useState(false);
+  const {
+    allNoteFields,
+    fieldMap,
+    templateMap,
+    taskFolders,
+    hasOtherNotes,
+    emptyFields,
+    notes,
+    totalNoteCount,
+    selectedFolder,
+    selectedFolderTitle,
+    selectedNote,
+    selectedNoteLoading,
+    selectedNoteSourceLabel,
+    selectedNoteSourceHref,
+    composing,
+    selectFolder,
+    selectNote,
+    closeNote,
+    startCompose,
+    chooseComposeField,
+    updateSelectedNoteValue,
+    updateSelectedNoteTitle,
+    deleteNote,
+  } = useNoteManagerState();
 
-  // Derived straight from the store's own functions every render instead of
-  // snapshotted into local state from a `useEffect(..., [])` that never
-  // refired — a note added/edited on another device now actually shows up
-  // here. `null` means "no explicit field filter yet" — show every note
-  // field, same as the original mount-time default.
-  const allNoteFields = useSyncedSelector(getAllNoteFields);
-  const [selectedFieldIds, setSelectedFieldIds] = React.useState<string[] | null>(null);
-  const effectiveFieldIds = selectedFieldIds ?? allNoteFields.map(f => f.id);
-  const allNotes = useSyncedSelector(getNotes, effectiveFieldIds);
+  const showDetail = composing || !!selectedNote;
+
+  if (showDetail) {
+    return (
+      <div className={styles.screen}>
+        <BackHeader
+          renderLeftComponent={() => <>{composing ? 'New Note' : selectedNote?.title || 'Note'}</>}
+          onClickLeftButton={closeNote}
+        />
+        <NoteEditorPane
+          className={styles.detailPane}
+          note={selectedNote}
+          loading={selectedNoteLoading}
+          sourceLabel={selectedNoteSourceLabel}
+          sourceHref={selectedNoteSourceHref}
+          composing={composing}
+          emptyFields={emptyFields}
+          onChooseComposeField={chooseComposeField}
+          onCancelCompose={closeNote}
+          onChangeTitle={updateSelectedNoteTitle}
+          onChangeValue={updateSelectedNoteValue}
+          onDelete={note => {
+            deleteNote(note);
+            closeNote();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div className={styles.screen}>
       <BackHeader
         renderLeftComponent={() => <>Notes</>}
         onClickLeftButton={() => navigate('/')}
         renderRightComponent={() => (
-          <Button
-            className={styles.addNoteButton}
-            type="dash"
-            onClick={() => navigate('/notes/add')}
+          <button
+            type="button"
+            className={styles.headerIconButton}
+            onClick={() => setFoldersOpen(true)}
+            aria-label="Folders"
           >
-            <Icon icon="fe:plus" className={styles.addIcon} width={20} /> Add
-            Note
-          </Button>
+            <Icon icon="solar:folder-outline" width={20} />
+          </button>
         )}
       />
-      <div
-        className={cx(
-          styles.container,
-          !isExtended && isMobile && styles.containerVertical,
-        )}
-      >
-        <NoteGroup
-          onChangeField={fieldIds => {
-            setSelectedFieldIds(fieldIds);
-            if (isMobile) {
-              setIsExtended(false);
-            }
-          }}
-          allNoteFields={allNoteFields}
-          minimal={isMobile && !isExtended}
-          isExtended={isExtended}
-          setIsExtended={setIsExtended}
+      <NoteList
+        className={styles.listPane}
+        title={selectedFolderTitle}
+        notes={notes}
+        fieldMap={fieldMap}
+        templateMap={templateMap}
+        onSelectNote={selectNote}
+        onNewNote={startCompose}
+        canCreateNote={emptyFields.length > 0}
+      />
+      {/* Full-screen, not a compact bottom sheet — @moon-ui/drawer's own sliding panel always
+          fills the viewport (see its own index.module.scss), so this gets a real header/close
+          button instead of relying on a tap-outside-to-dismiss backdrop that wouldn't be
+          visible anyway. */}
+      <Drawer visible={foldersOpen} onBlur={() => setFoldersOpen(false)}>
+        <BackHeader
+          renderLeftComponent={() => <>Folders</>}
+          onClickLeftButton={() => setFoldersOpen(false)}
         />
-        <NoteDetail
-          allNotes={allNotes}
-          allNoteFields={allNoteFields}
-          defaultFieldId={allNoteFields[0]?.id || ''}
-          deleteNote={note => {
-            deleteNote(note);
-          }}
-          addNote={(fieldId, value) => {
-            addNote(fieldId, value);
+        <FolderSidebar
+          noteFields={allNoteFields}
+          taskFolders={taskFolders}
+          hasOtherNotes={hasOtherNotes}
+          selectedFolder={selectedFolder}
+          totalNoteCount={totalNoteCount}
+          onSelectFolder={folder => {
+            selectFolder(folder);
+            setFoldersOpen(false);
           }}
         />
-      </div>
-    </>
+      </Drawer>
+    </div>
   );
 };

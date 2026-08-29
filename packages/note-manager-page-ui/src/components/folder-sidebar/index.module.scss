@@ -1,0 +1,108 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: $spacing-sm;
+  // `flex: 1; min-height: 0` (not just `height: 100%`, which a flex column's percentage-height
+  // child can't always resolve reliably) — this is always a flex item itself, whether that's
+  // desktop's own `.desktopBody` row or the mobile Folders drawer's column.
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.sectionLabel {
+  padding: $spacing-md $spacing-sm $spacing-xs;
+  font-size: toRem(11px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-description-color);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: 7px $spacing-sm;
+  border: 0;
+  background: transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: var(--text-color);
+  transition: background-color 0.1s ease;
+
+  &:hover {
+    background: var(--card-selected-background);
+  }
+}
+
+// No section header of its own — a single row on its own doesn't need one, just some breathing
+// room from whatever section came before it.
+.otherRow {
+  margin-top: $spacing-sm;
+}
+
+.rowActive {
+  background: var(--button-action-background);
+  color: var(--button-action-color);
+
+  &:hover {
+    background: var(--button-action-background);
+  }
+
+  .iconBadge {
+    color: inherit;
+  }
+
+  .count {
+    color: inherit;
+    opacity: 0.8;
+  }
+}
+
+.iconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  color: var(--text-description-color);
+}
+
+.allNotesBadge {
+  // Same accent used for "selected" state elsewhere (@moon-ui/radio, @moon-ui/select) — real
+  // theme-aware token, not a hardcoded hex, so this still adapts in dark mode.
+  color: var(--radio-color);
+}
+
+.label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: toRem(14px);
+}
+
+.count {
+  flex-shrink: 0;
+  font-size: toRem(13px);
+  color: var(--text-description-color);
+}
+
+.filledDot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}

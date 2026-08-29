@@ -84,7 +84,9 @@ export function buildEditorJsDocument(blocks: AiGeneratedNoteBlock[]): unknown |
   return { time: Date.now(), blocks: buildEditorJsBlocks(blocks), version: '2.31.6' };
 }
 
-// `notes.search_text` used to be computed client-side here (blocks → plain text) before every
-// write; it's server-side now instead (_shared/notes.ts's `computeSearchText`, reusing
-// aiNoteGeneration.ts's own `blockToPlainText`) — see useNote.tsx's `Note` doc comment. Nothing
-// in the browser bundle needs to derive it anymore.
+// `notes.search_text` and a note list row's own one-line preview used to both be computed
+// client-side here (blocks → plain text); both are server-side now instead (_shared/notes.ts's
+// `computeSearchText`/`preview`, reusing aiNoteGeneration.ts's own `blockToPlainText`) — see
+// useNote.tsx's `Note` doc comment. `notes/index.ts`'s own summary read doesn't even send
+// `value` down for a list read (see toNoteSummary's own comment), so there'd be nothing left
+// here to derive a preview from client-side even if this stayed.

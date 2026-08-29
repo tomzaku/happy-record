@@ -16,15 +16,14 @@ const Header = () => {
         DREAMER
       </div>
       <div className={styles.right}>
-        {/* Notes is temporarily hidden while we focus on the task feature — re-enable later. */}
-        {/* <Icon
+        <Icon
           className={styles.rightIcon}
           width={24}
           icon="solar:notes-line-duotone"
           onClick={() => {
             navigate('/notes');
           }}
-        /> */}
+        />
         <TaskSearch variant="header" className={styles.rightIcon} />
         {/* Settings is reachable via the account icon below (AccountStatus navigates
             there once signed in), so no separate settings icon here. */}

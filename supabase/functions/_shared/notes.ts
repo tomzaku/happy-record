@@ -15,10 +15,12 @@ export type OwnerType = (typeof OWNER_TYPES)[number];
 const isOwnerType = (v: unknown): v is OwnerType => (OWNER_TYPES as readonly string[]).includes(v as string);
 
 const MAX_SEARCH_TEXT_CHARS = 2000;
+const MAX_PREVIEW_CHARS = 200;
 const MAX_TITLE_CHARS = 200;
 
-/** Plain text pulled out of a note's real Editor.js blocks — the shared extraction both
- * `computeSearchText` and `deriveTitle` build on. `value` is the same not-yet-stringified shape
+/** Plain text pulled out of a note's real Editor.js blocks — the shared extraction
+ * `computeSearchText`, `preview`, and `deriveTitle` all build on, walked once per write (see
+ * fromNote's own comment) rather than three times. `value` is the same not-yet-stringified shape
  * `fromNote`/`fromChecklistFieldNoteEntry` both receive it in — `toBlocks` already tolerates a
  * real object, a JSON string, or neither. */
 function plainTextOf(value: unknown): string {
@@ -47,12 +49,38 @@ function deriveTitle(plainText: string): string {
   return sentence.slice(0, MAX_TITLE_CHARS).trim();
 }
 
+/** The full row — used for an id/ids fetch (the caller actually wants to open this note in an
+ * editor). `search_text` never leaves this file — nothing client-side reads it; it exists purely
+ * for `?q=`'s own server-side `ilike` match. */
 export function toNote(r: Record<string, unknown>) {
   return {
     id: r.id as string,
     value: r.value as string,
     title: (r.title as string) ?? '',
-    searchText: (r.search_text as string) ?? '',
+    preview: (r.preview as string) ?? '',
+    ownerType: r.owner_type as OwnerType,
+    ownerId: r.owner_id as string,
+    createdAt: r.created_at as string,
+    updatedAt: r.updated_at as string,
+    ...(r.folder_id ? { folderId: r.folder_id as string } : {}),
+    ...(r.checklist_id ? { checklistId: r.checklist_id as string } : {}),
+    ...(r.checklist_template_id ? { checklistTemplateId: r.checklist_template_id as string } : {}),
+    ...(r.submission_id ? { submissionId: r.submission_id as string } : {}),
+  };
+}
+
+/** Everything a note list row needs — title, preview, dates, and enough owner info to resolve a
+ * folder/link — deliberately not `value`: a note's raw content can be large (embeds, long
+ * documents), and a page rendering every note the user owns just to show a title and a short
+ * preview has no reason to pull all of that over the wire. Used for the unscoped "every note"
+ * read and `?q=` search results; `notes/index.ts` selects only these columns for both, so this
+ * isn't just a narrower *response* shape, the query itself never reads `value` off disk for
+ * them. */
+export function toNoteSummary(r: Record<string, unknown>) {
+  return {
+    id: r.id as string,
+    title: (r.title as string) ?? '',
+    preview: (r.preview as string) ?? '',
     ownerType: r.owner_type as OwnerType,
     ownerId: r.owner_id as string,
     createdAt: r.created_at as string,
@@ -87,8 +115,11 @@ export function fromNote(e: Record<string, unknown>) {
     // A title the client actually typed always wins; only a blank one falls back to
     // deriveTitle — see that function's own comment.
     title: typeof e.title === 'string' && e.title.trim() ? e.title : deriveTitle(plainText),
-    // Computed here, not trusted from the client — see computeSearchText's own comment.
+    // Computed here, not trusted from the client — see computeSearchText's own comment. Same
+    // for `preview` — a note list row's own display text, stored so a list read never has to
+    // touch `value`/re-derive this per render (see toNoteSummary's own comment).
     search_text: plainText.slice(0, MAX_SEARCH_TEXT_CHARS),
+    preview: plainText.slice(0, MAX_PREVIEW_CHARS),
     owner_type: e.ownerType,
     owner_id: e.ownerId,
     checklist_id: checklistId,

@@ -1,57 +1,83 @@
-import React from 'react';
 import { DesktopDrawer } from '@dreamer/header';
-import NoteGroupDesktop from './components/note-group/index.desktop';
 import styles from './index.desktop.module.scss';
-import NoteDetail from './components/note-detail';
-import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
-import { useSyncedSelector } from '@dreamer/global/src/hook';
-import { useSearchParams } from 'react-router-dom';
+import FolderSidebar from './components/folder-sidebar';
+import NoteList from './components/note-list';
+import NoteEditorPane from './components/note-editor-pane';
+import { useNoteManagerState } from './useNoteManagerState';
 
 export const NoteManagerPageDesktop = () => {
-  const [search] = useSearchParams();
-  const fieldId = search.get('fieldId');
-
-  const { getNotes, getAllNoteFields, deleteNote, addNote } = useNoteRecords();
-
-  // Derived straight from the store's own functions every render instead of
-  // snapshotted into local state from a `useEffect(..., [])` that never
-  // refired — a note added/edited on another device now actually shows up
-  // here. `null` means "no explicit field filter chosen yet" — falls back
-  // to the URL's `fieldId`, then every note field, same as the original
-  // mount-time default.
-  const allNoteFields = useSyncedSelector(getAllNoteFields);
-  const [selectedFieldIds, setSelectedFieldIds] = React.useState<string[] | null>(null);
-  const effectiveFieldIds =
-    selectedFieldIds ?? (fieldId ? [fieldId] : allNoteFields.map(f => f.id));
-  const allNotes = useSyncedSelector(getNotes, effectiveFieldIds);
+  const {
+    allNoteFields,
+    fieldMap,
+    templateMap,
+    taskFolders,
+    hasOtherNotes,
+    emptyFields,
+    notes,
+    totalNoteCount,
+    selectedFolder,
+    selectedFolderTitle,
+    selectedNote,
+    selectedNoteLoading,
+    selectedNoteSourceLabel,
+    selectedNoteSourceHref,
+    composing,
+    selectFolder,
+    selectNote,
+    startCompose,
+    chooseComposeField,
+    cancelCompose,
+    updateSelectedNoteValue,
+    updateSelectedNoteTitle,
+    deleteNote,
+  } = useNoteManagerState();
 
   return (
     <div className={styles.desktopContainer}>
       <DesktopDrawer />
       <div className={styles.desktopBody}>
-        <div className={styles.centerContent}>
-          <div className={styles.notesContainer}>
-            <NoteDetail
-              allNotes={allNotes}
-              defaultFieldId={fieldId || allNoteFields[0]?.id || ''}
-              allNoteFields={allNoteFields}
-              deleteNote={note => {
-                deleteNote(note);
-              }}
-              addNote={(fieldId, value) => {
-                addNote(fieldId, value);
-              }}
-            />
-            <NoteGroupDesktop
-              onChangeField={fieldIds => {
-                setSelectedFieldIds(fieldIds);
-              }}
-              allNoteFields={allNoteFields}
-              minimal={false}
-              isExtended={true}
-              setIsExtended={() => {}}
-            />
-          </div>
+        {/* Each pane gets its own sizing wrapper here rather than a `className` merged into the
+            component's own root class — the component's own root already needs `height: 100%`
+            for its internal scroll area to work when reused standalone (the mobile Folders
+            drawer, for FolderSidebar), and stacking a second, differently-sourced class for
+            desktop's fixed/flexible widths on that same element left the two fighting over which
+            one's `flex`/`width` rules actually apply. A wrapper sidesteps that entirely. */}
+        <div className={styles.sidebarPane}>
+          <FolderSidebar
+            noteFields={allNoteFields}
+            taskFolders={taskFolders}
+            hasOtherNotes={hasOtherNotes}
+            selectedFolder={selectedFolder}
+            totalNoteCount={totalNoteCount}
+            onSelectFolder={selectFolder}
+          />
+        </div>
+        <div className={styles.listPane}>
+          <NoteList
+            title={selectedFolderTitle}
+            notes={notes}
+            fieldMap={fieldMap}
+            templateMap={templateMap}
+            selectedNoteId={selectedNote?.id}
+            onSelectNote={selectNote}
+            onNewNote={startCompose}
+            canCreateNote={emptyFields.length > 0}
+          />
+        </div>
+        <div className={styles.editorPane}>
+          <NoteEditorPane
+            note={selectedNote}
+            loading={selectedNoteLoading}
+            sourceLabel={selectedNoteSourceLabel}
+            sourceHref={selectedNoteSourceHref}
+            composing={composing}
+            emptyFields={emptyFields}
+            onChooseComposeField={chooseComposeField}
+            onCancelCompose={cancelCompose}
+            onChangeTitle={updateSelectedNoteTitle}
+            onChangeValue={updateSelectedNoteValue}
+            onDelete={deleteNote}
+          />
         </div>
       </div>
     </div>
