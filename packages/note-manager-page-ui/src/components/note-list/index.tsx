@@ -33,6 +33,16 @@ type Props = {
   selectedNoteId?: string;
   onSelectNote: (id: string) => void;
   onNewNote: () => void;
+  // Search across every note this user owns, not just the currently selected folder — see
+  // useNoteManagerState's own doc comment on `searchQuery`. Controlled here so the input stays
+  // focused/keeps its cursor position across re-renders (an uncontrolled-then-recreated input
+  // loses both); `isSearching` (derived from `searchQuery.trim()`) is what actually switches the
+  // rows below from the current folder's own view to `searchResults` instead of `notes`.
+  searchQuery: string;
+  onSearchQueryChange: (query: string) => void;
+  searchResults: Note[];
+  searchLoading: boolean;
+  isSearching: boolean;
 };
 
 /** Stands in for a real row while the first fetch is still in flight — same
@@ -126,11 +136,16 @@ const NoteList = ({
   selectedNoteId,
   onSelectNote,
   onNewNote,
+  searchQuery,
+  onSearchQueryChange,
+  searchResults,
+  searchLoading,
+  isSearching,
 }: Props) => (
   <div className={cx(styles.list, className)}>
     <div className={styles.header}>
       <Typography.Title level={5} noMargin className={styles.headerTitle}>
-        {title}
+        {isSearching ? `Results for "${searchQuery.trim()}"` : title}
       </Typography.Title>
       <button
         type="button"
@@ -142,8 +157,54 @@ const NoteList = ({
         <Icon icon="solar:pen-new-square-linear" width={18} />
       </button>
     </div>
+    {/* Always visible, not just once someone clicks a magnifying glass — searches every note
+        this user owns regardless of which folder is selected (see useNoteManagerState's own
+        `searchQuery` comment), so it doesn't need to live "inside" any one folder's view. */}
+    <div className={styles.searchRow}>
+      <Icon icon="solar:magnifer-linear" width={16} className={styles.searchIcon} />
+      <input
+        className={styles.searchInput}
+        value={searchQuery}
+        onChange={e => onSearchQueryChange(e.target.value)}
+        placeholder="Search notes"
+      />
+      {isSearching && (
+        <button
+          type="button"
+          className={styles.searchClear}
+          onClick={() => onSearchQueryChange('')}
+          aria-label="Clear search"
+        >
+          <Icon icon="material-symbols:close-rounded" width={14} />
+        </button>
+      )}
+    </div>
     <div className={styles.rows}>
-      {loading ? (
+      {isSearching ? (
+        searchLoading ? (
+          [0, 1, 2].map(i => <SkeletonRow key={i} />)
+        ) : searchResults.length === 0 ? (
+          <div className={styles.empty}>
+            <Typography.Text className={styles.emptyText}>No matching notes</Typography.Text>
+          </div>
+        ) : (
+          groupNotesByDate(searchResults).map(group => (
+            <div key={group.label} className={styles.dateGroup}>
+              <div className={styles.dateGroupLabel}>{group.label}</div>
+              {group.notes.map(note => (
+                <NoteRow
+                  key={note.id}
+                  note={note}
+                  active={note.id === selectedNoteId}
+                  fieldMap={fieldMap}
+                  templateMap={templateMap}
+                  onSelectNote={onSelectNote}
+                />
+              ))}
+            </div>
+          ))
+        )
+      ) : loading ? (
         [0, 1, 2, 3, 4].map(i => <SkeletonRow key={i} />)
       ) : notes.length === 0 ? (
         <div className={styles.empty}>

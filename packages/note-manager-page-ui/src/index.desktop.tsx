@@ -28,6 +28,11 @@ export const NoteManagerPageDesktop = () => {
     selectedNoteSourceHref,
     selectedFieldId,
     selectedFieldCluster,
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    searchLoading,
+    isSearching,
     selectFolder,
     selectNote,
     selectField,
@@ -77,6 +82,11 @@ export const NoteManagerPageDesktop = () => {
             selectedNoteId={selectedNote?.id}
             onSelectNote={selectNote}
             onNewNote={createQuickNote}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            searchResults={searchResults}
+            searchLoading={searchLoading}
+            isSearching={isSearching}
           />
         </div>
         <div className={styles.editorPane}>

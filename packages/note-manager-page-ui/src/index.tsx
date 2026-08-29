@@ -42,6 +42,11 @@ export const NoteManagerPage = () => {
     selectedNoteSourceHref,
     selectedFieldId,
     selectedFieldCluster,
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    searchLoading,
+    isSearching,
     selectFolder,
     selectNote,
     selectField,
@@ -114,6 +119,11 @@ export const NoteManagerPage = () => {
         templateMap={templateMap}
         onSelectNote={selectNote}
         onNewNote={createQuickNote}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        searchResults={searchResults}
+        searchLoading={searchLoading}
+        isSearching={isSearching}
       />
       {/* Full-screen, not a compact bottom sheet — @moon-ui/drawer's own sliding panel always
           fills the viewport (see its own index.module.scss), so this gets a real header/close

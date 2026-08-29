@@ -84,6 +84,7 @@ export const useNoteManagerState = () => {
     getAllNotes,
     allNotesLoading,
     createNote,
+    searchNotes,
     updateNote: updateNoteApi,
     deleteNote: deleteNoteApi,
   } = useNote();
@@ -128,6 +129,47 @@ export const useNoteManagerState = () => {
       { replace: true },
     );
   };
+
+  // Search across every note this user owns (title/content, server-side — see useNote.tsx's own
+  // `searchNotes`), not scoped to whichever folder is currently selected: typing here answers
+  // "which note has this in it" regardless of where that note happens to live, same as macOS
+  // Notes' own search searching everything by default. `searchNotes` itself isn't memoized (a
+  // plain closure, new identity every render of `useNote()`) — a ref keeps the effect below from
+  // re-running (and re-debouncing) on every unrelated render, only on `searchQuery` actually
+  // changing.
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchResults, setSearchResults] = React.useState<Note[]>([]);
+  const [searchLoading, setSearchLoading] = React.useState(false);
+  const searchNotesRef = React.useRef(searchNotes);
+  searchNotesRef.current = searchNotes;
+  // Bumped on every new query so a slow, now-stale response (the previous keystroke's own
+  // request landing after a newer one already fired) can't overwrite what a faster, more recent
+  // search already found.
+  const searchSeqRef = React.useRef(0);
+
+  React.useEffect(() => {
+    const query = searchQuery.trim();
+    if (!query) {
+      searchSeqRef.current += 1;
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+    const seq = ++searchSeqRef.current;
+    setSearchLoading(true);
+    // A plain debounce — searching fires on every keystroke otherwise, one request per character
+    // typed.
+    const timer = setTimeout(() => {
+      searchNotesRef.current(query).then(results => {
+        if (seq !== searchSeqRef.current) return;
+        setSearchResults(results);
+        setSearchLoading(false);
+      });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const isSearching = searchQuery.trim().length > 0;
 
   const fieldMap = React.useMemo(
     () => new Map(allNoteFields.map(field => [field.id, field])),
@@ -310,6 +352,10 @@ export const useNoteManagerState = () => {
     setSelectedFolder(folder);
     setNoteId(null);
     setSelectedFieldId(null);
+    // Picking a folder is "go somewhere else" — same reasoning macOS Notes' own search clears
+    // once you navigate to a different folder, rather than leaving stale global results showing
+    // under an unrelated folder's own header.
+    setSearchQuery('');
   };
 
   const selectNote = (noteId: string) => {
@@ -410,6 +456,11 @@ export const useNoteManagerState = () => {
     selectedNoteSourceHref,
     selectedFieldId,
     selectedFieldCluster,
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    searchLoading,
+    isSearching,
     selectFolder,
     selectNote,
     selectField,

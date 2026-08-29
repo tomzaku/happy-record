@@ -47,6 +47,61 @@
   }
 }
 
+// A rounded pill, same shape a real notes app's own search field has — sits right under the
+// folder title, always visible (see NoteList's own comment on why it isn't gated behind a
+// magnifying-glass toggle).
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 $spacing-md $spacing-sm;
+  padding: 6px $spacing-sm;
+  border-radius: 8px;
+  background: var(--input-background);
+  flex-shrink: 0;
+}
+
+.searchIcon {
+  flex-shrink: 0;
+  color: var(--text-description-color);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-color);
+  font: inherit;
+  font-size: toRem(13px);
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    color: var(--text-description-color);
+  }
+}
+
+.searchClear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--card-selected-background);
+  color: var(--text-description-color);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-color);
+  }
+}
+
 .rows {
   flex: 1;
   overflow-y: auto;
