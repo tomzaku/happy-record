@@ -1,7 +1,9 @@
 // Row mapping + validation for the `notes` resource. See
 // packages/global/src/store/note/useNote.tsx for the client shape (`Note`) this mirrors.
 // `owner_type`/`owner_id` (which field or field group owns this note) are set once at creation
-// and immutable after — see 20260829020000_notes_title_search_owner.sql. `checklist_id` (see
+// and immutable after — see 20260829020000_notes_title_search_owner.sql — but optional now
+// (20260829100000_notes_optional_owner.sql): a plain note created from the Notes page's own "+"
+// has neither, and isn't routed through any field at all. `checklist_id` (see
 // 20260829030000_notes_checklist_history.sql) tells apart the two shapes an `owner_type: 'field'`
 // note can be: unset is the field's own single current note (standalone notebook), set is one
 // day's journal entry for that field inside a checklist — many rows, one per submission.
@@ -58,10 +60,12 @@ export function toNote(r: Record<string, unknown>) {
     value: r.value as string,
     title: (r.title as string) ?? '',
     preview: (r.preview as string) ?? '',
-    ownerType: r.owner_type as OwnerType,
-    ownerId: r.owner_id as string,
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
+    // Absent entirely for a plain note with no field/field-group behind it, same convention as
+    // `folderId`/`checklistId` below — never `null` on the wire.
+    ...(r.owner_type ? { ownerType: r.owner_type as OwnerType } : {}),
+    ...(r.owner_id ? { ownerId: r.owner_id as string } : {}),
     ...(r.folder_id ? { folderId: r.folder_id as string } : {}),
     ...(r.checklist_id ? { checklistId: r.checklist_id as string } : {}),
     ...(r.checklist_template_id ? { checklistTemplateId: r.checklist_template_id as string } : {}),
@@ -81,10 +85,10 @@ export function toNoteSummary(r: Record<string, unknown>) {
     id: r.id as string,
     title: (r.title as string) ?? '',
     preview: (r.preview as string) ?? '',
-    ownerType: r.owner_type as OwnerType,
-    ownerId: r.owner_id as string,
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
+    ...(r.owner_type ? { ownerType: r.owner_type as OwnerType } : {}),
+    ...(r.owner_id ? { ownerId: r.owner_id as string } : {}),
     ...(r.folder_id ? { folderId: r.folder_id as string } : {}),
     ...(r.checklist_id ? { checklistId: r.checklist_id as string } : {}),
     ...(r.checklist_template_id ? { checklistTemplateId: r.checklist_template_id as string } : {}),
@@ -95,8 +99,15 @@ export function toNoteSummary(r: Record<string, unknown>) {
 export function fromNote(e: Record<string, unknown>) {
   if (typeof e.id !== 'string' || !e.id) throw new Error('Missing id.');
   if (typeof e.value !== 'string') throw new Error('Missing value.');
-  if (!isOwnerType(e.ownerType)) throw new Error('Invalid ownerType.');
-  if (typeof e.ownerId !== 'string' || !e.ownerId) throw new Error('Missing ownerId.');
+  // Owner is optional now (20260829100000_notes_optional_owner.sql) — a plain note from the
+  // Notes page's own "+" has neither. `ownerType` and `ownerId` are still a pair, though: one
+  // without the other is a malformed write from somewhere, not a valid "no owner" state (that's
+  // both absent, not one).
+  const hasOwnerType = e.ownerType !== undefined;
+  const hasOwnerId = e.ownerId !== undefined;
+  if (hasOwnerType !== hasOwnerId) throw new Error('ownerType and ownerId must be set together.');
+  if (hasOwnerType && !isOwnerType(e.ownerType)) throw new Error('Invalid ownerType.');
+  if (hasOwnerId && (typeof e.ownerId !== 'string' || !e.ownerId)) throw new Error('Invalid ownerId.');
   const checklistId = typeof e.checklistId === 'string' ? e.checklistId : null;
   const checklistTemplateId = typeof e.checklistTemplateId === 'string' ? e.checklistTemplateId : null;
   if (e.ownerType === 'field_group' && !checklistTemplateId) {
@@ -120,8 +131,8 @@ export function fromNote(e: Record<string, unknown>) {
     // touch `value`/re-derive this per render (see toNoteSummary's own comment).
     search_text: plainText.slice(0, MAX_SEARCH_TEXT_CHARS),
     preview: plainText.slice(0, MAX_PREVIEW_CHARS),
-    owner_type: e.ownerType,
-    owner_id: e.ownerId,
+    owner_type: hasOwnerType ? e.ownerType : null,
+    owner_id: hasOwnerId ? e.ownerId : null,
     checklist_id: checklistId,
     checklist_template_id: checklistTemplateId,
     // Only ever set by checklist-records' own POST (see that function) — the "these were

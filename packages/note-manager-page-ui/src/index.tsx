@@ -27,7 +27,7 @@ export const NoteManagerPage = () => {
     taskFolders,
     noteFolders,
     hasOtherNotes,
-    emptyFields,
+    hasUnfiledNotes,
     notes,
     notesLoading,
     groupByField,
@@ -42,14 +42,11 @@ export const NoteManagerPage = () => {
     selectedNoteSourceHref,
     selectedFieldId,
     selectedFieldCluster,
-    composing,
     selectFolder,
     selectNote,
     selectField,
     closeNote,
-    startCompose,
-    chooseComposeField,
-    createNewNoteType,
+    createQuickNote,
     createNoteFolder,
     updateSelectedNoteValue,
     updateSelectedNoteTitle,
@@ -57,15 +54,13 @@ export const NoteManagerPage = () => {
     deleteNote,
   } = useNoteManagerState();
 
-  const showDetail = composing || !!selectedNote || !!selectedFieldId;
+  const showDetail = !!selectedNote || !!selectedFieldId;
 
   if (showDetail) {
     return (
       <div className={styles.screen}>
         <BackHeader
-          renderLeftComponent={() => (
-            <>{composing ? 'New Note' : selectedNote?.title || selectedFieldCluster?.title || 'Note'}</>
-          )}
+          renderLeftComponent={() => <>{selectedNote?.title || selectedFieldCluster?.title || 'Note'}</>}
           onClickLeftButton={closeNote}
         />
         <NoteEditorPane
@@ -78,11 +73,6 @@ export const NoteManagerPage = () => {
           sourceHref={selectedNoteSourceHref}
           noteFolders={noteFolders}
           onChangeFolder={updateSelectedNoteFolder}
-          composing={composing}
-          emptyFields={emptyFields}
-          onChooseComposeField={chooseComposeField}
-          onCreateNoteType={createNewNoteType}
-          onCancelCompose={closeNote}
           onChangeTitle={updateSelectedNoteTitle}
           onChangeValue={updateSelectedNoteValue}
           onDelete={note => {
@@ -123,7 +113,7 @@ export const NoteManagerPage = () => {
         fieldMap={fieldMap}
         templateMap={templateMap}
         onSelectNote={selectNote}
-        onNewNote={startCompose}
+        onNewNote={createQuickNote}
       />
       {/* Full-screen, not a compact bottom sheet — @moon-ui/drawer's own sliding panel always
           fills the viewport (see its own index.module.scss), so this gets a real header/close
@@ -139,6 +129,7 @@ export const NoteManagerPage = () => {
           noteFolders={noteFolders}
           taskFolders={taskFolders}
           hasOtherNotes={hasOtherNotes}
+          hasUnfiledNotes={hasUnfiledNotes}
           selectedFolder={selectedFolder}
           totalNoteCount={totalNoteCount}
           onSelectFolder={folder => {

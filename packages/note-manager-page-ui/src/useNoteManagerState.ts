@@ -4,7 +4,6 @@ import { useNote, type Note } from '@dreamer/global/src/store/note/useNote';
 import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
 import { useNoteFolder } from '@dreamer/global/src/store/note-folder/useNoteFolder';
 import { useChecklistTemplates } from '@dreamer/global/src/store/checklists/useChecklistTemplates';
-import { useRecordField, type RecordField } from '@dreamer/global/src/store/record-field';
 import { useSyncedSelector } from '@dreamer/global/src/hook';
 
 // A brand-new, genuinely empty Editor.js document — same shape `@editorjs/editorjs` itself
@@ -16,6 +15,7 @@ export type FolderRef =
   | { kind: 'field'; id: string }
   | { kind: 'task'; id: string }
   | { kind: 'noteFolder'; id: string }
+  | { kind: 'unfiled' }
   | { kind: 'other' };
 
 /** Which folder a note belongs to. A real, user-created folder (`note.folderId` — the
@@ -23,10 +23,14 @@ export type FolderRef =
  * someone made for that one note, not something to second-guess against where the note
  * structurally came from. Absent that, a real checklist template id (a journal entry, or a
  * field-group's own Home note; both set `checklistTemplateId`, see useNote.tsx's own
- * `NoteOrigin`) buckets it under that task; nothing set means the standalone notebook's own
- * per-field note. A `checklistTemplateId` that doesn't resolve to a template this device knows
- * about (a deleted template, most likely) falls back to `other` rather than silently vanishing —
- * the note itself is real, just its folder isn't resolvable right now. */
+ * `NoteOrigin`) buckets it under that task; a note-type field's own id (`note.ownerId`, no
+ * `checklistTemplateId`) means the standalone notebook's own per-field note. Neither an owner
+ * nor a folder — a plain note from this page's own "+" (see useNote.tsx's `Note` doc comment on
+ * why a note doesn't need either anymore) — falls into `unfiled`, this page's own equivalent of
+ * a real notes app's default "Notes" bucket. A `checklistTemplateId` that doesn't resolve to a
+ * template this device knows about (a deleted template, most likely) falls back to `other`
+ * rather than silently vanishing — the note itself is real, just its folder isn't resolvable
+ * right now. */
 const folderOf = (note: Note, knownTemplateIds: Set<string>): FolderRef => {
   if (note.folderId) return { kind: 'noteFolder', id: note.folderId };
   if (note.checklistTemplateId) {
@@ -34,11 +38,13 @@ const folderOf = (note: Note, knownTemplateIds: Set<string>): FolderRef => {
       ? { kind: 'task', id: note.checklistTemplateId }
       : { kind: 'other' };
   }
-  return { kind: 'field', id: note.ownerId };
+  if (note.ownerId) return { kind: 'field', id: note.ownerId };
+  return { kind: 'unfiled' };
 };
 
+// 'other' and 'unfiled' are both singleton buckets — no `id` to compare, just the kind itself.
 const sameFolder = (a: FolderRef, b: FolderRef): boolean =>
-  a.kind === 'other' ? b.kind === 'other' : a.kind === b.kind && a.id === b.id;
+  a.kind === 'other' || a.kind === 'unfiled' ? a.kind === b.kind : a.kind === b.kind && a.id === b.id;
 
 /** One note-type field's own records, grouped, inside a Task folder — see `taskFieldClusters`
  * below. There's deliberately no "parent note" here: a field's own persistent, checklistId-less
@@ -66,24 +72,24 @@ export type NoteFieldCluster = {
  * or three separate "kind of note" code paths — reading, editing, and deleting all go through
  * the exact same `useNote()` functions regardless of which surface a given note came from.
  *
- * "New Note" (`startCompose`/`chooseComposeField`) is the one thing that's still standalone-only
- * — a journal entry only ever gets created from a checklist's own Submit form, and a field-group
- * note from that group's own Home tab; this page can't originate either, only show and edit them
- * once they exist. Same one-note-per-field limit as before applies to what "+" can create (see
- * useNoteRecord.tsx's own doc comment).
+ * "New Note" (`createQuickNote`) creates a plain, ownerless note directly — see useNote.tsx's
+ * own `Note`/`createNote` doc comments on why a note doesn't need a field behind it at all. A
+ * journal entry still only ever gets created from a checklist's own Submit form, and a
+ * field-group note from that group's own Home tab; this page can't originate either, only show
+ * and edit them once they exist — same as before.
  */
 export const useNoteManagerState = () => {
   const {
     getNote,
     getAllNotes,
     allNotesLoading,
+    createNote,
     updateNote: updateNoteApi,
     deleteNote: deleteNoteApi,
   } = useNote();
-  const { getAllNoteFields, addNote } = useNoteRecords();
+  const { getAllNoteFields } = useNoteRecords();
   const { getRecommendChecklistTemplates } = useChecklistTemplates();
   const { getAllNoteFolders, addNoteFolder } = useNoteFolder();
-  const { addRecordField } = useRecordField();
 
   const allNotes = useSyncedSelector(getAllNotes);
   const allNoteFields = useSyncedSelector(getAllNoteFields);
@@ -101,13 +107,10 @@ export const useNoteManagerState = () => {
   const [selectedFolder, setSelectedFolder] = React.useState<FolderRef | null>(null);
   const [selectedNoteId, setSelectedNoteId] = React.useState<string | null>(null);
   // Which field's own record-picker menu is showing — set only inside a Task folder, and
-  // mutually exclusive with `selectedNoteId`/`composing` (see the setters below, which all clear
-  // whichever of the three isn't theirs). See NoteFieldCluster's own comment for why this exists
-  // instead of just being another note to select.
+  // mutually exclusive with `selectedNoteId` (see the setters below, which both clear whichever
+  // of the two isn't theirs). See NoteFieldCluster's own comment for why this exists instead of
+  // just being another note to select.
   const [selectedFieldId, setSelectedFieldId] = React.useState<string | null>(null);
-  // True while the editor pane is showing the "pick where to save this" chooser — a note hasn't
-  // actually been created yet at this point (see startCompose's own comment).
-  const [composing, setComposing] = React.useState(false);
 
   // Every place below that opens/closes a note goes through this instead of the raw setter, so
   // `?id=` never drifts out of sync with what's actually open. `replace: true` — selecting note
@@ -154,6 +157,10 @@ export const useNoteManagerState = () => {
     () => allNotes.some(note => folderOf(note, templateIds).kind === 'other'),
     [allNotes, templateIds],
   );
+  const hasUnfiledNotes = React.useMemo(
+    () => allNotes.some(note => folderOf(note, templateIds).kind === 'unfiled'),
+    [allNotes, templateIds],
+  );
 
   const notes = React.useMemo(() => {
     const filtered = selectedFolder
@@ -181,9 +188,15 @@ export const useNoteManagerState = () => {
         fieldGroupNotes.push(note);
         continue;
       }
-      const records = byField.get(note.ownerId) ?? [];
+      // A task-owned, non-field_group note is always a journal entry (see folderOf's own
+      // comment) — created via checklist-records' own POST, which always supplies `ownerId`
+      // (the note-type field it belongs to). `ownerId` being optional on `Note` is for a plain
+      // note from this page's own "+" instead, which never lands here (no `checklistTemplateId`
+      // to have filtered it into this Task folder in the first place).
+      const ownerId = note.ownerId ?? note.id;
+      const records = byField.get(ownerId) ?? [];
       records.push(note);
-      byField.set(note.ownerId, records);
+      byField.set(ownerId, records);
     }
     const clusters: NoteFieldCluster[] = [...byField.entries()].map(([fieldId, records]) => {
       const field = fieldMap.get(fieldId);
@@ -218,7 +231,6 @@ export const useNoteManagerState = () => {
     urlOpenedIdRef.current = urlNoteId;
     setSelectedNoteId(urlNoteId);
     setSelectedFieldId(null);
-    setComposing(false);
   }, [urlNoteId]);
 
   // getNote fetches this note's own full content (`value` included) the moment it's selected —
@@ -226,7 +238,6 @@ export const useNoteManagerState = () => {
   // and exposes `loading` for the brief window before it lands, so the editor pane can show a
   // loading state instead of rendering a blank NoteEditor for `value: undefined`.
   const { note: selectedNote, loading: selectedNoteLoading } = getNote(selectedNoteId ?? undefined);
-  const emptyFields = React.useMemo(() => allNoteFields.filter(f => !f.noteId), [allNoteFields]);
 
   // Once a `?id=`-opened note's own content actually lands, resolve which sidebar folder it
   // belongs to and select it — the URL alone can't tell us that; `folderOf` needs the note's own
@@ -262,6 +273,7 @@ export const useNoteManagerState = () => {
     (folder: FolderRef | null): string => {
       if (!folder) return 'All Notes';
       if (folder.kind === 'other') return 'Other';
+      if (folder.kind === 'unfiled') return 'Unfiled';
       if (folder.kind === 'field') return fieldMap.get(folder.id)?.title ?? 'Notes';
       if (folder.kind === 'noteFolder') return noteFolderMap.get(folder.id)?.title ?? 'Folder';
       return templateMap.get(folder.id)?.title ?? 'Task';
@@ -298,13 +310,11 @@ export const useNoteManagerState = () => {
     setSelectedFolder(folder);
     setNoteId(null);
     setSelectedFieldId(null);
-    setComposing(false);
   };
 
   const selectNote = (noteId: string) => {
     setNoteId(noteId);
     setSelectedFieldId(null);
-    setComposing(false);
   };
 
   /** A field cluster's own header row (e.g. "Mock Interview") — there's no note of its own to
@@ -313,7 +323,6 @@ export const useNoteManagerState = () => {
   const selectField = (fieldId: string) => {
     setSelectedFieldId(fieldId);
     setNoteId(null);
-    setComposing(false);
   };
 
   /** The mobile "back from a note" gesture — closes whatever's open in the editor pane without
@@ -322,63 +331,24 @@ export const useNoteManagerState = () => {
   const closeNote = () => {
     setNoteId(null);
     setSelectedFieldId(null);
-    setComposing(false);
   };
 
-  /** Creates `field.id`'s one standalone note right now, blank, and selects it — safe any time a
-   * field has no `noteId` yet (its one slot is free). Lands the sidebar/list on that field's own
-   * folder too, so what's now open in the editor stays visible regardless of the filter that was
-   * active before. */
-  const createNoteIn = async (field: RecordField) => {
-    const created = await addNote(field.id, EMPTY_NOTE_VALUE, '');
-    const note = created[0];
-    setComposing(false);
-    if (note) {
-      setSelectedFolder({ kind: 'field', id: field.id });
-      setNoteId(note.id);
-      setSelectedFieldId(null);
-    }
+  /** The "+" button — creates a plain note right now, blank, no field/owner behind it at all
+   * (see useNote.tsx's own `Note`/`createNote` doc comments), and selects it. Files it directly
+   * into whatever real folder is currently selected. Otherwise, only switches the active folder
+   * when the one currently selected wouldn't actually show a plain note (a field/task/Other
+   * view, which filter by owner/checklistTemplateId) — landing on `unfiled` there so what was
+   * just created is visible immediately; "All Notes" or `unfiled` itself already show it as-is,
+   * so there's nothing to switch, and no reason to narrow the view someone was already on. */
+  const createQuickNote = async () => {
+    const folderId = selectedFolder?.kind === 'noteFolder' ? selectedFolder.id : undefined;
+    const note = await createNote(EMPTY_NOTE_VALUE, undefined, '', folderId);
+    setSelectedFieldId(null);
+    setNoteId(note.id);
+    const alreadyVisible = !selectedFolder || folderId !== undefined || selectedFolder.kind === 'unfiled';
+    if (!alreadyVisible) setSelectedFolder({ kind: 'unfiled' });
     return note;
   };
-
-  /** The "+" button. Exactly one existing empty slot → just create there, no picker needed.
-   * Zero or several → `composing` turns on so the editor pane can show a picker: an existing
-   * empty field to pick, or a name to type to create a brand-new note-type field on the spot
-   * (`createNewNoteType`) — every note-type field ever holds exactly one note (see
-   * RecordField.noteId's own comment), so once every field the user already has is full, "+" has
-   * nothing existing left to offer; this is what makes it never a dead end regardless of how many
-   * notes already exist, rather than just disabling the button once `emptyFields` runs out (what
-   * this used to do). */
-  const startCompose = () => {
-    if (emptyFields.length === 1) {
-      createNoteIn(emptyFields[0]);
-      return;
-    }
-    setNoteId(null);
-    setSelectedFieldId(null);
-    setComposing(true);
-  };
-
-  const chooseComposeField = (field: RecordField) => createNoteIn(field);
-
-  /** Composing's own "create a new note type" option, for when every existing note-type field
-   * already has its one note — see startCompose's own comment. Creates the field, then
-   * immediately creates+opens its note, same as picking an already-empty one would. Blank (or
-   * whitespace-only) names are silently ignored, same as createNoteFolder's own guard. */
-  const createNewNoteType = async (title: string) => {
-    const trimmed = title.trim();
-    if (!trimmed) return;
-    const field = addRecordField({
-      title: trimmed,
-      icon: 'solar:notebook-line-duotone',
-      description: '',
-      type: 'note',
-      unit: '',
-    });
-    await createNoteIn(field);
-  };
-
-  const cancelCompose = () => setComposing(false);
 
   const updateSelectedNoteValue = (value: unknown) => {
     if (!selectedNote) return;
@@ -404,7 +374,7 @@ export const useNoteManagerState = () => {
   };
 
   /** The sidebar's own "+" next to Folders — creates a real `note_folders` row and switches
-   * straight to it, same as `createNoteIn`'s own "land on what you just made" behavior. Blank
+   * straight to it, same as `createQuickNote`'s own "land on what you just made" behavior. Blank
    * (or whitespace-only) names are silently ignored rather than creating an unlabeled folder. */
   const createNoteFolder = (title: string) => {
     const trimmed = title.trim();
@@ -425,7 +395,7 @@ export const useNoteManagerState = () => {
     taskFolders,
     noteFolders: allNoteFolders,
     hasOtherNotes,
-    emptyFields,
+    hasUnfiledNotes,
     notes,
     notesLoading: allNotesLoading && allNotes.length === 0,
     totalNoteCount: allNotes.length,
@@ -440,15 +410,11 @@ export const useNoteManagerState = () => {
     selectedNoteSourceHref,
     selectedFieldId,
     selectedFieldCluster,
-    composing,
     selectFolder,
     selectNote,
     selectField,
     closeNote,
-    startCompose,
-    chooseComposeField,
-    createNewNoteType,
-    cancelCompose,
+    createQuickNote,
     createNoteFolder,
     updateSelectedNoteValue,
     updateSelectedNoteTitle,

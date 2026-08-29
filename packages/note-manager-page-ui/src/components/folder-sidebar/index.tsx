@@ -15,6 +15,7 @@ type Props = {
   noteFolders: NoteFolder[];
   taskFolders: TaskFolder[];
   hasOtherNotes: boolean;
+  hasUnfiledNotes: boolean;
   selectedFolder: FolderRef | null;
   totalNoteCount: number;
   onSelectFolder: (folder: FolderRef | null) => void;
@@ -23,19 +24,21 @@ type Props = {
 
 const isActive = (a: FolderRef | null, b: FolderRef | null) => {
   if (a === null || b === null) return a === b;
-  if (a.kind === 'other' || b.kind === 'other') return a.kind === 'other' && b.kind === 'other';
+  if (a.kind === 'other' || a.kind === 'unfiled') return a.kind === b.kind;
   return a.kind === b.kind && a.id === b.id;
 };
 
 /**
- * The folders list — four sections now: standalone note-type fields ("Fields" — this page's
- * original and only kind, one slot per field), real user-created folders ("Folders" — the
+ * The folders list — five sections now: "Unfiled" (pinned, right under All Notes — a plain note
+ * from this page's own "+" with no field and no real folder chosen for it, see
+ * useNoteManagerState's own `folderOf`), real user-created folders ("Folders" — the
  * `note-folders` resource, see useNoteFolder.tsx; a note explicitly filed here via
  * `note.folderId` always shows up under its folder instead of wherever it structurally came
- * from, see useNoteManagerState's own `folderOf`), checklist templates that actually have a note
- * in them ("Tasks" — a journal entry or a field-group's own Home note), and "Other" for a note
- * whose checklist template no longer resolves (deleted). `All Notes` stays pinned first, showing
- * the true total across every section combined.
+ * from), standalone note-type fields ("Fields" — this page's original and only kind before
+ * folders existed, one slot per field), checklist templates that actually have a note in them
+ * ("Tasks" — a journal entry or a field-group's own Home note), and "Other" for a note whose
+ * checklist template no longer resolves (deleted). `All Notes` stays pinned first, showing the
+ * true total across every section combined.
  */
 const FolderSidebar = ({
   className,
@@ -43,6 +46,7 @@ const FolderSidebar = ({
   noteFolders,
   taskFolders,
   hasOtherNotes,
+  hasUnfiledNotes,
   selectedFolder,
   totalNoteCount,
   onSelectFolder,
@@ -75,6 +79,19 @@ const FolderSidebar = ({
         <span className={styles.label}>All Notes</span>
         <span className={styles.count}>{totalNoteCount}</span>
       </button>
+
+      {hasUnfiledNotes && (
+        <button
+          type="button"
+          className={cx(styles.row, isActive(selectedFolder, { kind: 'unfiled' }) && styles.rowActive)}
+          onClick={() => onSelectFolder({ kind: 'unfiled' })}
+        >
+          <span className={styles.iconBadge}>
+            <Icon icon="solar:document-text-outline" width={15} />
+          </span>
+          <span className={styles.label}>Unfiled</span>
+        </button>
+      )}
 
       {/* Real, user-created folders — the only section with a way to add to it, since it's the
           only one of the four whose members this page actually originates (a field/task folder

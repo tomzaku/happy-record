@@ -6,7 +6,7 @@ import type { RecordField } from '@dreamer/global/src/store/record-field';
 import type { ChecklistTemplate } from '@dreamer/global/src/store/checklists/useChecklistTemplates';
 import type { NoteFieldCluster } from '../../useNoteManagerState';
 
-import { formatNoteDate } from '../../utils';
+import { formatNoteDate, groupNotesByDate } from '../../utils';
 import Skeleton from '../Skeleton';
 import styles from './index.module.scss';
 
@@ -52,13 +52,16 @@ const SkeletonRow = () => (
 );
 
 /** A journal entry/Home note shows its checklist template's own icon (that's the folder it's
- * in — see useNoteManagerState's own `folderOf`); a standalone note shows its field's icon.
- * Neither resolving (a deleted template, an id this device hasn't fetched yet) just omits the
- * icon rather than guessing. */
+ * in — see useNoteManagerState's own `folderOf`); a standalone field note shows its field's icon;
+ * a plain, ownerless note (no field, no task — see useNote.tsx's own `Note` doc comment) has
+ * nothing to resolve an icon from at all. Neither resolving (a deleted template, an id this
+ * device hasn't fetched yet) just omits the icon rather than guessing. */
 const rowIcon = (note: Note, fieldMap: Map<string, RecordField>, templateMap: Map<string, ChecklistTemplate>): string | undefined =>
   note.checklistTemplateId
     ? templateMap.get(note.checklistTemplateId)?.avatar?.name
-    : fieldMap.get(note.ownerId)?.icon;
+    : note.ownerId
+      ? fieldMap.get(note.ownerId)?.icon
+      : undefined;
 
 type NoteRowProps = {
   note: Note;
@@ -189,15 +192,23 @@ const NoteList = ({
           ))}
         </>
       ) : (
-        notes.map(note => (
-          <NoteRow
-            key={note.id}
-            note={note}
-            active={note.id === selectedNoteId}
-            fieldMap={fieldMap}
-            templateMap={templateMap}
-            onSelectNote={onSelectNote}
-          />
+        // Same macOS-Notes-style "Today"/"Yesterday"/"Previous 7 Days"/... sections every flat
+        // list here gets — see groupNotesByDate's own comment. The Task-folder tree above has
+        // its own, more specific grouping (by field) instead, so this branch never runs there.
+        groupNotesByDate(notes).map(group => (
+          <div key={group.label} className={styles.dateGroup}>
+            <div className={styles.dateGroupLabel}>{group.label}</div>
+            {group.notes.map(note => (
+              <NoteRow
+                key={note.id}
+                note={note}
+                active={note.id === selectedNoteId}
+                fieldMap={fieldMap}
+                templateMap={templateMap}
+                onSelectNote={onSelectNote}
+              />
+            ))}
+          </div>
         ))
       )}
     </div>

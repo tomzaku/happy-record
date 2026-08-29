@@ -37,13 +37,19 @@
   background: var(--card-selected-background);
 }
 
+// Same background as `.editorPane` — a real Notes app's own middle list and its editor sit on
+// the exact same surface, with only the left sidebar (`.sidebarPane` above) shaded differently
+// to read as a distinct navigation rail. `.listPane`/`.editorPane` used to point at two
+// different tokens here (`--background` vs. `--card-background`, genuinely different colors in
+// both themes — see moon-ui's own theme files) purely because they were written at different
+// times, not for any visual reason.
 .listPane {
   flex: 0 0 320px;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
   border-right: 1px solid var(--division-color);
-  background: var(--background);
+  background: var(--card-background);
 }
 
 .editorPane {

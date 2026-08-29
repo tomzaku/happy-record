@@ -131,6 +131,23 @@
   color: var(--text-description-color);
 }
 
+// One "Today"/"Yesterday"/"Previous 7 Days"/... section of the flat list — see
+// groupNotesByDate's own comment. Plain `<div>`s, not buttons: unlike a field cluster's own
+// header, there's nothing to click here, it's purely a section label.
+.dateGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.dateGroupLabel {
+  padding: $spacing-md $spacing-sm $spacing-xs;
+  font-size: toRem(11px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-description-color);
+}
+
 .empty {
   display: flex;
   align-items: center;

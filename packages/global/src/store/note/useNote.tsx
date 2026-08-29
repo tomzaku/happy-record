@@ -20,7 +20,10 @@ const NOTE_ALL_LOADING_KEY = 'note_all_loading';
  * it as part of the same `records` array a number field's value goes in, and `checklist-records`
  * routes it to `notes` itself. `ownerType`/`ownerId` (a denormalized reverse pointer, set once at
  * creation, never changed after — see 20260829020000_notes_title_search_owner.sql) is what a
- * search result resolves back to something openable with.
+ * search result resolves back to something openable with — both optional now
+ * (20260829100000_notes_optional_owner.sql), since a plain note from note-manager-page-ui's own
+ * "+" isn't routed through any field/field-group at all; nothing points a `note_id` at it, it
+ * just exists on its own, organized (if at all) by `folderId` alone.
  *
  * `value` (the real, parsed Editor.js `OutputData` every note editor in this app,
  * @moon-ui/note-editor, actually produces — noteApi.ts is the only place that ever
@@ -40,8 +43,8 @@ export type Note = {
   value?: unknown;
   title: string;
   preview: string;
-  ownerType: 'field' | 'field_group';
-  ownerId: string;
+  ownerType?: 'field' | 'field_group';
+  ownerId?: string;
   folderId?: string;
   checklistId?: string;
   checklistTemplateId?: string;
@@ -51,7 +54,9 @@ export type Note = {
 
 /** What a note-owning component has to supply the moment it actually creates a note — see
  * createNote below. A field's own single current note (standalone notebook) omits
- * `checklistId`/`checklistTemplateId`; a field-group's own note sets `checklistTemplateId`. */
+ * `checklistId`/`checklistTemplateId`; a field-group's own note sets `checklistTemplateId`.
+ * Omitted entirely (`createNote`'s `origin` param is optional) for a plain note with no field
+ * behind it at all — note-manager-page-ui's own "+" (see this file's own `Note` doc comment). */
 export type NoteOrigin =
   | { ownerType: 'field'; ownerId: string; checklistId?: string; checklistTemplateId?: string }
   | { ownerType: 'field_group'; ownerId: string; checklistTemplateId: string };
@@ -233,18 +238,24 @@ export const useNote = () => {
     return result?.notes ?? [];
   };
 
-  /** Creates a new note and returns it — the caller persists its `id` onto its own owner right
-   * after (`updateFieldGroup`/`updateRecordField`). Marked "already fetched" immediately: this
+  /** Creates a new note and returns it. When `origin` is given, the caller persists its `id`
+   * onto its own owner right after (`updateFieldGroup`/`updateRecordField`) — omit it entirely
+   * for a plain note with no field/field-group behind it at all (note-manager-page-ui's own "+",
+   * see this file's own `Note` doc comment); nothing needs its id persisted anywhere else in that
+   * case, since nothing else points at it. `folderId` files it directly into a real folder at
+   * creation time (optional — note-manager-page-ui's own "create into the folder I'm looking
+   * at"), same field `updateNote` can set later. Marked "already fetched" immediately: this
    * device just wrote it, there's nothing to fetch. `preview` starts empty locally (this
    * optimistic copy) — the server computes the real one from `value` on its own next fetch;
    * nothing here trusts this local placeholder for anything.
    *
    * `async`, and actually awaited by every caller (not fire-and-forget like most writes here —
-   * see CLAUDE.md's own note on that) because the owner's own id column (`field_groups.note_id`/
-   * `fields.note_id`) is a real FK into `notes`: persisting that id before this row has actually
-   * landed server-side is a real race, not a hypothetical one — it shipped once as exactly this,
-   * a field-group's `noteId` reaching the server before its note did and failing the FK check. */
-  const createNote = async (value: unknown, origin: NoteOrigin, title = '') => {
+   * see CLAUDE.md's own note on that) because an `origin`'s own owner id column
+   * (`field_groups.note_id`/`fields.note_id`) is a real FK into `notes`: persisting that id
+   * before this row has actually landed server-side is a real race, not a hypothetical one — it
+   * shipped once as exactly this, a field-group's `noteId` reaching the server before its note
+   * did and failing the FK check. */
+  const createNote = async (value: unknown, origin?: NoteOrigin, title = '', folderId?: string) => {
     const id = v4();
     const now = new Date().toISOString();
     const note: Note = {
@@ -252,14 +263,19 @@ export const useNote = () => {
       value,
       title,
       preview: '',
-      ownerType: origin.ownerType,
-      ownerId: origin.ownerId,
-      ...(origin.ownerType === 'field_group'
-        ? { checklistTemplateId: origin.checklistTemplateId }
-        : {
-          ...(origin.checklistId ? { checklistId: origin.checklistId } : {}),
-          ...(origin.checklistTemplateId ? { checklistTemplateId: origin.checklistTemplateId } : {}),
-        }),
+      ...(origin
+        ? {
+          ownerType: origin.ownerType,
+          ownerId: origin.ownerId,
+          ...(origin.ownerType === 'field_group'
+            ? { checklistTemplateId: origin.checklistTemplateId }
+            : {
+              ...(origin.checklistId ? { checklistId: origin.checklistId } : {}),
+              ...(origin.checklistTemplateId ? { checklistTemplateId: origin.checklistTemplateId } : {}),
+            }),
+        }
+        : {}),
+      ...(folderId ? { folderId } : {}),
       createdAt: now,
       updatedAt: now,
     };

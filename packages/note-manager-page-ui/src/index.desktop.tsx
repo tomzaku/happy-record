@@ -13,7 +13,7 @@ export const NoteManagerPageDesktop = () => {
     taskFolders,
     noteFolders,
     hasOtherNotes,
-    emptyFields,
+    hasUnfiledNotes,
     notes,
     notesLoading,
     groupByField,
@@ -28,14 +28,10 @@ export const NoteManagerPageDesktop = () => {
     selectedNoteSourceHref,
     selectedFieldId,
     selectedFieldCluster,
-    composing,
     selectFolder,
     selectNote,
     selectField,
-    startCompose,
-    chooseComposeField,
-    createNewNoteType,
-    cancelCompose,
+    createQuickNote,
     createNoteFolder,
     updateSelectedNoteValue,
     updateSelectedNoteTitle,
@@ -59,6 +55,7 @@ export const NoteManagerPageDesktop = () => {
             noteFolders={noteFolders}
             taskFolders={taskFolders}
             hasOtherNotes={hasOtherNotes}
+            hasUnfiledNotes={hasUnfiledNotes}
             selectedFolder={selectedFolder}
             totalNoteCount={totalNoteCount}
             onSelectFolder={selectFolder}
@@ -79,7 +76,7 @@ export const NoteManagerPageDesktop = () => {
             templateMap={templateMap}
             selectedNoteId={selectedNote?.id}
             onSelectNote={selectNote}
-            onNewNote={startCompose}
+            onNewNote={createQuickNote}
           />
         </div>
         <div className={styles.editorPane}>
@@ -92,11 +89,6 @@ export const NoteManagerPageDesktop = () => {
             sourceHref={selectedNoteSourceHref}
             noteFolders={noteFolders}
             onChangeFolder={updateSelectedNoteFolder}
-            composing={composing}
-            emptyFields={emptyFields}
-            onChooseComposeField={chooseComposeField}
-            onCreateNoteType={createNewNoteType}
-            onCancelCompose={cancelCompose}
             onChangeTitle={updateSelectedNoteTitle}
             onChangeValue={updateSelectedNoteValue}
             onDelete={deleteNote}

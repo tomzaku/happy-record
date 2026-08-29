@@ -1,14 +1,11 @@
-import React from 'react';
 import Icon from '@moon-ui/icon/Icon';
 import Input from '@moon-ui/input';
 import Select from '@moon-ui/select';
 import NoteEditor from '@moon-ui/note-editor';
 import Typography from '@moon-ui/typography';
-import Button from '@moon-ui/button/src/DefaultButton';
 import cx from 'classnames';
 import { useNavigate } from 'react-router-dom';
 import type { Note } from '@dreamer/global/src/store/note/useNote';
-import type { RecordField } from '@dreamer/global/src/store/record-field';
 import type { NoteFolder } from '@dreamer/global/src/store/note-folder/useNoteFolder';
 import { useAiNoteGenerate } from '@dreamer/global/src/hook';
 
@@ -48,25 +45,19 @@ type Props = {
   // condition, so this reuses it rather than re-deriving `!!note?.checklistTemplateId` here too.
   noteFolders?: NoteFolder[];
   onChangeFolder?: (folderId: string | undefined) => void;
-  composing: boolean;
-  emptyFields: RecordField[];
-  onChooseComposeField: (field: RecordField) => void;
-  // The composing picker's own "or create a new note type" option — every note-type field ever
-  // holds exactly one note (see useNoteManagerState's own startCompose comment), so once
-  // `emptyFields` is empty this is the only way "+" can still produce a new note.
-  onCreateNoteType: (title: string) => void;
-  onCancelCompose: () => void;
   onChangeTitle: (title: string) => void;
   onChangeValue: (value: unknown) => void;
   onDelete: (note: Note) => void;
 };
 
 /**
- * The right-hand pane — always the same three states a real notes app's own detail pane has:
- * nothing selected, picking where a brand-new note goes, or a note open and directly editable
- * (no separate view/edit mode — every keystroke here writes straight through
- * updateNote/updateNoteTitle, same "click and type" feel Notes.app itself has, and the same
- * live-write convention every other editor in this app already follows).
+ * The right-hand pane — one of three states: nothing selected, a field cluster's own record
+ * picker (`fieldMenu`), or a note open and directly editable (no separate view/edit mode — every
+ * keystroke here writes straight through updateNote/updateNoteTitle, same "click and type" feel
+ * Notes.app itself has, and the same live-write convention every other editor in this app
+ * already follows). There's no "pick where this goes" chooser anymore — a new note from this
+ * page's own "+" is just created directly (see useNoteManagerState's own `createQuickNote`),
+ * no field to disambiguate.
  */
 const NoteEditorPane = ({
   className,
@@ -78,11 +69,6 @@ const NoteEditorPane = ({
   sourceHref,
   noteFolders,
   onChangeFolder,
-  composing,
-  emptyFields,
-  onChooseComposeField,
-  onCreateNoteType,
-  onCancelCompose,
   onChangeTitle,
   onChangeValue,
   onDelete,
@@ -91,74 +77,9 @@ const NoteEditorPane = ({
   // uses (see CLAUDE.md's "Data access: go through an edge function").
   const { isPro, generate } = useAiNoteGenerate();
   const navigate = useNavigate();
-  const [newTypeTitle, setNewTypeTitle] = React.useState('');
 
-  if (composing) {
-    const submitNewType = () => {
-      if (!newTypeTitle.trim()) return;
-      onCreateNoteType(newTypeTitle);
-      setNewTypeTitle('');
-    };
-    return (
-      <div className={cx(styles.pane, styles.paneCentered, className)}>
-        <div className={styles.composeCard}>
-          <Typography.Title level={5} noMargin>
-            New Note
-          </Typography.Title>
-          <Typography.Paragraph noMargin isDescription className={styles.composeHint}>
-            Every note type holds one note — choose which one this is, or create a new one below.
-          </Typography.Paragraph>
-          {emptyFields.length > 0 && (
-            <div className={styles.composeOptions}>
-              {emptyFields.map(candidate => (
-                <button
-                  key={candidate.id}
-                  type="button"
-                  className={styles.composeOption}
-                  onClick={() => onChooseComposeField(candidate)}
-                >
-                  <Icon icon={candidate.icon} width={18} />
-                  <span>{candidate.title}</span>
-                </button>
-              ))}
-            </div>
-          )}
-          {/* Every existing note-type field already has its own note once `emptyFields` is
-              empty — this is the only way "+" can still produce a new note at that point (see
-              useNoteManagerState's own startCompose comment), so it's always here, not just a
-              fallback for the zero-empty-fields case. */}
-          <div className={styles.newTypeRow}>
-            <Icon icon="solar:notebook-line-duotone" width={18} className={styles.newTypeIcon} />
-            <input
-              className={styles.newTypeInput}
-              value={newTypeTitle}
-              onChange={e => setNewTypeTitle(e.target.value)}
-              placeholder="New note type name"
-              onKeyDown={e => {
-                if (e.key === 'Enter') submitNewType();
-              }}
-            />
-            <button
-              type="button"
-              className={styles.newTypeSubmit}
-              onClick={submitNewType}
-              disabled={!newTypeTitle.trim()}
-              aria-label="Create"
-            >
-              <Icon icon="solar:add-circle-bold" width={20} />
-            </button>
-          </div>
-          <Button type="ghost" onClick={onCancelCompose} className={styles.composeCancel}>
-            Cancel
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Wins over the plain empty state below, but `note` (a specific record actually opened,
-  // whether from the list or from clicking a menu item here) always wins over this — see this
-  // prop's own comment.
+  // `note` (a specific record actually opened, whether from the list or from clicking a menu
+  // item here) always wins over the field-menu picker below — see this prop's own comment.
   if (!note && fieldMenu) {
     return (
       <div className={cx(styles.pane, className)}>
