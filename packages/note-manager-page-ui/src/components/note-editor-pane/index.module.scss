@@ -121,6 +121,28 @@
   }
 }
 
+// The "which folder is this in" picker — a standalone note only (see this control's own comment
+// in index.tsx). Small and centered under the meta line, not a full-width form field — filing a
+// note away is a light touch, not something that should read as "editing a required field".
+.folderRow {
+  display: flex;
+  justify-content: center;
+  padding-bottom: $spacing-sm;
+  flex-shrink: 0;
+}
+
+.folderSelect {
+  width: auto;
+}
+
+.folderTrigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: toRem(12px);
+  color: var(--text-description-color);
+}
+
 .editorBody {
   flex: 1;
   min-height: 0;

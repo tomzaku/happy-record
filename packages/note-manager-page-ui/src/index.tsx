@@ -25,6 +25,7 @@ export const NoteManagerPage = () => {
     fieldMap,
     templateMap,
     taskFolders,
+    noteFolders,
     hasOtherNotes,
     emptyFields,
     notes,
@@ -48,8 +49,10 @@ export const NoteManagerPage = () => {
     closeNote,
     startCompose,
     chooseComposeField,
+    createNoteFolder,
     updateSelectedNoteValue,
     updateSelectedNoteTitle,
+    updateSelectedNoteFolder,
     deleteNote,
   } = useNoteManagerState();
 
@@ -72,6 +75,8 @@ export const NoteManagerPage = () => {
           onSelectNote={selectNote}
           sourceLabel={selectedNoteSourceLabel}
           sourceHref={selectedNoteSourceHref}
+          noteFolders={noteFolders}
+          onChangeFolder={updateSelectedNoteFolder}
           composing={composing}
           emptyFields={emptyFields}
           onChooseComposeField={chooseComposeField}
@@ -130,6 +135,7 @@ export const NoteManagerPage = () => {
         />
         <FolderSidebar
           noteFields={allNoteFields}
+          noteFolders={noteFolders}
           taskFolders={taskFolders}
           hasOtherNotes={hasOtherNotes}
           selectedFolder={selectedFolder}
@@ -138,6 +144,7 @@ export const NoteManagerPage = () => {
             selectFolder(folder);
             setFoldersOpen(false);
           }}
+          onCreateFolder={createNoteFolder}
         />
       </Drawer>
     </div>

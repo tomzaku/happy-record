@@ -23,6 +23,60 @@
   color: var(--text-description-color);
 }
 
+// The Folders section's own header — label + "+" together, unlike every other section's plain
+// `.sectionLabel` div, since it's the only one with something to add to it (see FolderSidebar's
+// own doc comment on why).
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-xs $spacing-xs $spacing-sm;
+
+  .sectionLabel {
+    padding: 0;
+  }
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--radio-color);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--card-selected-background);
+  }
+}
+
+// The "type a name, Enter to create" row — same left rhythm as a real folder row below it
+// (`.row`'s own padding) so it doesn't visually jump once the real row replaces it.
+.draftInput {
+  width: 100%;
+  padding: 7px $spacing-sm;
+  margin-bottom: 1px;
+  border: 1px solid var(--input-border-focus);
+  border-radius: 7px;
+  background: var(--input-background);
+  color: var(--text-color);
+  font: inherit;
+  font-size: toRem(14px);
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    color: var(--text-description-color);
+  }
+}
+
 .row {
   display: flex;
   align-items: center;

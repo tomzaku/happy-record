@@ -11,6 +11,7 @@ export const NoteManagerPageDesktop = () => {
     fieldMap,
     templateMap,
     taskFolders,
+    noteFolders,
     hasOtherNotes,
     emptyFields,
     notes,
@@ -34,8 +35,10 @@ export const NoteManagerPageDesktop = () => {
     startCompose,
     chooseComposeField,
     cancelCompose,
+    createNoteFolder,
     updateSelectedNoteValue,
     updateSelectedNoteTitle,
+    updateSelectedNoteFolder,
     deleteNote,
   } = useNoteManagerState();
 
@@ -52,11 +55,13 @@ export const NoteManagerPageDesktop = () => {
         <div className={styles.sidebarPane}>
           <FolderSidebar
             noteFields={allNoteFields}
+            noteFolders={noteFolders}
             taskFolders={taskFolders}
             hasOtherNotes={hasOtherNotes}
             selectedFolder={selectedFolder}
             totalNoteCount={totalNoteCount}
             onSelectFolder={selectFolder}
+            onCreateFolder={createNoteFolder}
           />
         </div>
         <div className={styles.listPane}>
@@ -85,6 +90,8 @@ export const NoteManagerPageDesktop = () => {
             onSelectNote={selectNote}
             sourceLabel={selectedNoteSourceLabel}
             sourceHref={selectedNoteSourceHref}
+            noteFolders={noteFolders}
+            onChangeFolder={updateSelectedNoteFolder}
             composing={composing}
             emptyFields={emptyFields}
             onChooseComposeField={chooseComposeField}

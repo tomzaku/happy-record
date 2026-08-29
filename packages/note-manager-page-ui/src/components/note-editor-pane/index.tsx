@@ -1,5 +1,6 @@
 import Icon from '@moon-ui/icon/Icon';
 import Input from '@moon-ui/input';
+import Select from '@moon-ui/select';
 import NoteEditor from '@moon-ui/note-editor';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button/src/DefaultButton';
@@ -7,6 +8,7 @@ import cx from 'classnames';
 import { useNavigate } from 'react-router-dom';
 import type { Note } from '@dreamer/global/src/store/note/useNote';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
+import type { NoteFolder } from '@dreamer/global/src/store/note-folder/useNoteFolder';
 import { useAiNoteGenerate } from '@dreamer/global/src/hook';
 
 import { formatNoteDate } from '../../utils';
@@ -38,6 +40,13 @@ type Props = {
   // from. Undefined for a standalone field note (nothing to link to) or one whose template no
   // longer resolves — `sourceLabel` renders as plain text in either case.
   sourceHref?: string;
+  // Filing a standalone note into a real, user-created folder (the `note-folders` resource) —
+  // undefined `onChangeFolder`/empty `noteFolders` just means the picker below doesn't render.
+  // Task-originated notes don't get this control at all (see useNoteManagerState's own
+  // `updateSelectedNoteFolder` comment for why) — `sourceHref` being set is exactly that same
+  // condition, so this reuses it rather than re-deriving `!!note?.checklistTemplateId` here too.
+  noteFolders?: NoteFolder[];
+  onChangeFolder?: (folderId: string | undefined) => void;
   composing: boolean;
   emptyFields: RecordField[];
   onChooseComposeField: (field: RecordField) => void;
@@ -62,6 +71,8 @@ const NoteEditorPane = ({
   onSelectNote,
   sourceLabel,
   sourceHref,
+  noteFolders,
+  onChangeFolder,
   composing,
   emptyFields,
   onChooseComposeField,
@@ -180,6 +191,32 @@ const NoteEditorPane = ({
           <Icon icon="solar:trash-bin-trash-outline" width={16} />
         </button>
       </div>
+      {/* Only a standalone note gets this — see this prop's own comment on why `sourceHref`
+          (already exactly "this is task-originated") is the right gate to reuse here. */}
+      {!sourceHref && onChangeFolder && (
+        <div className={styles.folderRow}>
+          <Select
+            options={[
+              { label: 'No Folder', value: '' },
+              ...(noteFolders ?? []).map(folder => ({ label: folder.title, value: folder.id })),
+            ]}
+            value={note.folderId ?? ''}
+            onChange={(option, { close }) => {
+              onChangeFolder(option.value || undefined);
+              close();
+            }}
+            renderInput={() => (
+              <span className={styles.folderTrigger}>
+                <Icon icon="solar:folder-outline" width={13} />
+                {note.folderId
+                  ? (noteFolders ?? []).find(folder => folder.id === note.folderId)?.title ?? 'Folder'
+                  : 'No Folder'}
+              </span>
+            )}
+            classes={{ container: styles.folderSelect }}
+          />
+        </div>
+      )}
       {/* Keyed by note.id so switching between notes remounts both fields — Input and
           NoteEditor (see @moon-ui/input, @moon-ui/note-editor) only ever read their own `value`
           prop once, at mount, so without this a newly-selected note would keep showing the

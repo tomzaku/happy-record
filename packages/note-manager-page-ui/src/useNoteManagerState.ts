@@ -2,6 +2,7 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useNote, type Note } from '@dreamer/global/src/store/note/useNote';
 import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
+import { useNoteFolder } from '@dreamer/global/src/store/note-folder/useNoteFolder';
 import { useChecklistTemplates } from '@dreamer/global/src/store/checklists/useChecklistTemplates';
 import { useSyncedSelector } from '@dreamer/global/src/hook';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
@@ -14,15 +15,20 @@ const EMPTY_NOTE_VALUE = { time: Date.now(), blocks: [], version: '2.31.6' };
 export type FolderRef =
   | { kind: 'field'; id: string }
   | { kind: 'task'; id: string }
+  | { kind: 'noteFolder'; id: string }
   | { kind: 'other' };
 
-/** Which folder a note belongs to — a real checklist template id (a journal entry, or a
+/** Which folder a note belongs to. A real, user-created folder (`note.folderId` — the
+ * `note-folders` resource, see useNoteFolder.tsx) always wins when set: it's an explicit choice
+ * someone made for that one note, not something to second-guess against where the note
+ * structurally came from. Absent that, a real checklist template id (a journal entry, or a
  * field-group's own Home note; both set `checklistTemplateId`, see useNote.tsx's own
  * `NoteOrigin`) buckets it under that task; nothing set means the standalone notebook's own
  * per-field note. A `checklistTemplateId` that doesn't resolve to a template this device knows
  * about (a deleted template, most likely) falls back to `other` rather than silently vanishing —
  * the note itself is real, just its folder isn't resolvable right now. */
 const folderOf = (note: Note, knownTemplateIds: Set<string>): FolderRef => {
+  if (note.folderId) return { kind: 'noteFolder', id: note.folderId };
   if (note.checklistTemplateId) {
     return knownTemplateIds.has(note.checklistTemplateId)
       ? { kind: 'task', id: note.checklistTemplateId }
@@ -76,10 +82,12 @@ export const useNoteManagerState = () => {
   } = useNote();
   const { getAllNoteFields, addNote } = useNoteRecords();
   const { getRecommendChecklistTemplates } = useChecklistTemplates();
+  const { getAllNoteFolders, addNoteFolder } = useNoteFolder();
 
   const allNotes = useSyncedSelector(getAllNotes);
   const allNoteFields = useSyncedSelector(getAllNoteFields);
   const allTemplates = useSyncedSelector(getRecommendChecklistTemplates);
+  const allNoteFolders = useSyncedSelector(getAllNoteFolders);
 
   // `?id=` is the open note's own id, kept in sync both ways: selecting a note writes it here
   // (setNoteId below) so the URL is always shareable/refreshable/back-button-able, and a `?id=`
@@ -126,6 +134,10 @@ export const useNoteManagerState = () => {
     [allTemplates],
   );
   const templateIds = React.useMemo(() => new Set(templateMap.keys()), [templateMap]);
+  const noteFolderMap = React.useMemo(
+    () => new Map(allNoteFolders.map(folder => [folder.id, folder])),
+    [allNoteFolders],
+  );
 
   // Task folders — only templates that actually have a note in them (a journal entry or a Home
   // note), not every checklist template the user has, most of which never have one.
@@ -250,9 +262,10 @@ export const useNoteManagerState = () => {
       if (!folder) return 'All Notes';
       if (folder.kind === 'other') return 'Other';
       if (folder.kind === 'field') return fieldMap.get(folder.id)?.title ?? 'Notes';
+      if (folder.kind === 'noteFolder') return noteFolderMap.get(folder.id)?.title ?? 'Folder';
       return templateMap.get(folder.id)?.title ?? 'Task';
     },
-    [fieldMap, templateMap],
+    [fieldMap, templateMap, noteFolderMap],
   );
   const selectedFolderTitle = folderTitle(selectedFolder);
   // Deliberately not `folderTitle(folderOf(...))` here — `folderOf`'s `other` bucket is about
@@ -356,6 +369,29 @@ export const useNoteManagerState = () => {
     updateNoteApi(selectedNote.id, { title });
   };
 
+  /** `folderId: undefined` clears it — a real key set to `undefined` still drops out of the
+   * outgoing JSON body (see noteApi.ts's own `saveNote`), so the server's own `fromNote` sees it
+   * as absent and writes `null`, same as it never having been set. Restricted to a standalone
+   * note (no `checklistTemplateId`) for now — filing a task-originated note into a personal
+   * folder would pull it out of its Task's own grouping in the list (NoteFieldCluster/the
+   * group's flat rows), which isn't obviously what someone filing a journal entry away would
+   * expect; the source link above still finds its way back to the task either way, since that's
+   * driven by `checklistTemplateId`, not by which folder it's filed under. */
+  const updateSelectedNoteFolder = (folderId: string | undefined) => {
+    if (!selectedNote || selectedNote.checklistTemplateId) return;
+    updateNoteApi(selectedNote.id, { folderId });
+  };
+
+  /** The sidebar's own "+" next to Folders — creates a real `note_folders` row and switches
+   * straight to it, same as `createNoteIn`'s own "land on what you just made" behavior. Blank
+   * (or whitespace-only) names are silently ignored rather than creating an unlabeled folder. */
+  const createNoteFolder = (title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    const id = addNoteFolder({ title: trimmed });
+    selectFolder({ kind: 'noteFolder', id });
+  };
+
   const deleteNote = (note: Note) => {
     deleteNoteApi(note.id);
     if (note.id === selectedNoteId) setNoteId(null);
@@ -366,6 +402,7 @@ export const useNoteManagerState = () => {
     fieldMap,
     templateMap,
     taskFolders,
+    noteFolders: allNoteFolders,
     hasOtherNotes,
     emptyFields,
     notes,
@@ -390,8 +427,10 @@ export const useNoteManagerState = () => {
     startCompose,
     chooseComposeField,
     cancelCompose,
+    createNoteFolder,
     updateSelectedNoteValue,
     updateSelectedNoteTitle,
+    updateSelectedNoteFolder,
     deleteNote,
   };
 };

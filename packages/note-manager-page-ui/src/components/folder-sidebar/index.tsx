@@ -1,6 +1,8 @@
+import React from 'react';
 import Icon from '@moon-ui/icon/Icon';
 import cx from 'classnames';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
+import type { NoteFolder } from '@dreamer/global/src/store/note-folder/useNoteFolder';
 import type { FolderRef } from '../../useNoteManagerState';
 
 import styles from './index.module.scss';
@@ -10,11 +12,13 @@ type TaskFolder = { id: string; title: string; icon: string };
 type Props = {
   className?: string;
   noteFields: RecordField[];
+  noteFolders: NoteFolder[];
   taskFolders: TaskFolder[];
   hasOtherNotes: boolean;
   selectedFolder: FolderRef | null;
   totalNoteCount: number;
   onSelectFolder: (folder: FolderRef | null) => void;
+  onCreateFolder: (title: string) => void;
 };
 
 const isActive = (a: FolderRef | null, b: FolderRef | null) => {
@@ -24,94 +28,164 @@ const isActive = (a: FolderRef | null, b: FolderRef | null) => {
 };
 
 /**
- * The folders list — three sections now, not just one: standalone note-type fields ("Folders",
- * this page's original and only kind), checklist templates that actually have a note in them
- * ("Tasks" — a journal entry or a field-group's own Home note, see useNoteManagerState's own
- * `folderOf`), and "Other" for a note whose checklist template no longer resolves (deleted).
- * `All Notes` stays pinned first, showing the true total across every section combined.
+ * The folders list — four sections now: standalone note-type fields ("Fields" — this page's
+ * original and only kind, one slot per field), real user-created folders ("Folders" — the
+ * `note-folders` resource, see useNoteFolder.tsx; a note explicitly filed here via
+ * `note.folderId` always shows up under its folder instead of wherever it structurally came
+ * from, see useNoteManagerState's own `folderOf`), checklist templates that actually have a note
+ * in them ("Tasks" — a journal entry or a field-group's own Home note), and "Other" for a note
+ * whose checklist template no longer resolves (deleted). `All Notes` stays pinned first, showing
+ * the true total across every section combined.
  */
 const FolderSidebar = ({
   className,
   noteFields,
+  noteFolders,
   taskFolders,
   hasOtherNotes,
   selectedFolder,
   totalNoteCount,
   onSelectFolder,
-}: Props) => (
-  <nav className={cx(styles.sidebar, className)} aria-label="Note folders">
-    <button
-      type="button"
-      className={cx(styles.row, isActive(selectedFolder, null) && styles.rowActive)}
-      onClick={() => onSelectFolder(null)}
-    >
-      <span className={cx(styles.iconBadge, styles.allNotesBadge)}>
-        <Icon icon="solar:notes-line-duotone" width={15} />
-      </span>
-      <span className={styles.label}>All Notes</span>
-      <span className={styles.count}>{totalNoteCount}</span>
-    </button>
+  onCreateFolder,
+}: Props) => {
+  const [creatingFolder, setCreatingFolder] = React.useState(false);
+  const [draftTitle, setDraftTitle] = React.useState('');
+  const draftInputRef = React.useRef<HTMLInputElement>(null);
 
-    {noteFields.length > 0 && (
-      <>
-        <div className={styles.sectionLabel}>Folders</div>
-        {noteFields.map(field => {
-          const ref: FolderRef = { kind: 'field', id: field.id };
-          return (
-            <button
-              key={field.id}
-              type="button"
-              className={cx(styles.row, isActive(selectedFolder, ref) && styles.rowActive)}
-              onClick={() => onSelectFolder(ref)}
-            >
-              <span className={styles.iconBadge}>
-                <Icon icon={field.icon} width={15} />
-              </span>
-              <span className={styles.label}>{field.title}</span>
-              {/* At most 0 or 1 — a filled dot rather than a "1" badge, so it doesn't read as a
-                  count that could ever grow. */}
-              {field.noteId && <span className={styles.filledDot} />}
-            </button>
-          );
-        })}
-      </>
-    )}
+  React.useEffect(() => {
+    if (creatingFolder) draftInputRef.current?.focus();
+  }, [creatingFolder]);
 
-    {taskFolders.length > 0 && (
-      <>
-        <div className={styles.sectionLabel}>Tasks</div>
-        {taskFolders.map(task => {
-          const ref: FolderRef = { kind: 'task', id: task.id };
-          return (
-            <button
-              key={task.id}
-              type="button"
-              className={cx(styles.row, isActive(selectedFolder, ref) && styles.rowActive)}
-              onClick={() => onSelectFolder(ref)}
-            >
-              <span className={styles.iconBadge}>
-                <Icon icon={task.icon} width={15} />
-              </span>
-              <span className={styles.label}>{task.title}</span>
-            </button>
-          );
-        })}
-      </>
-    )}
+  const submitDraft = () => {
+    onCreateFolder(draftTitle);
+    setDraftTitle('');
+    setCreatingFolder(false);
+  };
 
-    {hasOtherNotes && (
+  return (
+    <nav className={cx(styles.sidebar, className)} aria-label="Note folders">
       <button
         type="button"
-        className={cx(styles.row, styles.otherRow, isActive(selectedFolder, { kind: 'other' }) && styles.rowActive)}
-        onClick={() => onSelectFolder({ kind: 'other' })}
+        className={cx(styles.row, isActive(selectedFolder, null) && styles.rowActive)}
+        onClick={() => onSelectFolder(null)}
       >
-        <span className={styles.iconBadge}>
-          <Icon icon="solar:folder-outline" width={15} />
+        <span className={cx(styles.iconBadge, styles.allNotesBadge)}>
+          <Icon icon="solar:notes-line-duotone" width={15} />
         </span>
-        <span className={styles.label}>Other</span>
+        <span className={styles.label}>All Notes</span>
+        <span className={styles.count}>{totalNoteCount}</span>
       </button>
-    )}
-  </nav>
-);
+
+      {/* Real, user-created folders — the only section with a way to add to it, since it's the
+          only one of the four whose members this page actually originates (a field/task folder
+          exists because a field/template does; this exists because someone clicked "+" here). */}
+      <div className={styles.sectionHeader}>
+        <span className={styles.sectionLabel}>Folders</span>
+        <button
+          type="button"
+          className={styles.addButton}
+          onClick={() => setCreatingFolder(true)}
+          aria-label="New Folder"
+          title="New Folder"
+        >
+          <Icon icon="solar:add-circle-line-duotone" width={16} />
+        </button>
+      </div>
+      {creatingFolder && (
+        <input
+          ref={draftInputRef}
+          className={styles.draftInput}
+          value={draftTitle}
+          placeholder="Folder name"
+          onChange={e => setDraftTitle(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') submitDraft();
+            if (e.key === 'Escape') {
+              setDraftTitle('');
+              setCreatingFolder(false);
+            }
+          }}
+          onBlur={() => (draftTitle.trim() ? submitDraft() : setCreatingFolder(false))}
+        />
+      )}
+      {noteFolders.map(folder => {
+        const ref: FolderRef = { kind: 'noteFolder', id: folder.id };
+        return (
+          <button
+            key={folder.id}
+            type="button"
+            className={cx(styles.row, isActive(selectedFolder, ref) && styles.rowActive)}
+            onClick={() => onSelectFolder(ref)}
+          >
+            <span className={styles.iconBadge}>
+              <Icon icon="solar:folder-outline" width={15} />
+            </span>
+            <span className={styles.label}>{folder.title}</span>
+          </button>
+        );
+      })}
+
+      {noteFields.length > 0 && (
+        <>
+          <div className={styles.sectionLabel}>Fields</div>
+          {noteFields.map(field => {
+            const ref: FolderRef = { kind: 'field', id: field.id };
+            return (
+              <button
+                key={field.id}
+                type="button"
+                className={cx(styles.row, isActive(selectedFolder, ref) && styles.rowActive)}
+                onClick={() => onSelectFolder(ref)}
+              >
+                <span className={styles.iconBadge}>
+                  <Icon icon={field.icon} width={15} />
+                </span>
+                <span className={styles.label}>{field.title}</span>
+                {/* At most 0 or 1 — a filled dot rather than a "1" badge, so it doesn't read as a
+                    count that could ever grow. */}
+                {field.noteId && <span className={styles.filledDot} />}
+              </button>
+            );
+          })}
+        </>
+      )}
+
+      {taskFolders.length > 0 && (
+        <>
+          <div className={styles.sectionLabel}>Tasks</div>
+          {taskFolders.map(task => {
+            const ref: FolderRef = { kind: 'task', id: task.id };
+            return (
+              <button
+                key={task.id}
+                type="button"
+                className={cx(styles.row, isActive(selectedFolder, ref) && styles.rowActive)}
+                onClick={() => onSelectFolder(ref)}
+              >
+                <span className={styles.iconBadge}>
+                  <Icon icon={task.icon} width={15} />
+                </span>
+                <span className={styles.label}>{task.title}</span>
+              </button>
+            );
+          })}
+        </>
+      )}
+
+      {hasOtherNotes && (
+        <button
+          type="button"
+          className={cx(styles.row, styles.otherRow, isActive(selectedFolder, { kind: 'other' }) && styles.rowActive)}
+          onClick={() => onSelectFolder({ kind: 'other' })}
+        >
+          <span className={styles.iconBadge}>
+            <Icon icon="solar:folder-outline" width={15} />
+          </span>
+          <span className={styles.label}>Other</span>
+        </button>
+      )}
+    </nav>
+  );
+};
 
 export default FolderSidebar;
