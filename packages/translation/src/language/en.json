@@ -176,8 +176,6 @@
   "label-record-custom.type.label": "Type",
   "label-record-custom.unit.description": "Ex: minutes, hours, reps, kg",
   "label-record-custom.unit.label": "Field Unit",
-  "label-record-custom.visibility.description": "Other users can use this field in their own checklists",
-  "label-record-custom.visibility.label": "Public",
   "label-record-edit.title": "Edit field",
   "label-save": "Save",
   "label-schedule": "Schedule",

@@ -106,42 +106,6 @@ export const getEffectiveFieldDisplay = (
   placeholder: overrides?.placeholder,
 });
 
-// `updatedAt: epoch` on purpose — these three are a bootstrap fallback only
-// (never written to storage until something actually persists them), so
-// anything a real fetch returns, even the system rows' own genuine
-// timestamps, is unconditionally newer and correctly replaces this
-// placeholder.
-const NEVER_SYNCED = new Date(0).toISOString();
-const defaultRecordField: Record<string, RecordField> = {
-  duration: {
-    id: 'duration',
-    title: 'Duration',
-    icon: 'solar:clock-square-broken',
-    description: 'Record duration for tracking purpose',
-    type: 'metric',
-    unit: 'minutes',
-    updatedAt: NEVER_SYNCED,
-  },
-  'push-ups': {
-    id: 'push-ups',
-    title: 'Push-ups',
-    icon: 'iconoir:gym',
-    description: 'Push-ups for tracking purpose',
-    type: 'metric',
-    unit: 'reps',
-    updatedAt: NEVER_SYNCED,
-  },
-  note: {
-    id: 'note',
-    title: 'Note',
-    icon: 'solar:notebook-minimalistic-linear',
-    description: 'Write anything',
-    type: 'note',
-    unit: 'words',
-    updatedAt: NEVER_SYNCED,
-  },
-};
-
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 // Fetched by whatever scope is actually asked for — "all mine + public"
@@ -154,9 +118,15 @@ const fetchedScopes = new Set<string>();
 const ALL_SCOPE = '__all__';
 
 export const useRecordField = () => {
+  // No local bootstrap defaults anymore — `duration`/`push-ups`/`note` are seeded server-side as
+  // system rows (20260821000000_seed_system_fields.sql, unowned + `visibility: 'public'`), so a
+  // fresh page load starts empty and picks them up from the real fetch below, same
+  // "never render a stale local copy" rule every other `useSessionStore`-backed resource already
+  // follows (see CLAUDE.md's "Fetching from the backend" section) — this store used to be the one
+  // exception.
   const [recordFieldList, setRecordFieldList] = useSessionStore<Record<string, RecordField>>(
     RECORD_KEY,
-    defaultRecordField,
+    {},
   );
   const { userId, ready } = useSession();
 
