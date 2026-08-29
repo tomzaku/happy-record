@@ -4,14 +4,30 @@ import cx from 'classnames';
 import type { Note } from '@dreamer/global/src/store/note/useNote';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
 import type { ChecklistTemplate } from '@dreamer/global/src/store/checklists/useChecklistTemplates';
+import type { NoteFieldCluster } from '../../useNoteManagerState';
 
 import { formatNoteDate } from '../../utils';
+import Skeleton from '../Skeleton';
 import styles from './index.module.scss';
 
 type Props = {
   className?: string;
   title: string;
   notes: Note[];
+  // True only while getAllNotes' own fetch is still in flight and nothing's arrived yet (see
+  // useNoteManagerState's own `notesLoading`) — distinct from `notes.length === 0`, which is
+  // just as true once the fetch resolves to a genuinely empty account.
+  loading?: boolean;
+  // Inside a Task folder, `notes` above stays the flat list (used for the empty-state check and
+  // as a fallback), but the actual rows render from these two instead — a field-group's own flat
+  // Home note rows, and every note-type field's own records grouped under a clickable header
+  // (see useNoteManagerState's own NoteFieldCluster). Every other folder (All Notes, a single
+  // field, Other) ignores these and just renders `notes` flat, same as before.
+  groupByField?: boolean;
+  fieldGroupNotes?: Note[];
+  fieldClusters?: NoteFieldCluster[];
+  selectedFieldId?: string;
+  onSelectField?: (fieldId: string) => void;
   fieldMap: Map<string, RecordField>;
   templateMap: Map<string, ChecklistTemplate>;
   selectedNoteId?: string;
@@ -19,6 +35,22 @@ type Props = {
   onNewNote: () => void;
   canCreateNote: boolean;
 };
+
+/** Stands in for a real row while the first fetch is still in flight — same
+ * `.row`/`.rowTop`/`.rowBottom` layout classes the real rows below use, with `Skeleton`
+ * standing in for each piece of real text, so the loading state lines up with what actually
+ * renders once the fetch lands instead of jumping. */
+const SkeletonRow = () => (
+  <div className={styles.row}>
+    <div className={styles.rowTop}>
+      <Skeleton width="55%" height={13} />
+      <Skeleton width={40} height={11} />
+    </div>
+    <div className={styles.rowBottom}>
+      <Skeleton width="85%" height={12} />
+    </div>
+  </div>
+);
 
 /** A journal entry/Home note shows its checklist template's own icon (that's the folder it's
  * in — see useNoteManagerState's own `folderOf`); a standalone note shows its field's icon.
@@ -29,18 +61,61 @@ const rowIcon = (note: Note, fieldMap: Map<string, RecordField>, templateMap: Ma
     ? templateMap.get(note.checklistTemplateId)?.avatar?.name
     : fieldMap.get(note.ownerId)?.icon;
 
+type NoteRowProps = {
+  note: Note;
+  active: boolean;
+  indented?: boolean;
+  fieldMap: Map<string, RecordField>;
+  templateMap: Map<string, ChecklistTemplate>;
+  onSelectNote: (id: string) => void;
+};
+
+/** One note row — title + a one-line preview + a graduated date label, the same information
+ * density a real notes app's list shows. `note.preview` is computed and stored server-side (see
+ * _shared/notes.ts) — this never touches `note.value` at all, which is exactly the point:
+ * `getAllNotes` doesn't even fetch it (see useNote.tsx's own comment), so there'd be nothing
+ * here to derive a preview from client-side anyway. `indented` is a field cluster's own child
+ * row (see NoteFieldCluster) — same row, just nested under its field's header instead of sitting
+ * at the top level.
+ */
+const NoteRow = ({ note, active, indented, fieldMap, templateMap, onSelectNote }: NoteRowProps) => {
+  const icon = rowIcon(note, fieldMap, templateMap);
+  return (
+    <button
+      type="button"
+      className={cx(styles.row, active && styles.rowActive, indented && styles.rowIndented)}
+      onClick={() => onSelectNote(note.id)}
+    >
+      <div className={styles.rowTop}>
+        <span className={styles.rowTitle}>{note.title || 'New Note'}</span>
+        <span className={styles.rowDate}>{formatNoteDate(note.updatedAt)}</span>
+      </div>
+      <div className={styles.rowBottom}>
+        {icon && <Icon icon={icon} width={12} className={styles.rowFieldIcon} />}
+        <span className={styles.rowPreview}>{note.preview || 'No additional text'}</span>
+      </div>
+    </button>
+  );
+};
+
 /**
  * The middle pane — one row per note, most-recently-edited first (already sorted by
- * useNoteManagerState's own `notes`). A row is title + a one-line preview + a graduated date
- * label, the same information density a real notes app's list shows. `note.preview` is computed
- * and stored server-side (see _shared/notes.ts) — this list never touches `note.value` at all,
- * which is exactly the point: `getAllNotes` doesn't even fetch it (see useNote.tsx's own
- * comment), so there'd be nothing here to derive a preview from client-side anyway.
+ * useNoteManagerState's own `notes`), or — inside a Task folder — a small tree instead: each
+ * note-type field's own records grouped under a clickable header row for that field, since a
+ * field used purely for per-day journaling has no note of its own to show at the top level (see
+ * NoteFieldCluster's own comment); clicking the header shows a picker of its records in the
+ * editor pane rather than opening anything directly.
  */
 const NoteList = ({
   className,
   title,
   notes,
+  loading,
+  groupByField,
+  fieldGroupNotes,
+  fieldClusters,
+  selectedFieldId,
+  onSelectField,
   fieldMap,
   templateMap,
   selectedNoteId,
@@ -65,31 +140,60 @@ const NoteList = ({
       </button>
     </div>
     <div className={styles.rows}>
-      {notes.length === 0 ? (
+      {loading ? (
+        [0, 1, 2, 3, 4].map(i => <SkeletonRow key={i} />)
+      ) : notes.length === 0 ? (
         <div className={styles.empty}>
           <Typography.Text className={styles.emptyText}>No Notes</Typography.Text>
         </div>
-      ) : (
-        notes.map(note => {
-          const icon = rowIcon(note, fieldMap, templateMap);
-          return (
-            <button
+      ) : groupByField ? (
+        <>
+          {(fieldGroupNotes ?? []).map(note => (
+            <NoteRow
               key={note.id}
-              type="button"
-              className={cx(styles.row, note.id === selectedNoteId && styles.rowActive)}
-              onClick={() => onSelectNote(note.id)}
-            >
-              <div className={styles.rowTop}>
-                <span className={styles.rowTitle}>{note.title || 'New Note'}</span>
-                <span className={styles.rowDate}>{formatNoteDate(note.updatedAt)}</span>
-              </div>
-              <div className={styles.rowBottom}>
-                {icon && <Icon icon={icon} width={12} className={styles.rowFieldIcon} />}
-                <span className={styles.rowPreview}>{note.preview || 'No additional text'}</span>
-              </div>
-            </button>
-          );
-        })
+              note={note}
+              active={note.id === selectedNoteId}
+              fieldMap={fieldMap}
+              templateMap={templateMap}
+              onSelectNote={onSelectNote}
+            />
+          ))}
+          {(fieldClusters ?? []).map(cluster => (
+            <div key={cluster.fieldId} className={styles.cluster}>
+              <button
+                type="button"
+                className={cx(styles.clusterHeader, cluster.fieldId === selectedFieldId && styles.rowActive)}
+                onClick={() => onSelectField?.(cluster.fieldId)}
+              >
+                <Icon icon={cluster.icon} width={14} className={styles.rowFieldIcon} />
+                <span className={styles.clusterTitle}>{cluster.title}</span>
+                <span className={styles.clusterCount}>{cluster.records.length}</span>
+              </button>
+              {cluster.records.map(record => (
+                <NoteRow
+                  key={record.id}
+                  note={record}
+                  active={record.id === selectedNoteId}
+                  indented
+                  fieldMap={fieldMap}
+                  templateMap={templateMap}
+                  onSelectNote={onSelectNote}
+                />
+              ))}
+            </div>
+          ))}
+        </>
+      ) : (
+        notes.map(note => (
+          <NoteRow
+            key={note.id}
+            note={note}
+            active={note.id === selectedNoteId}
+            fieldMap={fieldMap}
+            templateMap={templateMap}
+            onSelectNote={onSelectNote}
+          />
+        ))
       )}
     </div>
   </div>

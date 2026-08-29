@@ -141,3 +141,54 @@
 .emptyText {
   color: var(--text-description-color);
 }
+
+.cluster {
+  display: flex;
+  flex-direction: column;
+}
+
+// One note-type field's own header row (e.g. "Mock Interview") — bold, not indented, so it
+// reads as a small section heading over the records nested under it. Clicking it has no note of
+// its own to open (see NoteFieldCluster's own comment) — it switches the editor pane into a
+// record-picker instead, same active-state treatment as a real selected row otherwise.
+.clusterHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  width: 100%;
+  padding: $spacing-sm;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: var(--text-color);
+
+  &:hover {
+    background: var(--card-selected-background);
+  }
+}
+
+.clusterTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: toRem(13px);
+  font-weight: 700;
+}
+
+.clusterCount {
+  flex-shrink: 0;
+  font-size: toRem(11px);
+  color: var(--text-description-color);
+}
+
+// A field cluster's own record row — same `.row` shape, just nested visually under its header
+// with a left indent standing in for the "- " a plain-text tree would use.
+.rowIndented {
+  margin-left: $spacing-md;
+  width: calc(100% - #{$spacing-md});
+}

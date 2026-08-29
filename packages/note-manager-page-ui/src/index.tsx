@@ -28,6 +28,10 @@ export const NoteManagerPage = () => {
     hasOtherNotes,
     emptyFields,
     notes,
+    notesLoading,
+    groupByField,
+    taskFieldGroupNotes,
+    taskFieldClusters,
     totalNoteCount,
     selectedFolder,
     selectedFolderTitle,
@@ -35,9 +39,12 @@ export const NoteManagerPage = () => {
     selectedNoteLoading,
     selectedNoteSourceLabel,
     selectedNoteSourceHref,
+    selectedFieldId,
+    selectedFieldCluster,
     composing,
     selectFolder,
     selectNote,
+    selectField,
     closeNote,
     startCompose,
     chooseComposeField,
@@ -46,19 +53,23 @@ export const NoteManagerPage = () => {
     deleteNote,
   } = useNoteManagerState();
 
-  const showDetail = composing || !!selectedNote;
+  const showDetail = composing || !!selectedNote || !!selectedFieldId;
 
   if (showDetail) {
     return (
       <div className={styles.screen}>
         <BackHeader
-          renderLeftComponent={() => <>{composing ? 'New Note' : selectedNote?.title || 'Note'}</>}
+          renderLeftComponent={() => (
+            <>{composing ? 'New Note' : selectedNote?.title || selectedFieldCluster?.title || 'Note'}</>
+          )}
           onClickLeftButton={closeNote}
         />
         <NoteEditorPane
           className={styles.detailPane}
           note={selectedNote}
           loading={selectedNoteLoading}
+          fieldMenu={selectedFieldCluster}
+          onSelectNote={selectNote}
           sourceLabel={selectedNoteSourceLabel}
           sourceHref={selectedNoteSourceHref}
           composing={composing}
@@ -96,6 +107,12 @@ export const NoteManagerPage = () => {
         className={styles.listPane}
         title={selectedFolderTitle}
         notes={notes}
+        loading={notesLoading}
+        groupByField={groupByField}
+        fieldGroupNotes={taskFieldGroupNotes}
+        fieldClusters={taskFieldClusters}
+        selectedFieldId={selectedFieldId ?? undefined}
+        onSelectField={selectField}
         fieldMap={fieldMap}
         templateMap={templateMap}
         onSelectNote={selectNote}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useNote, type Note } from '@dreamer/global/src/store/note/useNote';
 import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
 import { useChecklistTemplates } from '@dreamer/global/src/store/checklists/useChecklistTemplates';
@@ -33,6 +34,20 @@ const folderOf = (note: Note, knownTemplateIds: Set<string>): FolderRef => {
 const sameFolder = (a: FolderRef, b: FolderRef): boolean =>
   a.kind === 'other' ? b.kind === 'other' : a.kind === b.kind && a.id === b.id;
 
+/** One note-type field's own records, grouped, inside a Task folder — see `taskFieldClusters`
+ * below. There's deliberately no "parent note" here: a field's own persistent, checklistId-less
+ * note only ever exists for the standalone notebook (see useNote.tsx's own doc comment on
+ * `checklistId`), so a field used purely for per-day journaling inside a checklist has nothing
+ * of its own to open — `title`/`icon` (falling back when this device hasn't loaded the field
+ * itself — a deleted field, most likely) exist purely to label the group, not to open anything;
+ * clicking it shows `records` as a picker instead (NoteEditorPane's own "field menu" state). */
+export type NoteFieldCluster = {
+  fieldId: string;
+  title: string;
+  icon: string;
+  records: Note[];
+};
+
 /**
  * The shared state behind both index.tsx (mobile) and index.desktop.tsx.
  *
@@ -52,7 +67,13 @@ const sameFolder = (a: FolderRef, b: FolderRef): boolean =>
  * useNoteRecord.tsx's own doc comment).
  */
 export const useNoteManagerState = () => {
-  const { getNote, getAllNotes, updateNote: updateNoteApi, deleteNote: deleteNoteApi } = useNote();
+  const {
+    getNote,
+    getAllNotes,
+    allNotesLoading,
+    updateNote: updateNoteApi,
+    deleteNote: deleteNoteApi,
+  } = useNote();
   const { getAllNoteFields, addNote } = useNoteRecords();
   const { getRecommendChecklistTemplates } = useChecklistTemplates();
 
@@ -60,11 +81,41 @@ export const useNoteManagerState = () => {
   const allNoteFields = useSyncedSelector(getAllNoteFields);
   const allTemplates = useSyncedSelector(getRecommendChecklistTemplates);
 
+  // `?id=` is the open note's own id, kept in sync both ways: selecting a note writes it here
+  // (setNoteId below) so the URL is always shareable/refreshable/back-button-able, and a `?id=`
+  // that arrives from outside this page's own clicks (a fresh deep link, browser back/forward,
+  // another page's own link built with `?id=` — e.g. a "jump to this note" link elsewhere in the
+  // app) opens that note and resolves its sidebar folder on load, below.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlNoteId = searchParams.get('id');
+
   const [selectedFolder, setSelectedFolder] = React.useState<FolderRef | null>(null);
   const [selectedNoteId, setSelectedNoteId] = React.useState<string | null>(null);
+  // Which field's own record-picker menu is showing — set only inside a Task folder, and
+  // mutually exclusive with `selectedNoteId`/`composing` (see the setters below, which all clear
+  // whichever of the three isn't theirs). See NoteFieldCluster's own comment for why this exists
+  // instead of just being another note to select.
+  const [selectedFieldId, setSelectedFieldId] = React.useState<string | null>(null);
   // True while the editor pane is showing the "pick where to save this" chooser — a note hasn't
   // actually been created yet at this point (see startCompose's own comment).
   const [composing, setComposing] = React.useState(false);
+
+  // Every place below that opens/closes a note goes through this instead of the raw setter, so
+  // `?id=` never drifts out of sync with what's actually open. `replace: true` — selecting note
+  // after note is a within-page navigation, not a new history entry; a whole *browser* back
+  // press should leave the page, not step backwards one note at a time.
+  const setNoteId = (id: string | null) => {
+    setSelectedNoteId(id);
+    setSearchParams(
+      prev => {
+        const next = new URLSearchParams(prev);
+        if (id) next.set('id', id);
+        else next.delete('id');
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   const fieldMap = React.useMemo(
     () => new Map(allNoteFields.map(field => [field.id, field])),
@@ -101,12 +152,83 @@ export const useNoteManagerState = () => {
     return [...filtered].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }, [allNotes, selectedFolder, templateIds]);
 
+  const isTaskFolder = selectedFolder?.kind === 'task';
+
+  // Inside a Task folder, split `notes` (already filtered to this one task) into the group's own
+  // flat rows (a field-group's persistent Home note — one per group, nothing to nest under it)
+  // and per-field clusters (every note-type field's own records, grouped by which field owns
+  // them — see NoteFieldCluster's own comment). Empty arrays outside a Task folder; NoteList only
+  // renders this shape when `groupByField` is set, so nothing consumes it otherwise.
+  const { taskFieldGroupNotes, taskFieldClusters } = React.useMemo(() => {
+    if (!isTaskFolder) return { taskFieldGroupNotes: [] as Note[], taskFieldClusters: [] as NoteFieldCluster[] };
+    const fieldGroupNotes: Note[] = [];
+    const byField = new Map<string, Note[]>();
+    for (const note of notes) {
+      if (note.ownerType === 'field_group') {
+        fieldGroupNotes.push(note);
+        continue;
+      }
+      const records = byField.get(note.ownerId) ?? [];
+      records.push(note);
+      byField.set(note.ownerId, records);
+    }
+    const clusters: NoteFieldCluster[] = [...byField.entries()].map(([fieldId, records]) => {
+      const field = fieldMap.get(fieldId);
+      return {
+        fieldId,
+        title: field?.title ?? 'Notes',
+        icon: field?.icon || 'solar:notebook-line-duotone',
+        // Chronological, not most-recently-edited-first — "Day 1" before "Day 2" reads the way a
+        // journal actually happened, unlike the group/flat-list ordering above which is about
+        // surfacing recent activity, not narrative order.
+        records: [...records].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
+      };
+    });
+    return { taskFieldGroupNotes: fieldGroupNotes, taskFieldClusters: clusters };
+  }, [isTaskFolder, notes, fieldMap]);
+
+  const selectedFieldCluster = React.useMemo(
+    () => (selectedFieldId ? taskFieldClusters.find(c => c.fieldId === selectedFieldId) : undefined),
+    [selectedFieldId, taskFieldClusters],
+  );
+
+  // A URL with `?id=` pointing at a note this page hasn't already opened — a fresh deep link,
+  // the browser's own back/forward, or another page's own link built with `?id=` — opens it.
+  // The ref (not just comparing `urlNoteId` to `selectedNoteId`) is what makes this fire exactly
+  // once per distinct incoming id rather than on every render where the two happen to differ —
+  // it's also what the folder-resolving effect below keys off of, to tell "this note came from
+  // the URL, go resolve its folder too" apart from "this note came from a normal in-page click,
+  // which already sits in the right folder."
+  const urlOpenedIdRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!urlNoteId || urlNoteId === urlOpenedIdRef.current) return;
+    urlOpenedIdRef.current = urlNoteId;
+    setSelectedNoteId(urlNoteId);
+    setSelectedFieldId(null);
+    setComposing(false);
+  }, [urlNoteId]);
+
   // getNote fetches this note's own full content (`value` included) the moment it's selected —
   // the list itself only ever holds a summary (see useNote.tsx's own getAllNotes comment) —
   // and exposes `loading` for the brief window before it lands, so the editor pane can show a
   // loading state instead of rendering a blank NoteEditor for `value: undefined`.
   const { note: selectedNote, loading: selectedNoteLoading } = getNote(selectedNoteId ?? undefined);
   const emptyFields = React.useMemo(() => allNoteFields.filter(f => !f.noteId), [allNoteFields]);
+
+  // Once a `?id=`-opened note's own content actually lands, resolve which sidebar folder it
+  // belongs to and select it — the URL alone can't tell us that; `folderOf` needs the note's own
+  // ownerType/ownerId/checklistTemplateId, which only exist once `getNote` above has fetched it.
+  // Only for a URL-driven open (`urlOpenedIdRef`) — a normal in-page click already sits inside
+  // the right folder already (that's what filtered it into the list to click in the first
+  // place), so this would otherwise be redundant there, not wrong, just pointless work on every
+  // note switch. Re-runs (harmlessly, `sameFolder` bails out) if `templateIds` finishes loading
+  // after this — see folderOf's own comment on why an incomplete `knownTemplateIds` can
+  // transiently misclassify a real task note as `other`.
+  React.useEffect(() => {
+    if (!selectedNote || selectedNote.id !== urlOpenedIdRef.current) return;
+    const folder = folderOf(selectedNote, templateIds);
+    setSelectedFolder(prev => (prev && sameFolder(prev, folder) ? prev : folder));
+  }, [selectedNote, templateIds]);
 
   // FolderSidebar's own "Tasks" section — resolved title/icon per task folder, once here rather
   // than in both entry files.
@@ -133,30 +255,50 @@ export const useNoteManagerState = () => {
     [fieldMap, templateMap],
   );
   const selectedFolderTitle = folderTitle(selectedFolder);
-  const selectedNoteSourceLabel = selectedNote ? folderTitle(folderOf(selectedNote, templateIds)) : undefined;
+  // Deliberately not `folderTitle(folderOf(...))` here — `folderOf`'s `other` bucket is about
+  // *sidebar grouping* (a template this device hasn't loaded into `templateMap` yet doesn't get
+  // its own Tasks entry), not about whether a link back to it is possible. The note itself
+  // always carries its own real `checklistTemplateId`/`checklistId` regardless of whether this
+  // page happens to have that template's title cached — falling back to a generic "Task" label
+  // (rather than `folderTitle`'s own "Other") still tells the reader this note came from a task,
+  // just not which one by name, and the link below still opens the real thing.
+  const selectedNoteSourceLabel = selectedNote?.checklistTemplateId
+    ? templateMap.get(selectedNote.checklistTemplateId)?.title ?? 'Task'
+    : undefined;
   // A journal entry or a field-group's own Home note came *from* a checklist template — this is
   // the link back to it, landed on the exact day the note itself is from (a journal entry's own
   // `checklistId` — that day's real checklist instance — when there is one, else just the date;
-  // detail-task-page resolves `currentDay` either way). `undefined` for a standalone field note
-  // (nothing to link to) and for an `other`-bucketed one (the template itself doesn't resolve,
-  // so a link would 404).
+  // detail-task-page resolves `currentDay` either way). `undefined` only for a standalone field
+  // note (nothing to link to) — an "Other"-bucketed note still has a real `checklistTemplateId`
+  // on it (that's the whole reason `getRecommendChecklistTemplates`'s own doc comment on
+  // resolving it is a *display* concern, not a routing one) — `/task/:id` fetches that template
+  // by id itself once landed there, it doesn't depend on this page having it cached already.
   const selectedNoteSourceHref = React.useMemo(() => {
-    if (!selectedNote?.checklistTemplateId || !templateMap.has(selectedNote.checklistTemplateId)) {
-      return undefined;
-    }
+    if (!selectedNote?.checklistTemplateId) return undefined;
     const params = new URLSearchParams({ currentDay: selectedNote.createdAt });
     if (selectedNote.checklistId) params.set('checklistId', selectedNote.checklistId);
     return `/task/${selectedNote.checklistTemplateId}?${params.toString()}`;
-  }, [selectedNote, templateMap]);
+  }, [selectedNote]);
 
   const selectFolder = (folder: FolderRef | null) => {
     setSelectedFolder(folder);
-    setSelectedNoteId(null);
+    setNoteId(null);
+    setSelectedFieldId(null);
     setComposing(false);
   };
 
   const selectNote = (noteId: string) => {
-    setSelectedNoteId(noteId);
+    setNoteId(noteId);
+    setSelectedFieldId(null);
+    setComposing(false);
+  };
+
+  /** A field cluster's own header row (e.g. "Mock Interview") — there's no note of its own to
+   * open (see NoteFieldCluster's own comment), so this just switches the editor pane into its
+   * record-picker state instead of selecting a note. */
+  const selectField = (fieldId: string) => {
+    setSelectedFieldId(fieldId);
+    setNoteId(null);
     setComposing(false);
   };
 
@@ -164,7 +306,8 @@ export const useNoteManagerState = () => {
    * touching which folder is selected, unlike `selectFolder`'s own reset. Desktop never calls
    * this (its editor pane just sits empty, no separate screen to leave). */
   const closeNote = () => {
-    setSelectedNoteId(null);
+    setNoteId(null);
+    setSelectedFieldId(null);
     setComposing(false);
   };
 
@@ -178,7 +321,8 @@ export const useNoteManagerState = () => {
     setComposing(false);
     if (note) {
       setSelectedFolder({ kind: 'field', id: field.id });
-      setSelectedNoteId(note.id);
+      setNoteId(note.id);
+      setSelectedFieldId(null);
     }
     return note;
   };
@@ -193,7 +337,8 @@ export const useNoteManagerState = () => {
       createNoteIn(emptyFields[0]);
       return;
     }
-    setSelectedNoteId(null);
+    setNoteId(null);
+    setSelectedFieldId(null);
     setComposing(true);
   };
 
@@ -213,7 +358,7 @@ export const useNoteManagerState = () => {
 
   const deleteNote = (note: Note) => {
     deleteNoteApi(note.id);
-    if (note.id === selectedNoteId) setSelectedNoteId(null);
+    if (note.id === selectedNoteId) setNoteId(null);
   };
 
   return {
@@ -224,16 +369,23 @@ export const useNoteManagerState = () => {
     hasOtherNotes,
     emptyFields,
     notes,
+    notesLoading: allNotesLoading && allNotes.length === 0,
     totalNoteCount: allNotes.length,
+    groupByField: isTaskFolder,
+    taskFieldGroupNotes,
+    taskFieldClusters,
     selectedFolder,
     selectedFolderTitle,
     selectedNote,
     selectedNoteLoading,
     selectedNoteSourceLabel,
     selectedNoteSourceHref,
+    selectedFieldId,
+    selectedFieldCluster,
     composing,
     selectFolder,
     selectNote,
+    selectField,
     closeNote,
     startCompose,
     chooseComposeField,

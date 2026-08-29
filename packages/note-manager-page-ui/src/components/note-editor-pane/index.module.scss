@@ -158,3 +158,81 @@
   padding: $spacing-xl 0;
   color: var(--text-description-color);
 }
+
+.editorSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding-top: $spacing-xs;
+}
+
+// The field-menu (record-picker) state — a cluster header's own records, shown here instead of
+// a title+editor body since there's no note of its own to open (see NoteEditorPane's own
+// `fieldMenu` prop comment).
+.menuHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-lg $spacing-xl $spacing-sm;
+  flex-shrink: 0;
+}
+
+.menuList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 $spacing-md $spacing-xl;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menuItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: var(--text-color);
+
+  &:hover {
+    background: var(--card-selected-background);
+  }
+}
+
+.menuItemTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $spacing-sm;
+}
+
+.menuItemTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: toRem(14px);
+  font-weight: 600;
+}
+
+.menuItemDate {
+  flex-shrink: 0;
+  font-size: toRem(12px);
+  color: var(--text-description-color);
+}
+
+.menuItemPreview {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: toRem(13px);
+  color: var(--text-description-color);
+}

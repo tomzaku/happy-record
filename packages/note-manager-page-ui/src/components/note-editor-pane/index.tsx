@@ -9,6 +9,8 @@ import type { Note } from '@dreamer/global/src/store/note/useNote';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
 import { useAiNoteGenerate } from '@dreamer/global/src/hook';
 
+import { formatNoteDate } from '../../utils';
+import Skeleton from '../Skeleton';
 import styles from './index.module.scss';
 
 type Props = {
@@ -18,6 +20,14 @@ type Props = {
   // pane a summary (`note.value === undefined`, see useNote.tsx's own getAllNotes comment), so
   // opening a note always has this brief window before its real content is here to render.
   loading?: boolean;
+  // A note-type field's own records (see useNoteManagerState's own NoteFieldCluster) — set only
+  // when NoteList's cluster header was clicked, not a specific record. There's no note of its
+  // own to open for a field used purely for per-day journaling (see that type's own comment), so
+  // this renders a picker instead of the usual title+editor body; picking one calls
+  // `onSelectNote` same as clicking a record row in the list would. `note` always wins when both
+  // are set (opening a specific note closes this, see useNoteManagerState's own selectNote).
+  fieldMenu?: { title: string; icon: string; records: Note[] };
+  onSelectNote: (id: string) => void;
   // The folder this note is showing in — a field's own title (standalone) or a checklist
   // template's own title (a journal entry / that task's Home note); computed by the caller
   // (useNoteManagerState's own fieldMap/templateMap), since resolving it needs both maps and
@@ -48,6 +58,8 @@ const NoteEditorPane = ({
   className,
   note,
   loading,
+  fieldMenu,
+  onSelectNote,
   sourceLabel,
   sourceHref,
   composing,
@@ -89,6 +101,42 @@ const NoteEditorPane = ({
           <Button type="ghost" onClick={onCancelCompose} className={styles.composeCancel}>
             Cancel
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Wins over the plain empty state below, but `note` (a specific record actually opened,
+  // whether from the list or from clicking a menu item here) always wins over this — see this
+  // prop's own comment.
+  if (!note && fieldMenu) {
+    return (
+      <div className={cx(styles.pane, className)}>
+        <div className={styles.menuHeader}>
+          <Icon icon={fieldMenu.icon} width={18} />
+          <Typography.Title level={5} noMargin>
+            {fieldMenu.title}
+          </Typography.Title>
+        </div>
+        <div className={styles.menuList}>
+          {fieldMenu.records.length === 0 ? (
+            <Typography.Text className={styles.emptyText}>No records yet.</Typography.Text>
+          ) : (
+            fieldMenu.records.map(record => (
+              <button
+                key={record.id}
+                type="button"
+                className={styles.menuItem}
+                onClick={() => onSelectNote(record.id)}
+              >
+                <div className={styles.menuItemTop}>
+                  <span className={styles.menuItemTitle}>{record.title || 'New Note'}</span>
+                  <span className={styles.menuItemDate}>{formatNoteDate(record.updatedAt)}</span>
+                </div>
+                <span className={styles.menuItemPreview}>{record.preview || 'No additional text'}</span>
+              </button>
+            ))
+          )}
         </div>
       </div>
     );
@@ -150,14 +198,21 @@ const NoteEditorPane = ({
               is what's still in flight here (`loading`). NoteEditor only reads its `value` prop
               once at mount (see the comment above), so it can't render at all until the real
               content is in — rendering it early with a placeholder would just get remounted a
-              beat later anyway. A `quiet: true` fetch that fails resolves to `loading: false`
-              with `value` still undefined (see useNote.tsx's own getNote) rather than hanging
-              forever — that gets its own message instead of a permanent spinner. */}
+              beat later anyway. A few shimmering lines stand in for the paragraphs about to
+              land, same idea ChallengeDashboard's own Skeleton uses for its cards: it reads as
+              "content is coming" rather than a bare spinner that only says "something's
+              happening." A `quiet: true` fetch that fails resolves to `loading: false` with
+              `value` still undefined (see useNote.tsx's own getNote) rather than hanging forever
+              — that gets its own message instead of a permanent skeleton. */}
           {note.value !== undefined ? (
             <NoteEditor value={note.value} setValue={onChangeValue} withoutBorder ai={{ isPro, generate }} />
           ) : loading ? (
-            <div className={styles.editorLoading}>
-              <Icon icon="svg-spinners:180-ring" width={28} />
+            <div className={styles.editorSkeleton}>
+              <Skeleton width="92%" height={14} />
+              <Skeleton width="100%" height={14} />
+              <Skeleton width="78%" height={14} />
+              <Skeleton width="88%" height={14} />
+              <Skeleton width="60%" height={14} />
             </div>
           ) : (
             <div className={styles.editorLoading}>

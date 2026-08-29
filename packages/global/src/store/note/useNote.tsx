@@ -10,6 +10,7 @@ import { fetchNotes, removeNote as removeNoteApi, saveNote } from './noteApi';
 
 const NOTE_KEY = 'note';
 const NOTE_LOADING_KEY = 'note_loading';
+const NOTE_ALL_LOADING_KEY = 'note_all_loading';
 
 /**
  * Addressed by its own `id` — see 20260829010000_notes_note_id_ownership.sql: a field-group's
@@ -78,6 +79,12 @@ export const useNote = () => {
   // Reactive (unlike `fetchedIds` above) — this is what lets a consumer render a loading state
   // on its editor while a note it already has the id for is still in flight.
   const [loadingIds, setLoadingIds] = useSessionStore<Record<string, boolean>>(NOTE_LOADING_KEY, {});
+  // Same idea, one flag for getAllNotes' own scope — starts `true` so a consumer's very first
+  // render (before this hook has had a chance to even kick off the fetch) already reads as
+  // "loading," not "confirmed empty." note-manager-page-ui's NoteList uses this to tell "still
+  // fetching" apart from "genuinely zero notes" and render a skeleton for the former instead of
+  // flashing "No Notes" while the real list is still in flight.
+  const [allLoading, setAllLoading] = useSessionStore<boolean>(NOTE_ALL_LOADING_KEY, true);
   const { ready, userId } = useSession();
 
   const setLoading = (ids: string[], value: boolean) => {
@@ -195,7 +202,9 @@ export const useNote = () => {
     const scopeKey = JSON.stringify({ userId });
     if (ready && !fetchedAllScopes.has(scopeKey)) {
       fetchedAllScopes.add(scopeKey);
+      setAllLoading(true);
       fetchNotes().then(result => {
+        setAllLoading(false);
         if (!result) {
           fetchedAllScopes.delete(scopeKey);
           return;
@@ -206,7 +215,13 @@ export const useNote = () => {
     return Object.values(notes).sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     );
-  }, [notes, userId, ready, setNotes]);
+  }, [notes, userId, ready, setNotes, setAllLoading]);
+
+  /** Whether getAllNotes' own fetch is still in flight for the current identity — starts `true`
+   * (see allLoading's own comment) and only flips once that fetch actually resolves, quiet
+   * failure included. A consumer that never calls getAllNotes just carries the default forever,
+   * which is fine: nothing reads this without also being one that does. */
+  const allNotesLoading = allLoading;
 
   /** Title/search_text substring match, most recently updated first — a search UI's own results
    * list. Not part of the scoped-fetch-by-query-key pattern the read functions above use (a
@@ -286,6 +301,7 @@ export const useNote = () => {
     getNote,
     getNotesByIds,
     getAllNotes,
+    allNotesLoading,
     searchNotes,
     createNote,
     updateNote,

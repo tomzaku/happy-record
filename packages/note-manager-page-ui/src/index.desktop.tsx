@@ -14,6 +14,10 @@ export const NoteManagerPageDesktop = () => {
     hasOtherNotes,
     emptyFields,
     notes,
+    notesLoading,
+    groupByField,
+    taskFieldGroupNotes,
+    taskFieldClusters,
     totalNoteCount,
     selectedFolder,
     selectedFolderTitle,
@@ -21,9 +25,12 @@ export const NoteManagerPageDesktop = () => {
     selectedNoteLoading,
     selectedNoteSourceLabel,
     selectedNoteSourceHref,
+    selectedFieldId,
+    selectedFieldCluster,
     composing,
     selectFolder,
     selectNote,
+    selectField,
     startCompose,
     chooseComposeField,
     cancelCompose,
@@ -56,6 +63,12 @@ export const NoteManagerPageDesktop = () => {
           <NoteList
             title={selectedFolderTitle}
             notes={notes}
+            loading={notesLoading}
+            groupByField={groupByField}
+            fieldGroupNotes={taskFieldGroupNotes}
+            fieldClusters={taskFieldClusters}
+            selectedFieldId={selectedFieldId ?? undefined}
+            onSelectField={selectField}
             fieldMap={fieldMap}
             templateMap={templateMap}
             selectedNoteId={selectedNote?.id}
@@ -68,6 +81,8 @@ export const NoteManagerPageDesktop = () => {
           <NoteEditorPane
             note={selectedNote}
             loading={selectedNoteLoading}
+            fieldMenu={selectedFieldCluster}
+            onSelectNote={selectNote}
             sourceLabel={selectedNoteSourceLabel}
             sourceHref={selectedNoteSourceHref}
             composing={composing}
