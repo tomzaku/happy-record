@@ -1,11 +1,18 @@
+import cx from 'classnames';
 import { DesktopDrawer } from '@dreamer/header';
+import { useLocalStorage } from '@dreamer/global';
 import styles from './index.desktop.module.scss';
 import FolderSidebar from './components/folder-sidebar';
 import NoteList from './components/note-list';
 import NoteEditorPane from './components/note-editor-pane';
 import { useNoteManagerState } from './useNoteManagerState';
 
+// Genuinely local-only (never backend-mirrored, see CLAUDE.md's own note on that) — which side
+// of the app someone likes this pane in has nothing to do with which device/account they're on.
+const SIDEBAR_COLLAPSED_KEY = 'notes_sidebar_collapsed';
+
 export const NoteManagerPageDesktop = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage(SIDEBAR_COLLAPSED_KEY, false);
   const {
     allNoteFields,
     fieldMap,
@@ -54,7 +61,7 @@ export const NoteManagerPageDesktop = () => {
             drawer, for FolderSidebar), and stacking a second, differently-sourced class for
             desktop's fixed/flexible widths on that same element left the two fighting over which
             one's `flex`/`width` rules actually apply. A wrapper sidesteps that entirely. */}
-        <div className={styles.sidebarPane}>
+        <div className={cx(styles.sidebarPane, sidebarCollapsed && styles.sidebarPaneCollapsed)}>
           <FolderSidebar
             noteFields={allNoteFields}
             noteFolders={noteFolders}
@@ -87,6 +94,8 @@ export const NoteManagerPageDesktop = () => {
             searchResults={searchResults}
             searchLoading={searchLoading}
             isSearching={isSearching}
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleSidebar={() => setSidebarCollapsed(prev => !prev)}
           />
         </div>
         <div className={styles.editorPane}>

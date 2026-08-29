@@ -18,12 +18,19 @@
 }
 
 .headerTitle {
+  // Absorbs the free space so the toggle stays flush left and "New Note" flush right regardless
+  // of how short/long the title text is — without this, three flex items under `.header`'s own
+  // `justify-content: space-between` would space evenly instead of grouping the toggle with the
+  // title the way a normal toolbar reads.
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.newButton {
+.newButton,
+.sidebarToggle {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -44,6 +51,17 @@
     color: var(--text-description-color);
     cursor: not-allowed;
     opacity: 0.5;
+  }
+}
+
+// Muted rather than `.newButton`'s own accent color — this is a view toggle, not a primary
+// action, and sitting right next to the title it would otherwise compete with "New Note" for
+// attention on the opposite side of the header.
+.sidebarToggle {
+  color: var(--text-description-color);
+
+  &:hover {
+    color: var(--text-color);
   }
 }
 

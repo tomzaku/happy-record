@@ -43,6 +43,11 @@ type Props = {
   searchResults: Note[];
   searchLoading: boolean;
   isSearching: boolean;
+  // Desktop only — mobile's own "sidebar" is already the full-screen Folders drawer, nothing to
+  // collapse there. Lives on the header here (not inside FolderSidebar itself) because it has to
+  // stay reachable even while the sidebar it controls is collapsed and gone from view.
+  sidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 };
 
 /** Stands in for a real row while the first fetch is still in flight — same
@@ -141,9 +146,22 @@ const NoteList = ({
   searchResults,
   searchLoading,
   isSearching,
+  sidebarCollapsed,
+  onToggleSidebar,
 }: Props) => (
   <div className={cx(styles.list, className)}>
     <div className={styles.header}>
+      {onToggleSidebar && (
+        <button
+          type="button"
+          className={styles.sidebarToggle}
+          onClick={onToggleSidebar}
+          title={sidebarCollapsed ? 'Show Folders' : 'Hide Folders'}
+          aria-label={sidebarCollapsed ? 'Show Folders' : 'Hide Folders'}
+        >
+          <Icon icon="solar:hamburger-menu-line-duotone" width={18} />
+        </button>
+      )}
       <Typography.Title level={5} noMargin className={styles.headerTitle}>
         {isSearching ? `Results for "${searchQuery.trim()}"` : title}
       </Typography.Title>

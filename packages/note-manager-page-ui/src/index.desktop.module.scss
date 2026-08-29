@@ -29,12 +29,28 @@
 // `.editorPane` off the right edge of the viewport entirely — a note really was opening on click
 // (see NoteEditorPane), it just rendered somewhere nobody could see it.
 .sidebarPane {
-  flex: 0 0 220px;
+  // `flex-basis` alone (the old `flex: 0 0 220px`) doesn't animate — swapping it for an explicit
+  // `width` this can actually transition between two real values, `.sidebarPaneCollapsed` being
+  // the other one, gives the collapse/expand a real slide instead of an instant snap.
+  flex: 0 0 auto;
+  width: 220px;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
   border-right: 1px solid var(--division-color);
   background: var(--card-selected-background);
+  transition: width 0.18s ease, border-color 0.18s ease;
+}
+
+// Toggled from NoteList's own header (see that component's own `sidebarToggle` — it has to live
+// there, not inside FolderSidebar itself, so it's still reachable once the sidebar it controls
+// is collapsed and gone from view). `border-color: transparent` rather than `border-right: 0`
+// so the border itself still transitions instead of popping away the instant this class lands —
+// at `width: 0` it renders nothing either way, this is purely about the transition looking
+// right on the way there.
+.sidebarPaneCollapsed {
+  width: 0;
+  border-color: transparent;
 }
 
 // Same background as `.editorPane` — a real Notes app's own middle list and its editor sit on
