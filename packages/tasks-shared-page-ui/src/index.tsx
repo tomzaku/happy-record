@@ -1,10 +1,8 @@
 import {
-  getActiveFieldGroups,
   getSharedChecklistTemplateUrl,
   useChecklistTemplates,
   useSyncedSelector,
 } from '@dreamer/global';
-import { useRecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
 import Icon from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
@@ -23,7 +21,6 @@ const TasksSharedPage = () => {
   const { id } = useParams<{ id: string }>();
   const [url, setUrl] = React.useState('');
   const { getChecklistTemplate } = useChecklistTemplates();
-  const { getRecordFieldsByIds } = useRecordField();
   const [copied, setCopied] = React.useState(false);
   const [targetName, setTargetName] = React.useState('you');
   const [message, setMessage] = React.useState('');
@@ -56,17 +53,12 @@ const TasksSharedPage = () => {
     // CLAUDE.md's sharing-flow section) — so `checklistTemplate.fieldGroups` itself must go
     // through unmodified, archived groups included, or sharing would permanently strip them
     // from the owner's own data and defeat the entire point of a soft delete being recoverable.
-    // Only which *fields* get marked public is scoped to the active groups — no reason to
-    // publicize a deleted group's fields just because they're still in the jsonb.
-    const checklistTemplateFieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(
-      group => group.fields.map(f => f.fieldId),
-    );
-    const allFields = await getRecordFieldsByIds(checklistTemplateFieldIds);
+    // Only the template's own visibility flips — a referenced field stays exactly as private as
+    // it already was; the shared page resolves it via `GET /fields?templateId=` instead,
+    // authorized by this template being public (see useCreateChecklistTemplateApi.tsx's own
+    // comment for why sharing no longer flips the field itself public).
     const data = {
       checklistTemplate: { ...checklistTemplate, visibility: 'public' as const },
-      fields: checklistTemplateFieldIds.map(id =>
-        allFields.find(f => f.id === id),
-      ),
     };
     const result = await updateChecklistTemplate(data);
     const fullUrl = getSharedChecklistTemplateUrl(result.id, userName, targetName);

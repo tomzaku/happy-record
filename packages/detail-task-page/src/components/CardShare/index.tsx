@@ -136,23 +136,18 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
 
     setGenerating(true);
     try {
-      // Scoped to active groups only — an archived group's fields have no reason to be marked
-      // public just because they're still physically present in the jsonb (see
-      // FieldGroup.archivedAt). `data.checklistTemplate` below still carries the *whole*
-      // `fieldGroups` array unmodified — this call writes back to the owner's own row, and
-      // dropping archived groups from it here would permanently lose them.
-      const checklistTemplateFieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(
-        group => group.fields.map(f => f.fieldId),
-      );
-      const allFields = await getRecordFieldsByIds(checklistTemplateFieldIds);
+      // Only the template's own visibility flips here now — a referenced field stays exactly as
+      // private as it already was; the shared page resolves it a different way (`GET
+      // /fields?templateId=`), authorized by this template being public, not by the field
+      // itself becoming public for everyone (see useCreateChecklistTemplateApi.tsx's own
+      // comment). `data.checklistTemplate` still carries the *whole* `fieldGroups` array
+      // unmodified — this call writes back to the owner's own row, and dropping anything from it
+      // here would permanently lose it.
       const data = {
         checklistTemplate: {
           ...checklistTemplate,
           visibility: 'public' as const,
         },
-        fields: checklistTemplateFieldIds.map(id =>
-          allFields.find(f => f.id === id),
-        ),
       };
       const result = await updateChecklistTemplate(data);
       updateChecklistTemplateLocal(data.checklistTemplate);

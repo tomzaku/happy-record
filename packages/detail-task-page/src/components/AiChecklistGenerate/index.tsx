@@ -154,7 +154,7 @@ const AiChecklistGenerate = ({
     });
   };
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!generated) return;
     const filtered: AiGeneratedChecklistTemplate = {
       ...generated,
@@ -162,11 +162,14 @@ const AiChecklistGenerate = ({
     };
     if (filtered.fieldGroups.length === 0) return;
 
+    // Both awaited now — applyAsNewTemplate/applyToExistingTemplate are async (see
+    // useApplyAiChecklistTemplate.ts's own comment: a proposed group's note has to actually be
+    // written before the group referencing its id is).
     if (mode === 'new') {
-      const { id } = applyAsNewTemplate(filtered);
+      const { id } = await applyAsNewTemplate(filtered);
       onApplied?.({ id });
     } else if (existingTemplate) {
-      const template = applyToExistingTemplate(existingTemplate, filtered, { applyAvatarAndTags });
+      const template = await applyToExistingTemplate(existingTemplate, filtered, { applyAvatarAndTags });
       onApplied?.({ id: existingTemplate.id, template });
     }
     handleDismiss();

@@ -1,26 +1,31 @@
 // The `fields` resource — every read and write of the `fields` table. See
 // CLAUDE.md.
 //
-//   GET    /fields           → { fields }
-//   GET    /fields  ?ids=a,b  → { fields }  just those ids, same visibility rule
-//   POST   /fields  { field } → { ok }
-//   DELETE /fields  ?id=      → { ok }
+//   GET    /fields                 → { fields }
+//   GET    /fields  ?ids=a,b        → { fields }  just those ids, same visibility rule
+//   GET    /fields  ?templateId=    → { fields }  every field one already-public checklist
+//                                      template's own field_groups reference — see listByTemplate
+//                                      below
+//   POST   /fields  { field }       → { ok }
+//   DELETE /fields  ?id=            → { ok }
 //
-// GET returns the caller's own fields *and* anyone's public ones — a field
-// with `visibility: 'public'` is meant to be usable in someone else's
-// checklist template, not just visible in a list. `?ids=` narrows that to a
-// specific set without waiting on a full sync — the shared-template page
-// uses it to resolve exactly the fields one template's field_groups
-// reference. Writes stay owner-only; RLS's own-row policy already blocks
-// anyone but the owner from touching a public field, this just keeps the
-// same shape true in the query too.
+// GET (unscoped or `?ids=`) returns the caller's own fields *and* anyone's public ones — but
+// `visibility: 'public'` is never something a write through this resource can grant anymore (see
+// _shared/fields.ts's own comment): the only public rows that exist are the three seeded
+// defaults (20260821000000_seed_system_fields.sql), written by a migration under the service
+// role. A shared checklist template's own (private) fields are resolved a different way —
+// `?templateId=` below — authorized by the template being public, not by flipping the field
+// itself public for literally everyone on the platform to see in their own field pickers.
+//
+// Writes stay owner-only; RLS's own-row policy already blocks anyone but the owner from touching
+// a field, this just keeps the same shape true in the query too.
 //
 // Deploy: `supabase functions deploy fields`
 
 import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
 import { fromRecordField, toRecordField } from '../_shared/fields.ts';
-import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
 
@@ -32,7 +37,75 @@ async function body(req: Request): Promise<Record<string, unknown>> {
   }
 }
 
-async function list({ url, db, userId }: Ctx) {
+/** A field id out of a `field_groups.fields` jsonb array element — either the current
+ * `{ fieldId, overrides? }` shape or a legacy plain id string (a row saved before that shape
+ * existed — see useChecklistTemplates.tsx's own normalizeFieldGroupFields, the client-side
+ * equivalent of this same tolerance). */
+function fieldIdOf(entry: unknown): string | undefined {
+  if (typeof entry === 'string') return entry;
+  if (entry && typeof entry === 'object' && typeof (entry as { fieldId?: unknown }).fieldId === 'string') {
+    return (entry as { fieldId: string }).fieldId;
+  }
+  return undefined;
+}
+
+/**
+ * Every field one checklist template's own field_groups reference — the shared-template page's
+ * own read, replacing the old "sharing flips every referenced field to `visibility: 'public'`"
+ * design (see useCreateChecklistTemplateApi.tsx's own comment for why that changed: a field
+ * becoming public makes it usable in *anyone's* checklist, not just visible to whoever the share
+ * link went to).
+ *
+ * The template being public is the entire authorization here, checked with the caller's own
+ * RLS-scoped client (the same "public checklist templates are readable by anyone" policy the
+ * template page's own read already relies on) — a private template resolves nothing, same as a
+ * template that doesn't exist. Once confirmed, this reads the template's own field_groups (now
+ * allowed too — see 20260829060000_public_template_field_groups.sql) to get the referenced field
+ * ids, then reaches for a service-role client scoped to exactly that pre-validated, narrow set of
+ * ids — the fields themselves stay `visibility: 'private'` in the table; this is a deliberate,
+ * narrowly-scoped bypass of that, not a blanket "read any field" grant, and the only place in
+ * this app that reaches for the service role today.
+ */
+async function listByTemplate({ db }: Ctx, templateId: string) {
+  const { data: template, error: templateError } = await db
+    .from('checklist_templates')
+    .select('id')
+    .eq('id', templateId)
+    .eq('visibility', 'public')
+    .maybeSingle();
+  if (templateError) throw new Error(templateError.message);
+  if (!template) return { fields: [] };
+
+  const { data: groups, error: groupsError } = await db
+    .from('field_groups')
+    .select('fields')
+    .eq('checklist_template_id', templateId);
+  if (groupsError) throw new Error(groupsError.message);
+
+  const fieldIds = [
+    ...new Set(
+      ((groups ?? []) as { fields: unknown }[]).flatMap(g =>
+        (Array.isArray(g.fields) ? g.fields : []).map(fieldIdOf).filter((id): id is string => !!id),
+      ),
+    ),
+  ];
+  if (!fieldIds.length) return { fields: [] };
+
+  const admin = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    { auth: { persistSession: false } },
+  );
+  const { data, error } = await admin.from('fields').select('*').in('id', fieldIds);
+  if (error) throw new Error(error.message);
+  return { fields: ((data ?? []) as Record<string, unknown>[]).map(toRecordField) };
+}
+
+async function list(ctx: Ctx) {
+  const { url, db, userId } = ctx;
+  const templateId = url.searchParams.get('templateId');
+  if (templateId) return listByTemplate(ctx, templateId);
+
   const ids = (url.searchParams.get('ids') ?? '').split(',').filter(Boolean);
 
   let query = db

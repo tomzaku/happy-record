@@ -10,7 +10,6 @@ import styles from './index.module.scss';
 import cx from 'classnames';
 import IconPicker from '../../IconPicker';
 import Radio from '@moon-ui/radio';
-import Checkbox from '@moon-ui/checkbox';
 
 export type FormState = {
   icon: string;
@@ -19,7 +18,6 @@ export type FormState = {
   title: string;
   unit: string;
   description: string;
-  visibility: 'public' | 'private';
   /** Metric-only — pre-fills the daily submit screen's input for this field. */
   defaultValue?: number;
 };
@@ -57,7 +55,6 @@ const CoreFieldRecord = ({
     title: '',
     unit: '',
     description: '',
-    visibility: 'private',
     ...initialValues,
   });
 
@@ -115,7 +112,14 @@ const CoreFieldRecord = ({
           />
         </div>
 
-        <div className={styles.formRow}>
+        {/* No "Public" toggle after this anymore — a field a user creates can never become
+            usable in someone else's checklist template through this form (see _shared/fields.ts's
+            own comment on why: only a migration, run as admin, can seed a genuinely public
+            field). Sharing a checklist template resolves its own fields a different way (GET
+            /fields?templateId=), without ever touching this column. So the "last row, no bottom
+            border" styling now lands on whichever row is actually last: Default Value for a
+            metric field, Type itself for a note field (no unit/default-value rows to follow). */}
+        <div className={cx(styles.formRow, form.type !== 'metric' && styles.formRowLast)}>
           <List.ItemMeta
             noPaddingHorizontal
             className={styles.itemMeta}
@@ -164,7 +168,7 @@ const CoreFieldRecord = ({
         )}
 
         {form.type === 'metric' && (
-          <div className={styles.formRow}>
+          <div className={cx(styles.formRow, styles.formRowLast)}>
             <List.ItemMeta
               noPaddingHorizontal
               className={styles.itemMeta}
@@ -193,30 +197,6 @@ const CoreFieldRecord = ({
             />
           </div>
         )}
-
-        <div className={cx(styles.formRow, styles.formRowLast)}>
-          <List.ItemMeta
-            noPaddingHorizontal
-            className={styles.itemMeta}
-            logo={<RowIcon icon="solar:users-group-rounded-linear" />}
-            title={intl.formatMessage({
-              defaultMessage: 'Public',
-              id: 'label-record-custom.visibility.label',
-            })}
-            description={intl.formatMessage({
-              defaultMessage: 'Other users can use this field in their own checklists',
-              id: 'label-record-custom.visibility.description',
-            })}
-            rightComponent={
-              <Checkbox
-                checked={form.visibility === 'public'}
-                onChange={e =>
-                  setForm({ ...form, visibility: e.target.checked ? 'public' : 'private' })
-                }
-              />
-            }
-          />
-        </div>
       </div>
 
       <IconPicker

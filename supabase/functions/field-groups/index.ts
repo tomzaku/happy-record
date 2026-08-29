@@ -2,11 +2,15 @@
 // 20260829010000_notes_note_id_ownership.sql for why this moved off
 // `checklist_templates.field_groups` jsonb into its own table.
 //
-//   GET    /field-groups ?checklistTemplateId=   → { fieldGroups }  one template's own groups
+//   GET    /field-groups ?checklistTemplateId=   → { fieldGroups }  one template's own groups —
+//     the caller's own, or anyone's if that exact template is `visibility: 'public'` (see
+//     20260829060000_public_template_field_groups.sql; the shared-template page is what actually
+//     relies on this)
 //   GET    /field-groups                          → { fieldGroups }  every group across all of
 //     the caller's templates — the home page's own schedule-matching needs every template's
 //     groups loaded at once (see useChecklistTemplates.tsx's getChecklistTemplateIdsByGivingDate),
-//     same "all mine, unscoped" shape flags/note-folders/tags already use.
+//     same "all mine, unscoped" shape flags/note-folders/tags already use. Always the caller's
+//     own only, unlike the scoped form above — see list()'s own comment on why.
 //   POST   /field-groups { fieldGroup }           → { ok }   full-row upsert — create, edit,
 //     set/clear noteId, or set archivedAt (soft delete; there's no hard-delete route, matching
 //     the convention this replaced).
@@ -31,8 +35,20 @@ async function body(req: Request): Promise<Record<string, unknown>> {
 async function list({ url, db, userId }: Ctx) {
   const checklistTemplateId = url.searchParams.get('checklistTemplateId');
 
-  let q = db.from('field_groups').select('*').eq('user_id', userId).order('position');
-  if (checklistTemplateId) q = q.eq('checklist_template_id', checklistTemplateId);
+  let q = db.from('field_groups').select('*').order('position');
+  if (checklistTemplateId) {
+    // Scoped to one exact template — not hard-filtering by user_id here, unlike the unscoped
+    // branch below: RLS itself decides whether this caller may see it (their own groups, or a
+    // template that's genuinely public — see 20260829060000_public_template_field_groups.sql).
+    // Safe precisely because it's narrowed to one id, not a fan-out risk the way dropping the
+    // filter in the unscoped branch would be.
+    q = q.eq('checklist_template_id', checklistTemplateId);
+  } else {
+    // Unscoped ("all mine", the home page's own schedule-matching) — always the caller's own
+    // only. Must stay a hard filter, not left to RLS alone: the public-template policy above
+    // would otherwise also surface every other user's public template's groups here.
+    q = q.eq('user_id', userId);
+  }
 
   const { data, error } = await q;
   if (error) throw new Error(error.message);

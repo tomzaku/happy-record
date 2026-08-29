@@ -1,9 +1,9 @@
 // Reads a shared checklist template — the `/checklist-template/shared/:id`
 // page's data source. See CLAUDE.md and useCreateChecklistTemplateApi.tsx
-// (the write side that makes the template, and its fields, public first).
+// (the write side that makes the template itself public).
 import { fetchChecklistTemplateById } from '../../store/checklists/checklistTemplatesApi';
 import { fetchFieldGroups } from '../../store/checklists/fieldGroupsApi';
-import { fetchRecordFieldsByIds } from '../../store/record-field/recordFieldApi';
+import { fetchRecordFieldsByTemplateId } from '../../store/record-field/recordFieldApi';
 import type { ChecklistTemplate } from '../../store/checklists/useChecklistTemplates';
 import type { RecordField } from '../../store/record-field/useRecordField';
 
@@ -22,10 +22,10 @@ export const useGetChecklistTemplateApi = () => {
     // from that response anymore (see 20260829010000_notes_note_id_ownership.sql), so this has
     // to fetch it itself instead of assuming it's already populated.
     const fieldGroupsResult = await fetchFieldGroups({ checklistTemplateId: checklistTemplate.id });
-    const fieldIds = (fieldGroupsResult?.fieldGroups ?? []).flatMap(group =>
-      group.fields.map(f => f.fieldId),
-    );
-    const fieldsResult = await fetchRecordFieldsByIds(fieldIds);
+    // Resolved by template id, not by the referenced field ids directly — a shared template's
+    // own fields stay `visibility: 'private'` now (see fields/index.ts's own listByTemplate),
+    // authorized by this template being public rather than by the fields themselves.
+    const fieldsResult = await fetchRecordFieldsByTemplateId(checklistTemplate.id);
     return {
       checklistTemplate: { ...checklistTemplate, fieldGroups: fieldGroupsResult?.fieldGroups ?? [] },
       fields: fieldsResult?.fields ?? [],

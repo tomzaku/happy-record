@@ -40,7 +40,16 @@ export function fromRecordField(e: Record<string, unknown>) {
     description: typeof e.description === 'string' ? e.description : '',
     type: e.type,
     unit: typeof e.unit === 'string' ? e.unit : '',
-    visibility: e.visibility === 'public' ? 'public' : 'private',
+    // Never trusted from the client, regardless of what's sent — a public field would be usable
+    // in *anyone's* checklist template (fields/index.ts's own "owner OR public" read rule), and
+    // a real user's own field becoming that is never something this route should grant on
+    // request. The three seeded defaults (`duration`/`push-ups`/`note`,
+    // 20260821000000_seed_system_fields.sql) are the only public fields that exist, written by a
+    // migration under the service role, which bypasses this mapping function entirely — that's
+    // the only path to `visibility: 'public'` now. A shared checklist template's own fields stay
+    // private too; a recipient resolves them through `GET /fields?templateId=` instead (see that
+    // route's own comment), authorized by the template being public, not by the field itself.
+    visibility: 'private',
     // Metric-only in practice (the client only shows this input for
     // type: 'metric') but not enforced here — a stray value on a note field
     // is harmless, just never read.

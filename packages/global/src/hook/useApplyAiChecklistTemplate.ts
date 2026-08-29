@@ -82,42 +82,49 @@ export const useApplyAiChecklistTemplate = () => {
    *
    * A group's id is generated here, up front — not left to `addFieldGroup`'s own default — so a
    * proposed note (see createNote's `owner*` params, 20260829020000_notes_title_search_owner.sql)
-   * can record it as the note's owner before the group's own row exists at all.
+   * can record it as the note's owner before the group's own row exists at all. `async`, and each
+   * group's own `createNote` is awaited before its `addFieldGroup` — `field_groups.note_id` is a
+   * real FK, so the note has to actually exist server-side before the group referencing it is
+   * written (see createNote's own comment); groups themselves are independent of each other, so
+   * this still runs them concurrently via `Promise.all` rather than one at a time.
    */
   const applyFieldGroups = (
     checklistTemplateId: string,
     groups: AiGeneratedGroup[],
     startPosition: number,
-  ): FieldGroup[] =>
-    groups.map((group, i) => {
-      const fieldGroupId = v4();
-      const value = buildNoteFromBlocks(group.note);
-      const noteId = value
-        ? createNote(
-          value,
-          { ownerType: 'field_group', ownerId: fieldGroupId, checklistTemplateId },
-          group.title,
-        ).id
-        : undefined;
-      return addFieldGroup({
-        id: fieldGroupId,
-        checklistTemplateId,
-        title: group.title,
-        // No overrides — an AI-generated group's fields start exactly as the (possibly reused)
-        // field itself already is; overriding is a manual per-group customization, not something
-        // the AI proposes.
-        fields: resolveFieldIds(group.fields).map(fieldId => ({ fieldId })),
-        position: startPosition + i,
-        ...(noteId ? { noteId } : {}),
-        ...(group.repeat ? { repeat: group.repeat } : {}),
-      });
-    });
+  ): Promise<FieldGroup[]> =>
+    Promise.all(
+      groups.map(async (group, i) => {
+        const fieldGroupId = v4();
+        const value = buildNoteFromBlocks(group.note);
+        const noteId = value
+          ? (await createNote(
+            value,
+            { ownerType: 'field_group', ownerId: fieldGroupId, checklistTemplateId },
+            group.title,
+          )).id
+          : undefined;
+        return addFieldGroup({
+          id: fieldGroupId,
+          checklistTemplateId,
+          title: group.title,
+          // No overrides — an AI-generated group's fields start exactly as the (possibly reused)
+          // field itself already is; overriding is a manual per-group customization, not something
+          // the AI proposes.
+          fields: resolveFieldIds(group.fields).map(fieldId => ({ fieldId })),
+          position: startPosition + i,
+          ...(noteId ? { noteId } : {}),
+          ...(group.repeat ? { repeat: group.repeat } : {}),
+        });
+      }),
+    );
 
   /** Home tab entry point: a whole new template, plus today's checklist instance — same two
    * calls packages/create-checklist-page-ui/src/createTaskUtil.ts's createTask makes for a
    * repeat-less ("forever") task, since an AI template never sets its own template-level
-   * `repeat` — day-gating lives on each group instead. */
-  const applyAsNewTemplate = (generated: AiGeneratedChecklistTemplate) => {
+   * `repeat` — day-gating lives on each group instead. `async` because `applyFieldGroups` now
+   * is — see that function's own comment. */
+  const applyAsNewTemplate = async (generated: AiGeneratedChecklistTemplate) => {
     registerTags(generated.tags);
     const { id } = addChecklistTemplate({
       title: generated.title,
@@ -126,7 +133,7 @@ export const useApplyAiChecklistTemplate = () => {
       fieldGroups: [],
       tags: generated.tags,
     });
-    applyFieldGroups(id, generated.fieldGroups, 0);
+    await applyFieldGroups(id, generated.fieldGroups, 0);
     addChecklist({
       title: generated.title,
       checklistTemplateId: id,
@@ -142,12 +149,13 @@ export const useApplyAiChecklistTemplate = () => {
    * Returns the merged template, `.fieldGroups` included — `useFieldGroups`' own store won't
    * reflect this write until its next render, and detail-task-page keeps its own mirrored
    * `useState` (see index.desktop.tsx), so the caller needs the value directly, not a re-read.
+   * `async` because `applyFieldGroups` now is — see that function's own comment.
    */
-  const applyToExistingTemplate = (
+  const applyToExistingTemplate = async (
     template: ChecklistTemplate,
     generated: AiGeneratedChecklistTemplate,
     options: { applyAvatarAndTags?: boolean } = {},
-  ): ChecklistTemplate => {
+  ): Promise<ChecklistTemplate> => {
     if (options.applyAvatarAndTags) registerTags(generated.tags);
     const merged: ChecklistTemplate = {
       ...template,
@@ -159,7 +167,7 @@ export const useApplyAiChecklistTemplate = () => {
         : {}),
     };
     updateChecklistTemplate(merged);
-    const newGroups = applyFieldGroups(template.id, generated.fieldGroups, template.fieldGroups.length);
+    const newGroups = await applyFieldGroups(template.id, generated.fieldGroups, template.fieldGroups.length);
     return { ...merged, fieldGroups: [...template.fieldGroups, ...newGroups] };
   };
 

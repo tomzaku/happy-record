@@ -145,11 +145,17 @@ export const useNote = () => {
   };
 
   /** Creates a new note and returns it — the caller persists its `id` onto its own owner right
-   * after (`updateFieldGroup`). Marked "already fetched" immediately: this device just wrote it,
-   * there's nothing to fetch. `searchText` starts empty locally (this optimistic copy) — the
-   * server computes the real one from `value` on its own next fetch; nothing here trusts this
-   * local placeholder for anything. */
-  const createNote = (value: unknown, origin: NoteOrigin, title = '') => {
+   * after (`updateFieldGroup`/`updateRecordField`). Marked "already fetched" immediately: this
+   * device just wrote it, there's nothing to fetch. `searchText` starts empty locally (this
+   * optimistic copy) — the server computes the real one from `value` on its own next fetch;
+   * nothing here trusts this local placeholder for anything.
+   *
+   * `async`, and actually awaited by every caller (not fire-and-forget like most writes here —
+   * see CLAUDE.md's own note on that) because the owner's own id column (`field_groups.note_id`/
+   * `fields.note_id`) is a real FK into `notes`: persisting that id before this row has actually
+   * landed server-side is a real race, not a hypothetical one — it shipped once as exactly this,
+   * a field-group's `noteId` reaching the server before its note did and failing the FK check. */
+  const createNote = async (value: unknown, origin: NoteOrigin, title = '') => {
     const id = v4();
     const now = new Date().toISOString();
     const note: Note = {
@@ -170,7 +176,7 @@ export const useNote = () => {
     };
     fetchedIds.add(id);
     setNotes(prev => ({ ...prev, [id]: note }));
-    saveNote(note);
+    await saveNote(note);
     return note;
   };
 

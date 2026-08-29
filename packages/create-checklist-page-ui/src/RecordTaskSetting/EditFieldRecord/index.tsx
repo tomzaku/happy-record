@@ -23,7 +23,6 @@ const EditFieldRecord = ({ className, onSubmit, recordField }: Props) => {
       title: form.title,
       unit: form.unit,
       description: form.description,
-      visibility: form.visibility,
       defaultValue: form.defaultValue,
     });
 
@@ -43,7 +42,6 @@ const EditFieldRecord = ({ className, onSubmit, recordField }: Props) => {
       title: recordField.title,
       unit: recordField.unit,
       description: recordField.description,
-      visibility: recordField.visibility ?? 'private',
       defaultValue: recordField.defaultValue,
     };
   };

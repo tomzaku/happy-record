@@ -26,12 +26,16 @@ export const useNoteById = (
   const { note, loading } = getNote(noteId);
 
   /** No note yet → create one and hand its id to the caller to persist onto its own owner
-   * (updateFieldGroup); already has one → update in place. */
-  const save = (value: unknown) => {
+   * (updateFieldGroup); already has one → update in place. Awaits `createNote` before calling
+   * `onCreated` — the owner's own `note_id` is a real FK, so the note has to actually exist
+   * server-side before something else is written pointing at it (see createNote's own comment).
+   * `save` itself stays fire-and-forget from the caller's side (NoteEditor's `setValue` doesn't
+   * await it) — only the two writes *inside* here need to happen in order. */
+  const save = async (value: unknown) => {
     if (noteId) {
       updateNote(noteId, { value });
     } else {
-      const created = createNote(value, origin);
+      const created = await createNote(value, origin);
       onCreated(created.id);
     }
   };

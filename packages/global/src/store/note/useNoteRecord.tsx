@@ -62,14 +62,17 @@ export const useNoteRecords = () => {
   /** Creates this field's one note and persists the new id onto it. A field that already has a
    * `noteId` (picked again from add-note-page-ui's field selector) updates that note in place
    * instead of creating a second one and orphaning it — this is really an edit at that point,
-   * even though the caller still calls it "add". */
-  const addNote = (fieldId: string, value: unknown, title = '') => {
+   * even though the caller still calls it "add". Awaits `createNote` before persisting its id
+   * onto the field — `fields.note_id` is a real FK, so the note has to actually exist
+   * server-side first (same race createNote's own comment describes; this is the other owner
+   * that has a `note_id` column, alongside `field_groups`'). */
+  const addNote = async (fieldId: string, value: unknown, title = '') => {
     const field = getAllRecordFields().find(f => f.id === fieldId);
     if (field?.noteId) {
       const updated = updateNoteRaw(field.noteId, { value });
       return updated ? [toChecklistRecordShape(field, updated)] : [];
     }
-    const created = createNote(value, { ownerType: 'field', ownerId: fieldId }, title);
+    const created = await createNote(value, { ownerType: 'field', ownerId: fieldId }, title);
     updateRecordField(fieldId, { noteId: created.id });
     return field ? [toChecklistRecordShape({ ...field, noteId: created.id }, created)] : [];
   };

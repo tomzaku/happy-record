@@ -23,11 +23,16 @@ export type RecordField = {
   type: 'metric' | 'note';
   unit: string;
   /**
-   * 'public' means any user can use this field in their own checklist
-   * templates, not just see it in a list — see CLAUDE.md and
-   * supabase/functions/_shared/recordFields.ts. Absent (existing local
-   * data, or a field this device hasn't edited since this shipped) is
-   * treated the same as 'private'.
+   * 'public' means any user can use this field in their own checklist templates, not just see it
+   * in a list — see CLAUDE.md and supabase/functions/_shared/fields.ts. Never settable through
+   * this app's UI/API anymore: the server always writes 'private' for a real user's own field
+   * regardless of what's sent (`fromRecordField`'s own comment), so this only ever comes back
+   * 'public' for the three seeded system defaults (`duration`/`push-ups`/`note`), written by a
+   * migration under the service role. Sharing a checklist template used to flip a referenced
+   * field to 'public' too — it no longer does (see useCreateChecklistTemplateApi.tsx); a shared
+   * template's own fields stay private and get resolved a different way for the recipient. Absent
+   * (existing local data, or a field this device hasn't edited since this shipped) is treated the
+   * same as 'private'.
    */
   visibility?: 'public' | 'private';
   /**
@@ -156,14 +161,13 @@ export const useRecordField = () => {
   const { userId, ready } = useSession();
 
   /**
-   * Merges fetched (or shared-template) fields into local state without
-   * writing them back if this device doesn't own them — for a shared
-   * checklist template's fields, which are already persisted (owned by
-   * whoever shared them, `visibility: 'public'`). Saving them again here
-   * would upsert a row with this device's `user_id` against an id whose
-   * primary key already belongs to someone else, the exact "every client
-   * races to write the same global id" bug CLAUDE.md warns about for
-   * `fields.id`.
+   * Merges fetched (or shared-template, or system-default) fields into local state without
+   * writing them back if this device doesn't own them — already persisted, owned by whoever
+   * created them (the three system defaults, or a shared checklist template's own private
+   * fields, resolved via `GET /fields?templateId=` — see fields/index.ts's own listByTemplate).
+   * Saving them again here would upsert a row with this device's `user_id` against an id whose
+   * primary key already belongs to someone else, the exact "every client races to write the same
+   * global id" bug CLAUDE.md warns about for `fields.id`.
    */
   const mergeRecordFields = React.useCallback(
     (fields: RecordField[]) => {
