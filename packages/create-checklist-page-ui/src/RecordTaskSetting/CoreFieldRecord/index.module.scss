@@ -9,12 +9,14 @@
 
 // One bordered card grouping every row — same shell as the Select Fields list this form opens
 // from (ChecklistFieldGroupMenu.module.scss's `.fieldsList`), so "Add Field" reads as a
-// continuation of that picker instead of a visually separate form bolted on next to it.
+// continuation of that picker instead of a visually separate form bolted on next to it. No
+// `overflow: hidden` (it used to clip child corners to this card's own radius) — that also
+// clipped the Type row's own Select dropdown panel, which needs to render outside this card's
+// bounds when open.
 .formCard {
   border: 1px solid var(--division-color);
   border-radius: 8px;
   background: var(--background);
-  overflow: hidden;
 }
 
 .formRow {
@@ -62,17 +64,18 @@
 // so "Date & Time" (the longest option) doesn't get clipped, but still compact next to the label
 // rather than stretching the way `.rowInput` does for the rows below it.
 .typeSelectContainer {
-  min-width: 120px;
+  min-width: 140px;
 }
 
 .typeSelectElement {
   min-height: 32px;
 }
 
+// Left-aligned now (Select's own default) rather than right — with the trigger's own chevron
+// (added directly to @moon-ui/select) sitting at the right edge, right-aligning the label too
+// crowded the two together instead of reading as one control.
 .typeSelectInput {
-  padding: 6px 10px;
-  justify-content: flex-end;
-  text-align: right;
+  padding: 6px 8px 6px 10px;
 }
 
 .addFieldButtonContainer {

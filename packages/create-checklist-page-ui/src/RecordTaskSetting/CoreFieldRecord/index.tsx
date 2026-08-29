@@ -146,11 +146,11 @@ const CoreFieldRecord = ({
             rightComponent={
               <Select
                 options={typeOptions}
+                value={form.type}
                 onChange={({ value }, { close }) => {
                   setForm({ ...form, type: value });
                   close();
                 }}
-                renderInput={() => typeOptions.find(o => o.value === form.type)?.label ?? form.type}
                 classes={{
                   container: styles.typeSelectContainer,
                   selectElement: styles.typeSelectElement,

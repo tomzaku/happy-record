@@ -12,46 +12,94 @@
 
 .selectElement {
   position: relative;
-  // min-height: 40px;
   display: flex;
   align-items: center;
-  border: 1px solid var(--card-border);
-  border-radius: 4px;
-  // background-color: white;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background: var(--input-background);
   cursor: pointer;
   user-select: none;
+  transition: border-color 0.15s ease;
+
+  // `tabIndex={0}` on a plain div makes it focusable (keyboard users need that), but the
+  // browser's own default focus ring on an element like this is a thick, harsh outline that
+  // doesn't match anything else in the app — every real `<input>` here already swaps that for a
+  // border-color change instead (see @moon-ui/input's own `:focus`), so this does the same.
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    border-color: var(--input-border-focus);
+  }
 
   &:hover {
     border-color: var(--card-border-hover);
   }
 
   &.open {
-    border-color: var(--card-border-hover);
+    border-color: var(--card-border-open);
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+
+    &:hover {
+      border-color: var(--input-border);
+    }
   }
 }
 
 .selectedValue {
   display: flex;
   align-items: center;
-  min-height: 24px;
-  padding: 8px 12px;
+  min-height: 20px;
+  padding: 8px 4px 8px 12px;
   flex: 1;
-  overflow: scroll;
+  min-width: 0;
+  // A long label (an existing renderInput override, say) truncates instead of forcing the
+  // trigger to grow or wrapping onto a second line — the options panel below is where the full
+  // text is always available anyway.
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+// The dropdown affordance — a plain trigger with only a text label reads as inert, not
+// clickable; every native <select> has this for free, so the custom markup here needs it drawn
+// explicitly.
+.chevron {
+  flex-shrink: 0;
+  margin-right: 8px;
+  color: var(--text-description-color);
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
 }
 
 .optionsList {
   position: absolute;
   top: 100%;
   left: 0;
-  right: 0;
+  // Wide enough to never be narrower than the trigger, but free to grow past it — a long label
+  // ("Date & Time") used to force-wrap onto two lines because the panel was pinned to exactly
+  // the trigger's own width (`right: 0` alongside `left: 0`); `width: max-content` (capped by
+  // max-width below) lets it size to its own content instead.
+  min-width: 100%;
+  width: max-content;
+  max-width: 260px;
   margin-top: 4px;
   max-height: 300px;
   overflow-y: auto;
   background-color: var(--card-background);
   border: 1px solid var(--card-border);
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   z-index: 1000;
+  padding: 4px;
 
   &.optionsListAbove {
     top: auto;
@@ -62,14 +110,40 @@
 }
 
 .option {
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 14px;
+  color: var(--text-color);
 
   &:hover {
     background-color: var(--card-selected-background);
   }
 
-  &.selected {
-    background-color: #e6f3ff;
+  & + & {
+    margin-top: 2px;
   }
+}
+
+.optionLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionSelected {
+  // Same accent @moon-ui/radio already uses for "this is the selected choice" — not
+  // `--card-border-open`'s border-accent meaning, a different (if same-valued in both themes
+  // today) semantic.
+  color: var(--radio-color);
+  font-weight: 600;
+}
+
+.optionCheck {
+  flex-shrink: 0;
+  color: var(--radio-color);
 }
