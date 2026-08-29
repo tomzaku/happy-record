@@ -79,7 +79,10 @@ type NoteRowProps = {
  * at the top level.
  */
 const NoteRow = ({ note, active, indented, fieldMap, templateMap, onSelectNote }: NoteRowProps) => {
-  const icon = rowIcon(note, fieldMap, templateMap);
+  // A cluster child's own icon would resolve to its Task's icon (see rowIcon's own comment) —
+  // already shown once by the cluster header right above it, and by the folder itself being
+  // selected — repeating it on every child row under there is just noise, not new information.
+  const icon = indented ? undefined : rowIcon(note, fieldMap, templateMap);
   return (
     <button
       type="button"
@@ -162,24 +165,29 @@ const NoteList = ({
             <div key={cluster.fieldId} className={styles.cluster}>
               <button
                 type="button"
-                className={cx(styles.clusterHeader, cluster.fieldId === selectedFieldId && styles.rowActive)}
+                className={cx(styles.clusterHeader, cluster.fieldId === selectedFieldId && styles.clusterHeaderActive)}
                 onClick={() => onSelectField?.(cluster.fieldId)}
               >
-                <Icon icon={cluster.icon} width={14} className={styles.rowFieldIcon} />
+                <Icon icon={cluster.icon} width={15} className={styles.clusterIcon} />
                 <span className={styles.clusterTitle}>{cluster.title}</span>
                 <span className={styles.clusterCount}>{cluster.records.length}</span>
               </button>
-              {cluster.records.map(record => (
-                <NoteRow
-                  key={record.id}
-                  note={record}
-                  active={record.id === selectedNoteId}
-                  indented
-                  fieldMap={fieldMap}
-                  templateMap={templateMap}
-                  onSelectNote={onSelectNote}
-                />
-              ))}
+              {/* A guide line down the left edge, same idea a file tree/outline uses to show
+                  these records belong to the field above them — replaces the earlier flat
+                  margin-only indent, which read as "smaller row" rather than "nested under". */}
+              <div className={styles.clusterChildren}>
+                {cluster.records.map(record => (
+                  <NoteRow
+                    key={record.id}
+                    note={record}
+                    active={record.id === selectedNoteId}
+                    indented
+                    fieldMap={fieldMap}
+                    templateMap={templateMap}
+                    onSelectNote={onSelectNote}
+                  />
+                ))}
+              </div>
             </div>
           ))}
         </>

@@ -142,24 +142,29 @@
   color: var(--text-description-color);
 }
 
+// One note-type field's own group (e.g. "Mock Interview" + its day records) — a little extra
+// breathing room between one cluster and the next/a flat row after it, so the tree reads as
+// distinct blocks rather than one continuous list.
 .cluster {
   display: flex;
   flex-direction: column;
+  margin-top: 2px;
 }
 
-// One note-type field's own header row (e.g. "Mock Interview") — bold, not indented, so it
-// reads as a small section heading over the records nested under it. Clicking it has no note of
-// its own to open (see NoteFieldCluster's own comment) — it switches the editor pane into a
-// record-picker instead, same active-state treatment as a real selected row otherwise.
+// The cluster's own header row — visually a small section heading (uppercase-weight title, a
+// count pill, its own background chip), not just another list row, so it's unmistakably the
+// thing the records below are nested under rather than a sibling of them. Clicking it has no
+// note of its own to open (see NoteFieldCluster's own comment) — it switches the editor pane
+// into a record-picker instead of opening anything.
 .clusterHeader {
   display: flex;
   align-items: center;
   gap: $spacing-xs;
   width: 100%;
-  padding: $spacing-sm;
+  padding: 6px $spacing-sm;
   border: 0;
-  border-radius: 8px;
-  background: transparent;
+  border-radius: 7px;
+  background: var(--surface-secondary);
   cursor: pointer;
   font: inherit;
   text-align: left;
@@ -170,25 +175,66 @@
   }
 }
 
+.clusterHeaderActive {
+  background: var(--button-action-background);
+  color: var(--button-action-color);
+
+  &:hover {
+    background: var(--button-action-background);
+  }
+
+  .clusterIcon,
+  .clusterCount {
+    color: inherit;
+    opacity: 0.85;
+  }
+}
+
+.clusterIcon {
+  flex-shrink: 0;
+  color: var(--text-description-color);
+}
+
 .clusterTitle {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: toRem(13px);
+  font-size: toRem(12.5px);
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .clusterCount {
   flex-shrink: 0;
+  min-width: 16px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--input-background);
   font-size: toRem(11px);
+  text-align: center;
   color: var(--text-description-color);
 }
 
-// A field cluster's own record row — same `.row` shape, just nested visually under its header
-// with a left indent standing in for the "- " a plain-text tree would use.
+// The records nested under a cluster header — a guide line down the left edge (the same idea a
+// file tree/outline view uses) stands in for the "- " a plain-text tree would use, so a glance
+// at the shape alone reads as "these belong to the field above" rather than just smaller rows.
+.clusterChildren {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-left: 17px;
+  padding-left: $spacing-sm;
+  border-left: 1px solid var(--card-border);
+}
+
+// A field cluster's own record row — same `.row` shape, just a touch lighter than a top-level
+// row (regular weight vs. the flat list's own 600) so the hierarchy reads even without the
+// guide line alone.
 .rowIndented {
-  margin-left: $spacing-md;
-  width: calc(100% - #{$spacing-md});
+  .rowTitle {
+    font-weight: 500;
+  }
 }
