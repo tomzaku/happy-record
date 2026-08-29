@@ -4,8 +4,8 @@ import { useNote, type Note } from '@dreamer/global/src/store/note/useNote';
 import { useNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
 import { useNoteFolder } from '@dreamer/global/src/store/note-folder/useNoteFolder';
 import { useChecklistTemplates } from '@dreamer/global/src/store/checklists/useChecklistTemplates';
+import { useRecordField, type RecordField } from '@dreamer/global/src/store/record-field';
 import { useSyncedSelector } from '@dreamer/global/src/hook';
-import type { RecordField } from '@dreamer/global/src/store/record-field';
 
 // A brand-new, genuinely empty Editor.js document — same shape `@editorjs/editorjs` itself
 // produces from `.save()` on an untouched instance, not `undefined`/`null` (NoteEditor's own
@@ -83,6 +83,7 @@ export const useNoteManagerState = () => {
   const { getAllNoteFields, addNote } = useNoteRecords();
   const { getRecommendChecklistTemplates } = useChecklistTemplates();
   const { getAllNoteFolders, addNoteFolder } = useNoteFolder();
+  const { addRecordField } = useRecordField();
 
   const allNotes = useSyncedSelector(getAllNotes);
   const allNoteFields = useSyncedSelector(getAllNoteFields);
@@ -340,12 +341,15 @@ export const useNoteManagerState = () => {
     return note;
   };
 
-  /** The "+" button. No ambiguity → just create (0 fields: nothing to do, the button is disabled
-   * for this case by the caller; 1 empty field: that's obviously where it goes). More than one
-   * candidate → `composing` turns on instead, so the editor pane can show the picker
-   * (`chooseComposeField` is what actually creates once someone picks). */
+  /** The "+" button. Exactly one existing empty slot → just create there, no picker needed.
+   * Zero or several → `composing` turns on so the editor pane can show a picker: an existing
+   * empty field to pick, or a name to type to create a brand-new note-type field on the spot
+   * (`createNewNoteType`) — every note-type field ever holds exactly one note (see
+   * RecordField.noteId's own comment), so once every field the user already has is full, "+" has
+   * nothing existing left to offer; this is what makes it never a dead end regardless of how many
+   * notes already exist, rather than just disabling the button once `emptyFields` runs out (what
+   * this used to do). */
   const startCompose = () => {
-    if (emptyFields.length === 0) return;
     if (emptyFields.length === 1) {
       createNoteIn(emptyFields[0]);
       return;
@@ -356,6 +360,23 @@ export const useNoteManagerState = () => {
   };
 
   const chooseComposeField = (field: RecordField) => createNoteIn(field);
+
+  /** Composing's own "create a new note type" option, for when every existing note-type field
+   * already has its one note — see startCompose's own comment. Creates the field, then
+   * immediately creates+opens its note, same as picking an already-empty one would. Blank (or
+   * whitespace-only) names are silently ignored, same as createNoteFolder's own guard. */
+  const createNewNoteType = async (title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    const field = addRecordField({
+      title: trimmed,
+      icon: 'solar:notebook-line-duotone',
+      description: '',
+      type: 'note',
+      unit: '',
+    });
+    await createNoteIn(field);
+  };
 
   const cancelCompose = () => setComposing(false);
 
@@ -426,6 +447,7 @@ export const useNoteManagerState = () => {
     closeNote,
     startCompose,
     chooseComposeField,
+    createNewNoteType,
     cancelCompose,
     createNoteFolder,
     updateSelectedNoteValue,

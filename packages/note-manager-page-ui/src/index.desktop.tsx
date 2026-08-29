@@ -34,6 +34,7 @@ export const NoteManagerPageDesktop = () => {
     selectField,
     startCompose,
     chooseComposeField,
+    createNewNoteType,
     cancelCompose,
     createNoteFolder,
     updateSelectedNoteValue,
@@ -79,7 +80,6 @@ export const NoteManagerPageDesktop = () => {
             selectedNoteId={selectedNote?.id}
             onSelectNote={selectNote}
             onNewNote={startCompose}
-            canCreateNote={emptyFields.length > 0}
           />
         </div>
         <div className={styles.editorPane}>
@@ -95,6 +95,7 @@ export const NoteManagerPageDesktop = () => {
             composing={composing}
             emptyFields={emptyFields}
             onChooseComposeField={chooseComposeField}
+            onCreateNoteType={createNewNoteType}
             onCancelCompose={cancelCompose}
             onChangeTitle={updateSelectedNoteTitle}
             onChangeValue={updateSelectedNoteValue}

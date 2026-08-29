@@ -49,6 +49,7 @@ export const NoteManagerPage = () => {
     closeNote,
     startCompose,
     chooseComposeField,
+    createNewNoteType,
     createNoteFolder,
     updateSelectedNoteValue,
     updateSelectedNoteTitle,
@@ -80,6 +81,7 @@ export const NoteManagerPage = () => {
           composing={composing}
           emptyFields={emptyFields}
           onChooseComposeField={chooseComposeField}
+          onCreateNoteType={createNewNoteType}
           onCancelCompose={closeNote}
           onChangeTitle={updateSelectedNoteTitle}
           onChangeValue={updateSelectedNoteValue}
@@ -122,7 +124,6 @@ export const NoteManagerPage = () => {
         templateMap={templateMap}
         onSelectNote={selectNote}
         onNewNote={startCompose}
-        canCreateNote={emptyFields.length > 0}
       />
       {/* Full-screen, not a compact bottom sheet — @moon-ui/drawer's own sliding panel always
           fills the viewport (see its own index.module.scss), so this gets a real header/close

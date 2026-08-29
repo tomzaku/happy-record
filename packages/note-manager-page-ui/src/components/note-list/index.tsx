@@ -33,7 +33,6 @@ type Props = {
   selectedNoteId?: string;
   onSelectNote: (id: string) => void;
   onNewNote: () => void;
-  canCreateNote: boolean;
 };
 
 /** Stands in for a real row while the first fetch is still in flight — same
@@ -124,7 +123,6 @@ const NoteList = ({
   selectedNoteId,
   onSelectNote,
   onNewNote,
-  canCreateNote,
 }: Props) => (
   <div className={cx(styles.list, className)}>
     <div className={styles.header}>
@@ -135,8 +133,7 @@ const NoteList = ({
         type="button"
         className={styles.newButton}
         onClick={onNewNote}
-        disabled={!canCreateNote}
-        title={canCreateNote ? 'New Note' : 'Every note type already has a note'}
+        title="New Note"
         aria-label="New Note"
       >
         <Icon icon="solar:pen-new-square-linear" width={18} />

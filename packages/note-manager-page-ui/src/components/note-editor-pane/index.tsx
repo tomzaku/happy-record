@@ -1,3 +1,4 @@
+import React from 'react';
 import Icon from '@moon-ui/icon/Icon';
 import Input from '@moon-ui/input';
 import Select from '@moon-ui/select';
@@ -50,6 +51,10 @@ type Props = {
   composing: boolean;
   emptyFields: RecordField[];
   onChooseComposeField: (field: RecordField) => void;
+  // The composing picker's own "or create a new note type" option — every note-type field ever
+  // holds exactly one note (see useNoteManagerState's own startCompose comment), so once
+  // `emptyFields` is empty this is the only way "+" can still produce a new note.
+  onCreateNoteType: (title: string) => void;
   onCancelCompose: () => void;
   onChangeTitle: (title: string) => void;
   onChangeValue: (value: unknown) => void;
@@ -76,6 +81,7 @@ const NoteEditorPane = ({
   composing,
   emptyFields,
   onChooseComposeField,
+  onCreateNoteType,
   onCancelCompose,
   onChangeTitle,
   onChangeValue,
@@ -85,8 +91,14 @@ const NoteEditorPane = ({
   // uses (see CLAUDE.md's "Data access: go through an edge function").
   const { isPro, generate } = useAiNoteGenerate();
   const navigate = useNavigate();
+  const [newTypeTitle, setNewTypeTitle] = React.useState('');
 
   if (composing) {
+    const submitNewType = () => {
+      if (!newTypeTitle.trim()) return;
+      onCreateNoteType(newTypeTitle);
+      setNewTypeTitle('');
+    };
     return (
       <div className={cx(styles.pane, styles.paneCentered, className)}>
         <div className={styles.composeCard}>
@@ -94,20 +106,47 @@ const NoteEditorPane = ({
             New Note
           </Typography.Title>
           <Typography.Paragraph noMargin isDescription className={styles.composeHint}>
-            Every note type holds one note — choose which one this is.
+            Every note type holds one note — choose which one this is, or create a new one below.
           </Typography.Paragraph>
-          <div className={styles.composeOptions}>
-            {emptyFields.map(candidate => (
-              <button
-                key={candidate.id}
-                type="button"
-                className={styles.composeOption}
-                onClick={() => onChooseComposeField(candidate)}
-              >
-                <Icon icon={candidate.icon} width={18} />
-                <span>{candidate.title}</span>
-              </button>
-            ))}
+          {emptyFields.length > 0 && (
+            <div className={styles.composeOptions}>
+              {emptyFields.map(candidate => (
+                <button
+                  key={candidate.id}
+                  type="button"
+                  className={styles.composeOption}
+                  onClick={() => onChooseComposeField(candidate)}
+                >
+                  <Icon icon={candidate.icon} width={18} />
+                  <span>{candidate.title}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Every existing note-type field already has its own note once `emptyFields` is
+              empty — this is the only way "+" can still produce a new note at that point (see
+              useNoteManagerState's own startCompose comment), so it's always here, not just a
+              fallback for the zero-empty-fields case. */}
+          <div className={styles.newTypeRow}>
+            <Icon icon="solar:notebook-line-duotone" width={18} className={styles.newTypeIcon} />
+            <input
+              className={styles.newTypeInput}
+              value={newTypeTitle}
+              onChange={e => setNewTypeTitle(e.target.value)}
+              placeholder="New note type name"
+              onKeyDown={e => {
+                if (e.key === 'Enter') submitNewType();
+              }}
+            />
+            <button
+              type="button"
+              className={styles.newTypeSubmit}
+              onClick={submitNewType}
+              disabled={!newTypeTitle.trim()}
+              aria-label="Create"
+            >
+              <Icon icon="solar:add-circle-bold" width={20} />
+            </button>
           </div>
           <Button type="ghost" onClick={onCancelCompose} className={styles.composeCancel}>
             Cancel
