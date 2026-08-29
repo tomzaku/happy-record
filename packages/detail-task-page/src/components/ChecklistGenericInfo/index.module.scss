@@ -22,14 +22,14 @@
   transition: color 0.2s ease;
 }
 
-// Every dialog below shares SettingsDialog's own shell (badge, gradient header, Modal-vs-
-// BottomModal split — see packages/detail-task-page/src/components/SettingsDialog). What's
+// Every dialog below shares Dialog's own shell (badge, gradient header, Modal-vs-
+// BottomModal split — see packages/moon-ui/modal/src/Dialog). What's
 // still here is only what this file's own JSX passes *into* that shell.
 
-// Same fill as SettingsDialog's own `.gradientButton`/`.headerDoneButton` (the app's real
+// Same fill as Dialog's own `.gradientButton`/`.headerDoneButton` (the app's real
 // primary/accent color, not an invented one — see that component's `.badge` comment), sized to
 // sit in the header next to the title like a real button, not a compact chip. "Save" here (not
-// "Done"): unlike SettingsDialog's other consumers, these dialogs stage edits into `temp*`
+// "Done"): unlike Dialog's other consumers, these dialogs stage edits into `temp*`
 // state and only persist on this click, discarding them on dismiss (see handleModalClose) —
 // worth its own label, not just "close."
 .headerSaveButton {
@@ -54,11 +54,11 @@
 }
 
 // ScheduleModalContent brings its own outer padding already (shared with SchedulingGroup's own
-// modal, which has none of its own to double up on) — zeroes SettingsDialog's `.body` padding
+// modal, which has none of its own to double up on) — zeroes Dialog's `.body` padding
 // for that one dialog so the two don't stack into extra whitespace around the schedule form.
 // `!important` because CSS Modules gives both classes equal specificity — without it, which one
 // actually wins depends on unpredictable stylesheet load order, not the class list here (same
-// reasoning as `.modalShell`'s own `!important` in SettingsDialog/AiChecklistGenerate/CardShare).
+// reasoning as `.modalShell`'s own `!important` in Dialog/AiChecklistGenerate/CardShare).
 .noBodyPadding {
   padding: 0 !important;
 }

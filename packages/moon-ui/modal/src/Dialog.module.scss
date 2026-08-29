@@ -4,8 +4,7 @@
 // Passed as Modal's own `className` (merged onto its .container — see Modal.tsx) rather than
 // wrapping `content` in a second box of our own: the header's gradient needs to reach the real
 // modal corners, which a nested inner box can't do since Modal's own container always has its
-// own padding around whatever `content` it's given. See AiChecklistGenerate/index.module.scss's
-// own `.modalShell` comment for the fuller version of this reasoning.
+// own padding around whatever `content` it's given.
 .modalShell {
   padding: 0 !important;
   width: 100%;
@@ -114,5 +113,6 @@
 // `children`/`footer`/`headerAction` are React elements the *caller* builds, so their
 // `className` always resolves against the caller's own CSS module, never this one — a copy of
 // those classes here would just be dead weight this component never actually applies itself.
-// ChecklistFieldGroupMenu's and ChecklistGenericInfo's own `index.module.scss` each keep the
-// real, applied copy (same fill/sizing, described where they're defined) for exactly that reason.
+// ChecklistFieldGroupMenu's and ChecklistGenericInfo's own `index.module.scss` (and
+// note-manager-page-ui's NewFolderModal.module.scss) each keep the real, applied copy (same
+// fill/sizing, described where they're defined) for exactly that reason.

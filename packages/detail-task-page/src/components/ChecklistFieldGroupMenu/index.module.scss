@@ -69,12 +69,12 @@
   color: var(--error-color, #e5484d);
 }
 
-// Every dialog opened from the menu above shares SettingsDialog's own shell (badge, gradient
-// header, Modal-vs-BottomModal split — see packages/detail-task-page/src/components/
-// SettingsDialog for that). What's still here is only what this file's own JSX passes *into*
-// that shell (footer/headerAction content, description text) — a CSS module's `styles` object
-// only resolves classes defined in its own file, so those have to stay defined here too even
-// though SettingsDialog defines the identical-looking shell classes for its own JSX.
+// Every dialog opened from the menu above shares Dialog's own shell (badge, gradient header,
+// Modal-vs-BottomModal split — see packages/moon-ui/modal/src/Dialog for that). What's still
+// here is only what this file's own JSX passes *into* that shell (footer/headerAction content,
+// description text) — a CSS module's `styles` object only resolves classes defined in its own
+// file, so those have to stay defined here too even though Dialog defines the identical-looking
+// shell classes for its own JSX.
 .description {
   font-size: 13px;
   color: var(--text-description-color);
@@ -92,7 +92,7 @@
   border: 0;
   color: #fff;
   // The app's real primary/accent color (same token every other primary fill uses, so it
-  // follows dark mode's own shift to teal) — see SettingsDialog's own `.badge` comment.
+  // follows dark mode's own shift to teal) — see Dialog's own `.badge` comment.
   background: var(--icon-primary);
   box-shadow: 0 3px 10px rgba(11, 125, 194, 0.35);
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;

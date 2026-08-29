@@ -12,7 +12,7 @@ import {
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 import { SettingsCard, SettingsRow } from '../SettingsCard';
-import SettingsDialog from '../SettingsDialog';
+import Dialog from '@moon-ui/modal/src/Dialog';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { motion } from 'motion/react';
@@ -428,7 +428,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
       </SettingsCard>
 
       {/* Icon & Color Edit Modal */}
-      <SettingsDialog
+      <Dialog
         visible={activeModal === EditModal.Icon}
         onDismiss={handleModalClose}
         icon="tdesign:icon"
@@ -449,10 +449,10 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
           setSelectedColor={setTempColor}
           layout="two-line"
         />
-      </SettingsDialog>
+      </Dialog>
 
       {/* Schedule Edit Modal */}
-      <SettingsDialog
+      <Dialog
         visible={activeModal === EditModal.Schedule}
         onDismiss={handleModalClose}
         icon="solar:calendar-date-line-duotone"
@@ -467,7 +467,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
         }
         // ScheduleModalContent already brings its own outer padding (it's shared with
         // SchedulingGroup's own modal, which has no padding of its own to double up on) — this
-        // drops SettingsDialog's own so the two don't stack.
+        // drops Dialog's own so the two don't stack.
         bodyClassName={styles.noBodyPadding}
       >
         <ScheduleModalContent
@@ -480,10 +480,10 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
           fieldGroups={tempFieldGroups}
           onFieldGroupsChange={setTempFieldGroups}
         />
-      </SettingsDialog>
+      </Dialog>
 
       {/* Tags Edit Modal */}
-      <SettingsDialog
+      <Dialog
         visible={activeModal === EditModal.Tags}
         onDismiss={handleModalClose}
         icon="solar:tag-outline"
@@ -498,14 +498,14 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
         }
       >
         <TagInput tags={tempTags} setTags={setTempTags} />
-      </SettingsDialog>
+      </Dialog>
 
       {/* Archived Groups — restore, one at a time. No "delete forever" here on purpose: this
           screen exists specifically to make a soft delete recoverable; a permanent-delete action
           belongs somewhere that says so explicitly, not folded into a restore list. No header
           Save action — a restore applies immediately per row (see handleRestoreGroup), same as
           every other instantly-saving control elsewhere in this app. */}
-      <SettingsDialog
+      <Dialog
         visible={activeModal === EditModal.Archived}
         onDismiss={handleModalClose}
         icon="solar:trash-bin-2-linear"
@@ -528,7 +528,7 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
             </Button>
           </div>
         ))}
-      </SettingsDialog>
+      </Dialog>
 
       {/* Delete confirmation — the actual delete is the parent's own onDelete
           (deleteChecklistTemplate + navigate away), this just gates it. */}

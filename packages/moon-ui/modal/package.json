@@ -9,8 +9,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@dreamer/global": "^1.0.0",
+    "@dreamer/translation": "^1.0.0",
     "@moon-ui/division": "^1.0.0",
+    "@moon-ui/icon": "^1.0.0",
+    "@moon-ui/typography": "^1.0.0",
     "@react-spring/web": "^10.1.2",
-    "@use-gesture/react": "^10.3.1"
+    "@use-gesture/react": "^10.3.1",
+    "classnames": "^2.3.2"
   }
 }

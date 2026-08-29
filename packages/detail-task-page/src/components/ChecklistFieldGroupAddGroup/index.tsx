@@ -7,7 +7,7 @@ import Input from '@moon-ui/input';
 import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
 import { FieldGroup, RecordField, useRecordField } from '@dreamer/global';
-import SettingsDialog from '../SettingsDialog';
+import Dialog from '@moon-ui/modal/src/Dialog';
 import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
 import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
 import styles from './index.module.scss';
@@ -33,12 +33,12 @@ enum AddGroupView {
 }
 
 /**
- * "Add Group" — one SettingsDialog (badge/gradient header, Modal on desktop, BottomModal on
- * mobile — see that component's own doc), not the Modal-vs-hand-rolled-overlay pair this used
- * to be split across `index.desktop.tsx`/`index.mobile.tsx`: those two files' actual trigger
- * row markup was byte-for-byte identical, and only diverged in *how* they opened a modal at
- * all — a difference SettingsDialog already owns internally now, so the split had nothing left
- * to justify it.
+ * "Add Group" — one `Dialog` (badge/gradient header, Modal on desktop, BottomModal on
+ * mobile — see that component's own doc, `@moon-ui/modal`), not the Modal-vs-hand-rolled-overlay
+ * pair this used to be split across `index.desktop.tsx`/`index.mobile.tsx`: those two files'
+ * actual trigger row markup was byte-for-byte identical, and only diverged in *how* they opened
+ * a modal at all — a difference `Dialog` already owns internally now, so the split had nothing
+ * left to justify it.
  *
  * "Add Field" used to open `AddFieldRecordUi` as a second panel stacked on top of this one —
  * the exact z-index conflict ChecklistFieldGroupMenu's own Select Fields sheet had (BottomModal
@@ -151,7 +151,7 @@ const ChecklistFieldGroupAddGroup = ({
         />
       </div>
 
-      <SettingsDialog
+      <Dialog
         visible={isModalVisible}
         onDismiss={handleModalClose}
         icon="solar:folder-open-line-duotone"
@@ -272,7 +272,7 @@ const ChecklistFieldGroupAddGroup = ({
         {view === AddGroupView.AddField && (
           <AddFieldRecordUi onSubmit={handleFieldAdded} onCancel={() => setView(AddGroupView.Form)} />
         )}
-      </SettingsDialog>
+      </Dialog>
     </>
   );
 };

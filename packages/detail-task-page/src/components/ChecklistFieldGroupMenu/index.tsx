@@ -13,7 +13,7 @@ import { FieldGroup, FieldGroupField, FieldOverrides, RecordField } from '@dream
 import { getEffectiveFieldDisplay } from '@dreamer/global/src/store/record-field';
 import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
 import IconPicker from '../../../../create-checklist-page-ui/src/IconPicker';
-import SettingsDialog from '../SettingsDialog';
+import DialogModal from '@moon-ui/modal/src/Dialog';
 
 import styles from './index.module.scss';
 
@@ -453,7 +453,7 @@ const ChecklistFieldGroupMenu = React.forwardRef<
       )}
 
       {/* Group Name */}
-      <SettingsDialog
+      <DialogModal
         visible={activeDialog === Dialog.Name}
         onDismiss={closeDialog}
         icon="solar:pen-2-line-duotone"
@@ -485,10 +485,10 @@ const ChecklistFieldGroupMenu = React.forwardRef<
           border="dash"
           renderRightInput={() => <></>}
         />
-      </SettingsDialog>
+      </DialogModal>
 
       {/* Tabs */}
-      <SettingsDialog
+      <DialogModal
         visible={activeDialog === Dialog.Tabs}
         onDismiss={closeDialog}
         icon="solar:widget-5-line-duotone"
@@ -577,10 +577,10 @@ const ChecklistFieldGroupMenu = React.forwardRef<
             );
           })}
         </div>
-      </SettingsDialog>
+      </DialogModal>
 
       {/* Collapse Default */}
-      <SettingsDialog
+      <DialogModal
         visible={activeDialog === Dialog.Collapse}
         onDismiss={closeDialog}
         icon="solar:alt-arrow-down-line-duotone"
@@ -603,11 +603,11 @@ const ChecklistFieldGroupMenu = React.forwardRef<
             })}
           </Typography.Text>
         </div>
-      </SettingsDialog>
+      </DialogModal>
 
       {/* Select Fields — List/Add/Customize are three views of this one sheet (see FieldsView's
           own comment for why this isn't three separately-stacked modals). */}
-      <SettingsDialog
+      <DialogModal
         visible={activeDialog === Dialog.Fields}
         onDismiss={closeDialog}
         // Only actually shows when `onBack` is unset (List) — Add/Customize show the back arrow
@@ -853,7 +853,7 @@ const ChecklistFieldGroupMenu = React.forwardRef<
             />
           </>
         )}
-      </SettingsDialog>
+      </DialogModal>
 
       <WarningModal
         visible={isDeleteModalVisible}

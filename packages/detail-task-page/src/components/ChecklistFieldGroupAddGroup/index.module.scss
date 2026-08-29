@@ -14,10 +14,10 @@
   font-weight: 500;
 }
 
-// The rest renders inside SettingsDialog's own shell (header/body/footer) — see that
-// component's own module for the badge/gradient-header/Modal-vs-BottomModal parts. What's here
-// is only what this file's own JSX passes as `children`/`footer`, since a CSS module's `styles`
-// object only resolves classes defined in its own file.
+// The rest renders inside Dialog's own shell (header/body/footer) — see that component's own
+// module (`@moon-ui/modal`) for the badge/gradient-header/Modal-vs-BottomModal parts. What's
+// here is only what this file's own JSX passes as `children`/`footer`, since a CSS module's
+// `styles` object only resolves classes defined in its own file.
 
 .description {
   font-size: 13px;
@@ -119,7 +119,7 @@
 }
 
 // The app's real primary/accent color (same token every other primary fill uses, so it follows
-// dark mode's own shift to teal) — see SettingsDialog's own `.badge` comment. `#0b7dc2`'s RGB
+// dark mode's own shift to teal) — see Dialog's own `.badge` comment. `#0b7dc2`'s RGB
 // decomposition, not `$primary` itself: @moon-ui/app-scss/color doesn't `@forward` it out (only
 // pulls it into its own scope), so consumers only ever get the literal value — same as every
 // other hardcoded palette in this app.

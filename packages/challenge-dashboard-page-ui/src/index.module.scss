@@ -86,7 +86,7 @@
 // — fragile in a way that's easy to get wrong and hard to spot from the
 // CSS alone. Zeroing the card's own padding instead, so `.cardHeaderWash`
 // and `.cardBody` each supply their own, is the same header/body split
-// Modal already uses for exactly this (SettingsDialog's
+// Modal already uses for exactly this (Dialog's, `@moon-ui/modal`'s own
 // `.modalShell { padding: 0 !important; }`) — no margin math to get right,
 // just two sections that each own their own spacing.
 .cardNoPadding {
@@ -110,7 +110,7 @@
 }
 
 // A tinted background strip instead of a divider under the header — same
-// treatment SettingsDialog/CardShare's own modal headers already use (a
+// treatment Dialog/CardShare's own modal headers already use (a
 // faint wash of the header's own accent color, not a hairline). Sits flush
 // against a `.cardNoPadding` card's real edges — see that class's own
 // comment for why this doesn't reach for a negative-margin bleed instead.

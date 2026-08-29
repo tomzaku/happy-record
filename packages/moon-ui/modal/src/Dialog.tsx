@@ -2,13 +2,14 @@ import React from 'react';
 import { useIntl } from '@dreamer/translation';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
-import { Modal, BottomModal } from '@moon-ui/modal';
 import cx from 'classnames';
 import { useIsMobile } from '@dreamer/global';
 
-import styles from './index.module.scss';
+import Modal from './Modal';
+import BottomModal from './BottomModal';
+import styles from './Dialog.module.scss';
 
-export type SettingsDialogProps = {
+export type DialogProps = {
   visible: boolean;
   onDismiss: () => void;
   title: string;
@@ -34,17 +35,24 @@ export type SettingsDialogProps = {
 };
 
 /**
- * The one modal shell every settings dialog in the task detail page goes through — a badge +
- * gradient-wash header, a close X (or `headerAction`), Modal on desktop and BottomModal on
- * mobile. Same structural pattern as AiChecklistGenerate's and CardShare's own modals (see
- * either for the fuller reasoning on the device split and why the className is passed to
- * `Modal` directly rather than wrapping `content` in a second box), but slate rather than their
- * purple/pink or blue — this is generic settings, not a marquee feature with its own
- * "signature" color to carry. Originally built for ChecklistFieldGroupMenu's own dialogs, then
- * promoted here so ChecklistGenericInfo's (Icon & Color, Schedule, Tags, Archived Groups) match
- * instead of staying on the older BottomModal-only, no-desktop-treatment look.
+ * The standard dialog shell — a badge + gradient-wash header, a close X (or `headerAction`),
+ * `Modal` on desktop and `BottomModal` on mobile, `body`/`footer` with real padding instead of
+ * a bare `Modal`'s own minimal `.container`. Reach for this whenever a dialog needs a title,
+ * something to close it, and content with proper spacing — a bare `Modal` is for content that
+ * already brings its own full layout (its own header treatment, its own padding) and would just
+ * fight this shell's.
+ *
+ * Slate by default rather than any one feature's own signature color (AI's purple/pink, Share's
+ * blue) — this is the generic shell, not a marquee feature's own dialog; pass `icon` for
+ * something more specific than the default gear. Originally built for
+ * detail-task-page's ChecklistFieldGroupMenu, then promoted here (as `SettingsDialog` first, then
+ * renamed once it was clear "settings" was never really what this shape was about — a badge/
+ * title/close-X header over a padded body and optional footer is just the standard dialog
+ * composition, the same one a "New Folder" prompt or any other one-off form dialog needs too, not
+ * something specific to settings) so every caller across the app gets the same look rather than
+ * each one hand-rolling its own header/body/footer chrome on top of a bare `Modal`.
  */
-const SettingsDialog = ({
+const Dialog = ({
   visible,
   onDismiss,
   title,
@@ -54,7 +62,7 @@ const SettingsDialog = ({
   footer,
   bodyClassName,
   children,
-}: SettingsDialogProps) => {
+}: DialogProps) => {
   const intl = useIntl();
   const isMobile = useIsMobile();
 
@@ -100,4 +108,4 @@ const SettingsDialog = ({
   );
 };
 
-export default SettingsDialog;
+export default Dialog;
