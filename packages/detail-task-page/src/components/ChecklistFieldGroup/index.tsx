@@ -173,7 +173,6 @@ const ChecklistFieldGroup = ({
         tabContent = (
           <ChecklistFieldGroupView
             fieldGroup={fieldGroup}
-            fields={fieldDetails}
           />
         );
         break;
@@ -222,7 +221,6 @@ const ChecklistFieldGroup = ({
         tabContent = (
           <ChecklistFieldGroupView
             fieldGroup={fieldGroup}
-            fields={fieldDetails}
           />
         );
         break;

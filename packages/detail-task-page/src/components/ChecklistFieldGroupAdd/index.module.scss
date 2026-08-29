@@ -35,6 +35,18 @@
   margin-left: $spacing-sm;
 }
 
+// A note-type field's own composer — a new journal entry each Submit, same as a metric field's
+// own input above.
+.noteField {
+  margin-bottom: $spacing-md;
+}
+
+.titleInput {
+  width: 100%;
+  margin: $spacing-xs 0 $spacing-sm;
+  font-weight: 600;
+}
+
 .footerCenter {
   display: flex;
   align-items: center;

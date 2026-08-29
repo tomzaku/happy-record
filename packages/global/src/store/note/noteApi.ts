@@ -34,10 +34,22 @@ function fromWireNote(note: WireNote): Note {
 }
 
 /** `id` → one note, `ids` → several at once (batched, not one request per id — see
- * useNote.tsx's getNotesByIds), `q` → a title/search_text substring match (see useNote.tsx's
- * searchNotes). */
+ * useNote.tsx's getNotesByIds), `ownerIds` + `checklistId`/(`checklistTemplateId`+`from`/`to`) →
+ * a checklist's own journal entries for those fields (see useNote.tsx's
+ * getChecklistFieldNotes/getChecklistFieldNotesInRange), `q` → a title/search_text substring
+ * match (see useNote.tsx's searchNotes). */
 export function fetchNotes(
-  opts: { id?: string; ids?: string[]; q?: string; limit?: number },
+  opts: {
+    id?: string;
+    ids?: string[];
+    ownerIds?: string[];
+    checklistId?: string;
+    checklistTemplateId?: string;
+    from?: string;
+    to?: string;
+    q?: string;
+    limit?: number;
+  },
 ): Promise<{ notes: Note[] } | null> {
   return request
     .get<{ notes: WireNote[] }>('/notes', {
@@ -45,6 +57,11 @@ export function fetchNotes(
       params: {
         id: opts.id,
         ids: opts.ids?.length ? opts.ids.join(',') : undefined,
+        ownerIds: opts.ownerIds?.length ? opts.ownerIds.join(',') : undefined,
+        checklistId: opts.checklistId,
+        checklistTemplateId: opts.checklistTemplateId,
+        from: opts.from,
+        to: opts.to,
         q: opts.q,
         limit: opts.limit,
       },

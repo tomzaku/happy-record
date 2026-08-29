@@ -13,15 +13,19 @@ const NOTE_KEY = 'note';
 const NOTE_LOADING_KEY = 'note_loading';
 
 /**
- * Addressed by its own `id` now — see 20260829010000_notes_note_id_ownership.sql: whatever a
- * note belongs to (a `type: 'note'` field's own `note_id`, a field-group's own `note_id`) holds
- * the relationship. `ownerType`/`ownerId` (and `checklistTemplateId`, field-group notes only)
- * are a denormalized reverse pointer back — set once at creation, never changed after — so a
- * search result can be resolved to something openable without a reverse scan over
- * `fields`/`field_groups` (see 20260829020000_notes_title_search_owner.sql). `value` is the
- * real, parsed Editor.js `OutputData` every note editor in this app (@moon-ui/note-editor)
- * actually produces — noteApi.ts is the only place that ever stringifies/parses it against the
- * `text` column backing it server-side. `searchText` is plain text pulled out of `value` (see
+ * Addressed by its own `id` — see 20260829010000_notes_note_id_ownership.sql: a field-group's
+ * own note (`ownerType: 'field_group'`) is one persistent note, `field_groups.note_id` points at
+ * it. A `type: 'note'` field (`ownerType: 'field'`) is one of two shapes, told apart by
+ * `checklistId` (see 20260829030000_notes_checklist_history.sql): unset is the field's own
+ * single current note (`fields.note_id` points at it, the standalone notebook); set is one day's
+ * journal entry for that field inside a checklist — many rows, one per submission, never pointed
+ * at by `fields.note_id` at all. `ownerType`/`ownerId`/`checklistTemplateId` are a denormalized
+ * reverse pointer either way — set once at creation, never changed after — so a search result
+ * can be resolved to something openable without a reverse scan over `fields`/`field_groups` (see
+ * 20260829020000_notes_title_search_owner.sql). `value` is the real, parsed Editor.js
+ * `OutputData` every note editor in this app (@moon-ui/note-editor) actually produces —
+ * noteApi.ts is the only place that ever stringifies/parses it against the `text` column backing
+ * it server-side. `searchText` is plain text pulled out of `value` (see
  * lib/editorJsNoteBlocks.ts's `blocksToSearchText`) — never edited directly, only ever
  * recomputed from `value` on save.
  */
@@ -33,15 +37,18 @@ export type Note = {
   ownerType: 'field' | 'field_group';
   ownerId: string;
   folderId?: string;
+  checklistId?: string;
   checklistTemplateId?: string;
   createdAt: string;
   updatedAt: string;
 };
 
-/** What a note-owning component (a note-type field, a field group) has to supply the one time it
- * actually creates its own note — see createNote below. */
+/** What a note-owning component has to supply the moment it actually creates a note — see
+ * createNote below. A field's own single current note (standalone notebook) omits
+ * `checklistId`/`checklistTemplateId`; a checklist's own day-by-day journal entry for that field
+ * (ChecklistFieldGeneral/ChecklistFieldGroupAdd) sets both. */
 export type NoteOrigin =
-  | { ownerType: 'field'; ownerId: string }
+  | { ownerType: 'field'; ownerId: string; checklistId?: string; checklistTemplateId?: string }
   | { ownerType: 'field_group'; ownerId: string; checklistTemplateId: string };
 
 // Ids already fetched (or created locally, which counts as "fetched" — see createNote) this page
@@ -131,6 +138,51 @@ export const useNote = () => {
     [notes, ready, setNotes],
   );
 
+  /** A checklist's own journal entries for these fields, one specific day — the ChecklistRecord
+   * equivalent for a `type: 'note'` field (ChecklistFieldGeneral, ChecklistFieldGroupAdd's own
+   * Submit). Scoped-fetch-by-query-key, same shape every other resource here uses. */
+  const getChecklistFieldNotes = React.useCallback(
+    (checklistId: string, ownerIds: string[]): Note[] => {
+      const sortedIds = [...ownerIds].sort();
+      const scopeKey = JSON.stringify({ checklistId, ownerIds: sortedIds });
+      if (ready && checklistId && sortedIds.length && !fetchedIds.has(scopeKey)) {
+        fetchedIds.add(scopeKey);
+        // `requestedIds: [scopeKey]` — not real note ids, just what mergeFetched needs to evict
+        // this exact scope (not any note's own id) from `fetchedIds` if the fetch comes back
+        // null, so a later call actually retries instead of believing this was already tried.
+        fetchNotes({ ownerIds: sortedIds, checklistId }).then(result => mergeFetched(result, [scopeKey]));
+      }
+      return Object.values(notes).filter(
+        note => note.checklistId === checklistId && ownerIds.includes(note.ownerId),
+      );
+    },
+    [notes, ready, setNotes],
+  );
+
+  /** Same, across a whole date range instead of one day — ChecklistFieldGroupHistory's own
+   * monthly view. */
+  const getChecklistFieldNotesInRange = React.useCallback(
+    (checklistTemplateId: string, ownerIds: string[], range: { from: string; to: string }): Note[] => {
+      const sortedIds = [...ownerIds].sort();
+      const scopeKey = JSON.stringify({ checklistTemplateId, ownerIds: sortedIds, range });
+      if (ready && checklistTemplateId && sortedIds.length && !fetchedIds.has(scopeKey)) {
+        fetchedIds.add(scopeKey);
+        fetchNotes({ ownerIds: sortedIds, checklistTemplateId, from: range.from, to: range.to }).then(
+          result => mergeFetched(result, [scopeKey]),
+        );
+      }
+      return Object.values(notes).filter(
+        note =>
+          note.checklistTemplateId === checklistTemplateId &&
+          ownerIds.includes(note.ownerId) &&
+          !!note.checklistId &&
+          new Date(note.createdAt) >= new Date(range.from) &&
+          new Date(note.createdAt) <= new Date(range.to),
+      );
+    },
+    [notes, ready, setNotes],
+  );
+
   /** Title/search_text substring match, most recently updated first — a search UI's own results
    * list. Not part of the scoped-fetch-by-query-key pattern the read functions above use (a
    * search query changes on every keystroke; there's nothing sensible to dedupe against) — a
@@ -156,7 +208,12 @@ export const useNote = () => {
       searchText: blocksToSearchText(value),
       ownerType: origin.ownerType,
       ownerId: origin.ownerId,
-      ...(origin.ownerType === 'field_group' ? { checklistTemplateId: origin.checklistTemplateId } : {}),
+      ...(origin.ownerType === 'field_group'
+        ? { checklistTemplateId: origin.checklistTemplateId }
+        : {
+          ...(origin.checklistId ? { checklistId: origin.checklistId } : {}),
+          ...(origin.checklistTemplateId ? { checklistTemplateId: origin.checklistTemplateId } : {}),
+        }),
       createdAt: now,
       updatedAt: now,
     };
@@ -200,6 +257,8 @@ export const useNote = () => {
     notes,
     getNote,
     getNotesByIds,
+    getChecklistFieldNotes,
+    getChecklistFieldNotesInRange,
     searchNotes,
     createNote,
     updateNote,

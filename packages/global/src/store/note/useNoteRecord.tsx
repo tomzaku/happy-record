@@ -94,3 +94,103 @@ export const useNoteRecords = () => {
     getAllNoteFields,
   };
 };
+
+/**
+ * The other shape a `type: 'note'` field's value can be: a checklist's own day-by-day journal
+ * entry, not the field's single current note (see useNote.tsx's own `Note` doc comment and
+ * 20260829030000_notes_checklist_history.sql). Same `ChecklistRecord`-shaped adapter as
+ * `useNoteRecords` above, but `checklistId`/`checklistTemplateId` carry the note's real ones
+ * (never `''`) — that's the whole distinction: a note-type field's Submit/History behave exactly
+ * like a metric field's, one new entry per submission, shown per day.
+ */
+export const useChecklistFieldNoteRecords = () => {
+  const {
+    getChecklistFieldNotes: getChecklistFieldNotesRaw,
+    getChecklistFieldNotesInRange: getChecklistFieldNotesInRangeRaw,
+    createNote,
+    updateNote: updateNoteRaw,
+    deleteNote: deleteNoteRaw,
+  } = useNote();
+  const { getAllRecordFields } = useRecordField();
+
+  const toRecord = (field: RecordField, note: Note): ChecklistRecord => ({
+    id: note.id,
+    checklistId: note.checklistId ?? '',
+    checklistTemplateId: note.checklistTemplateId ?? '',
+    fieldId: field.id,
+    value: note.value as string | number,
+    title: note.title,
+    createdAt: note.createdAt,
+    updatedAt: note.updatedAt,
+  });
+
+  /** One day's entries for these fields (0 or more per field — every Submit adds one, so more
+   * than one shows up if Submit was clicked more than once that day, same as a metric field). */
+  const getChecklistFieldNotes = (checklistId: string, fieldIds: string[]): ChecklistRecord[] => {
+    const fields = getAllRecordFields().filter(field => fieldIds.includes(field.id));
+    return getChecklistFieldNotesRaw(checklistId, fieldIds)
+      .map(note => {
+        const field = fields.find(f => f.id === note.ownerId);
+        return field ? toRecord(field, note) : undefined;
+      })
+      .filter((record): record is ChecklistRecord => !!record);
+  };
+
+  /** A whole date range's worth — ChecklistFieldGroupHistory's own monthly view. */
+  const getChecklistFieldNotesInRange = (
+    checklistTemplateId: string,
+    fieldIds: string[],
+    range: { from: string; to: string },
+  ): ChecklistRecord[] => {
+    const fields = getAllRecordFields().filter(field => fieldIds.includes(field.id));
+    return getChecklistFieldNotesInRangeRaw(checklistTemplateId, fieldIds, range)
+      .map(note => {
+        const field = fields.find(f => f.id === note.ownerId);
+        return field ? toRecord(field, note) : undefined;
+      })
+      .filter((record): record is ChecklistRecord => !!record);
+  };
+
+  /** Always creates a new entry — never updates an earlier one, same as a metric field's own
+   * `addChecklistRecord` (see ChecklistFieldGroupAdd's Submit handler). */
+  const addChecklistFieldNote = (
+    fieldId: string,
+    value: unknown,
+    checklistId: string,
+    checklistTemplateId: string,
+    title = '',
+  ): ChecklistRecord | null => {
+    const field = getAllRecordFields().find(f => f.id === fieldId);
+    if (!field) return null;
+    const created = createNote(value, { ownerType: 'field', ownerId: fieldId, checklistId, checklistTemplateId }, title);
+    return toRecord(field, created);
+  };
+
+  /** Editing one day's entry in place — ChecklistFieldGeneral's own note case. */
+  const updateChecklistFieldNote = (record: ChecklistRecord, value: unknown): ChecklistRecord | null => {
+    const updated = updateNoteRaw(record.id, { value });
+    if (!updated) return null;
+    const field = getAllRecordFields().find(f => f.id === record.fieldId);
+    return field ? toRecord(field, updated) : null;
+  };
+
+  const updateChecklistFieldNoteTitle = (record: ChecklistRecord, title: string): ChecklistRecord | null => {
+    const updated = updateNoteRaw(record.id, { title });
+    if (!updated) return null;
+    const field = getAllRecordFields().find(f => f.id === record.fieldId);
+    return field ? toRecord(field, updated) : null;
+  };
+
+  const deleteChecklistFieldNote = (record: ChecklistRecord) => {
+    deleteNoteRaw(record.id);
+  };
+
+  return {
+    getChecklistFieldNotes,
+    getChecklistFieldNotesInRange,
+    addChecklistFieldNote,
+    updateChecklistFieldNote,
+    updateChecklistFieldNoteTitle,
+    deleteChecklistFieldNote,
+  };
+};

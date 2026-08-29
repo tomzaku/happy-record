@@ -35,3 +35,9 @@
 .highlight {
   border: 1px dashed var(--button-default-background);
 }
+
+.titleInput {
+  width: 100%;
+  margin: $spacing-xs 0 $spacing-sm;
+  font-weight: 600;
+}

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import EditorJS from "@editorjs/editorjs";
 import Header from "@editorjs/header";
 import List from "@editorjs/list";
@@ -32,7 +32,19 @@ interface NoteEditorProps {
   ai?: AiNoteToolConfig;
 }
 
-const EditorJs = ({ initialData, setValue, value, classes, readOnly = false, ai }: NoteEditorProps) => {
+export interface NoteEditorHandle {
+  /** The editor's own real current content, read directly from Editor.js — not whatever
+   * `setValue` last reported. `onChange` (below) is debounced internally by Editor.js itself
+   * (its own MutationObserver handler, not something this wrapper controls), so a caller that
+   * needs the actual-right-now value for a one-shot action (e.g. "Submit" firing immediately
+   * after the last keystroke) can't trust `setValue` having already fired — same "this tick, not
+   * a later render" reasoning CLAUDE.md's own `getRecordFieldsByIds`/`getAllChecklistWithTemplate`
+   * follow for the same class of problem. `undefined` if the editor hasn't finished mounting yet. */
+  getValue: () => Promise<unknown | undefined>;
+}
+
+const EditorJs = forwardRef<NoteEditorHandle, NoteEditorProps>(
+  ({ initialData, setValue, value, classes, readOnly = false, ai }, ref) => {
   const editorRef = useRef<EditorJS | null>(null);
   const holderRef = useRef<HTMLDivElement>(null);
   const aiConfigRef = useRef<AiNoteToolConfig | undefined>(ai);
@@ -158,12 +170,21 @@ const EditorJs = ({ initialData, setValue, value, classes, readOnly = false, ai 
     });
   }, [readOnly]);
 
+  useImperativeHandle(ref, () => ({
+    getValue: async () => {
+      if (!editorRef.current) return undefined;
+      await editorRef.current.isReady;
+      return editorRef.current.save();
+    },
+  }));
+
   return (
     <div
       ref={holderRef}
       className={cx(styles.editorContent, classes?.container)}
     />
   );
-};
+  },
+);
 
 export default EditorJs;

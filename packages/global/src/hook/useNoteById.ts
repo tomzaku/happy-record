@@ -2,14 +2,12 @@
 // persistent note (see 20260829010000_notes_note_id_ownership.sql): fetch it by id with a
 // loading state, edit it (and its title) in place, and — the one thing that's genuinely
 // different per owner — persist a brand-new note's id back onto whichever row owns it the first
-// time someone actually writes something. Replaces what used to be two near-identical hooks
-// (useAiFieldGroupNoteGenerate.ts, useAiFieldNoteGenerate.ts) now that a field-group's note and a
-// note-type field's note are the exact same shape of thing: an optional `noteId`, resolved
-// through useNote.tsx's getNote, with "/ai" resolving its own context from that same id (see
-// ai-note/index.ts).
+// time someone actually writes something.
 //
-// Call sites: ChecklistFieldGroupView.tsx, for both the group's own note and each note-type
-// field's note it renders alongside it.
+// Call site: ChecklistFieldGroupView.tsx, for the group's own note. A `type: 'note'` field's own
+// value isn't this shape anymore — it's a checklist journal entry (see ChecklistFieldGeneral's
+// own comment and 20260829030000_notes_checklist_history.sql), a new row per submission rather
+// than one note fetched/edited by id.
 
 import { useNote, type NoteOrigin } from '../store/note/useNote';
 import { useIsPro } from '../store/pro/useProStatus';
@@ -25,9 +23,8 @@ export const useNoteById = (
   const { isPro } = useIsPro();
   const { note, loading } = getNote(noteId);
 
-  /** No note yet → create one (with whatever title's already been typed, if any — see
-   * saveTitle's own note) and hand its id to the caller to persist onto its own owner
-   * (updateRecordField/updateFieldGroup); already has one → update in place. */
+  /** No note yet → create one and hand its id to the caller to persist onto its own owner
+   * (updateFieldGroup); already has one → update in place. */
   const save = (value: unknown) => {
     if (noteId) {
       updateNote(noteId, { value });

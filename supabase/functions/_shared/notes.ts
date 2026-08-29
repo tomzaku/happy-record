@@ -1,7 +1,10 @@
 // Row mapping + validation for the `notes` resource. See
 // packages/global/src/store/note/useNote.tsx for the client shape (`Note`) this mirrors.
 // `owner_type`/`owner_id` (which field or field group owns this note) are set once at creation
-// and immutable after — see 20260829020000_notes_title_search_owner.sql.
+// and immutable after — see 20260829020000_notes_title_search_owner.sql. `checklist_id` (see
+// 20260829030000_notes_checklist_history.sql) tells apart the two shapes an `owner_type: 'field'`
+// note can be: unset is the field's own single current note (standalone notebook), set is one
+// day's journal entry for that field inside a checklist — many rows, one per submission.
 
 export const OWNER_TYPES = ['field', 'field_group'] as const;
 export type OwnerType = (typeof OWNER_TYPES)[number];
@@ -18,6 +21,7 @@ export function toNote(r: Record<string, unknown>) {
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
     ...(r.folder_id ? { folderId: r.folder_id as string } : {}),
+    ...(r.checklist_id ? { checklistId: r.checklist_id as string } : {}),
     ...(r.checklist_template_id ? { checklistTemplateId: r.checklist_template_id as string } : {}),
   };
 }
@@ -27,9 +31,13 @@ export function fromNote(e: Record<string, unknown>) {
   if (typeof e.value !== 'string') throw new Error('Missing value.');
   if (!isOwnerType(e.ownerType)) throw new Error('Invalid ownerType.');
   if (typeof e.ownerId !== 'string' || !e.ownerId) throw new Error('Missing ownerId.');
+  const checklistId = typeof e.checklistId === 'string' ? e.checklistId : null;
   const checklistTemplateId = typeof e.checklistTemplateId === 'string' ? e.checklistTemplateId : null;
   if (e.ownerType === 'field_group' && !checklistTemplateId) {
     throw new Error('A field_group-owned note needs checklistTemplateId.');
+  }
+  if (checklistId && !checklistTemplateId) {
+    throw new Error('A checklist-day note needs checklistTemplateId.');
   }
 
   return {
@@ -39,6 +47,7 @@ export function fromNote(e: Record<string, unknown>) {
     search_text: typeof e.searchText === 'string' ? e.searchText : '',
     owner_type: e.ownerType,
     owner_id: e.ownerId,
+    checklist_id: checklistId,
     checklist_template_id: checklistTemplateId,
     folder_id: typeof e.folderId === 'string' ? e.folderId : null,
     created_at: typeof e.createdAt === 'string' ? e.createdAt : new Date().toISOString(),
