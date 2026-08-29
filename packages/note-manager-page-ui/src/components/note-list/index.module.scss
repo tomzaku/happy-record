@@ -84,13 +84,14 @@
   }
 }
 
+// Was 18×18 with a 14px icon — barely bigger than the glyph itself and a fiddly tap target.
 .searchClear {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border: 0;
   border-radius: 50%;
   background: var(--card-selected-background);

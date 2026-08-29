@@ -37,43 +37,23 @@
   }
 }
 
+// Same footprint NoteList's own "New Note" button uses (30×30, an 18px icon) — was 22×22/16px,
+// small enough to be a fiddly tap target next to the section label sitting right beside it.
 .addButton {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 7px;
   background: transparent;
   color: var(--radio-color);
   cursor: pointer;
 
   &:hover {
     background: var(--card-selected-background);
-  }
-}
-
-// The "type a name, Enter to create" row — same left rhythm as a real folder row below it
-// (`.row`'s own padding) so it doesn't visually jump once the real row replaces it.
-.draftInput {
-  width: 100%;
-  padding: 7px $spacing-sm;
-  margin-bottom: 1px;
-  border: 1px solid var(--input-border-focus);
-  border-radius: 7px;
-  background: var(--input-background);
-  color: var(--text-color);
-  font: inherit;
-  font-size: toRem(14px);
-
-  &:focus {
-    outline: none;
-  }
-
-  &::placeholder {
-    color: var(--text-description-color);
   }
 }
 

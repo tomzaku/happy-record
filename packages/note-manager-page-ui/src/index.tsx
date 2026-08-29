@@ -146,7 +146,10 @@ export const NoteManagerPage = () => {
             selectFolder(folder);
             setFoldersOpen(false);
           }}
-          onCreateFolder={createNoteFolder}
+          onCreateFolder={title => {
+            createNoteFolder(title);
+            setFoldersOpen(false);
+          }}
         />
       </Drawer>
     </div>

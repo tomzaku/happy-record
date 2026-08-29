@@ -5,6 +5,7 @@ import type { RecordField } from '@dreamer/global/src/store/record-field';
 import type { NoteFolder } from '@dreamer/global/src/store/note-folder/useNoteFolder';
 import type { FolderRef } from '../../useNoteManagerState';
 
+import NewFolderModal from './NewFolderModal';
 import styles from './index.module.scss';
 
 type TaskFolder = { id: string; title: string; icon: string };
@@ -53,18 +54,6 @@ const FolderSidebar = ({
   onCreateFolder,
 }: Props) => {
   const [creatingFolder, setCreatingFolder] = React.useState(false);
-  const [draftTitle, setDraftTitle] = React.useState('');
-  const draftInputRef = React.useRef<HTMLInputElement>(null);
-
-  React.useEffect(() => {
-    if (creatingFolder) draftInputRef.current?.focus();
-  }, [creatingFolder]);
-
-  const submitDraft = () => {
-    onCreateFolder(draftTitle);
-    setDraftTitle('');
-    setCreatingFolder(false);
-  };
 
   return (
     <nav className={cx(styles.sidebar, className)} aria-label="Note folders">
@@ -105,26 +94,14 @@ const FolderSidebar = ({
           aria-label="New Folder"
           title="New Folder"
         >
-          <Icon icon="solar:add-circle-line-duotone" width={16} />
+          <Icon icon="solar:add-circle-line-duotone" width={18} />
         </button>
       </div>
-      {creatingFolder && (
-        <input
-          ref={draftInputRef}
-          className={styles.draftInput}
-          value={draftTitle}
-          placeholder="Folder name"
-          onChange={e => setDraftTitle(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') submitDraft();
-            if (e.key === 'Escape') {
-              setDraftTitle('');
-              setCreatingFolder(false);
-            }
-          }}
-          onBlur={() => (draftTitle.trim() ? submitDraft() : setCreatingFolder(false))}
-        />
-      )}
+      <NewFolderModal
+        visible={creatingFolder}
+        onDismiss={() => setCreatingFolder(false)}
+        onCreate={onCreateFolder}
+      />
       {noteFolders.map(folder => {
         const ref: FolderRef = { kind: 'noteFolder', id: folder.id };
         return (

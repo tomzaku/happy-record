@@ -1,0 +1,11 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+// `@moon-ui/button`'s own `.ghost`/`.default` don't match each other's vertical padding out of
+// the box (`.ghost` is `padding: 0 4px`, `.default` is `10px 24px`) — every real footer pairing
+// them already overrides both to the same padding (see ChecklistFieldGroupAddGroup's own
+// `.secondaryButton`/`.gradientButton`), so Cancel and Create sit at the same height instead of
+// Cancel looking squished next to it.
+.secondaryButton,
+.primaryButton {
+  padding: $spacing-sm $spacing-lg;
+}
