@@ -1,8 +1,10 @@
 // The one owns-a-noteId pattern, used everywhere a field or a field group has its own single
 // persistent note (see 20260829010000_notes_note_id_ownership.sql): fetch it by id with a
-// loading state, edit it (and its title) in place, and — the one thing that's genuinely
-// different per owner — persist a brand-new note's id back onto whichever row owns it the first
-// time someone actually writes something.
+// loading state, edit its content in place, and — the one thing that's genuinely different per
+// owner — persist a brand-new note's id back onto whichever row owns it the first time someone
+// actually writes something. No title editing here — there's no title input left in the UI to
+// drive it; a note with no title of its own gets one derived server-side from its content
+// instead (see _shared/notes.ts's deriveTitle).
 //
 // Call site: ChecklistFieldGroupView.tsx, for the group's own note. A `type: 'note'` field's own
 // value isn't this shape anymore — it's a checklist journal entry (see ChecklistFieldGeneral's
@@ -34,14 +36,6 @@ export const useNoteById = (
     }
   };
 
-  /** A no-op before the note exists — there's nothing to title yet, and creating one from a
-   * title alone (no content) isn't a real note in this app. In practice the content editor is
-   * always on screen right next to the title input, so this only actually matters for the
-   * instant between "the note doesn't exist" and "the first real edit created it". */
-  const saveTitle = (title: string) => {
-    if (noteId) updateNote(noteId, { title });
-  };
-
   /** Throws `ApiError` on failure (rate limit, not Pro, provider error, offline) — there's no
    * local fallback for "the AI didn't run," so the composer's own try/catch is what surfaces
    * this, same as useAiNoteGenerate's own generate. `context.blockIndex` is the "/ai"
@@ -56,5 +50,5 @@ export const useNoteById = (
     return buildEditorJsBlocks(blocks);
   };
 
-  return { note, loading, save, saveTitle, isPro, generate };
+  return { note, loading, save, isPro, generate };
 };

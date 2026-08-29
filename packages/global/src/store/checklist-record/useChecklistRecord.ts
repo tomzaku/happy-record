@@ -21,11 +21,17 @@ export type ChecklistRecord = {
   checklistTemplateId: string;
   createdAt: string;
   fieldId: string;
+  // A metric field's own record: `number`. A note-type field's own entry (see
+  // 20260829040000_notes_via_checklist_records.sql — routed to `notes` server-side, presented
+  // back in this same shape): real Editor.js `OutputData`, not the narrower type — every
+  // consumer hands it straight to a NoteEditor either way, same looseness `useNoteRecord.tsx`'s
+  // own standalone-notebook adapter already has.
   value: number | string;
   folderId?: string;
-  /** Only ever real for the standalone notebook's own notes-as-ChecklistRecord adapter
-   * (useNoteRecord.tsx) — a real checklist record has no title of its own. See `Note['title']`
-   * (useNote.tsx) for where this actually comes from. */
+  /** Only ever real for a note-type field's own entry (a checklist journal entry, or the
+   * standalone notebook's own notes-as-ChecklistRecord adapter in useNoteRecord.tsx) — a metric
+   * record has no title of its own. See `Note['title']` (useNote.tsx) for where this actually
+   * comes from. */
   title?: string;
   /**
    * One id per Submit click, shared by every field submitted in that click
@@ -48,6 +54,8 @@ type AddChecklistRecordData = {
     fieldId: string;
     value: number | string;
     folderId?: string;
+    /** A note-type field's own entry only — see ChecklistRecord['title']'s own comment. */
+    title?: string;
   }[];
   checklistId: string;
   checklistTemplateId: string;
@@ -253,10 +261,14 @@ export const useChecklistRecord = () => {
     recordId: string,
     {
       value,
+      title,
       checklistTemplateId,
       folderId,
     }: {
-      value: number | string;
+      // Optional — a note-type field's own title-only edit (ChecklistFieldGeneral) touches
+      // nothing else. A metric field's own edit always sends this.
+      value?: number | string;
+      title?: string;
       checklistTemplateId: string;
       folderId?: string;
     },
@@ -270,7 +282,8 @@ export const useChecklistRecord = () => {
         if (record.id === recordId) {
           return {
             ...record,
-            value,
+            ...(value !== undefined && { value }),
+            ...(title !== undefined && { title }),
             ...(folderId !== undefined && { folderId }),
             updatedAt: new Date().toISOString(),
           };
@@ -283,7 +296,7 @@ export const useChecklistRecord = () => {
         [checklistTemplateId]: updatedRecords,
       };
     });
-    updateChecklistRecordValue(recordId, { value, folderId });
+    updateChecklistRecordValue(recordId, { value, title, folderId });
   };
 
   return {

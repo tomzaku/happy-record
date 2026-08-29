@@ -14,7 +14,6 @@ import {
   ChecklistRecord,
   useChecklistRecord,
 } from '@dreamer/global/src/store/checklist-record';
-import { useChecklistFieldNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
 import {
   setHours,
   setMinutes,
@@ -103,9 +102,7 @@ const ChecklistFieldGroupAdd = ({
   // entirely missing) content. `getValue()` (NoteEditorHandle, see @moon-ui/note-editor) asks
   // Editor.js for its real current state instead of trusting whatever was last reported.
   const noteEditorRefs = React.useRef<Record<string, NoteEditorHandle | null>>({});
-  const [noteFieldTitles, setNoteFieldTitles] = React.useState<Record<string, string>>({});
   const { addChecklistRecord, getChecklistRecords } = useChecklistRecord();
-  const { getChecklistFieldNotes, addChecklistFieldNote } = useChecklistFieldNoteRecords();
   const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
     ChecklistRecord[]
   >([]);
@@ -141,10 +138,11 @@ const ChecklistFieldGroupAdd = ({
   const reloadChecklistRecord = () => {
     // `fieldIds: []` means "no filter" to getChecklistRecords (see that hook's own comment),
     // not "match nothing" — has to be guarded rather than always called, or a note-only group
-    // would pull back every field's records for this template.
-    const metricFieldIds = metricFields.map(field => field.id);
-    const noteFieldIds = noteFields.map(field => field.id);
-    const records = metricFieldIds.length
+    // would pull back every field's records for this template. Metric and note fields both come
+    // back from this same call now — checklist-records' own list() merges note-type entries into
+    // the same response (see checklist-records/index.ts), so there's no separate note read left.
+    const allFieldIds = fields.map(field => field.id);
+    const records = allFieldIds.length
       ? getChecklistRecords(checklistTemplate.id, {
         rangeDate: {
           from: new Date(new Date(currentDay).setHours(0, 0, 0, 0)).toISOString(),
@@ -152,15 +150,12 @@ const ChecklistFieldGroupAdd = ({
             new Date(currentDay).setHours(23, 59, 59, 999),
           ).toISOString(),
         },
-        fieldIds: metricFieldIds,
+        fieldIds: allFieldIds,
         sortDirection: 'desc',
       })
       : {};
-    const noteRecords = noteFieldIds.length
-      ? getChecklistFieldNotes(checklist.id, noteFieldIds)
-      : [];
     // Flatten the records object into an array
-    const flattenedRecords = [...Object.values(records).flat(), ...noteRecords];
+    const flattenedRecords = Object.values(records).flat();
     setCurrentChecklistRecords(flattenedRecords);
     if (flattenedRecords.length === 0) {
       setShowHistory(true)
@@ -174,13 +169,12 @@ const ChecklistFieldGroupAdd = ({
   // `useSyncedSelector` — but its deps were missing `checklistTemplate.id`,
   // `fields`, and `getChecklistRecords` itself, so a record submitted on
   // another device (or a field list synced in) never refired this and just
-  // sat un-rendered. `getChecklistRecords`/`getChecklistFieldNotes` are plain closures today (a
-  // new identity every render until either is `useCallback`-wrapped), so this still refires on
-  // every render — correct, just not free.
+  // sat un-rendered. `getChecklistRecords` is `useCallback`-wrapped against its real store
+  // dependency (see useChecklistRecord.ts), so this only actually refires when that changes.
   React.useEffect(() => {
     reloadChecklistRecord();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDay, checklistTemplate.id, fields, getChecklistRecords, getChecklistFieldNotes]);
+  }, [currentDay, checklistTemplate.id, fields, getChecklistRecords]);
 
   const renderEmpty = () => {
     return null;
@@ -335,14 +329,8 @@ const ChecklistFieldGroupAdd = ({
             logo={<Icon width={24} icon={field.icon} />}
             title={field.title}
           />
-          <Input
-            key={`${field.id}-title-${newNoteKey}`}
-            value={noteFieldTitles[field.id] ?? ''}
-            onChange={e => setNoteFieldTitles({ ...noteFieldTitles, [field.id]: e.target.value })}
-            placeholder="Title"
-            border="dash"
-            className={styles.titleInput}
-          />
+          {/* No title input here — a note entry's title is derived server-side from its own
+              content when none is given (see _shared/notes.ts's deriveTitle), not typed in. */}
           <NoteEditor
             key={`${field.id}-${newNoteKey}`}
             ref={handle => {
@@ -412,10 +400,15 @@ const ChecklistFieldGroupAdd = ({
                 now.getHours(),
               );
 
-              const result = addChecklistRecord({
-                checklistId: checklist.id,
-                checklistTemplateId: checklistTemplate.id,
-                createdAt: newDate.toISOString(),
+              // Metric entries and touched note entries go in the same `records` array, one
+              // `addChecklistRecord` call — checklist-records routes each entry server-side by
+              // its own `value` shape (see checklist-records/index.ts's own save()/isNoteEntry),
+              // not by anything the client marks explicitly. A touched note field's Submit is
+              // otherwise the exact same shape as a metric field's: never updates an earlier
+              // entry, always a new one. No `title` sent — there's no title input left to fill
+              // in (see the noteFields.map above); the server derives one from the content itself
+              // when none is given (see _shared/notes.ts's deriveTitle).
+              const metricEntries = Object.entries(fieldRecord)
                 // A field the user never touched stays `undefined` in
                 // fieldRecord (see getEmptyFieldRecord) — sending it anyway
                 // fails the *whole* submission, since the server validates
@@ -424,34 +417,27 @@ const ChecklistFieldGroupAdd = ({
                 // several fields (e.g. an AI-generated one) are commonly
                 // only partly filled in per submission, so this has to be a
                 // real filter, not a hard requirement to fill every field.
-                records: Object.entries(fieldRecord)
-                  .filter(([, value]) => value !== undefined)
-                  .map(([key, value]) => ({
-                    fieldId: key,
-                    value: value as number,
-                  })),
+                .filter(([, value]) => value !== undefined)
+                .map(([key, value]) => ({
+                  fieldId: key,
+                  value: value as number,
+                }));
+              const noteEntries = touchedNoteFields.map(({ field, value }) => ({
+                fieldId: field.id,
+                value: value as unknown as string,
+              }));
+
+              const result = addChecklistRecord({
+                checklistId: checklist.id,
+                checklistTemplateId: checklistTemplate.id,
+                createdAt: newDate.toISOString(),
+                records: [...metricEntries, ...noteEntries],
               });
-              // Each touched note field becomes its own new entry — a `type: 'note'` field's
-              // Submit is otherwise the exact same shape as a metric field's (see
-              // ChecklistFieldGeneral's own comment): never updates an earlier one.
-              const noteResults = touchedNoteFields
-                .map(({ field, value }) =>
-                  addChecklistFieldNote(
-                    field.id,
-                    value,
-                    checklist.id,
-                    checklistTemplate.id,
-                    noteFieldTitles[field.id] ?? '',
-                  ),
-                )
-                .filter((record): record is ChecklistRecord => !!record);
               setCurrentChecklistRecords([
                 ...(result ?? []),
-                ...noteResults,
                 ...currentChecklistRecords,
               ]);
               setFieldRecord(getEmptyFieldRecord());
-              setNoteFieldTitles({});
               setNewNoteKey(v4());
               onSubmit?.();
             }

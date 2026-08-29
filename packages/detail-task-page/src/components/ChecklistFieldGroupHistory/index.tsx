@@ -1,7 +1,6 @@
 import React from 'react';
 import { ChecklistTemplate, useSyncedSelector } from '@dreamer/global';
-import { ChecklistRecord, useChecklistRecord } from '@dreamer/global/src/store/checklist-record';
-import { useChecklistFieldNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
+import { useChecklistRecord } from '@dreamer/global/src/store/checklist-record';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import Typography from '@moon-ui/typography';
@@ -17,19 +16,17 @@ type Props = {
 };
 
 /**
- * Metric fields group by submission (`type: 'time'`, see useChecklistRecord.ts) same as always.
- * A `type: 'note'` field's own value is a checklist journal entry now — its own row in `notes`,
- * not a `checklist_records` row (see useNote.tsx's `Note` doc comment) — so it has no
- * `submissionId` of its own to group by; it's merged into the metric group sharing its
- * `checklistId` instead (every field submitted in one Submit click shares the same checklist
- * instance either way). A day with *only* a note field filled in gets its own group, keyed by
- * the note's own `createdAt`, same as a metric-only day would use its own `createdAt`.
+ * Metric and note fields both group by submission now (`type: 'time'`, see
+ * useChecklistRecord.ts) — a `type: 'note'` field's own value is a checklist journal entry
+ * (its own row in `notes`, routed there server-side, see checklist-records/index.ts) but comes
+ * back from `getChecklistRecords` in the exact same `ChecklistRecord` shape with a real
+ * `submissionId`, so it groups with whatever metric fields were submitted alongside it — or gets
+ * its own singleton group on a day with only a note field filled in — with no client-side merge
+ * needed.
  */
 const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
   const { getChecklistRecords, deleteChecklistRecord } = useChecklistRecord();
-  const { getChecklistFieldNotesInRange, deleteChecklistFieldNote } = useChecklistFieldNoteRecords();
-  const metricFieldIds = fields.filter(field => field.type === 'metric').map(field => field.id);
-  const noteFieldIds = fields.filter(field => field.type === 'note').map(field => field.id);
+  const fieldIds = fields.map(field => field.id);
   const range = {
     from: startOfMonth(new Date()).toISOString(),
     to: endOfMonth(new Date()).toISOString(),
@@ -38,40 +35,12 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
   // snapshotted into local state from a `useEffect(..., [])` that never
   // refired — a record submitted or edited on another device, or even on
   // this one, now actually shows up here.
-  const metricRecords = useSyncedSelector(getChecklistRecords, checklistTemplate.id, {
+  const groups = useSyncedSelector(getChecklistRecords, checklistTemplate.id, {
     rangeDate: range,
     type: 'time' as const,
-    fieldIds: metricFieldIds,
+    fieldIds,
     sortDirection: 'desc' as const,
   });
-  const noteRecords = useSyncedSelector(
-    getChecklistFieldNotesInRange,
-    checklistTemplate.id,
-    noteFieldIds,
-    range,
-  );
-
-  const groups = React.useMemo(() => {
-    const merged: Record<string, ChecklistRecord[]> = {};
-    for (const [key, records] of Object.entries(metricRecords)) {
-      merged[key] = [...records];
-    }
-    const usedKeys = new Set(Object.keys(merged));
-    for (const note of noteRecords) {
-      const matchKey = Object.keys(merged).find(
-        key => merged[key][0]?.checklistId === note.checklistId,
-      );
-      if (matchKey) {
-        merged[matchKey] = [...merged[matchKey], note];
-        continue;
-      }
-      let key = note.createdAt;
-      while (usedKeys.has(key)) key = `${key}-${note.id}`;
-      usedKeys.add(key);
-      merged[key] = [note];
-    }
-    return merged;
-  }, [metricRecords, noteRecords]);
 
   return (
     <div className={styles.recordSection}>
@@ -92,14 +61,14 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
               size="sm"
               className={styles.deleteButton}
               onClick={() => {
+                // Uniform now regardless of field type — deleteChecklistRecord's own server-side
+                // remove() deletes from both `checklist_records` and `notes` unconditionally by
+                // id (harmless no-op on whichever table doesn't have that id), so there's no
+                // client-side branch left to make.
                 checklistRecords.forEach(record => {
-                  if (metricFieldIds.includes(record.fieldId)) {
-                    deleteChecklistRecord(record.id, {
-                      checklistTemplateId: record.checklistTemplateId,
-                    });
-                  } else {
-                    deleteChecklistFieldNote(record);
-                  }
+                  deleteChecklistRecord(record.id, {
+                    checklistTemplateId: record.checklistTemplateId,
+                  });
                 });
                 // `groups` is derived from the store — no local copy to
                 // update; the delete above already updates the shared store,

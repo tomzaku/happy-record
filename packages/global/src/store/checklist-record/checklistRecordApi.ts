@@ -47,9 +47,15 @@ export function saveChecklistRecords(data: {
   return request.post('/checklist-records', data, { quiet: true });
 }
 
+/**
+ * `value` is `number | string` for a metric field's own record, real Editor.js `OutputData` (an
+ * object) for a note-type field's own entry — the server tells them apart by that shape, not
+ * anything sent explicitly (see checklist-records/index.ts's own `update()`). Omitted entirely
+ * means a title-only edit (a note-type field's own entry again — a metric record has no title).
+ */
 export function updateChecklistRecordValue(
   id: string,
-  data: { value: number | string; folderId?: string },
+  data: { value?: unknown; title?: string; folderId?: string },
 ): Promise<{ ok: true } | null> {
   return request.patch('/checklist-records', { id, ...data }, { quiet: true });
 }

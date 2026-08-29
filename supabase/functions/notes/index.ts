@@ -1,29 +1,23 @@
-// The `notes` resource — every read and write of `notes`. See CLAUDE.md. Plain by-id content now
-// (see 20260829010000_notes_note_id_ownership.sql): whatever a note belongs to (a field, a field
-// group) holds its own `note_id` pointing here, `notes` itself doesn't point back out at anything.
+// The `notes` resource — every read and write of `notes`. See CLAUDE.md.
 //
-//   GET    /notes ?id=                                        → { notes }  one note
-//   GET    /notes ?ids=a,b                                    → { notes }  several at once (the
-//                                                                standalone notebook's own
-//                                                                listing — one note per
-//                                                                note-type field, by their ids)
-//   GET    /notes ?ownerIds=a,b&checklistId=                  → { notes }  one day's journal
-//                                                                entries for those fields inside
-//                                                                a checklist (0 or more per field
-//                                                                — every Submit adds a new one)
-//   GET    /notes ?ownerIds=a,b&checklistTemplateId=&from=&to= → { notes }  a whole range of
-//                                                                days' journal entries — History
-//   GET    /notes ?q=text&limit=                              → { notes }  title/search_text
-//                                                                match, most recently updated
-//                                                                first — a search UI's own
-//                                                                results list. `search_text` is
-//                                                                plain text (see _shared/notes.ts's
-//                                                                own comment), so this is a real
-//                                                                substring match on what the note
-//                                                                actually says, not on `value`'s
-//                                                                raw JSON.
-//   POST   /notes { note }                                    → { ok }
-//   DELETE /notes ?id=                                        → { ok }
+// A `type: 'note'` field's own value *inside a checklist* doesn't read or write through here —
+// `checklist-records` owns that path end to end (routing note-type entries into this same table
+// server-side, see checklist-records/index.ts and 20260829040000_notes_via_checklist_records.sql)
+// so the client never has to know the difference. What's left here is plain by-id content: the
+// standalone notebook (one note per note-type field, via `fields.note_id`) and a field-group's
+// own Home note (via `field_groups.note_id`) — whatever owns a note holds its own pointer to it,
+// `notes` itself doesn't point back out at anything.
+//
+//   GET    /notes ?id=          → { notes }  one note
+//   GET    /notes ?ids=a,b      → { notes }  several at once (the standalone notebook's own
+//                                  listing — one note per note-type field, by their ids)
+//   GET    /notes ?q=text&limit= → { notes }  title/search_text match, most recently updated
+//                                  first — a search UI's own results list. `search_text` is
+//                                  plain text (see _shared/notes.ts's own comment), so this is a
+//                                  real substring match on what the note actually says, not on
+//                                  `value`'s raw JSON.
+//   POST   /notes { note }      → { ok }
+//   DELETE /notes ?id=          → { ok }
 //
 // Deploy: `supabase functions deploy notes`
 
@@ -48,29 +42,14 @@ async function body(req: Request): Promise<Record<string, unknown>> {
 async function list({ url, db, userId }: Ctx) {
   const id = url.searchParams.get('id');
   const ids = (url.searchParams.get('ids') ?? '').split(',').filter(Boolean);
-  const ownerIds = (url.searchParams.get('ownerIds') ?? '').split(',').filter(Boolean);
-  const checklistId = url.searchParams.get('checklistId');
-  const checklistTemplateId = url.searchParams.get('checklistTemplateId');
-  const from = url.searchParams.get('from');
-  const to = url.searchParams.get('to');
   const q = url.searchParams.get('q');
-  if (!id && !ids.length && !ownerIds.length && !q) return { notes: [] };
+  if (!id && !ids.length && !q) return { notes: [] };
 
   let query = db.from('notes').select('*').eq('user_id', userId);
   if (id) {
     query = query.eq('id', id);
   } else if (ids.length) {
     query = query.in('id', ids);
-  } else if (ownerIds.length) {
-    // A checklist's own journal entries for these fields — one day (`checklistId`) or a whole
-    // range (`checklistTemplateId` + `from`/`to`), never the field's own single current note
-    // (that's `?ids=`/`?id=` against `fields.note_id` instead, resolved client-side).
-    query = query.in('owner_id', ownerIds).eq('owner_type', 'field');
-    if (checklistId) query = query.eq('checklist_id', checklistId);
-    if (checklistTemplateId) query = query.eq('checklist_template_id', checklistTemplateId);
-    if (from) query = query.gte('created_at', from);
-    if (to) query = query.lte('created_at', to);
-    query = query.order('created_at', { ascending: false });
   } else {
     // `q` — a real substring, not user-controlled SQL: PostgREST's `.or()` filter string still
     // needs `%`/commas/parens escaped out of it, since those are syntax there, not just in the

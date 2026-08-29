@@ -4,7 +4,6 @@ import { useFieldGroups, useNoteById, type FieldGroup } from '@dreamer/global';
 import styles from './index.module.scss';
 import NoteEditor from '@moon-ui/note-editor';
 import Icon from '@moon-ui/icon/Icon';
-import Input from '@moon-ui/input';
 import Button from '@moon-ui/button/src/DefaultButton';
 
 type Props = {
@@ -24,7 +23,7 @@ const ChecklistFieldGroupView = ({ fieldGroup }: Props) => {
     setIsEditing(false);
   }, [fieldGroup.id]);
 
-  const { note, loading, save, saveTitle, isPro, generate } = useNoteById(
+  const { note, loading, save, isPro, generate } = useNoteById(
     fieldGroup.noteId,
     { ownerType: 'field_group', ownerId: fieldGroup.id, checklistTemplateId: fieldGroup.checklistTemplateId },
     newNoteId => updateFieldGroup({ ...fieldGroup, noteId: newNoteId }),
@@ -54,18 +53,10 @@ const ChecklistFieldGroupView = ({ fieldGroup }: Props) => {
           useNote.tsx/noteApi.ts — not a Yoopta document; @moon-ui/note-editor's real export
           renders EditorJs.tsx (@editorjs/editorjs); YooptaEditor.tsx in that package is a dead,
           unwired alternate. */}
+      {/* No title input here — a note's title is derived server-side from its own content when
+          none is given (see _shared/notes.ts's deriveTitle), not typed in. */}
       {!loading && (
         <>
-          {note && (
-            <Input
-              value={note.title}
-              onChange={e => saveTitle(e.target.value)}
-              placeholder="Title"
-              border="dash"
-              className={styles.titleInput}
-              readOnly={!isEditing}
-            />
-          )}
           <NoteEditor
             value={note?.value}
             setValue={save}

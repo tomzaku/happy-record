@@ -4,7 +4,6 @@ import {
   useChecklistRecord,
 } from '@dreamer/global/src/store/checklist-record';
 import { RecordField } from '@dreamer/global/src/store/record-field';
-import { useChecklistFieldNoteRecords } from '@dreamer/global/src/store/note/useNoteRecord';
 import { generateNote, type AiNoteOption } from '@dreamer/global/src/store/note/aiNoteApi';
 import { useIsPro } from '@dreamer/global/src/store/pro/useProStatus';
 import { buildEditorJsBlocks, type EditorJsBlockInput } from '@dreamer/global/src/lib/editorJsNoteBlocks';
@@ -23,11 +22,15 @@ type Props = {
 };
 
 const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
-  const { updateChecklistRecord } = useChecklistRecord();
   // A `type: 'note'` field's own value here is a checklist journal entry, not the field's single
   // current note (that's the standalone notebook's own thing — see useNote.tsx's `Note` doc
   // comment) — one row per submission, editable in place from History same as a metric field.
-  const { updateChecklistFieldNote, updateChecklistFieldNoteTitle } = useChecklistFieldNoteRecords();
+  // Routes to `notes` server-side (see checklist-records/index.ts), but the client never has to
+  // know that — this is the exact same `updateChecklistRecord` call a metric field's own edit
+  // makes, just with an Editor.js `OutputData` object instead of a numeric `value`. No title sent
+  // from here — there's no title input in this UI; the server derives one from the content
+  // itself when none is given (see _shared/notes.ts's deriveTitle).
+  const { updateChecklistRecord } = useChecklistRecord();
   const { isPro } = useIsPro();
   const field = fields.find(f => f.id === record.fieldId);
   if (!field) return;
@@ -65,22 +68,16 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
               />
             }
           />
-          <Input
-            value={record.title ?? ''}
-            onChange={e => {
-              const updated = updateChecklistFieldNoteTitle(record, e.target.value);
-              if (updated) setRecord(updated);
-            }}
-            placeholder="Title"
-            border="dash"
-            className={styles.titleInput}
-            readOnly={!isEditingNote}
-          />
+          {/* No title input here — a note entry's title is derived server-side from its own
+              content when none is given (see _shared/notes.ts's deriveTitle), not typed in. */}
           <NoteEditor
             value={record.value}
             setValue={(value: unknown) => {
-              const updated = updateChecklistFieldNote(record, value);
-              if (updated) setRecord(updated);
+              updateChecklistRecord(record.id, {
+                checklistTemplateId: record.checklistTemplateId,
+                value: value as unknown as string,
+              });
+              setRecord({ ...record, value: value as unknown as string });
             }}
             readOnly={!isEditingNote}
             withoutBorder

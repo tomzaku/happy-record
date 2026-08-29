@@ -162,8 +162,10 @@ const stripHtml = (s: string) => s.replace(/<[^>]*>/g, '');
 /** Same block-shape knowledge packages/global/src/lib/editorJsNoteBlocks.ts owns client-side for
  * the opposite direction (AI blocks → Editor.js blocks) — duplicated, not shared, since one runs
  * in Deno and the other in the browser bundle. `table`/`delimiter` are tools nothing here ever
- * generates but a real note can still contain. */
-function blockToPlainText(block: { type?: unknown; data?: unknown }): string {
+ * generates but a real note can still contain. Exported for _shared/notes.ts's own
+ * `computeSearchText` — the exact same "turn real blocks into plain text" job, just for the
+ * whole document instead of a context window around one insertion point. */
+export function blockToPlainText(block: { type?: unknown; data?: unknown }): string {
   const data = (block.data && typeof block.data === 'object' ? block.data : {}) as Record<string, unknown>;
   switch (block.type) {
     case 'header':
