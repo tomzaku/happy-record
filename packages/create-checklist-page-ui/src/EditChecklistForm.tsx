@@ -1,6 +1,6 @@
 import React, { startTransition } from 'react';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
-import { useChecklistTemplates, useChecklist } from '@dreamer/global';
+import { useChecklistTemplates, useChecklist, useFieldGroups } from '@dreamer/global';
 import { useNavigate, useParams } from 'react-router-dom';
 import CoreChecklistForm, { FormState } from './CoreChecklistForm';
 import { calculateRepeat } from './calculateRepeat';
@@ -15,6 +15,10 @@ const EditChecklistForm = () => {
   const { id } = useParams<{ id: string }>();
   const template = checklistTemplate[id || ''];
   const { updateChecklistTemplate } = useChecklistTemplates();
+  // `fieldGroups` isn't part of the template's own row anymore — a schedule edit made via
+  // GroupScheduleList (the only thing this form's own fieldGroups field ever changes; see that
+  // component's own doc comment) is its own write now, one row at a time.
+  const { updateFieldGroup } = useFieldGroups();
   const navigate = useNavigate();
   const intl = useIntl();
   const onSubmit = ({
@@ -39,8 +43,14 @@ const EditChecklistForm = () => {
         name: selectedIcon,
         color: selectedColor,
       },
-      fieldGroups,
+      fieldGroups: template.fieldGroups,
       tags,
+    });
+    (fieldGroups ?? []).forEach(group => {
+      const original = template.fieldGroups.find(g => g.id === group.id);
+      if (original && JSON.stringify(group) !== JSON.stringify(original)) {
+        updateFieldGroup(group);
+      }
     });
     navigate('/');
   };

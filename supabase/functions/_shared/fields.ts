@@ -20,6 +20,9 @@ export function toRecordField(r: Record<string, unknown>) {
       ? { defaultValue: Number(r.default_value_number) }
       : {}),
     ...(r.copied_from_id ? { copiedFromId: r.copied_from_id as string } : {}),
+    // Only meaningful for type: 'note' — this field's own single current note. See
+    // 20260829010000_notes_note_id_ownership.sql.
+    ...(r.note_id ? { noteId: r.note_id as string } : {}),
     updatedAt: r.updated_at as string,
   };
 }
@@ -45,6 +48,7 @@ export function fromRecordField(e: Record<string, unknown>) {
     // Lineage only, set once at fork time (see useJoinChallenge.tsx) — never
     // read for access control, so no validation beyond "is it a string".
     copied_from_id: typeof e.copiedFromId === 'string' ? e.copiedFromId : null,
+    note_id: typeof e.noteId === 'string' ? e.noteId : null,
     // Postgres only fills `updated_at`'s default on insert, not update —
     // an upsert has to set it explicitly every time.
     updated_at: new Date().toISOString(),

@@ -8,10 +8,11 @@
 //     public-read RLS policy below is what makes a non-owner's lookup return
 //     anything at all.
 //   POST   /checklist-templates { template } → { ok }
-//   PATCH  /checklist-templates { id, ...changes, fieldGroupPatches? } → { ok }
-//     fieldGroupPatches: [{ id, ...changedKeys }] — merges into the stored
-//     field_groups by group id, instead of replacing the whole jsonb array.
+//   PATCH  /checklist-templates { id, ...changes } → { ok }
 //   DELETE /checklist-templates  ?id=        → { ok }
+//
+// field_groups isn't part of this resource anymore — see `field-groups`
+// (20260829010000_notes_note_id_ownership.sql).
 //
 // Deploy: `supabase functions deploy checklist-templates`
 
@@ -19,7 +20,6 @@ import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
 import {
   fromChecklistTemplate,
-  mergeFieldGroupPatches,
   patchChecklistTemplate,
   toChecklistTemplate,
 } from '../_shared/checklistTemplates.ts';
@@ -77,10 +77,9 @@ async function save({ req, db, userId }: Ctx) {
 }
 
 /**
- * Edits only the fields the caller actually changed — the note/schedule
- * editors on detail-task-page send a diff, not the whole template, so an
- * in-flight edit to a field nobody touched here can't get clobbered by a
- * stale client copy the way `save`'s full-row upsert would.
+ * Edits only the fields the caller actually changed — a schedule/tag/flag edit sends a diff, not
+ * the whole template, so an in-flight edit to a field nobody touched here can't get clobbered by
+ * a stale client copy the way `save`'s full-row upsert would.
  */
 async function update({ req, db, userId }: Ctx) {
   const params = await body(req);
@@ -91,25 +90,6 @@ async function update({ req, db, userId }: Ctx) {
     patch = patchChecklistTemplate(params);
   } catch (err) {
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid template.');
-  }
-
-  // fieldGroupPatches (see checklistTemplatesApi.ts) means "merge these
-  // groups' changed keys into whatever's already stored", not "replace
-  // field_groups with this" — read the current column so the merge is
-  // against the latest row, not this device's possibly-stale local copy.
-  if (Array.isArray(params.fieldGroupPatches) && params.fieldGroupPatches.length) {
-    const { data, error } = await db
-      .from('checklist_templates')
-      .select('field_groups')
-      .eq('user_id', userId)
-      .eq('id', params.id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    const current = Array.isArray(data?.field_groups) ? (data.field_groups as Record<string, unknown>[]) : [];
-    patch.field_groups = mergeFieldGroupPatches(
-      current,
-      params.fieldGroupPatches as Record<string, unknown>[],
-    );
   }
 
   const { error } = await db

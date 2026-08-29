@@ -12,9 +12,10 @@ type Props = {
 };
 
 /**
- * Spotlight-style task search — filters the caller's own checklist templates by title/tag
- * as they type and opens the existing per-day detail page (`/task/:id`, see route/index.tsx)
- * for today, same as clicking a task on the home page's checklist-today list.
+ * Spotlight-style task search — lists every one of the caller's own checklist templates on
+ * open, narrowed by title/tag as they type, and opens the existing per-day detail page
+ * (`/task/:id`, see route/index.tsx) for today, same as clicking a task on the home page's
+ * checklist-today list.
  */
 const SearchDialog = ({ visible, onDismiss }: Props) => {
   const navigate = useNavigate();
@@ -31,7 +32,9 @@ const SearchDialog = ({ visible, onDismiss }: Props) => {
 
   const results = React.useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return [];
+    // No query yet — the dialog just opened, so show every task rather than an empty state
+    // telling the user to start typing.
+    if (!q) return templates;
     return templates
       .filter(
         template =>
@@ -102,10 +105,14 @@ const SearchDialog = ({ visible, onDismiss }: Props) => {
             />
           </div>
           <div className={styles.results}>
-            {query.trim() === '' ? (
-              <div className={styles.emptyState}>Start typing to search your tasks</div>
-            ) : results.length === 0 ? (
-              <div className={styles.emptyState}>No tasks match &ldquo;{query}&rdquo;</div>
+            {results.length === 0 ? (
+              <div className={styles.emptyState}>
+                {query.trim() === '' ? (
+                  'No tasks yet'
+                ) : (
+                  <>No tasks match &ldquo;{query}&rdquo;</>
+                )}
+              </div>
             ) : (
               results.map((template, index) => (
                 <button

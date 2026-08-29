@@ -3,6 +3,7 @@ import {
   ChecklistTemplate,
   FieldGroup,
   useChecklistTemplates,
+  useFieldGroups,
   getEffectiveDayOfWeek,
   formatDaysOfWeek,
   getActiveFieldGroups,
@@ -60,6 +61,10 @@ enum EditModal {
 
 const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed, onDelete, readOnly, children }: Props) => {
   const intl = useIntl();
+  // `fieldGroups` isn't part of the template's own row anymore — a schedule edit
+  // (GroupScheduleList, below) or a group restore is its own write now, one row at a time (see
+  // useFieldGroups.tsx), not folded into `onUpdate`'s template patch.
+  const { updateFieldGroup } = useFieldGroups();
   const [isCollapsed, setIsCollapsed] = React.useState(isDefaultCollapsed);
   const [activeModal, setActiveModal] = React.useState<EditModal>(
     EditModal.None,
@@ -173,12 +178,17 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
         ...repeat,
         startedAt: new Date(tempStartDay).toISOString(),
       },
-      // Only actually changed when this template has field groups — GroupScheduleList edits
-      // this per group instead of the day picker above; the store resyncs the template's own
-      // `repeat.dayOfWeek` from these on save regardless (see withSyncedRepeat in
-      // useChecklistTemplates.tsx), so what's picked into `repeat` above doesn't need to agree.
-      fieldGroups: tempFieldGroups,
     });
+    // GroupScheduleList edits each group's own `repeat` instead of the day picker above — its
+    // own write, per changed group, not folded into the template patch.
+    if (!readOnly) {
+      tempFieldGroups.forEach(group => {
+        const original = checklistTemplate.fieldGroups.find(g => g.id === group.id);
+        if (original && JSON.stringify(group) !== JSON.stringify(original)) {
+          updateFieldGroup(group);
+        }
+      });
+    }
     setActiveModal(EditModal.None);
   };
 
@@ -194,12 +204,9 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
   // multi-field form like the modals above. `archivedAt: null`, not `undefined` — see
   // FieldGroup.archivedAt's own comment on why `undefined` here would silently fail to persist.
   const handleRestoreGroup = (groupId: string) => {
-    onUpdate({
-      ...checklistTemplate,
-      fieldGroups: checklistTemplate.fieldGroups.map(group =>
-        group.id === groupId ? { ...group, archivedAt: null } : group,
-      ),
-    });
+    if (readOnly) return;
+    const group = checklistTemplate.fieldGroups.find(g => g.id === groupId);
+    if (group) updateFieldGroup({ ...group, archivedAt: null });
   };
 
   const resetModalStates = () => {

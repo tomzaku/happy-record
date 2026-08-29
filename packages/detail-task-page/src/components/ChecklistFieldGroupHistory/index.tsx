@@ -14,8 +14,16 @@ type Props = {
   checklistTemplate: ChecklistTemplate;
   fields: RecordField[];
 };
+
+/**
+ * Metric fields only — a `type: 'note'` field has no per-day history to show here anymore (see
+ * ChecklistFieldGeneral's own comment); `fields` may still include note-type ones (this group's
+ * full field list), so this filters down to what it actually renders rather than assuming the
+ * caller already narrowed it.
+ */
 const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
   const { getChecklistRecords, deleteChecklistRecord } = useChecklistRecord();
+  const metricFieldIds = fields.filter(field => field.type === 'metric').map(field => field.id);
   // Derived straight from the store's own function every render instead of
   // snapshotted into local state from a `useEffect(..., [])` that never
   // refired — a record submitted or edited on another device, or even on
@@ -26,7 +34,7 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fields }: Props) => {
       to: endOfMonth(new Date()).toISOString(),
     },
     type: 'time' as const,
-    fieldIds: fields.map(field => field.id),
+    fieldIds: metricFieldIds,
     sortDirection: 'desc' as const,
   });
   return (

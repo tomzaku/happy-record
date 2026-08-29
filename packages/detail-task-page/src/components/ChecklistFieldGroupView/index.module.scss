@@ -17,6 +17,12 @@
   padding: $spacing-xs $spacing-sm;
 }
 
+.titleInput {
+  width: 100%;
+  margin-bottom: $spacing-sm;
+  font-weight: 600;
+}
+
 .iconSuccess {
   position: absolute;
   right: -20px;
@@ -39,4 +45,17 @@
 .itemEmptyContainer {
   position: absolute;
   opacity: 0.4;
+}
+
+// Each note-type field's own note (see NoteFieldEditor) — stacked below the group's own note,
+// same shape repeated once per field.
+.fieldNotes {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  margin-top: $spacing-md;
+}
+
+.fieldNote {
+  padding-top: $spacing-md;
 }

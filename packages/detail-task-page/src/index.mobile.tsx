@@ -172,9 +172,7 @@ const DetailTaskPageMobile = () => {
         checklistTemplate={checklistTemplate}
         fields={fields}
         currentDay={currentDay}
-        onUpdateChecklistTemplate={isOwner ? (updatedTemplate) => {
-          updateChecklistTemplate(updatedTemplate);
-        } : () => {}}
+        readOnly={!isOwner}
       />
       {/* General Settings — mobile's actual task content (the fields above)
           is what someone opens this page to see/do; the settings card is

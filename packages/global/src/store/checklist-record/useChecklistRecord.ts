@@ -23,6 +23,10 @@ export type ChecklistRecord = {
   fieldId: string;
   value: number | string;
   folderId?: string;
+  /** Only ever real for the standalone notebook's own notes-as-ChecklistRecord adapter
+   * (useNoteRecord.tsx) — a real checklist record has no title of its own. See `Note['title']`
+   * (useNote.tsx) for where this actually comes from. */
+  title?: string;
   /**
    * One id per Submit click, shared by every field submitted in that click
    * — the real "these were committed together" relationship (see
@@ -224,7 +228,7 @@ export const useChecklistRecord = () => {
       //
       // The returned map is still keyed by a parseable date string (each
       // group's own createdAt) because callers (ChecklistFieldGroupHistory,
-      // RecordDayHistory, NoteHistory) display the key as one — two
+      // RecordDayHistory) display the key as one — two
       // submissions landing in the exact same millisecond would still
       // collide at that display step, same residual edge case as before,
       // just no longer the thing grouping (and "delete this entry")

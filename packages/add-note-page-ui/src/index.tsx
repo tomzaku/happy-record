@@ -5,6 +5,7 @@ import NoteEditor from '@moon-ui/note-editor';
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';
+import Input from '@moon-ui/input';
 import { useNavigate } from 'react-router-dom';
 import Drawer from '@moon-ui/drawer';
 import Typography from '@moon-ui/typography';
@@ -29,11 +30,13 @@ export const AddNotePage = () => {
   // refired — a note field synced in from another device now actually
   // shows up in this picker.
   const allNoteFields = useSyncedSelector(getAllNoteFields);
+  const [noteTitle, setNoteTitle] = React.useState('');
   const [noteValue, setNoteValue] = React.useState();
   const handleAddNote = () => {
     if (selectedField && noteValue) {
-      addNote(selectedField.id, noteValue);
+      addNote(selectedField.id, noteValue, noteTitle);
       setSelectedField(null);
+      setNoteTitle('');
       setNoteValue(undefined);
       navigate('/notes')
     }
@@ -51,6 +54,13 @@ export const AddNotePage = () => {
           selectedField ||
           allNoteFields.length === 1) && (
             <>
+              <Input
+                value={noteTitle}
+                onChange={e => setNoteTitle(e.target.value)}
+                placeholder="Title"
+                border="dash"
+                className={styles.titleInput}
+              />
               <div className={styles.noteEditor}>
                 <NoteEditor
                   value={noteValue}

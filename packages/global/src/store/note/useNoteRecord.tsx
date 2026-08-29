@@ -1,30 +1,33 @@
 import type { ChecklistRecord } from '@dreamer/global/src/store/checklist-record';
-import { useRecordField } from '@dreamer/global/src/store/record-field';
+import { RecordField, useRecordField } from '@dreamer/global/src/store/record-field';
 import { Note, useNote } from './useNote';
 
 /**
- * Notes back onto `useNote` (the `notes` table) now, not
- * `useChecklistRecord` — see useNote.tsx. This still returns/accepts
- * `ChecklistRecord`-shaped objects so `note-manager-page-ui` and
- * `add-note-page-ui` didn't need to change: `checklistId`/
- * `checklistTemplateId` are always `''`, cosmetic leftovers of the old
- * shape, not read by anything anymore.
+ * Notes back onto `useNote` (the `notes` table) via each note-type field's own `note_id` now —
+ * see useNote.tsx and 20260829010000_notes_note_id_ownership.sql. One note per field, not a
+ * per-entry journal, so this still returns/accepts `ChecklistRecord`-shaped objects (so
+ * `note-manager-page-ui`/`add-note-page-ui` didn't need to change) but at most one per field id.
+ * `checklistId`/`checklistTemplateId` are always `''`, cosmetic leftovers of the old shape, not
+ * read by anything anymore.
  */
-const toChecklistRecordShape = (note: Note): ChecklistRecord => ({
+const toChecklistRecordShape = (field: RecordField, note: Note): ChecklistRecord => ({
   id: note.id,
   checklistId: '',
   checklistTemplateId: '',
-  fieldId: note.fieldId,
-  value: note.value,
+  fieldId: field.id,
+  // `Note['value']` is `unknown` (real, parsed Editor.js OutputData — see noteApi.ts) while
+  // `ChecklistRecord['value']` is typed `number | string`; every consumer of this adapter hands
+  // it straight to a NoteEditor, which takes the real object, not the narrower type.
+  value: note.value as string | number,
+  title: note.title,
   createdAt: note.createdAt,
   updatedAt: note.updatedAt,
   ...(note.folderId ? { folderId: note.folderId } : {}),
 });
 
 export const useNoteRecords = () => {
-  const { getNotes: getNotesRaw, addNote: addNoteRaw, updateNote: updateNoteRaw, deleteNote: deleteNoteRaw } =
-    useNote();
-  const { getAllRecordFields } = useRecordField();
+  const { getNotesByIds, createNote, updateNote: updateNoteRaw, deleteNote: deleteNoteRaw } = useNote();
+  const { getAllRecordFields, updateRecordField } = useRecordField();
 
   const getAllNoteFields = () => {
     const fields = getAllRecordFields();
@@ -32,25 +35,54 @@ export const useNoteRecords = () => {
     return noteFields;
   };
 
+  /** One row per note-type field (among `noteFieldIds`) that already has content — a field with
+   * no `noteId` yet just doesn't show up here (nothing written yet). Batches every field's note
+   * into one request rather than fetching field-by-field. */
   const getNotes = (noteFieldIds: string[]): ChecklistRecord[] => {
-    return getNotesRaw(noteFieldIds)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .map(toChecklistRecordShape);
+    const fields = getAllRecordFields().filter(field => noteFieldIds.includes(field.id));
+    const notes = getNotesByIds(fields.map(field => field.noteId));
+    return fields
+      .map(field => {
+        const note = field.noteId ? notes.find(n => n.id === field.noteId) : undefined;
+        return note ? toChecklistRecordShape(field, note) : undefined;
+      })
+      .filter((record): record is ChecklistRecord => !!record)
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   };
 
   const deleteNote = (note: ChecklistRecord) => {
     deleteNoteRaw(note.id);
   };
 
-  const addNote = (fieldId: string, value: string) => {
-    const note = addNoteRaw({ fieldId, value });
-    return [toChecklistRecordShape(note)];
+  /** Creates this field's one note and persists the new id onto it. A field that already has a
+   * `noteId` (picked again from add-note-page-ui's field selector) updates that note in place
+   * instead of creating a second one and orphaning it — this is really an edit at that point,
+   * even though the caller still calls it "add". */
+  const addNote = (fieldId: string, value: unknown, title = '') => {
+    const field = getAllRecordFields().find(f => f.id === fieldId);
+    if (field?.noteId) {
+      const updated = updateNoteRaw(field.noteId, { value });
+      return updated ? [toChecklistRecordShape(field, updated)] : [];
+    }
+    const created = createNote(value, { ownerType: 'field', ownerId: fieldId }, title);
+    updateRecordField(fieldId, { noteId: created.id });
+    return field ? [toChecklistRecordShape({ ...field, noteId: created.id }, created)] : [];
   };
 
   /** The inline editor in NoteDetail — editing a note's own value in place. */
-  const updateNote = (note: ChecklistRecord, value: string) => {
+  const updateNote = (note: ChecklistRecord, value: unknown) => {
     const updated = updateNoteRaw(note.id, { value, folderId: note.folderId });
-    return updated ? toChecklistRecordShape(updated) : null;
+    if (!updated) return null;
+    const field = getAllRecordFields().find(f => f.id === note.fieldId);
+    return field ? toChecklistRecordShape(field, updated) : null;
+  };
+
+  /** Same, for the title alone — see NoteDetail's own title input. */
+  const updateNoteTitle = (note: ChecklistRecord, title: string) => {
+    const updated = updateNoteRaw(note.id, { title });
+    if (!updated) return null;
+    const field = getAllRecordFields().find(f => f.id === note.fieldId);
+    return field ? toChecklistRecordShape(field, updated) : null;
   };
 
   return {
@@ -58,6 +90,7 @@ export const useNoteRecords = () => {
     deleteNote,
     addNote,
     updateNote,
+    updateNoteTitle,
     getAllNoteFields,
   };
 };

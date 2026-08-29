@@ -6,7 +6,7 @@ import { FormState } from './CoreChecklistForm';
  * Utility function to handle task creation logic
  * Follows the desktop logic from create-task-modal
  */
-export const createTask = (
+export const createTask = async (
   formData: FormState,
   addChecklistTemplate: ReturnType<typeof useChecklistTemplates>['addChecklistTemplate'],
   addChecklist: ReturnType<typeof useChecklist>['addChecklist']
@@ -24,11 +24,11 @@ export const createTask = (
   } = formData;
 
   // If no weekly hobbies are selected, it's a forever task (no repeat schedule)
-  const repeat = weeklyHobbies && weeklyHobbies.length > 0 
+  const repeat = weeklyHobbies && weeklyHobbies.length > 0
     ? calculateRepeat({ weeklyHobbies, selectedTime, startedAt })
     : undefined;
-  
-  const { id } = addChecklistTemplate({
+
+  const { id, saved } = addChecklistTemplate({
     title: checklistText,
     repeat,
     avatar: {
@@ -40,9 +40,14 @@ export const createTask = (
     fieldGroups: fieldGroups || [], // Default empty array since RecordTaskSetting is commented out
     tags,
   });
-  
-  // If not repeat we need to create a checklist onetime.
+
+  // If not repeat we need to create a checklist onetime. `checklists.checklist_template_id` is a
+  // real FK into `checklist_templates` — firing this immediately (id in hand, but the template's
+  // own POST above still in flight) races that insert and can 500 with a foreign-key violation
+  // if this one lands first. `saved` is exactly the guard useJoinChallenge.tsx's own comment
+  // describes for this same race.
   if (!repeat) {
+    await saved;
     addChecklist({
       title: checklistText,
       checklistTemplateId: id,

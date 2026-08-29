@@ -4,7 +4,7 @@
 // is the fallback.
 
 import { request } from '../../lib/api';
-import type { ChecklistTemplate, FieldGroup } from './useChecklistTemplates';
+import type { ChecklistTemplate } from './useChecklistTemplates';
 
 export function fetchChecklistTemplates(): Promise<{ templates: ChecklistTemplate[] } | null> {
   return request.get('/checklist-templates', { quiet: true });
@@ -28,22 +28,13 @@ export function saveChecklistTemplate(template: ChecklistTemplate): Promise<{ ok
 /**
  * Edits only the fields actually changed — `updateChecklistTemplate` diffs
  * against its current local copy before calling this, so touching one field
- * (a note, a schedule) doesn't overwrite whatever else changed the row
- * server-side since this device's last read.
- *
- * `fieldGroupPatches` is the same idea one level down: `fieldGroups` is a
- * single jsonb column, so a plain diff of it is all-or-nothing (the caller
- * always rebuilds the whole array, even to change one group's note). Passing
- * `{ id, note }` per changed group instead lets the server merge into
- * whatever's actually stored, rather than resending every group's full
- * config — id, fields, tabs — to change one note.
+ * (a schedule, a tag) doesn't overwrite whatever else changed the row
+ * server-side since this device's last read. `fieldGroups` isn't part of this
+ * row anymore — see useFieldGroups.tsx's own `updateFieldGroup`.
  */
 export function patchChecklistTemplate(
   id: string,
-  changes: Partial<Omit<ChecklistTemplate, 'id' | 'createdAt' | 'fieldGroups'>> & {
-    fieldGroups?: FieldGroup[];
-    fieldGroupPatches?: (Partial<FieldGroup> & Pick<FieldGroup, 'id'>)[];
-  },
+  changes: Partial<Omit<ChecklistTemplate, 'id' | 'createdAt' | 'fieldGroups'>>,
 ): Promise<{ ok: true } | null> {
   return request.patch('/checklist-templates', { id, ...changes }, { quiet: true });
 }

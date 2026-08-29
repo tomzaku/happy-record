@@ -2,14 +2,15 @@
 // packages/global/src/store/checklists/useChecklistTemplates.tsx for the
 // client shape (`ChecklistTemplate`) this mirrors.
 //
-// `repeat`, `avatar`, `fieldGroups`/`field_groups` and `tags` round-trip as
-// given — they're config the server never filters on, not relational data
-// (see the migration's comment on why only ownership + visibility are real
-// columns). `flagId`/`flag_id` is the exception: a real foreign key into
-// `flags` (see 20260821030000_flags.sql) — one flag groups many templates,
-// unlike `tags`. The deprecated `records: string[]` field is dropped: it's
-// unused in the client type already (`@deprecated use groups instead`) and
-// never makes it to the wire here.
+// `repeat`, `avatar`, and `tags` round-trip as given — they're config the server never filters
+// on, not relational data (see the migration's comment on why only ownership + visibility are
+// real columns). `flagId`/`flag_id` is the exception: a real foreign key into `flags` (see
+// 20260821030000_flags.sql) — one flag groups many templates, unlike `tags`. The deprecated
+// `records: string[]` field is dropped: it's unused in the client type already
+// (`@deprecated use groups instead`) and never makes it to the wire here. `fieldGroups` isn't
+// handled here at all anymore — it's the `field-groups` resource now (see
+// 20260829010000_notes_note_id_ownership.sql), fetched separately and merged onto the client
+// object by useChecklistTemplates.tsx, not embedded in this row.
 
 export function toChecklistTemplate(r: Record<string, unknown>) {
   const hasRepeat = [
@@ -38,7 +39,6 @@ export function toChecklistTemplate(r: Record<string, unknown>) {
       : undefined,
     createdAt: r.created_at as string,
     records: [] as string[],
-    fieldGroups: (r.field_groups as unknown[]) ?? [],
     tags: (r.tags as string[]) ?? [],
     visibility: (r.visibility as string) ?? 'private',
     updatedAt: r.updated_at as string,
@@ -74,9 +74,6 @@ export function patchChecklistTemplate(e: Record<string, unknown>): Record<strin
     patch.repeat_started_at = str(repeat.startedAt);
     patch.repeat_completed_at = str(repeat.completedAt);
   }
-  if ('fieldGroups' in e) {
-    patch.field_groups = Array.isArray(e.fieldGroups) ? e.fieldGroups : [];
-  }
   if ('tags' in e) {
     patch.tags = Array.isArray(e.tags) ? e.tags.filter((t): t is string => typeof t === 'string') : [];
   }
@@ -94,26 +91,6 @@ export function patchChecklistTemplate(e: Record<string, unknown>): Record<strin
   // has to set this explicitly, partial or not.
   patch.updated_at = new Date().toISOString();
   return patch;
-}
-
-/**
- * Merges per-group patches (`{ id, ...changedKeys }`) into the `field_groups`
- * already stored for this row. `field_groups` is one jsonb column — there's
- * no partial-column write for "just this group's note", so the PATCH route
- * reads the current array, merges here, and writes the whole array back.
- * That's still one full column write, but the request body itself only ever
- * carried what actually changed, and unrecognized/reordered ids are left
- * alone rather than dropped, so a patch built against a slightly stale
- * client copy can't delete a group it doesn't know about.
- */
-export function mergeFieldGroupPatches(
-  current: Record<string, unknown>[],
-  patches: Record<string, unknown>[],
-): Record<string, unknown>[] {
-  return current.map(group => {
-    const patch = patches.find(p => p.id === group.id);
-    return patch ? { ...group, ...patch } : group;
-  });
 }
 
 export function fromChecklistTemplate(e: Record<string, unknown>) {
@@ -134,7 +111,6 @@ export function fromChecklistTemplate(e: Record<string, unknown>) {
     repeat_day_of_week: str(repeat.dayOfWeek),
     repeat_started_at: str(repeat.startedAt),
     repeat_completed_at: str(repeat.completedAt),
-    field_groups: Array.isArray(e.fieldGroups) ? e.fieldGroups : [],
     tags: Array.isArray(e.tags) ? e.tags.filter((t): t is string => typeof t === 'string') : [],
     visibility: e.visibility === 'public' ? 'public' : 'private',
     flag_id: str(e.flagId),

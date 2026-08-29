@@ -1,11 +1,10 @@
 // Shared "write note content blocks from a prompt (+ optional already-resolved context)"
-// pipeline — ai-note, ai-field-group-note, and ai-checklist-record-note all generate the exact
-// same shape of content (same block types, same validation, same prompt template); the only
-// thing that ever differs between them is *where* (if anywhere) they resolve context from
-// before calling in here. That's genuinely a case for sharing, unlike e.g. this file's own
-// duplicated-on-purpose YOUTUBE_ID_RE-style helpers elsewhere in this codebase — those are each
-// one small, resource-specific regex with no second real consumer; this is the entire ~200-line
-// pipeline three separate functions were otherwise each carrying their own copy of.
+// pipeline. Originally split across three edge functions (ai-note, ai-field-group-note,
+// ai-checklist-record-note) that generated the exact same shape of content and differed only in
+// *where* they resolved context from — now that every note surface lives in the `notes` table
+// (see 20260829000000_centralize_notes.sql), that context-resolution step collapsed into one
+// lookup too, so the three functions are just ai-note now (see its own resolveContext). This
+// module stays the shared pipeline underneath it either way.
 //
 // Doesn't handle routing/CORS/auth/rate-limit/Pro-gating/the provider call itself — those live
 // in ai.ts and are common to every ai-* function, not specifically note generation. This module
@@ -52,9 +51,9 @@ const OPTION_BLOCK_DOCS: Record<Option, string> = {
 };
 
 /** Turns already-resolved plain-text context (or two empty strings, for none) into the LLM
- * request. Doesn't know or care where that context came from — a caller with nothing to resolve
- * (ai-note) and a caller that resolved real content server-side (ai-field-group-note/
- * ai-checklist-record-note) call this identically. */
+ * request. Doesn't know or care where that context came from — ai-note calls this identically
+ * whether it resolved real content server-side (a `fieldId`/`fieldGroupId` position was given)
+ * or has nothing to resolve (a brand-new note with no position yet). */
 export function buildNotePrompt(
   prompt: string,
   options: Option[],
@@ -151,10 +150,10 @@ export function validateBlocks(raw: unknown): GeneratedNoteBlock[] {
 }
 
 // ─── real Editor.js blocks → plain text (context resolution) ───
-// Only ai-field-group-note/ai-checklist-record-note actually call extractContext/toBlocks
-// (ai-note has nothing to resolve context from at all) — kept here anyway, not split into a
-// third module, since it's still squarely "turn something into the plain-text context
-// buildNotePrompt above accepts," not a resource-specific concern of its own.
+// ai-note's own resolveContext calls extractContext/toBlocks when it was given a real position
+// (a `fieldId`/`checklistId` or `fieldGroupId`/`checklistTemplateId`) to resolve — kept here
+// rather than inlined there, since it's still squarely "turn something into the plain-text
+// context buildNotePrompt above accepts," not a resource-specific concern of its own.
 
 export const MAX_CONTEXT_CHARS = 1000;
 
@@ -210,10 +209,10 @@ export function extractContext(blocks: unknown[], edge: 'start' | 'end'): string
   return edge === 'end' ? text.slice(-MAX_CONTEXT_CHARS) : text.slice(0, MAX_CONTEXT_CHARS);
 }
 
-/** A resolved stored value (a FieldGroup's own `note`, or `checklist_records.value_text`) is
- * normally already Editor.js `{blocks:[...]}` — either a real object (jsonb columns) or a JSON
- * string (text columns). Still tolerant of a plain non-JSON string (kept as one legacy
- * paragraph rather than discarded) or anything else (no usable content) — never throws. */
+/** A resolved `notes.value` is normally already Editor.js `{blocks:[...]}` JSON (see
+ * noteApi.ts's own serialization on the client side that writes it). Still tolerant of a plain
+ * non-JSON string (kept as one legacy paragraph rather than discarded) or anything else (no
+ * usable content) — never throws. */
 export function toBlocks(stored: unknown): { type: string; data: Record<string, unknown> }[] {
   let doc: unknown = stored;
   if (typeof stored === 'string') {
@@ -232,9 +231,8 @@ export function toBlocks(stored: unknown): { type: string; data: Record<string, 
 /**
  * Runs the full "/ai-*" note-generation request: auth, rate limit, Pro gate, parse body, resolve
  * context (via the caller's own `resolveContext`, the one thing that's actually specific to each
- * function), build the prompt, call the provider, validate + return blocks. Every one of
- * ai-note/ai-field-group-note/ai-checklist-record-note's own `index.ts` is just this call plus
- * its own `resolveContext`.
+ * function), build the prompt, call the provider, validate + return blocks. ai-note/index.ts is
+ * just this call plus its own `resolveContext`.
  *
  * `resolveContext` gets the caller's own RLS-scoped `db` (never service-role) + `userId` — never
  * client-sent text. `ai-note` itself passes a resolver that always returns empty strings; that's

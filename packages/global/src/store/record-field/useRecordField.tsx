@@ -54,6 +54,16 @@ export type RecordField = {
    * without a second, wider type. Present here purely so that merge has somewhere to put it.
    */
   placeholder?: string;
+  /**
+   * Only meaningful for `type: 'note'` — this field's own single current note (see
+   * 20260829010000_notes_note_id_ownership.sql and useNote.tsx's `Note`). One note per field,
+   * edited in place, not a per-entry journal — set the first time someone saves content into it
+   * (useNoteById.ts creates the note, then calls updateRecordField(id, { noteId }) to persist
+   * this), read from wherever that field's note editor lives (ChecklistFieldGroupView for an
+   * in-checklist note-type field, note-manager-page-ui/add-note-page-ui for the standalone
+   * notebook).
+   */
+  noteId?: string;
   updatedAt: string;
 };
 

@@ -44,6 +44,12 @@
   gap: $spacing-sm;
 }
 
+.titleInput {
+  width: 100%;
+  margin-bottom: $spacing-sm;
+  font-weight: 600;
+}
+
 .noteEditor {
   height: 500px;
 }

@@ -7,6 +7,7 @@ import {
   getNextScheduledDayLabel,
   isFieldGroupActiveOnDay,
   useChecklist,
+  useFieldGroups,
 } from '@dreamer/global';
 import { getEffectiveFieldDisplay, RecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
@@ -32,7 +33,11 @@ type Props = {
   checklistTemplate: ChecklistTemplate;
   fields: RecordField[];
   currentDay: string;
-  onUpdateChecklistTemplate: (updatedTemplate: ChecklistTemplate) => void;
+  /** A non-owner viewing someone else's template (see index.mobile.tsx/index.desktop.tsx's own
+   * `isOwner`) — field groups are a real resource with their own owner-only RLS now (see
+   * useFieldGroups.tsx), so this is what keeps a non-owner's client from even attempting a write
+   * that would just fail server-side anyway. Defaults to editable, same as before this existed. */
+  readOnly?: boolean;
   onFieldAdded?: (newField: RecordField) => void;
 };
 
@@ -41,10 +46,11 @@ const ChecklistFieldGroup = ({
   checklistTemplate,
   fields,
   currentDay,
-  onUpdateChecklistTemplate,
+  readOnly = false,
   onFieldAdded,
 }: Props) => {
   const { updateChecklist } = useChecklist();
+  const { addFieldGroup, updateFieldGroup } = useFieldGroups();
   const intl = useIntl();
   // Keyed by fieldGroup id — the Submit tab's own "Select Fields" button (see
   // ChecklistFieldGroupAdd's onOpenFieldSettings) reaches into this same group's settings menu
@@ -144,29 +150,21 @@ const ChecklistFieldGroup = ({
       </span>
     );
   };
-  // Shared by every place that changes one group in place (a note edit, the settings menu's
-  // field/tab/name/collapse changes) — splices `checklistTemplate.fieldGroups` at `index`
-  // directly, so `index` has to be the real position in that array (see renderBody's own note on
-  // why archived groups are filtered out only after pairing with their real index).
-  const updateFieldGroupAt = (index: number, updatedGroup: FieldGroup) => {
-    onUpdateChecklistTemplate({
-      ...checklistTemplate,
-      fieldGroups: [
-        ...checklistTemplate.fieldGroups.slice(0, index),
-        updatedGroup,
-        ...checklistTemplate.fieldGroups.slice(index + 1),
-      ],
-    });
+  // Shared by every place that changes one group in place (the settings menu's
+  // field/tab/name/collapse changes) — one row now (see useFieldGroups.tsx), no more
+  // index-based splicing into a shared array. A no-op for a non-owner (see `readOnly`) rather
+  // than firing a write RLS would reject anyway.
+  const saveFieldGroupChange = (updatedGroup: FieldGroup) => {
+    if (readOnly) return;
+    updateFieldGroup(updatedGroup);
   };
 
   const renderTab = ({
     fieldGroup,
     fieldDetails,
-    index,
   }: {
     fieldGroup: FieldGroup;
     fieldDetails: RecordField[];
-    index: number;
   }) => {
     let tabContent;
 
@@ -175,10 +173,7 @@ const ChecklistFieldGroup = ({
         tabContent = (
           <ChecklistFieldGroupView
             fieldGroup={fieldGroup}
-            onUpdateNote={value =>
-              updateFieldGroupAt(index, { ...checklistTemplate.fieldGroups[index], note: value })
-            }
-            checklistTemplateId={checklistTemplate.id}
+            fields={fieldDetails}
           />
         );
         break;
@@ -227,10 +222,7 @@ const ChecklistFieldGroup = ({
         tabContent = (
           <ChecklistFieldGroupView
             fieldGroup={fieldGroup}
-            onUpdateNote={value =>
-              updateFieldGroupAt(index, { ...checklistTemplate.fieldGroups[index], note: value })
-            }
-            checklistTemplateId={checklistTemplate.id}
+            fields={fieldDetails}
           />
         );
         break;
@@ -255,23 +247,18 @@ const ChecklistFieldGroup = ({
     );
   };
   const renderBody = () => {
-    // Every update below (onUpdateNote, onUpdateFieldGroup, onSelectedFieldsChange) splices
-    // `checklistTemplate.fieldGroups` at `index` directly, so `index` here has to stay the real
-    // position in that array — filtering fieldGroups down to the active ones first and mapping
-    // over the filtered array would hand those splices the wrong position for every group after
-    // an archived one. Pairing with the original index before filtering keeps it correct.
-    return checklistTemplate.fieldGroups
-      .map((fieldGroup, index) => ({ fieldGroup, index }))
-      .filter(({ fieldGroup }) => !fieldGroup.archivedAt)
+    // Each group is its own row now (see useFieldGroups.tsx) — no more index bookkeeping to
+    // keep an update aimed at the right array position, unlike the old jsonb-array splice this
+    // replaced.
+    return getActiveFieldGroups(checklistTemplate.fieldGroups)
       // Groups scheduled today float to the top; a stable sort keeps everything else in its
-      // existing relative order (the splice indices above are already captured, so reordering
-      // here only changes render order, never which position an update lands on).
+      // existing relative order.
       .sort((a, b) => {
-        const aActive = isFieldGroupActiveOnDay(a.fieldGroup.repeat, new Date(currentDay));
-        const bActive = isFieldGroupActiveOnDay(b.fieldGroup.repeat, new Date(currentDay));
+        const aActive = isFieldGroupActiveOnDay(a.repeat, new Date(currentDay));
+        const bActive = isFieldGroupActiveOnDay(b.repeat, new Date(currentDay));
         return aActive === bActive ? 0 : aActive ? -1 : 1;
       })
-      .map(({ fieldGroup, index }) => {
+      .map(fieldGroup => {
         const fieldDetails = fieldDetailsByGroup[fieldGroup.id] ?? [];
         const isCollapsed = collapsedGroups[fieldGroup.id] || false;
         const isActiveToday = isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay));
@@ -324,7 +311,7 @@ const ChecklistFieldGroup = ({
                     menuRefs.current[fieldGroup.id] = handle;
                   }}
                   fieldGroup={fieldGroup}
-                  onUpdateFieldGroup={updatedGroup => updateFieldGroupAt(index, updatedGroup)}
+                  onUpdateFieldGroup={saveFieldGroupChange}
                   availableFields={fields.map(f => f.id)}
                   allRecordFields={fields}
                   onFieldAdded={onFieldAdded}
@@ -351,31 +338,33 @@ const ChecklistFieldGroup = ({
               }}
             >
               <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
-              {renderTab({ fieldGroup, fieldDetails, index })}
+              {renderTab({ fieldGroup, fieldDetails })}
             </motion.div>
           </Card>
         );
       });
   }
-  const handleAddFieldGroup = (newGroup: FieldGroup) => {
-    const updatedTemplate = {
-      ...checklistTemplate,
-      fieldGroups: [...checklistTemplate.fieldGroups, newGroup],
-    };
-    
+  const handleAddFieldGroup = (newGroup: Omit<FieldGroup, 'checklistTemplateId' | 'position' | 'updatedAt'>) => {
+    if (readOnly) return;
+    // New groups go last — `position` on the existing ones is already gap-free from however they
+    // were created, so the current count is the next free slot.
+    const created = addFieldGroup({
+      ...newGroup,
+      checklistTemplateId: checklistTemplate.id,
+      position: checklistTemplate.fieldGroups.length,
+    });
+
     // Update activeTab state to include the new field group
     setActiveTab(prev => ({
       ...prev,
-      [newGroup.id]: newGroup.defaultTab ?? ChecklistFieldGroupTab.Home,
+      [created.id]: created.defaultTab ?? ChecklistFieldGroupTab.Home,
     }));
-    
+
     // Update collapsedGroups state to include the new field group
     setCollapsedGroups(prev => ({
       ...prev,
-      [newGroup.id]: newGroup.collapseDefault ?? false,
+      [created.id]: created.collapseDefault ?? false,
     }));
-    
-    onUpdateChecklistTemplate(updatedTemplate);
   };
 
   return (

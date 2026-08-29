@@ -4,12 +4,11 @@ import Icon from '@moon-ui/icon/Icon';
 import Input from '@moon-ui/input';
 import List from '@moon-ui/list';
 import Typography from '@moon-ui/typography';
-import NoteEditor from '@moon-ui/note-editor';
 import { v4 } from 'uuid';
 
 import styles from './index.module.scss';
 import Button from '@moon-ui/button/src/DefaultButton';
-import { Checklist, ChecklistTemplate, useAiNoteGenerate } from '@dreamer/global';
+import { Checklist, ChecklistTemplate } from '@dreamer/global';
 import {
   ChecklistRecord,
   useChecklistRecord,
@@ -39,10 +38,10 @@ type Props = {
 };
 
 // A metric record's `value` can be null/undefined/a non-numeric string —
-// old bad submissions, a note-type field's value shape leaking in, or a
-// backend row saved before a value existed. `+b` on any of those turns the
-// whole running sum into NaN, so this filters to real finite numbers first
-// rather than trusting every record already has one.
+// old bad submissions, or a backend row saved before a value existed. `+b`
+// on any of those turns the whole running sum into NaN, so this filters to
+// real finite numbers first rather than trusting every record already has
+// one.
 const toFiniteNumber = (value: unknown): number | null => {
   const n = typeof value === 'string' ? Number(value) : value;
   return typeof n === 'number' && Number.isFinite(n) ? n : null;
@@ -57,12 +56,18 @@ const ChecklistFieldGroupAdd = ({
   onSubmit,
   onOpenFieldSettings,
 }: Props) => {
+  // Metric only — a `type: 'note'` field isn't a per-day submitted record anymore (see
+  // ChecklistFieldGeneral's own comment): it's one persistent note attached to the field, edited
+  // on the group's Home tab instead. `fields` here is still this whole group's list (used
+  // elsewhere for override merging), so this component narrows it itself rather than assuming
+  // the caller already did.
+  const metricFields = fields.filter(field => field.type === 'metric');
   // Pre-fills a metric field's own default value (set via the Edit Field
   // form — see CoreFieldRecord) instead of always starting blank; still
   // fully editable, and a field with no default set stays blank exactly as
   // before.
   const getEmptyFieldRecord = () => {
-    return fields.reduce(
+    return metricFields.reduce(
       (acc, { id, defaultValue }) => ({
         ...acc,
         [id]: defaultValue,
@@ -70,28 +75,23 @@ const ChecklistFieldGroupAdd = ({
       {},
     );
   };
-  const [fieldRecord, setFieldRecord] = React.useState<
-    Record<string, number | undefined | unknown[]>
-  >(getEmptyFieldRecord());
-  const { addChecklistRecord } = useChecklistRecord();
-  const { getChecklistRecords } = useChecklistRecord();
+  const [fieldRecord, setFieldRecord] = React.useState<Record<string, number | undefined>>(
+    getEmptyFieldRecord(),
+  );
+  const { addChecklistRecord, getChecklistRecords } = useChecklistRecord();
   const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
     ChecklistRecord[]
   >([]);
-  // Forces a remount after submit — both Input and NoteEditor only read
-  // their `value` prop once, at mount (see @moon-ui/input, @moon-ui/note-editor),
-  // so resetting `fieldRecord` alone doesn't clear what's already on screen.
+  // Forces a remount after submit — Input only reads its `value` prop once, at mount (see
+  // @moon-ui/input), so resetting `fieldRecord` alone doesn't clear what's already on screen.
   const [newNoteKey, setNewNoteKey] = React.useState(v4());
-  // "/ai" inside the note-type field editor below — see add-note-page-ui's own AddNotePage for
-  // the same wiring.
-  const { isPro, generate } = useAiNoteGenerate();
 
   // Add ref to track previous records for shake animation
   const prevRecordsRef = React.useRef<ChecklistRecord[]>([]);
 
   // State for shake animation
   const [isShaking, setIsShaking] = React.useState(false);
-  
+
   // State for showing history
   const [showHistory, setShowHistory] = React.useState(false);
 
@@ -108,16 +108,22 @@ const ChecklistFieldGroupAdd = ({
   }, [currentChecklistRecords]);
 
   const reloadChecklistRecord = () => {
-    const records = getChecklistRecords(checklistTemplate.id, {
-      rangeDate: {
-        from: new Date(new Date(currentDay).setHours(0, 0, 0, 0)).toISOString(),
-        to: new Date(
-          new Date(currentDay).setHours(23, 59, 59, 999),
-        ).toISOString(),
-      },
-      fieldIds: fields.map(field => field.id),
-      sortDirection: 'desc',
-    });
+    // `fieldIds: []` means "no filter" to getChecklistRecords (see that hook's own comment),
+    // not "match nothing" — has to be guarded rather than always called, or a note-only group
+    // (nothing left to submit) would pull back every field's records for this template.
+    const metricFieldIds = metricFields.map(field => field.id);
+    const records = metricFieldIds.length
+      ? getChecklistRecords(checklistTemplate.id, {
+        rangeDate: {
+          from: new Date(new Date(currentDay).setHours(0, 0, 0, 0)).toISOString(),
+          to: new Date(
+            new Date(currentDay).setHours(23, 59, 59, 999),
+          ).toISOString(),
+        },
+        fieldIds: metricFieldIds,
+        sortDirection: 'desc',
+      })
+      : {};
     // Flatten the records object into an array
     const flattenedRecords = Object.values(records).flat();
     setCurrentChecklistRecords(flattenedRecords);
@@ -205,52 +211,30 @@ const ChecklistFieldGroupAdd = ({
               },
             )}
           </Typography.Title>
-          {fields.map(recordField => {
-            if (recordField.type === 'metric') {
-              const recordValues = Object.values(currentChecklistRecords)
-                .flat()
-                .filter(record => record.fieldId === recordField.id);
-              const sumValue = sum(recordValues.map(record => record.value));
-              return (
-                <List.ItemMeta
-                  logo={<Icon width={24} icon={recordField.icon} />}
-                  title={recordField.title}
-                  rightComponent={
-                    <>
-                      <Typography.Title
-                        level={1}
-                        noMargin
-                        className={styles.sumValueText}
-                      >
-                        {sumValue}
-                      </Typography.Title>
-                      <Typography.Text>{recordField.unit}</Typography.Text>
-                    </>
-                  }
-                />
-              );
-            } else {
-              const latestRecord = currentChecklistRecords.find(
-                record => record.fieldId === recordField.id,
-              );
-              if (!latestRecord) {
-                return null;
-              }
-              return (
-                <React.Fragment key={latestRecord.id}>
-                  <List.ItemMeta
-                    logo={<Icon width={24} icon={recordField.icon} />}
-                    title={recordField.title}
-                  />
-                  <NoteEditor
-                    key={latestRecord.id}
-                    value={latestRecord.value}
-                    readOnly
-                    withoutBorder
-                  />
-                </React.Fragment>
-              );
-            }
+          {metricFields.map(recordField => {
+            const recordValues = Object.values(currentChecklistRecords)
+              .flat()
+              .filter(record => record.fieldId === recordField.id);
+            const sumValue = sum(recordValues.map(record => record.value));
+            return (
+              <List.ItemMeta
+                key={recordField.id}
+                logo={<Icon width={24} icon={recordField.icon} />}
+                title={recordField.title}
+                rightComponent={
+                  <>
+                    <Typography.Title
+                      level={1}
+                      noMargin
+                      className={styles.sumValueText}
+                    >
+                      {sumValue}
+                    </Typography.Title>
+                    <Typography.Text>{recordField.unit}</Typography.Text>
+                  </>
+                }
+              />
+            );
           })}
         </div>
       </div>
@@ -259,65 +243,34 @@ const ChecklistFieldGroupAdd = ({
   return (
     <>
       <WeeklyRow currentDay={currentDay} />
-      {fields.map(field => {
-        // const field = fields.find(f => f.id === fieldId)
-        switch (field?.type) {
-          case 'metric': {
-            return (
-              <List.ItemMeta
-                key={field.id}
-                logo={<Icon width={24} icon={field.icon} />}
-                title={field.title}
-                rightComponent={
-                  <>
-                    <Input
-                      key={`${field.id}-${newNoteKey}`}
-                      suffix={<Typography.Text>{field.unit}</Typography.Text>}
-                      value={fieldRecord[field.id] === undefined ? '' : String(fieldRecord[field.id])}
-                      onChange={e => {
-                        setFieldRecord({
-                          ...fieldRecord,
-                          [field.id]: Number(e.target.value),
-                        });
-                      }}
-                      border="dash"
-                      className={styles.input}
-                      type="number"
-                      // Only ever set via a group's own override (see getEffectiveFieldDisplay
-                      // in ChecklistFieldGroup) — a field has no placeholder of its own.
-                      placeholder={field.placeholder}
-                    />
-                    {/* <Typography.Text className={styles.unit}> {field.unit} */}
-                    {/* </Typography.Text> */}
-                  </>
-                }
+      {metricFields.map(field => (
+        <List.ItemMeta
+          key={field.id}
+          logo={<Icon width={24} icon={field.icon} />}
+          title={field.title}
+          rightComponent={
+            <>
+              <Input
+                key={`${field.id}-${newNoteKey}`}
+                suffix={<Typography.Text>{field.unit}</Typography.Text>}
+                value={fieldRecord[field.id] === undefined ? '' : String(fieldRecord[field.id])}
+                onChange={e => {
+                  setFieldRecord({
+                    ...fieldRecord,
+                    [field.id]: Number(e.target.value),
+                  });
+                }}
+                border="dash"
+                className={styles.input}
+                type="number"
+                // Only ever set via a group's own override (see getEffectiveFieldDisplay
+                // in ChecklistFieldGroup) — a field has no placeholder of its own.
+                placeholder={field.placeholder}
               />
-            );
+            </>
           }
-          case 'note': {
-            return (
-              <React.Fragment key={field.id}>
-                <List.ItemMeta
-                  logo={<Icon width={24} icon={field.icon} />}
-                  title={field.title}
-                />
-                <NoteEditor
-                  key={newNoteKey}
-                  withoutBorder
-                  value={fieldRecord?.[field.id]}
-                  setValue={value => {
-                    setFieldRecord({
-                      ...fieldRecord,
-                      [field.id]: value,
-                    });
-                  }}
-                  ai={{ isPro, generate }}
-                />
-              </React.Fragment>
-            );
-          }
-        }
-      })}
+        />
+      ))}
       <div className={styles.footerCenter}>
         {onOpenFieldSettings ? (
           <button
@@ -378,11 +331,11 @@ const ChecklistFieldGroupAdd = ({
                   .filter(([, value]) => value !== undefined)
                   .map(([key, value]) => ({
                     fieldId: key,
-                    value: value as number | string,
+                    value: value as number,
                   })),
               });
               setCurrentChecklistRecords([
-                ...result,
+                ...(result ?? []),
                 ...currentChecklistRecords,
               ]);
               setFieldRecord(getEmptyFieldRecord());
@@ -404,7 +357,7 @@ const ChecklistFieldGroupAdd = ({
             {renderEmpty()}
           </>
         )}
-        
+
         {/* History Section Header */}
         <div className={styles.historyHeader} onClick={() => setShowHistory(!showHistory)}>
           <div className={styles.historyHeaderContent}>
@@ -413,13 +366,13 @@ const ChecklistFieldGroupAdd = ({
               History
             </Typography.Title>
           </div>
-          <Icon 
-            icon="solar:alt-arrow-down-outline" 
-            width={16} 
+          <Icon
+            icon="solar:alt-arrow-down-outline"
+            width={16}
             className={`${styles.arrowIcon} ${showHistory ? styles.arrowExpanded : ''}`}
           />
         </div>
-        
+
         {showHistory && (
           <div className={styles.historyContent}>
             <ChecklistFieldGroupHistory

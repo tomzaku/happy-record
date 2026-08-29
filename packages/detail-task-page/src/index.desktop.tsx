@@ -253,9 +253,7 @@ const DetailTaskPageDesktop = () => {
                 checklistTemplate={checklistTemplate}
                 fields={fields}
                 currentDay={currentDay}
-                onUpdateChecklistTemplate={
-                  isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}
-                }
+                readOnly={!isOwner}
               />
             </div>
             <div className={styles.side}>

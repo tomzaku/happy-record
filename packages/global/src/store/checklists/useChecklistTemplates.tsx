@@ -6,6 +6,7 @@ import { useSessionStore } from '../../hook/useSessionStore';
 import { useSession } from '../../hook/useSession';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
 import type { FieldOverrides } from '../record-field/useRecordField';
+import { useFieldGroups } from './useFieldGroups';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
@@ -33,20 +34,31 @@ export type FieldGroupField = {
 };
 
 /**
- * `fieldGroups` is jsonb (see FieldGroup's own note below), so a template saved before this
- * shipped still has `fields` as plain `RecordField` id strings — this is the one normalizer
- * every fetched template goes through (mergeTemplates below) so nothing downstream has to
- * special-case the legacy shape.
+ * `fields` (this group's own field-ids-plus-overrides list) is jsonb on the `field_groups` row —
+ * see FieldGroup's own note below — so a group saved before this shipped still has `fields` as
+ * plain `RecordField` id strings — this is the one normalizer every fetched group goes through
+ * (useFieldGroups.tsx's own merge) so nothing downstream has to special-case the legacy shape.
  */
 export const normalizeFieldGroupFields = (
   fields: (string | FieldGroupField)[] | undefined | null,
 ): FieldGroupField[] => (fields ?? []).map(f => (typeof f === 'string' ? { fieldId: f } : f));
 
+/**
+ * A real row in `field_groups` now (see 20260829010000_notes_note_id_ownership.sql), not jsonb
+ * embedded in `checklist_templates.field_groups` — see useFieldGroups.tsx for the store this is
+ * fetched/written through.
+ */
 export type FieldGroup = {
   id: string;
+  checklistTemplateId: string;
   title: string;
   fields: FieldGroupField[];
-  note: unknown;
+  /** This group's own persistent note — see useNoteById.ts and ChecklistFieldGroupView. Set the
+   * first time someone actually writes into it; absent means no note yet. */
+  noteId?: string;
+  /** Explicit ordering among a template's own groups — the old jsonb array's position used to be
+   * this. */
+  position: number;
   defaultTab?: number;
   activeTabs?: number[];
   collapseDefault?: boolean;
@@ -59,8 +71,7 @@ export type FieldGroup = {
    * union of every group's `dayOfWeek` when there are any field groups (scheduleUtils.ts's
    * `getEffectiveDayOfWeek`) rather than edited independently — otherwise a group could end up
    * scheduled for a day the template itself never generates a `Checklist` instance on, making it
-   * silently unreachable. `fieldGroups` is jsonb end to end (see
-   * supabase/functions/_shared/checklistTemplates.ts), so this needed no migration.
+   * silently unreachable.
    */
   repeat?: {
     hour: string;
@@ -68,26 +79,24 @@ export type FieldGroup = {
     dayOfWeek: string;
   };
   /**
-   * Soft delete — set (to the deletion time) instead of removing the group from `fieldGroups`,
-   * by "Delete Group" in the group's own settings menu (ChecklistFieldGroupMenu). There's no
-   * undo anywhere else in this app
-   * (a write here is immediate and optimistic, same as everywhere — see CLAUDE.md's "online-first"
-   * section), so this is what makes a group's own title/note/schedule/fields recoverable at all
-   * after a delete, rather than that config being gone the instant the request fires. Every
-   * consumer that renders or counts "the template's groups" should go through
-   * `getActiveFieldGroups` (below) rather than reading `fieldGroups` directly, so an archived
-   * group doesn't silently reappear in a tab list, a schedule union, or a group-name summary
-   * that forgot to filter it out.
+   * Soft delete — set (to the deletion time) instead of actually deleting the row, by "Delete
+   * Group" in the group's own settings menu (ChecklistFieldGroupMenu). There's no undo anywhere
+   * else in this app (a write here is immediate and optimistic, same as everywhere — see
+   * CLAUDE.md's "online-first" section), so this is what makes a group's own title/schedule/
+   * fields recoverable at all after a delete, rather than that config being gone the instant the
+   * request fires. Every consumer that renders or counts "the template's groups" should go
+   * through `getActiveFieldGroups` (below) rather than reading a fetched list directly, so an
+   * archived group doesn't silently reappear in a tab list, a schedule union, or a group-name
+   * summary that forgot to filter it out.
    *
-   * Restoring a group must set this to `null`, not `undefined` — `JSON.stringify` drops an
-   * `undefined`-valued key entirely, so it would never even reach `patchChecklistTemplate`'s
-   * request body, and the per-group patch merge (`_shared/checklistTemplates.ts`'s
-   * `mergeFieldGroupPatches`, a plain `{ ...group, ...patch }`) only overwrites keys the patch
-   * actually contains — the group would look restored locally (optimistic update) while staying
-   * archived server-side, forever, until whatever local copy showed it restored got reloaded.
-   * `null` isn't dropped by `JSON.stringify`, so it reaches the merge and actually overwrites.
+   * Restoring a group must send this as `null`, not `undefined` — `JSON.stringify` drops an
+   * `undefined`-valued key entirely, so it would never even reach the `field-groups` POST body,
+   * and `fromFieldGroup` (`_shared/fieldGroups.ts`) only writes `archived_at` from what's
+   * actually present. `null` isn't dropped by `JSON.stringify`, so it reaches the row and
+   * actually overwrites.
    */
   archivedAt?: string | null;
+  updatedAt: string;
 };
 
 /** See `FieldGroup.archivedAt`'s own comment for why this exists instead of just removing the
@@ -159,44 +168,6 @@ const fetchedScopes = new Set<string>();
 const ALL_SCOPE = '__all__';
 
 /**
- * `fieldGroups` is one jsonb column, so a plain top-level diff of it is
- * all-or-nothing — every call site rebuilds the whole array even to change
- * one group's note (see ChecklistFieldGroup's onUpdateNote). This finds the
- * actual per-group diff so `updateChecklistTemplate` can send just what
- * changed in each group instead of every group's full config.
- *
- * Returns `full` when the group list itself changed shape (added, removed,
- * reordered) — there's no per-id diff to take there, it's a real replace.
- * Returns `patches` — one partial group per id that actually changed — the
- * rest of the time.
- */
-function diffFieldGroups(
-  next: FieldGroup[],
-  prev: FieldGroup[],
-): { full: FieldGroup[] } | { patches: (Partial<FieldGroup> & Pick<FieldGroup, 'id'>)[] } | null {
-  if (JSON.stringify(next) === JSON.stringify(prev)) return null;
-
-  const sameShape =
-    next.length === prev.length && next.every((group, i) => group.id === prev[i]?.id);
-  if (!sameShape) return { full: next };
-
-  const patches: (Partial<FieldGroup> & Pick<FieldGroup, 'id'>)[] = [];
-  next.forEach((group, i) => {
-    const prevGroup = prev[i];
-    if (JSON.stringify(group) === JSON.stringify(prevGroup)) return;
-    const patch: Partial<FieldGroup> & Pick<FieldGroup, 'id'> = { id: group.id };
-    for (const key of Object.keys(group) as (keyof FieldGroup)[]) {
-      if (key === 'id') continue;
-      if (JSON.stringify(group[key]) !== JSON.stringify(prevGroup[key])) {
-        (patch as Record<string, unknown>)[key] = group[key];
-      }
-    }
-    patches.push(patch);
-  });
-  return { patches };
-}
-
-/**
  * Keeps the stored `repeat.dayOfWeek` in sync with the derived union of the template's own
  * field-group schedules (getEffectiveDayOfWeek). Gating itself never trusts this stored value
  * (see getChecklistTemplateIdsByGivingDate below) — this is only for the handful of consumers
@@ -205,6 +176,13 @@ function diffFieldGroups(
  * changes. Only touches `repeat` when one is already set on the template — a template with
  * field-group schedules but no template-level `repeat` at all has nothing to sync into, and the
  * derived gate works from the field groups either way.
+ *
+ * Only runs from `addChecklistTemplate`/`updateChecklistTemplate`, against whatever
+ * `template.fieldGroups` the caller happened to pass in at that moment — since a group is its
+ * own row now (see useFieldGroups.tsx), one added via `addFieldGroup` *after* this runs won't
+ * retrigger this sync. Acceptable given the "display convenience only" note above (real gating
+ * never reads this), but worth knowing if a share card/label ever looks stale right after adding
+ * a group with its own schedule.
  */
 function withSyncedRepeat(template: ChecklistTemplate): ChecklistTemplate {
   if (!template.repeat || !template.fieldGroups?.length) return template;
@@ -232,6 +210,39 @@ export const useChecklistTemplates = () => {
     true,
   );
 
+  // `field-groups` is its own resource now (see useFieldGroups.tsx) — a fetched template here
+  // never carries real `fieldGroups` from the server anymore. `getChecklistTemplate`/
+  // `getRecommendChecklistTemplates` below merge that store's own fetch onto the object they
+  // return; the effect further down additionally keeps every *stored* template's own
+  // `.fieldGroups` in sync too, for the several places that still read `checklistTemplate[id]`
+  // directly instead of through those getters (WeeklyCalendarVertical/Horizontal,
+  // ChecklistToday, EditChecklistForm, useChecklists.tsx) — without it, only callers that went
+  // through `getChecklistTemplate` would ever see a group.
+  const { getFieldGroups, ensureAllFieldGroupsFetched, fieldGroupList } = useFieldGroups();
+
+  // Keeps every stored template's own `.fieldGroups` in sync with the field-groups store
+  // whenever it changes — see the comment above `getFieldGroups` for why this can't just live
+  // inside the read functions alone.
+  React.useEffect(() => {
+    setChecklistTemplate(prev => {
+      let changed = false;
+      const next = { ...prev };
+      for (const id of Object.keys(next)) {
+        const groups = getFieldGroups(id);
+        if (JSON.stringify(next[id].fieldGroups) !== JSON.stringify(groups)) {
+          next[id] = { ...next[id], fieldGroups: groups };
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    // Deliberately keyed on `fieldGroupList` alone, not `getFieldGroups`/`checklistTemplate` —
+    // this only needs to rerun when the field-groups store itself actually changes; including
+    // the others would refire on every template fetch too, for no benefit (a fetched template
+    // gets today's `fieldGroupList` snapshot in the very next tick anyway).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fieldGroupList]);
+
   // Shared by every fetch path below (one id, or "all mine") so a template
   // landing here for the first time — no matter which scope brought it in —
   // gets the same treatment `addChecklistTemplate` already gives a
@@ -239,23 +250,11 @@ export const useChecklistTemplates = () => {
   const mergeTemplates = React.useCallback(
     (fetched: ChecklistTemplate[]) => {
       if (!fetched.length) return;
-      // A row saved before FieldGroupField existed still has `fields` as plain id strings — see
-      // normalizeFieldGroupFields' own comment. Every fetch path (one id, all mine, a shared
-      // template) funnels through here, so this is the one place that needs to know that.
-      const normalized = fetched.map(template => ({
-        ...template,
-        fieldGroups: (template.fieldGroups ?? []).map(group => ({
-          ...group,
-          fields: normalizeFieldGroupFields(
-            group.fields as unknown as (string | FieldGroupField)[],
-          ),
-        })),
-      }));
       const newIds: string[] = [];
       setChecklistTemplate(prev => {
         const merged = { ...prev };
         let changed = false;
-        for (const template of normalized) {
+        for (const template of fetched) {
           const existing = merged[template.id];
           // Last-write-wins by `updatedAt` — cheap safety even though a
           // direct scoped fetch makes a real conflict rare.
@@ -377,24 +376,14 @@ export const useChecklistTemplates = () => {
     // `currentChecklistTemplate`, so a `repeat.dayOfWeek` resynced from the
     // field groups above actually reaches the backend instead of only
     // updating local state.
+    // fieldGroups isn't a column on this row anymore (see useFieldGroups.tsx) — a caller that
+    // wants to change a group calls that store's own addFieldGroup/updateFieldGroup directly,
+    // never through here.
     const changes: Record<string, unknown> = {};
     for (const key of Object.keys(currentChecklistTemplate) as (keyof ChecklistTemplate)[]) {
       if (key === 'id' || key === 'fieldGroups') continue;
       if (JSON.stringify(template[key]) !== JSON.stringify(existing[key])) {
         changes[key] = template[key];
-      }
-    }
-
-    // fieldGroups gets its own diff one level down — see diffFieldGroups.
-    if ('fieldGroups' in currentChecklistTemplate) {
-      const diff = diffFieldGroups(
-        currentChecklistTemplate.fieldGroups,
-        existing.fieldGroups ?? [],
-      );
-      if (diff && 'full' in diff) {
-        changes.fieldGroups = diff.full;
-      } else if (diff && diff.patches.length > 0) {
-        changes.fieldGroupPatches = diff.patches;
       }
     }
 
@@ -429,19 +418,33 @@ export const useChecklistTemplates = () => {
     setSelectedChecklist(Array.from(new Set(checklistIds)));
   };
 
+  // `field-groups` is fetched/stored separately (see useFieldGroups.tsx) — every read function
+  // below that hands back a `ChecklistTemplate` merges that store's own `getFieldGroups` onto it
+  // here, once, so nothing downstream has to know the two ever lived in different places.
+  const withFieldGroups = React.useCallback(
+    (template: ChecklistTemplate): ChecklistTemplate => ({
+      ...template,
+      fieldGroups: getFieldGroups(template.id),
+    }),
+    [getFieldGroups],
+  );
+
   // useCallback'd (not a plain closure) so a consumer's own useSyncedSelector
   // can memoize on it — its identity now only changes when `checklistTemplate`
   // itself changes, instead of on every render.
   const getRecommendChecklistTemplates = React.useCallback((): ChecklistTemplate[] => {
     ensureAllTemplatesFetched();
-    return Object.values(checklistTemplate);
-  }, [checklistTemplate, ensureAllTemplatesFetched]);
+    ensureAllFieldGroupsFetched();
+    return Object.values(checklistTemplate).map(withFieldGroups);
+  }, [checklistTemplate, ensureAllTemplatesFetched, ensureAllFieldGroupsFetched, withFieldGroups]);
 
   const getChecklistTemplateIdsByGivingDate = React.useCallback(
     ({ date }: { date: Date } = { date: new Date() }) => {
       ensureAllTemplatesFetched();
+      ensureAllFieldGroupsFetched();
       return selectedChecklistTemplates.filter(checklistTemplateId => {
-        const currentChecklistTemplate = checklistTemplate[checklistTemplateId];
+        const raw = checklistTemplate[checklistTemplateId];
+        const currentChecklistTemplate = raw && withFieldGroups(raw);
 
         // A schedule's startedAt is the day it takes effect from — a day-of-week
         // match before that date is the template's history, not a day it was
@@ -463,7 +466,7 @@ export const useChecklistTemplates = () => {
         );
       });
     },
-    [selectedChecklistTemplates, checklistTemplate, ensureAllTemplatesFetched],
+    [selectedChecklistTemplates, checklistTemplate, ensureAllTemplatesFetched, ensureAllFieldGroupsFetched, withFieldGroups],
   );
 
   const getChecklistTemplate = React.useCallback(
@@ -479,9 +482,10 @@ export const useChecklistTemplates = () => {
           mergeTemplates(result.templates);
         });
       }
-      return checklistTemplate[id];
+      const template = checklistTemplate[id];
+      return template && withFieldGroups(template);
     },
-    [checklistTemplate, userId, ready, mergeTemplates],
+    [checklistTemplate, userId, ready, mergeTemplates, withFieldGroups],
   );
 
   return {

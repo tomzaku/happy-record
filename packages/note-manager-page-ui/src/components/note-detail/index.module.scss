@@ -131,6 +131,12 @@
   }
 }
 
+.titleInput {
+  width: calc(100% - #{$spacing-md} * 2);
+  margin: $spacing-sm $spacing-md 0;
+  font-weight: 600;
+}
+
 .noteContent {
   padding: $spacing-md;
   min-height: 60px;

@@ -12,9 +12,15 @@ import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTas
 import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
 import styles from './index.module.scss';
 
+/** The caller (ChecklistFieldGroup) owns `checklistTemplateId`/`position` — this component
+ * doesn't know which template it's adding to, so it hands back everything else and lets
+ * `onAddFieldGroup` fill those in before actually persisting the group (see useFieldGroups.tsx's
+ * `addFieldGroup`). */
+type NewFieldGroup = Omit<FieldGroup, 'checklistTemplateId' | 'position' | 'updatedAt'>;
+
 interface ChecklistFieldGroupAddGroupProps {
   fieldGroups?: FieldGroup[];
-  onAddFieldGroup: (newGroup: FieldGroup) => void;
+  onAddFieldGroup: (newGroup: NewFieldGroup) => void;
   availableFields?: string[];
   onFieldAdded?: (newField: RecordField) => void;
 }
@@ -99,13 +105,12 @@ const ChecklistFieldGroupAddGroup = ({
 
   const handleSave = () => {
     if (!isFormValid) return;
-    const newGroup: FieldGroup = {
+    const newGroup: NewFieldGroup = {
       id: `group-${Date.now()}`,
       title: groupName.trim(),
       // No overrides on creation — Select Fields' own "Customize" panel (ChecklistFieldGroupMenu)
       // is where those get set, once the group actually exists.
       fields: selectedFields.map(fieldId => ({ fieldId })),
-      note: null,
       // All four real tabs, not just Add+Config — the old desktop-only default (see git history)
       // left a freshly created group unable to show History/Metric at all until someone opened
       // its own Tabs dialog and turned them back on.

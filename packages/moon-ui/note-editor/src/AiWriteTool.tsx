@@ -5,9 +5,8 @@
 //
 // This package has no dependency on @dreamer/global or the network (see its own package.json) —
 // the actual AI call, block-shape mapping, and Pro check all live in
-// packages/global/src/hook/useAiNoteGenerate.ts (and its position-aware siblings,
-// useAiFieldGroupNoteGenerate.ts/useAiChecklistRecordNoteGenerate.ts, for a host page that knows
-// which persisted note/record/field-group it's writing into) and get threaded in as
+// packages/global/src/hook/useAiNoteGenerate.ts (and useNoteById.ts, for a host page that knows
+// which persisted note it's writing into) and get threaded in as
 // `config.generate`/`config.isPro`, via NoteEditor's own `ai` prop (see index.tsx and
 // EditorJs.tsx). A page that never passes `ai` never registers this tool at all — every other
 // consumer of NoteEditor is unaffected.
@@ -41,10 +40,9 @@ export type AiNoteToolConfig = {
   options?: AiNoteToolOption[];
   /** Runs the actual generation. `context.blockIndex` is this placeholder's own index among the
    * document's blocks — not content, just a position. The host page's own generate function
-   * (useAiNoteGenerate.ts, or one of its position-aware siblings — useAiFieldGroupNoteGenerate.ts/
-   * useAiChecklistRecordNoteGenerate.ts) decides what to do with it: the plain one ignores it
-   * entirely, the position-aware ones send it to their own edge function alongside whichever
-   * note/record/field-group this editor instance is writing into, which resolves the real
+   * (useAiNoteGenerate.ts, or useNoteById.ts's own position-aware one) decides what to do with
+   * it: the plain one ignores it entirely, the position-aware one sends it to the edge function
+   * alongside whichever note this editor instance is writing into, which resolves the real
    * surrounding text itself server-side — this tool never learns or sends any note content, only
    * this number. A thrown error's `message` is shown inline; there's no local fallback for "the
    * AI didn't run" (see aiNoteApi.ts). */
@@ -260,9 +258,9 @@ export default class AiWriteTool {
   }
 
   /** This placeholder's own position among the document's blocks — the actual note content
-   * around it, if any is needed at all, is resolved server-side (see useAiFieldGroupNoteGenerate.ts/
-   * useAiChecklistRecordNoteGenerate.ts and their edge functions), scoped to whichever persisted
-   * note/record/field-group this editor instance is writing into. This tool sends only this
+   * around it, if any is needed at all, is resolved server-side (see useNoteById.ts and
+   * ai-note/index.ts), scoped to whichever persisted note this editor instance is writing into.
+   * This tool sends only this
    * index, never block content. */
   private getBlockIndex(): number {
     return this.api.blocks.getBlockIndex(this.block.id);

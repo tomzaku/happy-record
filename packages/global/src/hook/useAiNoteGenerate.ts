@@ -5,12 +5,12 @@
 // in as the editor's `ai` prop. See add-note-page-ui's AddNotePage for the call site.
 //
 // No note-context awareness here on purpose — this is the plain, context-less generator, used
-// by every "/ai" placeholder with no real, persisted note/record/field-group to resolve context
-// from yet (a brand-new, not-yet-saved note or record). The two cases that do have something to
-// draw context from use their own separate hooks instead — useAiFieldGroupNoteGenerate.ts and
-// useAiChecklistRecordNoteGenerate.ts — each backed by its own edge function that resolves
-// context server-side from a position the client sends, not client-sent text (see either of
-// those edge functions' own comments for why).
+// by every "/ai" placeholder with no real, persisted note to resolve context from yet (a
+// brand-new, not-yet-saved note — add-note-page-ui/note-manager-page-ui's composers). A note
+// that already has an id (a field's own note, a field group's own note) resolves context through
+// useNoteById.ts's own `generate` instead — same ai-note edge function underneath, just with the
+// `noteId` param that makes it resolve context server-side from a position the client sends, not
+// client-sent text (see ai-note/index.ts's own comment for why).
 
 import { useIsPro } from '../store/pro/useProStatus';
 import { generateNote, type AiNoteOption } from '../store/note/aiNoteApi';

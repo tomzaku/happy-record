@@ -5,6 +5,7 @@ import { useAiNoteGenerate } from '@dreamer/global/src/hook';
 
 import styles from './index.module.scss';
 import Typography from '@moon-ui/typography';
+import Input from '@moon-ui/input';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';
@@ -14,15 +15,16 @@ type Props = {
   allNotes: ChecklistRecord[];
   allNoteFields: RecordField[];
   deleteNote: (note: ChecklistRecord) => void;
-  addNote: (fieldId: string, value: string | number) => void;
+  addNote: (fieldId: string, value: string | number, title?: string) => void;
   defaultFieldId: string;
 };
 
 const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, defaultFieldId }: Props) => {
-  const { updateNote } = useNoteRecords();
+  const { updateNote, updateNoteTitle } = useNoteRecords();
   // "/ai" inside both editors below — see add-note-page-ui's own AddNotePage for the same wiring.
   const { isPro, generate } = useAiNoteGenerate();
   const [isCreatingNote, setIsCreatingNote] = React.useState(false);
+  const [newNoteTitle, setNewNoteTitle] = React.useState('');
   const [newNoteValue, setNewNoteValue] = React.useState<string | number | undefined>();
   // Existing notes open in view (read-only) mode by default; editing one is opt-in via its own
   // Edit button. Keyed by note id so toggling one note's edit state doesn't affect any other.
@@ -50,8 +52,9 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
 
   const handleSaveNewNote = () => {
     if (newNoteValue) {
-      addNote(defaultFieldId, newNoteValue);
+      addNote(defaultFieldId, newNoteValue, newNoteTitle);
       startTransition(() => {
+        setNewNoteTitle('');
         setNewNoteValue('');
         setIsCreatingNote(false);
       });
@@ -60,6 +63,7 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
 
   const handleCancelNewNote = () => {
     startTransition(() => {
+      setNewNoteTitle('');
       setNewNoteValue('');
       setIsCreatingNote(false);
     });
@@ -97,6 +101,13 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
               </Button>
             </div>
           </div>
+          <Input
+            value={newNoteTitle}
+            onChange={e => setNewNoteTitle(e.target.value)}
+            placeholder="Title"
+            border="dash"
+            className={styles.titleInput}
+          />
           <div className={styles.newNoteContent}>
             <NoteEditor
               value={newNoteValue}
@@ -145,6 +156,14 @@ const NoteDetail = ({ allNotes, allNoteFields = [], deleteNote, addNote, default
                 Delete
               </Button>
             </div>
+            <Input
+              value={note.title ?? ''}
+              onChange={e => updateNoteTitle(note, e.target.value)}
+              placeholder="Title"
+              border="dash"
+              className={styles.titleInput}
+              readOnly={!isEditingNote}
+            />
             <div className={styles.noteContent}>
               <NoteEditor
                 value={note.value}

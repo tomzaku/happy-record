@@ -1,19 +1,27 @@
-// The `notes` resource — every read and write of `notes`. See CLAUDE.md.
-// Not `checklist_records`: a note never belongs to a checklist (see the
-// migration for why they got split apart).
+// The `notes` resource — every read and write of `notes`. See CLAUDE.md. Plain by-id content now
+// (see 20260829010000_notes_note_id_ownership.sql): whatever a note belongs to (a field, a field
+// group) holds its own `note_id` pointing here, `notes` itself doesn't point back out at anything.
 //
-//   GET    /notes  ?fieldIds=&folderId=&limit=  → { notes }
-//   POST   /notes  { note }                     → { ok }
-//   DELETE /notes  ?id=                          → { ok }
+//   GET    /notes ?id=            → { notes }  one note
+//   GET    /notes ?ids=a,b        → { notes }  several at once (the standalone notebook's own
+//                                    listing — one note per note-type field, batched by their ids)
+//   GET    /notes ?q=text&limit=  → { notes }  title/search_text match, most recently updated
+//                                    first — a search UI's own results list. `search_text` is
+//                                    plain text (see _shared/notes.ts's own comment), so this is
+//                                    a real substring match on what the note actually says, not
+//                                    on `value`'s raw JSON.
+//   POST   /notes { note }        → { ok }
+//   DELETE /notes ?id=            → { ok }
 //
 // Deploy: `supabase functions deploy notes`
 
 import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
-import { fromNote, limitOf, toNote } from '../_shared/notes.ts';
+import { fromNote, toNote } from '../_shared/notes.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
-const DEFAULT_PAGE = 500;
+const DEFAULT_SEARCH_LIMIT = 20;
+const MAX_SEARCH_LIMIT = 100;
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
 
@@ -26,20 +34,33 @@ async function body(req: Request): Promise<Record<string, unknown>> {
 }
 
 async function list({ url, db, userId }: Ctx) {
-  const fieldIds = (url.searchParams.get('fieldIds') ?? '').split(',').filter(Boolean);
-  const folderId = url.searchParams.get('folderId');
-  const limit = limitOf(url.searchParams.get('limit'), DEFAULT_PAGE);
+  const id = url.searchParams.get('id');
+  const ids = (url.searchParams.get('ids') ?? '').split(',').filter(Boolean);
+  const q = url.searchParams.get('q');
+  if (!id && !ids.length && !q) return { notes: [] };
 
-  let q = db
-    .from('notes')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-  if (fieldIds.length) q = q.in('field_id', fieldIds);
-  if (folderId) q = q.eq('folder_id', folderId);
+  let query = db.from('notes').select('*').eq('user_id', userId);
+  if (id) {
+    query = query.eq('id', id);
+  } else if (ids.length) {
+    query = query.in('id', ids);
+  } else {
+    // `q` — a real substring, not user-controlled SQL: PostgREST's `.or()` filter string still
+    // needs `%`/commas/parens escaped out of it, since those are syntax there, not just in the
+    // ILIKE pattern itself.
+    const escaped = (q as string).replace(/[%,()]/g, char => `\\${char}`);
+    const pattern = `%${escaped}%`;
+    const limitParam = Number(url.searchParams.get('limit'));
+    const limit = Number.isFinite(limitParam) && limitParam >= 1
+      ? Math.min(Math.floor(limitParam), MAX_SEARCH_LIMIT)
+      : DEFAULT_SEARCH_LIMIT;
+    query = query
+      .or(`title.ilike.${pattern},search_text.ilike.${pattern}`)
+      .order('updated_at', { ascending: false })
+      .limit(limit);
+  }
 
-  const { data, error } = await q;
+  const { data, error } = await query;
   if (error) throw new Error(error.message);
   return { notes: ((data ?? []) as Record<string, unknown>[]).map(toNote) };
 }

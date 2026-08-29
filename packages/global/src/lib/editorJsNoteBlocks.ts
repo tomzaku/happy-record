@@ -83,3 +83,63 @@ export function buildEditorJsDocument(blocks: AiGeneratedNoteBlock[]): unknown |
   if (blocks.length === 0) return null;
   return { time: Date.now(), blocks: buildEditorJsBlocks(blocks), version: '2.31.6' };
 }
+
+// ─── the opposite direction: real Editor.js blocks → plain text ───
+// For `notes.search_text` (see 20260829020000_notes_title_search_owner.sql) — searching a
+// note's raw `value` directly means matching on structural JSON (`"type":"paragraph"`) along
+// with whatever the user actually wrote; this is what every write path (useNote.tsx's
+// addNote/updateNote) runs `value` through first instead. Mirrors
+// supabase/functions/_shared/aiNoteGeneration.ts's own `blockToPlainText`/`extractContext` —
+// not shared code (one runs in Deno, this in the browser bundle) — except this extracts the
+// whole document for search, not a context window around one insertion point.
+
+const MAX_SEARCH_TEXT_CHARS = 2000;
+
+const stripHtml = (s: string) => s.replace(/<[^>]*>/g, '');
+
+function blockToPlainText(block: { type?: unknown; data?: unknown }): string {
+  const data = (block.data && typeof block.data === 'object' ? block.data : {}) as Record<string, unknown>;
+  switch (block.type) {
+    case 'header':
+    case 'paragraph':
+    case 'quote':
+      return stripHtml(typeof data.text === 'string' ? data.text : '');
+    case 'checklist':
+      return Array.isArray(data.items)
+        ? (data.items as { text?: unknown }[])
+          .map(item => stripHtml(typeof item.text === 'string' ? item.text : ''))
+          .join(' ')
+        : '';
+    case 'list':
+      return Array.isArray(data.items)
+        ? (data.items as { content?: unknown }[])
+          .map(item => stripHtml(typeof item.content === 'string' ? item.content : ''))
+          .join(' ')
+        : '';
+    case 'table':
+      return Array.isArray(data.content)
+        ? (data.content as unknown[][])
+          .map(row => row.map(cell => stripHtml(typeof cell === 'string' ? cell : '')).join(' '))
+          .join(' ')
+        : '';
+    case 'embed':
+      return typeof data.caption === 'string' ? stripHtml(data.caption) : '';
+    case 'delimiter':
+    default:
+      return '';
+  }
+}
+
+/** Tolerant the same way toBlocks (_shared/aiNoteGeneration.ts) is: a stored `value` that isn't
+ * real Editor.js `OutputData` (not yet saved, or a legacy plain string) yields no usable text
+ * rather than throwing. */
+export function blocksToSearchText(value: unknown): string {
+  const doc = value && typeof value === 'object' ? (value as { blocks?: unknown }) : null;
+  const blocks = Array.isArray(doc?.blocks) ? (doc!.blocks as unknown[]) : [];
+  const text = blocks
+    .filter((b): b is { type?: unknown; data?: unknown } => !!b && typeof b === 'object')
+    .map(blockToPlainText)
+    .filter(Boolean)
+    .join(' ');
+  return text.slice(0, MAX_SEARCH_TEXT_CHARS);
+}
