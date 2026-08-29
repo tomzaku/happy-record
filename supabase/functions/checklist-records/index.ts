@@ -1,5 +1,5 @@
-// The `checklist-records` resource — every read and write of a checklist's own fields, metric or
-// note. See CLAUDE.md.
+// The `checklist-records` resource — every read and write of a checklist's own fields, number,
+// text, date, datetime, or note. See CLAUDE.md.
 //
 //   GET    /checklist-records  ?checklistTemplateId=&from=&to=&fieldIds=&limit=  → { records }
 //   POST   /checklist-records  { records, checklistId, checklistTemplateId, createdAt, submissionId } → { ok }
@@ -9,8 +9,8 @@
 // `checklistTemplateId` is optional on GET — omitted, it reads across every
 // template the caller owns.
 //
-// A `type: 'note'` field's own entry gets a real `checklist_records` row same as a metric field's
-// — see 20260829050000_checklist_records_note_id.sql — but with no value of its own
+// A `type: 'note'` field's own entry gets a real `checklist_records` row same as every other
+// field type's — see 20260829050000_checklist_records_note_id.sql — but with no value of its own
 // (`value_number`/`value_text` both null): its real content lives in `notes`, pointed at by
 // `note_id`. Both rows share one id (see `fromChecklistFieldNoteEntry`), so `note_id` is always
 // that same id, never a separately generated one. This keeps every read here a single
@@ -113,13 +113,15 @@ async function list({ url, db, userId }: Ctx) {
   return { records };
 }
 
-/** A metric field's own entry is always `number | string`; a note-type field's own entry is real
- * Editor.js `OutputData` (an object) — same shape-based split `update()` below already uses, not
- * a `fields` table lookup. Deliberately not looking the field up: a lookup can only ever be as
- * reliable as `fields` having a row for this id, and the value's own shape already says which
- * table it belongs in unambiguously — trusting the lookup instead used to fail silently closed
- * (an id the query didn't resolve — a race, a table not yet seeded — fell through to "metric" and
- * threw `fromRecordEntry`'s own "Missing value." on real note content). */
+/** Every field type but `note` has a plain `number | string` value (number, text, date,
+ * datetime — see _shared/fields.ts's own FIELD_TYPES comment); a note-type field's own entry is
+ * real Editor.js `OutputData` (an object) instead — same shape-based split `update()` below
+ * already uses, not a `fields` table lookup. Deliberately not looking the field up: a lookup can
+ * only ever be as reliable as `fields` having a row for this id, and the value's own shape
+ * already says which table it belongs in unambiguously — trusting the lookup instead used to
+ * fail silently closed (an id the query didn't resolve — a race, a table not yet seeded — fell
+ * through to "not a note" and threw `fromRecordEntry`'s own "Missing value." on real note
+ * content). */
 function isNoteEntry(e: Record<string, unknown>): boolean {
   return typeof e.value !== 'number' && typeof e.value !== 'string';
 }
@@ -129,7 +131,7 @@ function isNoteEntry(e: Record<string, unknown>): boolean {
  * sends every field on the day's form in one call, matching
  * `addChecklistRecord`'s batch shape. Creates the owning `submissions` row
  * first — `checklist_records.submission_id` is a real foreign key, so the parent has to exist
- * before any record (metric or note) can reference it.
+ * before any record (number/text/date/datetime, or note) can reference it.
  */
 async function save({ req, db, userId }: Ctx) {
   const params = await body(req);
@@ -146,7 +148,9 @@ async function save({ req, db, userId }: Ctx) {
   if (entries.length > MAX_BULK) throw new ApiError(400, `At most ${MAX_BULK} records per submit.`);
 
   const shared = { checklistId, checklistTemplateId, createdAt, submissionId };
-  const metricEntries = entries.filter(e => !isNoteEntry(e as Record<string, unknown>));
+  // Not "metricEntries" — this covers every non-note type (number, text, date, datetime), all of
+  // which share the same plain-value `checklist_records` row shape.
+  const valueEntries = entries.filter(e => !isNoteEntry(e as Record<string, unknown>));
   const noteEntries = entries.filter(e => isNoteEntry(e as Record<string, unknown>));
 
   const { error: submissionError } = await db.from('submissions').upsert({
@@ -160,9 +164,9 @@ async function save({ req, db, userId }: Ctx) {
 
   const recordRows: (ReturnType<typeof fromRecordEntry> | ReturnType<typeof fromChecklistFieldNoteEntry>['recordRow'])[] = [];
 
-  if (metricEntries.length) {
+  if (valueEntries.length) {
     try {
-      recordRows.push(...metricEntries.map(e => fromRecordEntry(e as Record<string, unknown>, shared)));
+      recordRows.push(...valueEntries.map(e => fromRecordEntry(e as Record<string, unknown>, shared)));
     } catch (err) {
       throw new ApiError(400, err instanceof Error ? err.message : 'Invalid record.');
     }
@@ -213,8 +217,8 @@ async function bumpSubmission(
 
 /**
  * Edits one record's value (and, for a note-type field's own entry, its title) in place — the
- * inline editor on both Submit and History. A metric field's own `value` is always `number |
- * string`, decided the same way `save()`'s own `isNoteEntry` is; a note-type field's is real
+ * inline editor on both Submit and History. A number/text/date/datetime field's own `value` is
+ * always `number | string`, decided the same way `save()`'s own `isNoteEntry` is; a note-type field's is real
  * Editor.js `OutputData` (an object) or entirely absent (a title-only edit), which reaches for
  * `notes` instead — same id as this record (see module doc comment), so `params.id` addresses
  * both rows without the client ever needing to know there are two. That row's own
@@ -284,9 +288,9 @@ async function update({ req, db, userId }: Ctx) {
 
 /** Idempotent — removing a missing record is not an error. Deletes the `checklist_records` row
  * first (harmless no-op if this id was never one), then `notes` (harmless no-op for a plain
- * metric record's own id) — `checklist_records.note_id` is `on delete set null`, so order doesn't
- * matter for the FK, but deleting the pointer before the content it points at reads more
- * naturally than the reverse. */
+ * number/text/date/datetime record's own id) — `checklist_records.note_id` is `on delete set
+ * null`, so order doesn't matter for the FK, but deleting the pointer before the content it
+ * points at reads more naturally than the reverse. */
 async function remove({ url, db, userId }: Ctx) {
   const id = url.searchParams.get('id');
   if (!id) throw new ApiError(400, 'Missing id.');

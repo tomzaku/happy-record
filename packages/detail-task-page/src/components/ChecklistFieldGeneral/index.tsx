@@ -7,11 +7,19 @@ import { RecordField } from '@dreamer/global/src/store/record-field';
 import { generateNote, type AiNoteOption } from '@dreamer/global/src/store/note/aiNoteApi';
 import { useIsPro } from '@dreamer/global/src/store/pro/useProStatus';
 import { buildEditorJsBlocks, type EditorJsBlockInput } from '@dreamer/global/src/lib/editorJsNoteBlocks';
+import {
+  dateInputValueToIso,
+  datetimeLocalInputValueToIso,
+  formatFieldValueForDisplay,
+  isoToDatetimeLocalInputValue,
+} from '@dreamer/global/src/lib/fieldValueFormat';
 import NoteEditor from '@moon-ui/note-editor';
 import Typography from '@moon-ui/typography';
 import List from '@moon-ui/list';
 import Icon from '@moon-ui/icon/Icon';
 import Input from '@moon-ui/input';
+import DatePicker from '@moon-ui/date-picker';
+import cx from 'classnames';
 
 import styles from './index.module.scss';
 
@@ -24,9 +32,9 @@ type Props = {
 const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
   // A `type: 'note'` field's own value here is a checklist journal entry, not the field's single
   // current note (that's the standalone notebook's own thing — see useNote.tsx's `Note` doc
-  // comment) — one row per submission, editable in place from History same as a metric field.
+  // comment) — one row per submission, editable in place from History same as a number field.
   // Routes to `notes` server-side (see checklist-records/index.ts), but the client never has to
-  // know that — this is the exact same `updateChecklistRecord` call a metric field's own edit
+  // know that — this is the exact same `updateChecklistRecord` call a number field's own edit
   // makes, just with an Editor.js `OutputData` object instead of a numeric `value`. No title sent
   // from here — there's no title input in this UI; the server derives one from the content
   // itself when none is given (see _shared/notes.ts's deriveTitle).
@@ -86,6 +94,89 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
         </div>
       );
     }
+    // `text`/`date`/`datetime` are all a plain string value (see useRecordField.tsx's own `type`
+    // comment) — same edit-in-place shape number's own case has (an `activeRecord`/`inputRef`
+    // pair, committed on the checkmark), just a different input control per type and no
+    // `Number()` coercion.
+    case 'text':
+    case 'date':
+    case 'datetime': {
+      const isEditing = activeRecord?.id === record.id;
+      const commit = (value: string) => {
+        updateChecklistRecord(record.id, {
+          checklistTemplateId: record.checklistTemplateId,
+          value,
+        });
+        setRecord({ ...record, value });
+        setActiveRecord(undefined);
+      };
+      return (
+        <List.ItemMeta
+          logo={<Icon width={24} icon={field.icon} />}
+          title={field.title}
+          rightComponent={
+            isEditing ? (
+              <>
+                {field.type === 'text' && (
+                  <Input
+                    value={String(activeRecord.value)}
+                    ref={inputRef}
+                    autoFocus
+                    border="dash"
+                    className={styles.textLikeInput}
+                    onChange={e => setActiveRecord({ ...record, value: e.target.value })}
+                  />
+                )}
+                {field.type === 'date' && (
+                  <DatePicker
+                    value={String(activeRecord.value)}
+                    className={styles.textLikeInput}
+                    onChange={e => {
+                      const iso = dateInputValueToIso(e.target.value);
+                      if (iso) setActiveRecord({ ...record, value: iso });
+                    }}
+                  />
+                )}
+                {field.type === 'datetime' && (
+                  <input
+                    type="datetime-local"
+                    className={cx(styles.textLikeInput, styles.nativeDateInput)}
+                    value={isoToDatetimeLocalInputValue(String(activeRecord.value))}
+                    onChange={e => {
+                      const iso = datetimeLocalInputValueToIso(e.target.value);
+                      if (iso) setActiveRecord({ ...record, value: iso });
+                    }}
+                  />
+                )}
+                <Icon
+                  width={24}
+                  className={styles.icon}
+                  onClick={() => setActiveRecord(undefined)}
+                  icon="proicons:cancel"
+                />
+                <Icon
+                  width={24}
+                  className={styles.icon}
+                  onClick={() => commit(String(activeRecord.value))}
+                  icon="material-symbols:check"
+                />
+              </>
+            ) : (
+              <>
+                <Typography.Text> {formatFieldValueForDisplay(field.type, record.value)}</Typography.Text>
+                <Icon
+                  width={24}
+                  className={styles.iconEdit}
+                  onClick={() => setActiveRecord(record)}
+                  icon="solar:pen-2-line-duotone"
+                />
+              </>
+            )
+          }
+        />
+      );
+    }
+    case 'number':
     default: {
       return (
         <>

@@ -9,16 +9,18 @@ import { useIntl } from '@dreamer/translation';
 import styles from './index.module.scss';
 import cx from 'classnames';
 import IconPicker from '../../IconPicker';
-import Radio from '@moon-ui/radio';
+import Select from '@moon-ui/select';
+
+export type FieldType = 'number' | 'note' | 'text' | 'date' | 'datetime';
 
 export type FormState = {
   icon: string;
   selectedIconColor: string;
-  type: 'metric' | 'note';
+  type: FieldType;
   title: string;
   unit: string;
   description: string;
-  /** Metric-only — pre-fills the daily submit screen's input for this field. */
+  /** number-only — pre-fills the daily submit screen's input for this field. */
   defaultValue?: number;
 };
 
@@ -48,10 +50,22 @@ const CoreFieldRecord = ({
   submitButtonText,
 }: Props) => {
   const intl = useIntl();
+
+  // A Select dropdown, not the segmented Radio buttons this used to be — 5 options ("Number",
+  // "Note", "Short Text", "Date", "Date & Time") don't fit as inline buttons in this row on
+  // mobile the way 2 did.
+  const typeOptions: { label: string; value: FieldType }[] = [
+    { label: intl.formatMessage({ defaultMessage: 'Number', id: 'label-record-custom.type.number' }), value: 'number' },
+    { label: intl.formatMessage({ defaultMessage: 'Note', id: 'label-record-custom.type.note' }), value: 'note' },
+    { label: intl.formatMessage({ defaultMessage: 'Short Text', id: 'label-record-custom.type.text' }), value: 'text' },
+    { label: intl.formatMessage({ defaultMessage: 'Date', id: 'label-record-custom.type.date' }), value: 'date' },
+    { label: intl.formatMessage({ defaultMessage: 'Date & Time', id: 'label-record-custom.type.datetime' }), value: 'datetime' },
+  ];
+
   const [form, setForm] = React.useState<FormState>({
     icon: 'octicon:goal-24',
     selectedIconColor: '#607d8b',
-    type: 'metric',
+    type: 'number',
     title: '',
     unit: '',
     description: '',
@@ -118,8 +132,9 @@ const CoreFieldRecord = ({
             field). Sharing a checklist template resolves its own fields a different way (GET
             /fields?templateId=), without ever touching this column. So the "last row, no bottom
             border" styling now lands on whichever row is actually last: Default Value for a
-            metric field, Type itself for a note field (no unit/default-value rows to follow). */}
-        <div className={cx(styles.formRow, form.type !== 'metric' && styles.formRowLast)}>
+            number field, Type itself for every other type (no unit/default-value rows to
+            follow any of them). */}
+        <div className={cx(styles.formRow, form.type !== 'number' && styles.formRowLast)}>
           <List.ItemMeta
             noPaddingHorizontal
             className={styles.itemMeta}
@@ -129,20 +144,24 @@ const CoreFieldRecord = ({
               id: 'label-record-custom.type.label',
             })}
             rightComponent={
-              <Radio
-                isButton
-                value={form.type}
-                onChangeValue={type => setForm({ ...form, type })}
-                options={[
-                  { label: 'Metric', value: 'metric' },
-                  { label: 'Note', value: 'note' },
-                ]}
+              <Select
+                options={typeOptions}
+                onChange={({ value }, { close }) => {
+                  setForm({ ...form, type: value });
+                  close();
+                }}
+                renderInput={() => typeOptions.find(o => o.value === form.type)?.label ?? form.type}
+                classes={{
+                  container: styles.typeSelectContainer,
+                  selectElement: styles.typeSelectElement,
+                  input: styles.typeSelectInput,
+                }}
               />
             }
           />
         </div>
 
-        {form.type === 'metric' && (
+        {form.type === 'number' && (
           <div className={styles.formRow}>
             <List.ItemMeta
               noPaddingHorizontal
@@ -167,7 +186,7 @@ const CoreFieldRecord = ({
           </div>
         )}
 
-        {form.type === 'metric' && (
+        {form.type === 'number' && (
           <div className={cx(styles.formRow, styles.formRowLast)}>
             <List.ItemMeta
               noPaddingHorizontal

@@ -94,7 +94,7 @@ export function fromNote(e: Record<string, unknown>) {
     checklist_id: checklistId,
     checklist_template_id: checklistTemplateId,
     // Only ever set by checklist-records' own POST (see that function) — the "these were
-    // committed together" relationship a note entry shares with its metric siblings from the
+    // committed together" relationship a note entry shares with its other-typed siblings from the
     // same Submit click. Absent for every other note surface.
     submission_id: typeof e.submissionId === 'string' ? e.submissionId : null,
     folder_id: typeof e.folderId === 'string' ? e.folderId : null,

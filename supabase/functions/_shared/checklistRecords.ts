@@ -7,8 +7,8 @@
 // / `value_text` columns here — see the migration for why. Exactly one is
 // ever set; `toChecklistRecord` picks whichever is non-null.
 //
-// A `type: 'note'` field's own value gets a real `checklist_records` row same as a metric
-// field's — see 20260829050000_checklist_records_note_id.sql — but that row carries no value of
+// A `type: 'note'` field's own value gets a real `checklist_records` row same as every other
+// field type's — see 20260829050000_checklist_records_note_id.sql — but that row carries no value of
 // its own (`value_number`/`value_text` both null) and points at the `notes` row holding the real
 // content via `note_id` instead. Both rows share one id (see `fromChecklistFieldNoteEntry`
 // below), so `checklist_records.id = notes.id = note_id` for a note-type entry — `toChecklistRecord`
@@ -27,7 +27,7 @@ export function limitOf(v: string | null, fallback: number, max = MAX_LIMIT): nu
 }
 
 /** `resolvedNote` is this row's own `notes` content, already looked up by `note_id` — undefined
- * for a metric row (no `note_id` to resolve), and for a note row whose lookup somehow came back
+ * for a number/text/date/datetime row (no `note_id` to resolve), and for a note row whose lookup somehow came back
  * empty (its `notes` row is missing — shouldn't happen, but falls back to an empty note rather
  * than throwing, same "degrade, don't break" rule as everywhere else here). */
 export function toChecklistRecord(
@@ -97,7 +97,7 @@ export function fromRecordEntry(
  *
  * Returns *two* rows now (see 20260829050000_checklist_records_note_id.sql): `noteRow` is the
  * real content, going into `notes`; `recordRow` is the pointer, going into `checklist_records`
- * alongside every metric entry in the same batch — same id on both (`e.id`), so
+ * alongside every other entry in the same batch — same id on both (`e.id`), so
  * `recordRow.note_id === noteRow.id` by construction rather than a second id this function has to
  * invent and thread through. The caller (checklist-records/index.ts's `save()`) must write
  * `noteRow` before `recordRow` — `note_id` is a real FK, and the referenced row has to exist

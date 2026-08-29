@@ -15,7 +15,7 @@ export type { AiGeneratedNoteBlock };
 export type AiAvailableField = {
   title: string;
   icon: string;
-  type: 'metric' | 'note';
+  type: 'number' | 'note';
   unit: string;
 };
 
@@ -43,7 +43,7 @@ export type AiGenerateChecklistTemplateParams = {
 export type AiGeneratedField = {
   title: string;
   icon: string;
-  type: 'metric' | 'note';
+  type: 'number' | 'note';
   unit: string;
   description: string;
 };

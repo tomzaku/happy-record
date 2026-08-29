@@ -32,7 +32,7 @@ export type Challenge = {
   shareRecords: boolean;
   commentsEnabled: boolean;
   /**
-   * A shared, collective goal per metric field — `{ [fieldId]: target }`,
+   * A shared, collective goal per number field — `{ [fieldId]: target }`,
    * keyed by the owner's own field id (never a participant's forked copy —
    * see useJoinChallenge.tsx and the challenge_targets migration). Owner-only
    * to set, "before or after share" (CardShare). Text fields are out of

@@ -339,15 +339,24 @@ const ChecklistFieldGroupMenu = React.forwardRef<
   // fallback so a row is never left with nothing under the title.
   const getFieldSummary = (field: RecordField) => {
     if (field.description) return field.description;
-    if (field.type === 'metric') {
-      return field.unit
-        ? intl.formatMessage(
-            { id: 'checklist-field-group-menu.field-summary-metric-unit', defaultMessage: 'Metric · {{unit}}' },
-            { unit: field.unit },
-          )
-        : intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-metric', defaultMessage: 'Metric' });
+    switch (field.type) {
+      case 'number':
+        return field.unit
+          ? intl.formatMessage(
+              { id: 'checklist-field-group-menu.field-summary-number-unit', defaultMessage: 'Number · {{unit}}' },
+              { unit: field.unit },
+            )
+          : intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-number', defaultMessage: 'Number' });
+      case 'text':
+        return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-text', defaultMessage: 'Short Text' });
+      case 'date':
+        return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-date', defaultMessage: 'Date' });
+      case 'datetime':
+        return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-datetime', defaultMessage: 'Date & Time' });
+      case 'note':
+      default:
+        return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-note', defaultMessage: 'Note' });
     }
-    return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-note', defaultMessage: 'Note' });
   };
 
   const editingField = allRecordFields.find(f => f.id === editingFieldId);
@@ -774,7 +783,7 @@ const ChecklistFieldGroupMenu = React.forwardRef<
                 />
               </div>
 
-              {editingField.type === 'metric' && (
+              {editingField.type === 'number' && (
                 <div className={styles.formRow}>
                   <List.ItemMeta
                     noPaddingHorizontal

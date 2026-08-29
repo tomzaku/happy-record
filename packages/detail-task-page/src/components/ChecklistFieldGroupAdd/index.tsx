@@ -5,9 +5,17 @@ import Input from '@moon-ui/input';
 import List from '@moon-ui/list';
 import Typography from '@moon-ui/typography';
 import NoteEditor, { type NoteEditorHandle } from '@moon-ui/note-editor';
+import DatePicker from '@moon-ui/date-picker';
 import { v4 } from 'uuid';
+import cx from 'classnames';
 
 import styles from './index.module.scss';
+import {
+  dateInputValueToIso,
+  datetimeLocalInputValueToIso,
+  formatFieldValueForDisplay,
+  isoToDatetimeLocalInputValue,
+} from '@dreamer/global/src/lib/fieldValueFormat';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { Checklist, ChecklistTemplate, useAiNoteGenerate } from '@dreamer/global';
 import {
@@ -38,7 +46,7 @@ type Props = {
   onOpenFieldSettings?: () => void;
 };
 
-// A metric record's `value` can be null/undefined/a non-numeric string —
+// A number record's `value` can be null/undefined/a non-numeric string —
 // old bad submissions, a note-type field's value shape leaking in, or a
 // backend row saved before a value existed. `+b` on any of those turns the
 // whole running sum into NaN, so this filters to real finite numbers first
@@ -52,7 +60,7 @@ const sum = (arr: unknown[]) =>
 
 // Editor.js's own `.save()` always resolves to a real OutputData object, blocks and all, even
 // for a note nobody touched — so "was this field actually filled in" can't just be "is the value
-// defined" the way a metric field's own `fieldRecord[id] !== undefined` check works. Has to look
+// defined" the way a number field's own `fieldRecord[id] !== undefined` check works. Has to look
 // at whether there's a block with real content in it.
 const hasNoteContent = (value: unknown): boolean => {
   const blocks = (value as { blocks?: unknown[] } | null | undefined)?.blocks;
@@ -74,17 +82,22 @@ const ChecklistFieldGroupAdd = ({
   onOpenFieldSettings,
 }: Props) => {
   // A `type: 'note'` field's own value is a checklist journal entry (see ChecklistFieldGeneral's
-  // own comment) — one new note per Submit click, same shape a metric field's own record already
+  // own comment) — one new note per Submit click, same shape a number field's own record already
   // has. `fields` here is still this whole group's list (used elsewhere for override merging),
   // so this component splits it itself rather than assuming the caller already did.
-  const metricFields = fields.filter(field => field.type === 'metric');
+  const numberFields = fields.filter(field => field.type === 'number');
   const noteFields = fields.filter(field => field.type === 'note');
-  // Pre-fills a metric field's own default value (set via the Edit Field
+  // 'text'/'date'/'datetime' all share one plain-string state bucket (textFieldRecord below) and
+  // one Submit shape — only the input control differs per type (see the render below).
+  const textLikeFields = fields.filter(
+    field => field.type === 'text' || field.type === 'date' || field.type === 'datetime',
+  );
+  // Pre-fills a number field's own default value (set via the Edit Field
   // form — see CoreFieldRecord) instead of always starting blank; still
   // fully editable, and a field with no default set stays blank exactly as
   // before.
   const getEmptyFieldRecord = () => {
-    return metricFields.reduce(
+    return numberFields.reduce(
       (acc, { id, defaultValue }) => ({
         ...acc,
         [id]: defaultValue,
@@ -95,6 +108,12 @@ const ChecklistFieldGroupAdd = ({
   const [fieldRecord, setFieldRecord] = React.useState<
     Record<string, number | undefined>
   >(getEmptyFieldRecord());
+  // Same "untouched stays undefined, filtered out at Submit" shape fieldRecord uses for number
+  // fields — a text/date/datetime field has no default-value concept (CoreFieldRecord only ever
+  // shows that input for type: 'number'), so this always starts empty.
+  const [textFieldRecord, setTextFieldRecord] = React.useState<
+    Record<string, string | undefined>
+  >({});
   // Read directly at Submit time (see hasNoteContent/the onClick handler below) instead of
   // tracked via `setValue` state — Editor.js's own `onChange` is debounced internally (its own
   // MutationObserver handler, not something this component controls), so a keystroke followed
@@ -138,7 +157,7 @@ const ChecklistFieldGroupAdd = ({
   const reloadChecklistRecord = () => {
     // `fieldIds: []` means "no filter" to getChecklistRecords (see that hook's own comment),
     // not "match nothing" — has to be guarded rather than always called, or a note-only group
-    // would pull back every field's records for this template. Metric and note fields both come
+    // would pull back every field's records for this template. Number and note fields both come
     // back from this same call now — checklist-records' own list() merges note-type entries into
     // the same response (see checklist-records/index.ts), so there's no separate note read left.
     const allFieldIds = fields.map(field => field.id);
@@ -241,7 +260,7 @@ const ChecklistFieldGroupAdd = ({
             )}
           </Typography.Title>
           {fields.map(recordField => {
-            if (recordField.type === 'metric') {
+            if (recordField.type === 'number') {
               const recordValues = Object.values(currentChecklistRecords)
                 .flat()
                 .filter(record => record.fieldId === recordField.id);
@@ -265,7 +284,7 @@ const ChecklistFieldGroupAdd = ({
                   }
                 />
               );
-            } else {
+            } else if (recordField.type === 'note') {
               const latestRecord = currentChecklistRecords.find(
                 record => record.fieldId === recordField.id,
               );
@@ -286,6 +305,27 @@ const ChecklistFieldGroupAdd = ({
                   />
                 </React.Fragment>
               );
+            } else {
+              // text/date/datetime — a plain formatted string, same read-only display
+              // ChecklistFieldGeneral's own collapsed state uses.
+              const latestRecord = currentChecklistRecords.find(
+                record => record.fieldId === recordField.id,
+              );
+              if (!latestRecord) {
+                return null;
+              }
+              return (
+                <List.ItemMeta
+                  key={latestRecord.id}
+                  logo={<Icon width={24} icon={recordField.icon} />}
+                  title={recordField.title}
+                  rightComponent={
+                    <Typography.Text>
+                      {formatFieldValueForDisplay(recordField.type as 'text' | 'date' | 'datetime', latestRecord.value)}
+                    </Typography.Text>
+                  }
+                />
+              );
             }
           })}
         </div>
@@ -295,7 +335,7 @@ const ChecklistFieldGroupAdd = ({
   return (
     <>
       <WeeklyRow currentDay={currentDay} />
-      {metricFields.map(field => (
+      {numberFields.map(field => (
         <List.ItemMeta
           key={field.id}
           logo={<Icon width={24} icon={field.icon} />}
@@ -341,6 +381,56 @@ const ChecklistFieldGroupAdd = ({
           />
         </div>
       ))}
+      {textLikeFields.map(field => (
+        <List.ItemMeta
+          key={field.id}
+          logo={<Icon width={24} icon={field.icon} />}
+          title={field.title}
+          rightComponent={
+            <>
+              {field.type === 'text' && (
+                <Input
+                  key={`${field.id}-${newNoteKey}`}
+                  value={textFieldRecord[field.id] ?? ''}
+                  onChange={e =>
+                    setTextFieldRecord({ ...textFieldRecord, [field.id]: e.target.value })
+                  }
+                  border="dash"
+                  className={styles.textLikeInput}
+                  placeholder={field.placeholder}
+                />
+              )}
+              {field.type === 'date' && (
+                <DatePicker
+                  key={`${field.id}-${newNoteKey}`}
+                  value={textFieldRecord[field.id]}
+                  className={styles.textLikeInput}
+                  onChange={e => {
+                    const iso = dateInputValueToIso(e.target.value);
+                    setTextFieldRecord({ ...textFieldRecord, [field.id]: iso });
+                  }}
+                />
+              )}
+              {field.type === 'datetime' && (
+                <input
+                  key={`${field.id}-${newNoteKey}`}
+                  type="datetime-local"
+                  className={cx(styles.textLikeInput, styles.nativeDateInput)}
+                  value={
+                    textFieldRecord[field.id]
+                      ? isoToDatetimeLocalInputValue(textFieldRecord[field.id]!)
+                      : ''
+                  }
+                  onChange={e => {
+                    const iso = datetimeLocalInputValueToIso(e.target.value);
+                    setTextFieldRecord({ ...textFieldRecord, [field.id]: iso });
+                  }}
+                />
+              )}
+            </>
+          }
+        />
+      ))}
       <div className={styles.footerCenter}>
         {onOpenFieldSettings ? (
           <button
@@ -378,9 +468,11 @@ const ChecklistFieldGroupAdd = ({
             // Nothing filled in — addChecklistRecord (see useChecklistRecord.ts) returns
             // undefined for an empty records array rather than writing a no-op submission,
             // so this has to bail before that, not rely on `result` being spreadable below.
-            // A touched note field counts too, even with no metric value alongside it.
+            // A touched note field counts too, even with no number value alongside it — same for
+            // a touched text/date/datetime field.
             const hasAnyValue =
               Object.values(fieldRecord).some(value => value !== undefined) ||
+              Object.values(textFieldRecord).some(value => value !== undefined) ||
               touchedNoteFields.length > 0;
             if (checklistTemplate && hasAnyValue) {
               const now = new Date();
@@ -400,15 +492,15 @@ const ChecklistFieldGroupAdd = ({
                 now.getHours(),
               );
 
-              // Metric entries and touched note entries go in the same `records` array, one
+              // Number entries and touched note entries go in the same `records` array, one
               // `addChecklistRecord` call — checklist-records routes each entry server-side by
               // its own `value` shape (see checklist-records/index.ts's own save()/isNoteEntry),
               // not by anything the client marks explicitly. A touched note field's Submit is
-              // otherwise the exact same shape as a metric field's: never updates an earlier
+              // otherwise the exact same shape as a number field's: never updates an earlier
               // entry, always a new one. No `title` sent — there's no title input left to fill
               // in (see the noteFields.map above); the server derives one from the content itself
               // when none is given (see _shared/notes.ts's deriveTitle).
-              const metricEntries = Object.entries(fieldRecord)
+              const numberEntries = Object.entries(fieldRecord)
                 // A field the user never touched stays `undefined` in
                 // fieldRecord (see getEmptyFieldRecord) — sending it anyway
                 // fails the *whole* submission, since the server validates
@@ -426,18 +518,27 @@ const ChecklistFieldGroupAdd = ({
                 fieldId: field.id,
                 value: value as unknown as string,
               }));
+              // Same "untouched stays undefined, filtered out" shape numberEntries uses above —
+              // a text/date/datetime field is equally fine partly filled in per submission.
+              const textEntries = Object.entries(textFieldRecord)
+                .filter(([, value]) => value !== undefined)
+                .map(([key, value]) => ({
+                  fieldId: key,
+                  value: value as string,
+                }));
 
               const result = addChecklistRecord({
                 checklistId: checklist.id,
                 checklistTemplateId: checklistTemplate.id,
                 createdAt: newDate.toISOString(),
-                records: [...metricEntries, ...noteEntries],
+                records: [...numberEntries, ...noteEntries, ...textEntries],
               });
               setCurrentChecklistRecords([
                 ...(result ?? []),
                 ...currentChecklistRecords,
               ]);
               setFieldRecord(getEmptyFieldRecord());
+              setTextFieldRecord({});
               setNewNoteKey(v4());
               onSubmit?.();
             }

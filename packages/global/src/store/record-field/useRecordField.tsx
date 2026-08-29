@@ -20,7 +20,15 @@ export type RecordField = {
   title: string;
   icon: string;
   description: string;
-  type: 'metric' | 'note';
+  // 'text'/'date'/'datetime' all carry a plain string `ChecklistRecord.value` — same wire shape
+  // a `number`-type field's own value already had (see checklist-records/index.ts's own
+  // `isNoteEntry`), told apart from `number`'s own numeric one only by this `type`, which the UI
+  // reads to pick the right input/display (short text vs. a date/datetime picker vs. a number
+  // input). `date`/`datetime` are always stored as a full ISO 8601 timestamp — see
+  // 20260829070000_field_types_text_date.sql — a `date`-type field's own "just the day" display
+  // is purely how the client formats it. 'number' was 'metric' until
+  // 20260829080000_field_type_metric_to_number.sql.
+  type: 'number' | 'note' | 'text' | 'date' | 'datetime';
   unit: string;
   /**
    * 'public' means any user can use this field in their own checklist templates, not just see it
@@ -36,7 +44,7 @@ export type RecordField = {
    */
   visibility?: 'public' | 'private';
   /**
-   * Metric-only. Pre-fills the daily submit screen's input for this field
+   * number-only. Pre-fills the daily submit screen's input for this field
    * (ChecklistFieldGroupAdd's getEmptyFieldRecord) instead of starting
    * blank — still fully editable. Set through the Edit Field form
    * (CoreFieldRecord) by whoever owns this row, which is exactly what makes
@@ -92,7 +100,7 @@ export type FieldOverrides = {
 /**
  * Merges a group's own per-field overrides onto the field's global values — override wins when
  * set, else the field's own value, same shape either way so every consumer (the group's own
- * Select Fields editor, and the actual submit/history/metric rendering in ChecklistFieldGroup)
+ * Select Fields editor, and the actual submit/history rendering in ChecklistFieldGroup)
  * reads through this one function instead of re-implementing the "which value wins" check.
  */
 export const getEffectiveFieldDisplay = (

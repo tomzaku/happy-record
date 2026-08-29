@@ -3,7 +3,17 @@
 // shape (RecordField) this mirrors — only the table/resource dropped the
 // "record" prefix, not the client-side type or hook.
 
-export const FIELD_TYPES = ['metric', 'note'] as const;
+// 'text'/'date'/'datetime' are all a plain string value, same as a `number`-type field's own
+// `value_text` branch already was — see checklist-records/index.ts's `isNoteEntry` and
+// _shared/checklistRecords.ts's `fromRecordEntry`, neither of which needs to know about these
+// three specifically. `date`/`datetime` are stored as a full ISO 8601 timestamp, never truncated
+// to a bare date string server-side — this file just passes the string through unchanged; a
+// `date`-type field's own "just the day" display is purely a client-side formatting choice.
+//
+// 'number' was 'metric' until 20260829080000_field_type_metric_to_number.sql — no backfill of
+// existing rows, since this app has no real user data yet (a fresh `supabase db reset` is what
+// actually picks the rename up).
+export const FIELD_TYPES = ['number', 'note', 'text', 'date', 'datetime'] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 export const isFieldType = (v: unknown): v is FieldType => (FIELD_TYPES as readonly string[]).includes(v as string);
 
@@ -50,8 +60,8 @@ export function fromRecordField(e: Record<string, unknown>) {
     // private too; a recipient resolves them through `GET /fields?templateId=` instead (see that
     // route's own comment), authorized by the template being public, not by the field itself.
     visibility: 'private',
-    // Metric-only in practice (the client only shows this input for
-    // type: 'metric') but not enforced here — a stray value on a note field
+    // number-only in practice (the client only shows this input for
+    // type: 'number') but not enforced here — a stray value on a note field
     // is harmless, just never read.
     default_value_number: typeof e.defaultValue === 'number' ? e.defaultValue : null,
     // Lineage only, set once at fork time (see useJoinChallenge.tsx) — never

@@ -5,7 +5,7 @@ import styles from './index.module.scss';
 // initial on top of it — hashed from the person's name so the same person
 // always lands on the same color (the Slack/Gmail-style initials-avatar
 // trick), not the chart's categorical palette elsewhere in this page: this
-// is a per-person badge, not a metric series, so there's no adjacent-pair
+// is a per-person badge, not a data series, so there's no adjacent-pair
 // CVD concern to validate against. Exported so the targets breakdown bar
 // can color each participant's segment the same as their avatar — same
 // entity, same color, wherever it shows up. Still the fallback even now

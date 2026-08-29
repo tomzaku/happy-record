@@ -35,7 +35,33 @@
   margin-left: $spacing-sm;
 }
 
-// A note-type field's own composer — a new journal entry each Submit, same as a metric field's
+// A text/date/datetime field's own value input — sizing only, no border here: `Input` (text) and
+// DatePicker (date) both already draw their own dashed border (Input via its own `border="dash"`
+// prop, DatePicker unconditionally in its own default styles) — adding one here too would double
+// up into a border-within-a-border on those two. `.input` above is sized for a short numeric
+// value (60–100px, right-aligned); short text and a native date/datetime-local input both
+// need real room ("Date & Time" renders as `YYYY-MM-DDTHH:mm`, which a 100px box clips), and read
+// left-to-right rather than right-aligned the way a number does.
+.textLikeInput {
+  width: 160px;
+  padding: 6px 10px;
+  text-align: start;
+  @include media.media('>=tablet') {
+    width: 240px;
+  }
+}
+
+// The raw `<input type="datetime-local">` — no moon-ui wrapper exists for that yet, so unlike
+// Input/DatePicker it needs its own border/radius drawn explicitly, matching their shared
+// `border="dash"` look so it doesn't read as the odd one out next to the other two.
+.nativeDateInput {
+  border: 1px dashed var(--input-border);
+  border-radius: 8px;
+  background: var(--input-background);
+  color: var(--text-color);
+}
+
+// A note-type field's own composer — a new journal entry each Submit, same as a number field's
 // own input above.
 .noteField {
   margin-bottom: $spacing-md;

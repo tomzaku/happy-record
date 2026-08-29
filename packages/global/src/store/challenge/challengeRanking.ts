@@ -10,7 +10,7 @@
 // another), streak as the tiebreaker, check-in count as the final one.
 // Falls back to check-in count alone when the challenge has no targets set
 // at all (nothing to compute a percentage from — a plain check/uncheck
-// habit, or a metric field with no goal set).
+// habit, or a number field with no goal set).
 
 const daysBetween = (a: string, b: string) => Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
 

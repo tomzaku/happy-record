@@ -113,17 +113,17 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
       : '',
   );
 
-  // The template's own metric fields — a target is a shared goal ("100 push-ups"), which
+  // The template's own number fields — a target is a shared goal ("100 push-ups"), which
   // only makes sense for a number. Fetched once per template (not gated on being already
   // shared, since targets can be set "before or after share" — see CLAUDE.md's
   // challenge_targets migration).
-  const [metricFields, setMetricFields] = useState<RecordField[]>([]);
+  const [numberFields, setNumberFields] = useState<RecordField[]>([]);
   React.useEffect(() => {
     const fieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(group =>
       group.fields.map(f => f.fieldId),
     );
     if (!fieldIds.length) return;
-    getRecordFieldsByIds(fieldIds).then(fields => setMetricFields(fields.filter(f => f.type === 'metric')));
+    getRecordFieldsByIds(fieldIds).then(fields => setNumberFields(fields.filter(f => f.type === 'number')));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checklistTemplate.fieldGroups]);
 
@@ -290,7 +290,7 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
             renderRightInput={() => <></>}
           />
         </div>
-        {!!metricFields.length && (
+        {!!numberFields.length && (
           <div className={styles.targets}>
             <Typography.Text className={styles.targetsLabel}>
               {intl.formatMessage({
@@ -298,7 +298,7 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
                 defaultMessage: 'Group targets (optional)',
               })}
             </Typography.Text>
-            {metricFields.map(field => (
+            {numberFields.map(field => (
               <div key={field.id} className={styles.targetRow}>
                 <Typography.Text className={styles.targetFieldName}>{field.title}</Typography.Text>
                 <Input

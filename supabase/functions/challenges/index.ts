@@ -195,12 +195,12 @@ type Target = {
 };
 
 /**
- * A shared goal per metric field, with a per-person breakdown — all-time,
+ * A shared goal per number field, with a per-person breakdown — all-time,
  * not scoped to the dashboard's date range (a collective goal accumulates
  * over the challenge's whole life, not just the visible window). Only
  * fields with a target ever get their real values read here, via the
  * peer-read policies the 20260825000000_challenge_targets.sql migration
- * added — an untargeted field (a personal note, a metric with no goal set)
+ * added — an untargeted field (a personal note, a number field with no goal set)
  * is never touched.
  *
  * Joining a challenge no longer forks the template or its fields (see

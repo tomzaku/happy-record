@@ -16,7 +16,7 @@ const NOTE_LOADING_KEY = 'note_loading';
  * own note (`ownerType: 'field_group'`) is one persistent note, `field_groups.note_id` points at
  * it. A `type: 'note'` field's own value inside a checklist isn't this shape at all anymore —
  * see checklistRecordApi.ts and 20260829040000_notes_via_checklist_records.sql: the client sends
- * it as part of the same `records` array a metric field's value goes in, and `checklist-records`
+ * it as part of the same `records` array a number field's value goes in, and `checklist-records`
  * routes it to `notes` itself. `ownerType`/`ownerId` (a denormalized reverse pointer, set once at
  * creation, never changed after — see 20260829020000_notes_title_search_owner.sql) is what a
  * search result resolves back to something openable with. `value` is the real, parsed Editor.js

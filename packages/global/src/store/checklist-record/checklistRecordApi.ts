@@ -48,10 +48,10 @@ export function saveChecklistRecords(data: {
 }
 
 /**
- * `value` is `number | string` for a metric field's own record, real Editor.js `OutputData` (an
+ * `value` is `number | string` for a number/text/date/datetime field's own record, real Editor.js `OutputData` (an
  * object) for a note-type field's own entry — the server tells them apart by that shape, not
  * anything sent explicitly (see checklist-records/index.ts's own `update()`). Omitted entirely
- * means a title-only edit (a note-type field's own entry again — a metric record has no title).
+ * means a title-only edit (a note-type field's own entry again — a number/text/date/datetime record has no title).
  */
 export function updateChecklistRecordValue(
   id: string,

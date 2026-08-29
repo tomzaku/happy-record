@@ -57,6 +57,24 @@
   margin-top: $spacing-xs;
 }
 
+// The field-type Select, sitting in the Type row's rightComponent (@moon-ui/list's `.right` is
+// `flex-shrink: 0` — it takes its own content width, never squeezed by the row's title) — sized
+// so "Date & Time" (the longest option) doesn't get clipped, but still compact next to the label
+// rather than stretching the way `.rowInput` does for the rows below it.
+.typeSelectContainer {
+  min-width: 120px;
+}
+
+.typeSelectElement {
+  min-height: 32px;
+}
+
+.typeSelectInput {
+  padding: 6px 10px;
+  justify-content: flex-end;
+  text-align: right;
+}
+
 .addFieldButtonContainer {
   display: flex;
   flex-direction: column;

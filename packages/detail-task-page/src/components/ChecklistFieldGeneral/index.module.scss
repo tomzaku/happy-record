@@ -22,6 +22,27 @@
   width: 60px;
 }
 
+// A text/date/datetime field's own inline edit input — `.input` above is sized for a short
+// numeric value (60px, right-aligned); short text and a date/datetime-local input both
+// need real room ("Date & Time" renders as `YYYY-MM-DDTHH:mm`) and read left-to-right, not
+// right-aligned the way a number does. No border here — Input (text) and DatePicker (date) both
+// already draw their own dashed border on their own; adding one here too would double up.
+.textLikeInput {
+  text-align: start;
+  padding: $spacing-xs $spacing-sm;
+  width: 160px;
+}
+
+// The raw `<input type="datetime-local">` — no moon-ui wrapper exists for that yet, so unlike
+// Input/DatePicker it needs its own border/radius drawn explicitly, matching their shared
+// `border="dash"` look.
+.nativeDateInput {
+  border: 1px dashed var(--input-border);
+  border-radius: 8px;
+  background: var(--input-background);
+  color: var(--text-color);
+}
+
 .editButton {
   align-items: center;
   display: flex;

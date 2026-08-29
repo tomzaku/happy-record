@@ -16,11 +16,11 @@ type Props = {
 };
 
 /**
- * Metric and note fields both group by submission now (`type: 'time'`, see
+ * Every field type groups by submission now (`type: 'time'`, see
  * useChecklistRecord.ts) — a `type: 'note'` field's own value is a checklist journal entry
  * (its own row in `notes`, routed there server-side, see checklist-records/index.ts) but comes
  * back from `getChecklistRecords` in the exact same `ChecklistRecord` shape with a real
- * `submissionId`, so it groups with whatever metric fields were submitted alongside it — or gets
+ * `submissionId`, so it groups with whatever other fields were submitted alongside it — or gets
  * its own singleton group on a day with only a note field filled in — with no client-side merge
  * needed.
  */

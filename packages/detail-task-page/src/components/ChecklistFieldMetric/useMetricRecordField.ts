@@ -66,10 +66,10 @@ export const useMetricRecordField = ({
   const rangeTypeRef = React.useRef<'month' | 'year'>('month');
   const fetchChecklistRecords = (rangeDateType: 'month' | 'year') => {
     rangeTypeRef.current = rangeDateType;
-    const metricFieldIds = fields
-      .filter(field => field.type === 'metric')
+    const numberFieldIds = fields
+      .filter(field => field.type === 'number')
       .map(field => field.id);
-    if (metricFieldIds.length === 0) {
+    if (numberFieldIds.length === 0) {
       return;
     }
     const records = getChecklistRecords(checklistTemplateId, {
@@ -84,7 +84,7 @@ export const useMetricRecordField = ({
               to: endOfYear(new Date()).toISOString(),
             },
       sortBy: 'createdAt',
-      fieldIds: metricFieldIds,
+      fieldIds: numberFieldIds,
     });
     const categories = Object.keys(records);
     setCurrentStreak(getCurrentStreak(categories));

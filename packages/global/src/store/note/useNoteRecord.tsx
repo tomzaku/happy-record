@@ -11,7 +11,7 @@ import { Note, useNote } from './useNote';
  * read by anything anymore.
  *
  * A `type: 'note'` field's own value *inside a checklist* is a different thing entirely now —
- * checklist-records' own `useChecklistRecord.ts` handles that uniformly alongside metric fields
+ * checklist-records' own `useChecklistRecord.ts` handles that uniformly alongside every other field type
  * (see checklistRecordApi.ts and 20260829040000_notes_via_checklist_records.sql) — this file is
  * the standalone notebook only.
  */

@@ -29,14 +29,14 @@ import {
 interface AvailableField {
   title: string;
   icon: string;
-  type: 'metric' | 'note';
+  type: 'number' | 'note';
   unit: string;
 }
 
 interface GeneratedField {
   title: string;
   icon: string;
-  type: 'metric' | 'note';
+  type: 'number' | 'note';
   unit: string;
   description: string;
 }
@@ -74,7 +74,7 @@ function sanitizeAvailableFields(v: unknown): AvailableField[] {
     .map((f) => ({
       title: String(f.title ?? '').slice(0, 60),
       icon: String(f.icon ?? '').slice(0, 80),
-      type: f.type === 'note' ? 'note' as const : 'metric' as const,
+      type: f.type === 'note' ? 'note' as const : 'number' as const,
       unit: String(f.unit ?? '').slice(0, 20),
     }))
     .filter((f) => f.title);
@@ -141,7 +141,7 @@ Design a small set of groups (usually 1-4) that break the request into a sane we
 - has a short title (e.g. "Push Day", "Morning Routine")
 - has a "note": 2-5 content blocks explaining how to do it — see the block shapes below
 - has a "repeat" schedule: which day(s) of the week it happens and what time, OR null if it should show every day
-- has 1-6 fields to record when doing it (a mix of "metric" fields like reps/duration, or a "note" field for a written log)
+- has 1-6 fields to record when doing it (a mix of "number" fields like reps/duration, or a "note" field for a written log)
 
 A group's "note" is an array of blocks, each one of:
   { "type": "heading", "text": "short heading, e.g. 'How to do it'" }
@@ -163,7 +163,7 @@ Return ONLY this JSON, no markdown, no extra text:
       "note": [ { "type": "heading" | "paragraph" | "quote" | "video", "text": "...", "caption": "...", "url": "..." } ],
       "repeat": { "hour": "8", "minute": "0", "dayOfWeek": "1,4" } | null,
       "fields": [
-        { "title": "field title", "icon": "iconify-icon-id", "type": "metric" | "note", "unit": "reps/minutes/etc, empty string for note fields", "description": "one short sentence" }
+        { "title": "field title", "icon": "iconify-icon-id", "type": "number" | "note", "unit": "reps/minutes/etc, empty string for note fields", "description": "one short sentence" }
       ]
     }
   ]
@@ -260,7 +260,7 @@ function validate(parsed: unknown): GeneratedTemplate {
         return {
           title: typeof f.title === 'string' && f.title.trim() ? f.title.trim().slice(0, 60) : 'Field',
           icon: typeof f.icon === 'string' && f.icon.includes(':') ? f.icon.slice(0, 80) : 'solar:document-linear',
-          type: f.type === 'note' ? 'note' as const : 'metric' as const,
+          type: f.type === 'note' ? 'note' as const : 'number' as const,
           unit: typeof f.unit === 'string' ? f.unit.slice(0, 20) : '',
           description: typeof f.description === 'string' ? f.description.slice(0, 200) : '',
         };
