@@ -268,14 +268,22 @@ export const SchedulingGroup = ({
           visible={isModalVisible}
           onDismiss={handleModalClose}
           content={modalContent}
+          // The schedule draft (`tempWeeklyHobbies`) only ever commits on the form's own explicit
+          // Save (see handleSave) — closing any other way, including this, discards it back to
+          // whatever was last saved. That's fine when it's a deliberate close; a stray click on
+          // the backdrop shouldn't be able to throw away a real edit the same way.
+          closeOnOverlayClick={false}
         />
       ) : (
         <>
-          {/* Simple overlay */}
+          {/* Simple overlay — no `onClick` (unlike the desktop Modal's own overlay, this one's
+              hand-rolled rather than going through `closeOnOverlayClick`): the schedule draft
+              only commits on the sheet's own Save button (see handleSave), so a tap here would
+              throw away an unsaved edit the same way an accidental backdrop click would on
+              desktop. Escape still closes it — that's a deliberate keypress, not a stray tap. */}
           {isModalVisible && (
-            <button 
-              className={styles.simpleOverlay} 
-              onClick={handleModalClose}
+            <button
+              className={styles.simpleOverlay}
               onKeyDown={(e) => {
                 if (e.key === 'Escape') {
                   handleModalClose();

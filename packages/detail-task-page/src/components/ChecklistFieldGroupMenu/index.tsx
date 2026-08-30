@@ -614,6 +614,12 @@ const ChecklistFieldGroupMenu = React.forwardRef<
         // in its place instead.
         icon="solar:checklist-minimalistic-line-duotone"
         onBack={fieldsView !== FieldsView.List ? () => setFieldsView(FieldsView.List) : undefined}
+        // List's own checkbox toggles save live (same as every other dialog in this menu — see
+        // this file's own module doc comment) — nothing there to lose. Add/Customize are real
+        // staged forms though (a whole new field's title/icon/type; `overrideForm`, only
+        // committed by their own explicit Save/Done — see handleSaveOverride) that a stray
+        // backdrop click shouldn't be able to throw away.
+        closeOnOverlayClick={fieldsView === FieldsView.List}
         title={
           fieldsView === FieldsView.Add
             ? intl.formatMessage({ id: 'label-add-new-field', defaultMessage: 'Add New Field' })

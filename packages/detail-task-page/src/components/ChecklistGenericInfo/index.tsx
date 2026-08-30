@@ -432,6 +432,9 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
         visible={activeModal === EditModal.Icon}
         onDismiss={handleModalClose}
         icon="tdesign:icon"
+        // `tempIcon`/`tempColor` only commit on the header's own Save (handleSaveIcon) — a
+        // stray backdrop click shouldn't be able to discard a picked icon/color the same way.
+        closeOnOverlayClick={false}
         title={intl.formatMessage({
           id: 'checklist-generic-info.edit-icon-color-title',
           defaultMessage: 'Edit Icon & Color',
@@ -456,6 +459,9 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
         visible={activeModal === EditModal.Schedule}
         onDismiss={handleModalClose}
         icon="solar:calendar-date-line-duotone"
+        // Same staged-until-Save shape as Icon/Tags above (tempWeeklyHobbies/tempStartDay/
+        // tempTime/tempFieldGroups, only committed by handleSaveSchedule).
+        closeOnOverlayClick={false}
         title={intl.formatMessage({
           id: 'checklist-generic-info.edit-schedule-title',
           defaultMessage: 'Edit Schedule',
@@ -487,6 +493,8 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
         visible={activeModal === EditModal.Tags}
         onDismiss={handleModalClose}
         icon="solar:tag-outline"
+        // tempTags only commits on handleSaveTags — same reasoning as Icon/Schedule above.
+        closeOnOverlayClick={false}
         title={intl.formatMessage({
           id: 'checklist-generic-info.edit-tags-title',
           defaultMessage: 'Edit Tags',

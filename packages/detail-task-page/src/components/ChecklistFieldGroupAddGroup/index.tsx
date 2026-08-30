@@ -155,6 +155,10 @@ const ChecklistFieldGroupAddGroup = ({
         visible={isModalVisible}
         onDismiss={handleModalClose}
         icon="solar:folder-open-line-duotone"
+        // Both views here are real staged forms (groupName/selectedFields; AddField's own
+        // whole-new-field form) with no live-save — only `handleSave`/its own submit actually
+        // commits either one. A stray backdrop click shouldn't be able to discard either.
+        closeOnOverlayClick={false}
         onBack={view === AddGroupView.AddField ? () => setView(AddGroupView.Form) : undefined}
         title={
           view === AddGroupView.AddField

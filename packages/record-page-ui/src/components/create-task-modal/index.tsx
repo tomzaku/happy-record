@@ -57,6 +57,10 @@ const CreateTaskModal = ({
     <Modal
       visible={visible}
       onDismiss={onDismiss}
+      // A real form lives inside (CoreChecklistForm — title, icon, color, fields, schedule,
+      // tags), not a plain confirm/info dialog — see Modal.tsx's own comment on why this
+      // shouldn't be dismissible by a stray click on the backdrop.
+      closeOnOverlayClick={false}
       content={
         <div className={styles.modalContent}>
 

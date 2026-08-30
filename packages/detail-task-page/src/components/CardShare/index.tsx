@@ -410,11 +410,16 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
           purple/pink) header gradient, since that combination is specifically the AI
           feature's own signature, not a generic "this is a nice modal" treatment to reuse
           verbatim everywhere. */}
+      {/* `closeOnOverlayClick={false}` — real config lives here (target numbers per field,
+          dashboard/comments toggles, theme), not just the `generating` guard's own async-safety
+          window; a stray click on the backdrop shouldn't discard it any more than one on
+          AiChecklistGenerate's own form should. */}
       {isMobile ? (
         <BottomModal
           visible={modalVisible}
           onDismiss={() => !generating && setModalVisible(false)}
           content={<div className={styles.mobileSheet}>{modalContent}</div>}
+          closeOnOverlayClick={false}
         />
       ) : (
         <Modal
@@ -422,6 +427,7 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
           onDismiss={() => !generating && setModalVisible(false)}
           content={modalContent}
           className={styles.modalShell}
+          closeOnOverlayClick={false}
         />
       )}
     </>

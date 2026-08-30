@@ -51,6 +51,9 @@ const NewFolderModal = ({ visible, onDismiss, onCreate }: Props) => {
       onDismiss={onDismiss}
       title="New Folder"
       icon="solar:folder-outline"
+      // The typed name only commits on "Create" — a stray backdrop click shouldn't be able to
+      // discard it, same reasoning as every other real form dialog in the app.
+      closeOnOverlayClick={false}
       footer={
         <>
           <Button type="ghost" className={styles.secondaryButton} onClick={onDismiss}>
