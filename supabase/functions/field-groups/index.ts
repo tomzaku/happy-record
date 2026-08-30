@@ -10,134 +10,23 @@
 //     the caller's templates — the home page's own schedule-matching needs every template's
 //     groups loaded at once (see useChecklistTemplates.tsx's getChecklistTemplateIdsByGivingDate),
 //     same "all mine, unscoped" shape flags/note-folders/tags already use. Always the caller's
-//     own only, unlike the scoped form above — see list()'s own comment on why.
+//     own only, unlike the scoped form above.
 //   POST   /field-groups { fieldGroup }           → { ok }   full-row upsert — create, edit,
 //     set/clear noteId, or set archivedAt (soft delete; there's no hard-delete route, matching
 //     the convention this replaced).
 //
-// Moved off RLS onto the app-layer `compose(checkPermission, core)` pattern — see
-// `shared/authorize.ts` and `notes/index.ts` for the full rationale.
+// Supabase requires this exact file as the deploy target (`supabase functions deploy
+// field-groups`), so it stays a thin entrypoint: CORS, identity, dispatch, error shape. Route
+// handlers live in `api/`, row mapping in `model/`, the real permission check + repeats-attaching
+// helper in `services/` — see `notes/index.ts` for the fuller version of this shape, and
+// CLAUDE.md's "Authorization: app layer, not RLS" for the rationale.
 //
 // Deploy: `supabase functions deploy field-groups`
 
 import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
 import { requireUser } from '../../shared/auth.ts';
-import { admin, compose } from '../../shared/authorize.ts';
-import { fromFieldGroup, toFieldGroup } from '../../shared/fieldGroups.ts';
-import { fetchRepeats, pickRepeat, saveRepeat, type RepeatOwner } from '../../shared/repeats.ts';
-import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
-
-type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
-
-async function body(req: Request): Promise<Record<string, unknown>> {
-  try {
-    return ((await req.json()) ?? {}) as Record<string, unknown>;
-  } catch {
-    throw new ApiError(400, 'Invalid JSON body.');
-  }
-}
-
-/** Attaches each row's own schedule the same way regardless of which branch of `list` produced
- * the rows — shared so that logic lives in exactly one place. `isPublicTemplate` only matters for
- * a row that isn't the caller's own (see `fetchRepeats`'s own comment); `listMine`'s rows are
- * always the caller's own regardless of what it passes here, since `ownerUserId === userId ===
- * callerUserId` already grants those through fetchRepeats' "caller's own row" branch. */
-async function withRepeats(
-  db: SupabaseClient,
-  userId: string,
-  rows: Record<string, unknown>[],
-  isPublicTemplate: boolean,
-) {
-  const owners: RepeatOwner[] = rows.map(r => ({
-    id: r.id as string,
-    ownerUserId: r.user_id as string,
-    isPublic: isPublicTemplate,
-  }));
-  const repeats = await fetchRepeats(db, 'fieldGroupId', owners, userId);
-  // No participant-override concept for a group's own schedule today — only its owner ever
-  // writes one (see save() below) — but resolving through pickRepeat rather than assuming "the
-  // only row" keeps this consistent with checklist-templates' own resolution, and correct without
-  // changes if that ever stops being true.
-  return rows.map(r => toFieldGroup(r, pickRepeat(repeats[r.id as string], userId, r.user_id as string)));
-}
-
-type TemplateGroupsAuthorization = { checklistTemplateId: string; visible: boolean; isPublic: boolean };
-
-/** Whether the caller may see *this* template's field groups at all — own template, or a
- * `visibility: 'public'` one. A `false` result isn't a 403: the old RLS policy just silently
- * filtered every row out for a template that doesn't exist or isn't visible, the same "empty,
- * never an error" contract `checklist-templates`' own `?id=` branch documents — so the core below
- * returns `{ fieldGroups: [] }` rather than the composed handler throwing. `isPublic` is kept
- * separate from `visible` (which is also true for a private template that's simply mine) — it's
- * what `withRepeats` needs to decide whether a row other than the caller's own may be surfaced. */
-async function checkCanReadFieldGroupsByTemplate({ db, userId, url }: Ctx): Promise<TemplateGroupsAuthorization> {
-  const checklistTemplateId = url.searchParams.get('checklistTemplateId')!;
-  const { data: template, error } = await db
-    .from('checklist_templates')
-    .select('user_id, visibility')
-    .eq('id', checklistTemplateId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  const isPublic = template?.visibility === 'public';
-  const visible = !!template && (template.user_id === userId || isPublic);
-  return { checklistTemplateId, visible, isPublic };
-}
-
-const getGroupsByTemplate = compose(
-  checkCanReadFieldGroupsByTemplate,
-  async ({ db, userId }: Ctx, { checklistTemplateId, visible, isPublic }: TemplateGroupsAuthorization) => {
-    if (!visible) return { fieldGroups: [] };
-    const { data, error } = await db
-      .from('field_groups')
-      .select('*')
-      .eq('checklist_template_id', checklistTemplateId)
-      .order('position');
-    if (error) throw new Error(error.message);
-    return { fieldGroups: await withRepeats(db, userId, (data ?? []) as Record<string, unknown>[], isPublic) };
-  },
-);
-
-/** Unscoped ("all mine", the home page's own schedule-matching) — always the caller's own only,
- * a plain explicit filter with nothing to compose a `checkPermission` around. */
-async function listMine({ db, userId }: Ctx) {
-  const { data, error } = await db.from('field_groups').select('*').eq('user_id', userId).order('position');
-  if (error) throw new Error(error.message);
-  return { fieldGroups: await withRepeats(db, userId, (data ?? []) as Record<string, unknown>[], false) };
-}
-
-async function list(ctx: Ctx) {
-  return ctx.url.searchParams.get('checklistTemplateId') ? getGroupsByTemplate(ctx) : listMine(ctx);
-}
-
-async function save({ req, db, userId }: Ctx) {
-  const entry = (await body(req)).fieldGroup;
-  if (!entry || typeof entry !== 'object') throw new ApiError(400, 'Missing fieldGroup.');
-
-  let row: ReturnType<typeof fromFieldGroup>;
-  try {
-    row = fromFieldGroup(entry as Record<string, unknown>);
-  } catch (err) {
-    throw new ApiError(400, err instanceof Error ? err.message : 'Invalid fieldGroup.');
-  }
-
-  const { error } = await db.from('field_groups').upsert({ user_id: userId, ...row });
-  if (error) throw new Error(error.message);
-  // After the group row exists — repeats.field_group_id is a real FK, so the parent has to be
-  // there first.
-  await saveRepeat(db, (entry as Record<string, unknown>).repeat, { userId, fieldGroupId: row.id });
-  return { ok: true };
-}
-
-const ROUTES: Record<string, (ctx: Ctx) => Promise<unknown>> = {
-  'GET /': list,
-  'POST /': save,
-};
-
-function subPath(url: URL): string {
-  const parts = url.pathname.split('/').filter(Boolean);
-  const at = parts.lastIndexOf('field-groups');
-  return '/' + (at === -1 ? parts : parts.slice(at + 1)).join('/');
-}
+import { admin } from '../../shared/authorize.ts';
+import { ROUTES, subPath } from './api/field-groups-routes.ts';
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });

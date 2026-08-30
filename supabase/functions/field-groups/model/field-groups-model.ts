@@ -7,7 +7,7 @@
 // config the server never filters on, not relational data (see the migration's own comment on why
 // only identity/note/ordering are real columns). `repeat` moved out the same way `fieldGroups`
 // itself did, one migration later — see `repeats` (20260830000000_repeats_table.sql) — except
-// it's still embedded in this row on the wire: `toFieldGroup`'s caller (field-groups/index.ts)
+// it's still embedded in this row on the wire: `toFieldGroup`'s caller (field-groups/services and api)
 // fetches the matching `repeats` row itself and passes it in, so the client-facing shape never
 // changed.
 
@@ -47,7 +47,7 @@ export function fromFieldGroup(e: Record<string, unknown>) {
     default_tab: typeof e.defaultTab === 'number' ? e.defaultTab : null,
     active_tabs: Array.isArray(e.activeTabs) ? e.activeTabs : null,
     collapse_default: typeof e.collapseDefault === 'boolean' ? e.collapseDefault : null,
-    // `repeat` isn't a column here anymore — the caller (field-groups/index.ts) writes it to
+    // `repeat` isn't a column here anymore — the caller (field-groups/services and api) writes it to
     // `repeats` itself via saveRepeat(), after this row exists (the FK needs a parent to point
     // at) — see 20260830000000_repeats_table.sql.
     // `null` (not `undefined`) restores an archived group — see FieldGroup.archivedAt's own
