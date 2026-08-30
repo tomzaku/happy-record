@@ -12,7 +12,9 @@
 //   DELETE /checklist-templates  ?id=        → { ok }
 //
 // field_groups isn't part of this resource anymore — see `field-groups`
-// (20260829010000_notes_note_id_ownership.sql).
+// (20260829010000_notes_note_id_ownership.sql). `repeat` isn't a column on this row anymore
+// either (see `repeats` — 20260830000000_repeats_table.sql), but it stays part of `template` on
+// the wire: every route below fetches/writes the matching `repeats` row alongside its own.
 //
 // Deploy: `supabase functions deploy checklist-templates`
 
@@ -23,6 +25,7 @@ import {
   patchChecklistTemplate,
   toChecklistTemplate,
 } from '../_shared/checklistTemplates.ts';
+import { fetchRepeats, saveRepeat } from '../_shared/repeats.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
@@ -48,7 +51,9 @@ async function list({ url, db, userId }: Ctx) {
       .eq('id', id)
       .limit(1);
     if (error) throw new Error(error.message);
-    return { templates: ((data ?? []) as Record<string, unknown>[]).map(toChecklistTemplate) };
+    const rows = (data ?? []) as Record<string, unknown>[];
+    const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(r => r.id as string));
+    return { templates: rows.map(r => toChecklistTemplate(r, repeats[r.id as string])) };
   }
 
   const { data, error } = await db
@@ -57,7 +62,9 @@ async function list({ url, db, userId }: Ctx) {
     .eq('user_id', userId)
     .order('created_at');
   if (error) throw new Error(error.message);
-  return { templates: ((data ?? []) as Record<string, unknown>[]).map(toChecklistTemplate) };
+  const rows = (data ?? []) as Record<string, unknown>[];
+  const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(r => r.id as string));
+  return { templates: rows.map(r => toChecklistTemplate(r, repeats[r.id as string])) };
 }
 
 async function save({ req, db, userId }: Ctx) {
@@ -73,6 +80,9 @@ async function save({ req, db, userId }: Ctx) {
 
   const { error } = await db.from('checklist_templates').upsert({ user_id: userId, ...row });
   if (error) throw new Error(error.message);
+  // After the template row exists — repeats.checklist_template_id is a real FK, so the parent has
+  // to be there first.
+  await saveRepeat(db, (entry as Record<string, unknown>).repeat, { userId, checklistTemplateId: row.id });
   return { ok: true };
 }
 
@@ -98,6 +108,11 @@ async function update({ req, db, userId }: Ctx) {
     .eq('user_id', userId)
     .eq('id', params.id);
   if (error) throw new Error(error.message);
+  // Not a column on `patch` anymore — write it to `repeats` directly, only when the caller
+  // actually sent one (same "only touch what changed" rule as every other key here).
+  if ('repeat' in params) {
+    await saveRepeat(db, params.repeat, { userId, checklistTemplateId: params.id });
+  }
   return { ok: true };
 }
 

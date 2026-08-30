@@ -3,11 +3,15 @@
 // this mirrors, and 20260829010000_notes_note_id_ownership.sql for why this is its own table now
 // instead of jsonb on `checklist_templates`.
 //
-// `fields` (the group's own field-ids-plus-overrides list) and `repeat`/`activeTabs` round-trip
-// as given — config the server never filters on, not relational data (see the migration's own
-// comment on why only identity/note/ordering are real columns).
+// `fields` (the group's own field-ids-plus-overrides list) and `activeTabs` round-trip as given —
+// config the server never filters on, not relational data (see the migration's own comment on why
+// only identity/note/ordering are real columns). `repeat` moved out the same way `fieldGroups`
+// itself did, one migration later — see `repeats` (20260830000000_repeats_table.sql) — except
+// it's still embedded in this row on the wire: `toFieldGroup`'s caller (field-groups/index.ts)
+// fetches the matching `repeats` row itself and passes it in, so the client-facing shape never
+// changed.
 
-export function toFieldGroup(r: Record<string, unknown>) {
+export function toFieldGroup(r: Record<string, unknown>, repeat: Record<string, unknown> | undefined) {
   return {
     id: r.id as string,
     checklistTemplateId: r.checklist_template_id as string,
@@ -20,7 +24,7 @@ export function toFieldGroup(r: Record<string, unknown>) {
     ...(r.collapse_default !== null && r.collapse_default !== undefined
       ? { collapseDefault: r.collapse_default as boolean }
       : {}),
-    ...(r.repeat ? { repeat: r.repeat as Record<string, unknown> } : {}),
+    ...(repeat ? { repeat } : {}),
     ...(r.archived_at ? { archivedAt: r.archived_at as string } : {}),
     updatedAt: r.updated_at as string,
   };
@@ -43,7 +47,9 @@ export function fromFieldGroup(e: Record<string, unknown>) {
     default_tab: typeof e.defaultTab === 'number' ? e.defaultTab : null,
     active_tabs: Array.isArray(e.activeTabs) ? e.activeTabs : null,
     collapse_default: typeof e.collapseDefault === 'boolean' ? e.collapseDefault : null,
-    repeat: e.repeat && typeof e.repeat === 'object' ? e.repeat : null,
+    // `repeat` isn't a column here anymore — the caller (field-groups/index.ts) writes it to
+    // `repeats` itself via saveRepeat(), after this row exists (the FK needs a parent to point
+    // at) — see 20260830000000_repeats_table.sql.
     // `null` (not `undefined`) restores an archived group — see FieldGroup.archivedAt's own
     // comment client-side (useFieldGroups.tsx) for why that distinction matters.
     archived_at: typeof e.archivedAt === 'string' ? e.archivedAt : null,

@@ -2,41 +2,27 @@
 // packages/global/src/store/checklists/useChecklistTemplates.tsx for the
 // client shape (`ChecklistTemplate`) this mirrors.
 //
-// `repeat`, `avatar`, and `tags` round-trip as given — they're config the server never filters
-// on, not relational data (see the migration's comment on why only ownership + visibility are
-// real columns). `flagId`/`flag_id` is the exception: a real foreign key into `flags` (see
+// `avatar` and `tags` round-trip as given — they're config the server never filters on, not
+// relational data (see the migration's comment on why only ownership + visibility are real
+// columns). `flagId`/`flag_id` is the exception: a real foreign key into `flags` (see
 // 20260821030000_flags.sql) — one flag groups many templates, unlike `tags`. The deprecated
 // `records: string[]` field is dropped: it's unused in the client type already
 // (`@deprecated use groups instead`) and never makes it to the wire here. `fieldGroups` isn't
 // handled here at all anymore — it's the `field-groups` resource now (see
 // 20260829010000_notes_note_id_ownership.sql), fetched separately and merged onto the client
-// object by useChecklistTemplates.tsx, not embedded in this row.
+// object by useChecklistTemplates.tsx, not embedded in this row. `repeat` moved the same way, one
+// migration later — see 20260830000000_repeats_table.sql — except it's still embedded in this
+// row on the wire: `toChecklistTemplate`'s caller (checklist-templates/index.ts) fetches the
+// matching `repeats` row itself and passes it in, so the client-facing shape never changed.
 
-export function toChecklistTemplate(r: Record<string, unknown>) {
-  const hasRepeat = [
-    r.repeat_minute,
-    r.repeat_hour,
-    r.repeat_day_of_month,
-    r.repeat_month,
-    r.repeat_day_of_week,
-    r.repeat_started_at,
-  ].some(v => v !== null && v !== undefined);
+import { toRepeat } from './repeats.ts';
 
+export function toChecklistTemplate(r: Record<string, unknown>, repeatRow: Record<string, unknown> | undefined) {
   return {
     id: r.id as string,
     title: r.title as string,
     avatar: (r.avatar as Record<string, unknown>) ?? {},
-    repeat: hasRepeat
-      ? {
-          minute: r.repeat_minute as string,
-          hour: r.repeat_hour as string,
-          dayOfMonth: r.repeat_day_of_month as string,
-          month: r.repeat_month as string,
-          dayOfWeek: r.repeat_day_of_week as string,
-          startedAt: r.repeat_started_at as string,
-          ...(r.repeat_completed_at ? { completedAt: r.repeat_completed_at as string } : {}),
-        }
-      : undefined,
+    repeat: toRepeat(repeatRow),
     createdAt: r.created_at as string,
     records: [] as string[],
     tags: (r.tags as string[]) ?? [],
@@ -64,16 +50,9 @@ export function patchChecklistTemplate(e: Record<string, unknown>): Record<strin
   if ('avatar' in e) {
     patch.avatar = e.avatar && typeof e.avatar === 'object' ? e.avatar : {};
   }
-  if ('repeat' in e) {
-    const repeat = (e.repeat && typeof e.repeat === 'object' ? e.repeat : {}) as Record<string, unknown>;
-    patch.repeat_minute = str(repeat.minute);
-    patch.repeat_hour = str(repeat.hour);
-    patch.repeat_day_of_month = str(repeat.dayOfMonth);
-    patch.repeat_month = str(repeat.month);
-    patch.repeat_day_of_week = str(repeat.dayOfWeek);
-    patch.repeat_started_at = str(repeat.startedAt);
-    patch.repeat_completed_at = str(repeat.completedAt);
-  }
+  // `repeat` isn't a column on this row anymore — the PATCH route (checklist-templates/index.ts)
+  // writes it to `repeats` itself via saveRepeat() when `'repeat' in params`, same as it does for
+  // the full-row save() path.
   if ('tags' in e) {
     patch.tags = Array.isArray(e.tags) ? e.tags.filter((t): t is string => typeof t === 'string') : [];
   }
@@ -97,20 +76,15 @@ export function fromChecklistTemplate(e: Record<string, unknown>) {
   if (typeof e.id !== 'string' || !e.id) throw new Error('Missing id.');
   if (typeof e.title !== 'string' || !e.title) throw new Error('Missing title.');
 
-  const repeat = (e.repeat && typeof e.repeat === 'object' ? e.repeat : {}) as Record<string, unknown>;
   const str = (v: unknown) => (typeof v === 'string' ? v : null);
 
   return {
     id: e.id,
     title: e.title,
     avatar: e.avatar && typeof e.avatar === 'object' ? e.avatar : {},
-    repeat_minute: str(repeat.minute),
-    repeat_hour: str(repeat.hour),
-    repeat_day_of_month: str(repeat.dayOfMonth),
-    repeat_month: str(repeat.month),
-    repeat_day_of_week: str(repeat.dayOfWeek),
-    repeat_started_at: str(repeat.startedAt),
-    repeat_completed_at: str(repeat.completedAt),
+    // `repeat` isn't a column here anymore — the caller (checklist-templates/index.ts) writes it
+    // to `repeats` itself via saveRepeat(), after this row exists (the FK needs a parent to point
+    // at) — see 20260830000000_repeats_table.sql.
     tags: Array.isArray(e.tags) ? e.tags.filter((t): t is string => typeof t === 'string') : [],
     visibility: e.visibility === 'public' ? 'public' : 'private',
     flag_id: str(e.flagId),

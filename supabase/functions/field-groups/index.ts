@@ -20,6 +20,7 @@
 import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
 import { fromFieldGroup, toFieldGroup } from '../_shared/fieldGroups.ts';
+import { fetchRepeats, saveRepeat } from '../_shared/repeats.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
@@ -52,7 +53,9 @@ async function list({ url, db, userId }: Ctx) {
 
   const { data, error } = await q;
   if (error) throw new Error(error.message);
-  return { fieldGroups: ((data ?? []) as Record<string, unknown>[]).map(toFieldGroup) };
+  const rows = (data ?? []) as Record<string, unknown>[];
+  const repeats = await fetchRepeats(db, 'fieldGroupId', rows.map(r => r.id as string));
+  return { fieldGroups: rows.map(r => toFieldGroup(r, repeats[r.id as string])) };
 }
 
 async function save({ req, db, userId }: Ctx) {
@@ -68,6 +71,9 @@ async function save({ req, db, userId }: Ctx) {
 
   const { error } = await db.from('field_groups').upsert({ user_id: userId, ...row });
   if (error) throw new Error(error.message);
+  // After the group row exists — repeats.field_group_id is a real FK, so the parent has to be
+  // there first.
+  await saveRepeat(db, (entry as Record<string, unknown>).repeat, { userId, fieldGroupId: row.id });
   return { ok: true };
 }
 
