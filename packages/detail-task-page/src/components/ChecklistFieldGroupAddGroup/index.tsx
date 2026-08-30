@@ -257,7 +257,6 @@ const ChecklistFieldGroupAddGroup = ({
                     return (
                       <div key={fieldId} className={styles.fieldItem}>
                         <Checkbox
-                          key={`${fieldId}-${isChecked}`}
                           checked={isChecked}
                           onChange={() => handleFieldToggle(fieldId)}
                           className={styles.fieldCheckbox}

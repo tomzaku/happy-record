@@ -701,14 +701,10 @@ const ChecklistFieldGroupMenu = React.forwardRef<
                         // actually landed on the checkbox itself, and keeps the edit pencil from
                         // toggling the field at all.
                         <div className={styles.fieldRowActions} onClick={e => e.stopPropagation()}>
-                          <Checkbox
-                            key={`${fieldId}-${isChecked}`}
-                            checked={isChecked}
-                            onChange={() => handleFieldToggle(fieldId)}
-                          />
                           {/* Only a field already in the group has anything to customize — an
                               unselected row has no FieldGroupField entry for its overrides to
-                              live on yet. */}
+                              live on yet. Comes before the checkbox so the checkbox stays pinned
+                              at the row's far right whether or not this is showing. */}
                           {isChecked && (
                             <button
                               type="button"
@@ -722,6 +718,7 @@ const ChecklistFieldGroupMenu = React.forwardRef<
                               <Icon icon="solar:pen-2-line-duotone" width={16} />
                             </button>
                           )}
+                          <Checkbox checked={isChecked} onChange={() => handleFieldToggle(fieldId)} />
                         </div>
                       }
                     />
