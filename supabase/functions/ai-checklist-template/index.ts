@@ -38,16 +38,19 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 // Mirrors RecordField.type (packages/global/src/store/record-field/useRecordField.tsx) — every
 // type a real field can be, not just the two this used to be limited to. 'metric' was renamed
 // 'number' in 20260829080000_field_type_metric_to_number.sql; nothing here ever dealt with that
-// old name.
-type FieldType = 'number' | 'note' | 'text' | 'date' | 'datetime';
-const FIELD_TYPES: readonly FieldType[] = ['number', 'note', 'text', 'date', 'datetime'];
+// old name. 'select'/'multiselect' added in 20260829110000_field_types_select.sql.
+type FieldType = 'number' | 'note' | 'text' | 'date' | 'datetime' | 'select' | 'multiselect';
+const FIELD_TYPES: readonly FieldType[] = ['number', 'note', 'text', 'date', 'datetime', 'select', 'multiselect'];
 const isFieldType = (v: unknown): v is FieldType => FIELD_TYPES.includes(v as FieldType);
+const SELECT_FIELD_TYPES = new Set<FieldType>(['select', 'multiselect']);
 
 interface AvailableField {
   title: string;
   icon: string;
   type: FieldType;
   unit: string;
+  // select/multiselect-only — see GeneratedField.options' own comment.
+  options?: string[];
 }
 
 interface GeneratedField {
@@ -61,6 +64,9 @@ interface GeneratedField {
   // default number) for every other type, and for a number field the AI doesn't have a sensible
   // starting value for.
   defaultValue?: number;
+  // select/multiselect-only, and required for them (see RecordField.options' own comment and
+  // _shared/fields.ts's own validation) — the fixed list of choices this field offers.
+  options?: string[];
 }
 
 // The note editor (@moon-ui/note-editor, backed by @editorjs/editorjs) supports far more than a
@@ -97,19 +103,26 @@ interface GeneratedTemplate {
 async function fetchAvailableFields(supabase: SupabaseClient, userId: string): Promise<AvailableField[]> {
   const { data, error } = await supabase
     .from('fields')
-    .select('title, icon, type, unit')
+    .select('title, icon, type, unit, options')
     .or(`user_id.eq.${userId},visibility.eq.public`)
     .in('type', FIELD_TYPES)
     .order('created_at')
     .limit(60);
   if (error) throw new Error(error.message);
   return ((data ?? []) as Record<string, unknown>[])
-    .map((f) => ({
-      title: String(f.title ?? '').slice(0, 60),
-      icon: String(f.icon ?? '').slice(0, 80),
-      type: isFieldType(f.type) ? f.type : 'number' as const,
-      unit: String(f.unit ?? '').slice(0, 20),
-    }))
+    .map((f) => {
+      const type = isFieldType(f.type) ? f.type : 'number' as const;
+      const options = Array.isArray(f.options)
+        ? f.options.filter((o): o is string => typeof o === 'string').slice(0, 20)
+        : [];
+      return {
+        title: String(f.title ?? '').slice(0, 60),
+        icon: String(f.icon ?? '').slice(0, 80),
+        type,
+        unit: String(f.unit ?? '').slice(0, 20),
+        ...(SELECT_FIELD_TYPES.has(type) && options.length ? { options } : {}),
+      };
+    })
     .filter((f) => f.title);
 }
 
@@ -130,7 +143,14 @@ function build(p: Record<string, unknown>, availableFields: AvailableField[]): B
     : [];
 
   const fieldsCatalog = availableFields.length
-    ? availableFields.map((f) => `- "${f.title}" (${f.type}${f.unit ? `, unit: ${f.unit}` : ''})`).join('\n')
+    ? availableFields.map((f) => {
+      const detail = f.unit
+        ? `, unit: ${f.unit}`
+        : f.options?.length
+          ? `, options: ${f.options.map((o) => `"${o}"`).join(', ')}`
+          : '';
+      return `- "${f.title}" (${f.type}${detail})`;
+    }).join('\n')
     : '(none yet)';
 
   const context = existing
@@ -180,7 +200,9 @@ Design a small set of groups (usually 1-4) that break the request into a sane we
   - "text" — a short single-line answer that isn't a number (e.g. "Route taken", "Who you trained with").
   - "date" — a single calendar date (e.g. "Date of last checkup").
   - "datetime" — a specific date AND time (e.g. "Bedtime", "Woke up at").
-  "unit"/"defaultValue" only ever apply to "number" — leave "unit" as an empty string and omit "defaultValue" for every other type.
+  - "select" — pick exactly ONE from a fixed list you provide (e.g. "Mood": Great/Good/Okay/Bad). Give it 2-6 short "options".
+  - "multiselect" — pick ANY NUMBER from a fixed list you provide (e.g. "Muscle Groups Worked": Chest/Back/Legs/Arms/Core). Give it 2-8 short "options".
+  "unit"/"defaultValue" only ever apply to "number"; "options" only ever applies to "select"/"multiselect" — leave "unit" as an empty string, omit "defaultValue", and omit "options" entirely for whichever of the two doesn't apply to a given field's own type.
 
 A group's "note" is an array of blocks, each one of:
   { "type": "heading", "text": "short heading, e.g. 'How to do it'" }
@@ -202,7 +224,7 @@ Return ONLY this JSON, no markdown, no extra text:
       "note": [ { "type": "heading" | "paragraph" | "quote" | "video", "text": "...", "caption": "...", "url": "..." } ],
       "repeat": { "hour": "8", "minute": "0", "dayOfWeek": "1,4" } | null,
       "fields": [
-        { "title": "field title", "icon": "iconify-icon-id", "type": "number" | "note" | "text" | "date" | "datetime", "unit": "reps/minutes/etc, empty string except for \"number\"", "defaultValue": "a number, only for \"number\" fields with a sensible default — omit this key entirely otherwise", "description": "one short sentence" }
+        { "title": "field title", "icon": "iconify-icon-id", "type": "number" | "note" | "text" | "date" | "datetime" | "select" | "multiselect", "unit": "reps/minutes/etc, empty string except for \"number\"", "defaultValue": "a number, only for \"number\" fields with a sensible default — omit this key entirely otherwise", "options": "an array of 2-8 short strings, only for \"select\"/\"multiselect\" — omit this key entirely otherwise", "description": "one short sentence" }
       ]
     }
   ]
@@ -297,10 +319,21 @@ function validate(parsed: unknown): GeneratedTemplate {
       ? g.fields.slice(0, 8).map((rawField) => {
         const f = (rawField && typeof rawField === 'object' ? rawField : {}) as Record<string, unknown>;
         // Used to collapse anything but "note" down to "number" — silently turning a genuine
-        // "text"/"date"/"datetime" proposal into a number field. isFieldType checks against the
-        // real 5-value set instead (see its own comment); an unrecognized/missing type still
-        // falls back to "number", same default as before.
-        const type: FieldType = isFieldType(f.type) ? f.type : 'number';
+        // "text"/"date"/"datetime"/"select"/"multiselect" proposal into a number field.
+        // isFieldType checks against the real value set instead (see its own comment); an
+        // unrecognized/missing type still falls back to "number", same default as before.
+        let type: FieldType = isFieldType(f.type) ? f.type : 'number';
+        const options = Array.isArray(f.options)
+          ? f.options
+            .filter((o): o is string => typeof o === 'string' && o.trim().length > 0)
+            .map((o) => o.trim().slice(0, 60))
+            .slice(0, 8)
+          : [];
+        // A select/multiselect field genuinely needs real options — _shared/fields.ts's own
+        // validation rejects one that doesn't when this actually gets applied. Rather than
+        // failing the whole proposal over one malformed field, this one field quietly becomes
+        // "text" instead (same shape it'd have anyway: no unit, no options).
+        if (SELECT_FIELD_TYPES.has(type) && options.length === 0) type = 'text';
         return {
           title: typeof f.title === 'string' && f.title.trim() ? f.title.trim().slice(0, 60) : 'Field',
           icon: typeof f.icon === 'string' && f.icon.includes(':') ? f.icon.slice(0, 80) : 'solar:document-linear',
@@ -312,6 +345,7 @@ function validate(parsed: unknown): GeneratedTemplate {
           ...(type === 'number' && typeof f.defaultValue === 'number' && Number.isFinite(f.defaultValue)
             ? { defaultValue: f.defaultValue }
             : {}),
+          ...(SELECT_FIELD_TYPES.has(type) ? { options } : {}),
         };
       })
       : [];

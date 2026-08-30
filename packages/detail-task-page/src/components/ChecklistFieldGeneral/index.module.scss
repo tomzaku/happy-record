@@ -62,3 +62,31 @@
   margin: $spacing-xs 0 $spacing-sm;
   font-weight: 600;
 }
+
+// select/multiselect's own editing state — a list of pickable rows below the field's header row
+// (no single-line control fits "pick from a fixed list" the way Input/DatePicker do for
+// text/date), so this mirrors the 'note' case's own full-width-block-below-the-header shape.
+.optionList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  margin-top: $spacing-sm;
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  cursor: pointer;
+}
+
+// No moon-ui radio input exists yet (@moon-ui/radio's own default export is button-group-only —
+// see its own `// TODO: Add the default radio`) — a plain native radio, tinted to the app's own
+// accent so it doesn't look like a bare unstyled browser control next to Checkbox's own styled
+// one right above it in the multiselect case.
+.optionRadio {
+  accent-color: var(--radio-color);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}

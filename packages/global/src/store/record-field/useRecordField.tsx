@@ -20,16 +20,26 @@ export type RecordField = {
   title: string;
   icon: string;
   description: string;
-  // 'text'/'date'/'datetime' all carry a plain string `ChecklistRecord.value` — same wire shape
-  // a `number`-type field's own value already had (see checklist-records/index.ts's own
-  // `isNoteEntry`), told apart from `number`'s own numeric one only by this `type`, which the UI
-  // reads to pick the right input/display (short text vs. a date/datetime picker vs. a number
-  // input). `date`/`datetime` are always stored as a full ISO 8601 timestamp — see
-  // 20260829070000_field_types_text_date.sql — a `date`-type field's own "just the day" display
-  // is purely how the client formats it. 'number' was 'metric' until
-  // 20260829080000_field_type_metric_to_number.sql.
-  type: 'number' | 'note' | 'text' | 'date' | 'datetime';
+  // 'text'/'date'/'datetime'/'select' all carry a plain string `ChecklistRecord.value` — same
+  // wire shape a `number`-type field's own value already had (see checklist-records/index.ts's
+  // own `isNoteEntry`), told apart from `number`'s own numeric one only by this `type`, which the
+  // UI reads to pick the right input/display (short text vs. a date/datetime picker vs. a number
+  // input vs. a list of options). `date`/`datetime` are always stored as a full ISO 8601
+  // timestamp — see 20260829070000_field_types_text_date.sql — a `date`-type field's own "just
+  // the day" display is purely how the client formats it. `multiselect` is the one exception: its
+  // own value is a JSON-encoded array of the chosen options, still a plain string on the wire —
+  // see checklistRecordApi.ts's own serializeMultiselect/parseMultiselect, the only place that
+  // encoding is ever touched. 'number' was 'metric' until 20260829080000_field_type_metric_to_number.sql.
+  type: 'number' | 'note' | 'text' | 'date' | 'datetime' | 'select' | 'multiselect';
   unit: string;
+  /**
+   * The fixed list of choices a `select`/`multiselect` field offers — required for those two
+   * types (enforced server-side, see 20260829110000_field_types_select.sql and
+   * _shared/fields.ts's own validation), meaningless and never read for every other type. Order
+   * here is display order, not alphabetized — set once through the Add/Edit Field form
+   * (CoreFieldRecord) and edited the same way a field's own title/icon are.
+   */
+  options?: string[];
   /**
    * 'public' means any user can use this field in their own checklist templates, not just see it
    * in a list — see CLAUDE.md and supabase/functions/_shared/fields.ts. Never settable through

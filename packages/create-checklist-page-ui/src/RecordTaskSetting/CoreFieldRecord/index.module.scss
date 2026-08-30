@@ -1,5 +1,6 @@
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/function' as *;
 
 .container {
   display: flex;
@@ -76,6 +77,74 @@
 // crowded the two together instead of reading as one control.
 .typeSelectInput {
   padding: 6px 8px 6px 10px;
+}
+
+// select/multiselect's own options editor — chips for what's already added, then the "type a
+// name, Enter/+ to add" row, same rhythm the folder-sidebar's own "type a name to create"
+// pattern uses elsewhere in this app.
+.optionsEditor {
+  margin-top: $spacing-xs;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.optionChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.optionChip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px $spacing-xs 4px $spacing-sm;
+  border-radius: 999px;
+  background: var(--card-group-background);
+  font-size: toRem(13px);
+  color: var(--text-color);
+}
+
+.optionChipRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-description-color);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--card-selected-background);
+    color: var(--text-color);
+  }
+}
+
+.optionAddRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.optionAddButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--radio-color);
+  cursor: pointer;
+
+  &:disabled {
+    color: var(--text-description-color);
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 }
 
 .addFieldButtonContainer {

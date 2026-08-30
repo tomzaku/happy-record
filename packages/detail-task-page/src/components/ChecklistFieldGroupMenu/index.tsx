@@ -353,6 +353,10 @@ const ChecklistFieldGroupMenu = React.forwardRef<
         return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-date', defaultMessage: 'Date' });
       case 'datetime':
         return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-datetime', defaultMessage: 'Date & Time' });
+      case 'select':
+        return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-select', defaultMessage: 'Multiple Choice' });
+      case 'multiselect':
+        return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-multiselect', defaultMessage: 'Multiple Select' });
       case 'note':
       default:
         return intl.formatMessage({ id: 'checklist-field-group-menu.field-summary-note', defaultMessage: 'Note' });

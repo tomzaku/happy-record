@@ -13,12 +13,14 @@ import {
   formatFieldValueForDisplay,
   isoToDatetimeLocalInputValue,
 } from '@dreamer/global/src/lib/fieldValueFormat';
+import { parseMultiselect, serializeMultiselect } from '@dreamer/global/src/lib/multiselectValue';
 import NoteEditor from '@moon-ui/note-editor';
 import Typography from '@moon-ui/typography';
 import List from '@moon-ui/list';
 import Icon from '@moon-ui/icon/Icon';
 import Input from '@moon-ui/input';
 import DatePicker from '@moon-ui/date-picker';
+import Checkbox from '@moon-ui/checkbox';
 import cx from 'classnames';
 
 import styles from './index.module.scss';
@@ -174,6 +176,93 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
             )
           }
         />
+      );
+    }
+    // `select`'s own value is the chosen option (a plain string, same shape `text` already is);
+    // `multiselect`'s is a JSON-encoded array of chosen options in that same string slot (see
+    // lib/multiselectValue.ts) — both edit in place the same way every other type here does, just
+    // with a list of pickable rows below the field's own header row instead of a single inline
+    // input, since there's no single-line control for "pick from a fixed list" the way Input/
+    // DatePicker are for text/date.
+    case 'select':
+    case 'multiselect': {
+      const isEditing = activeRecord?.id === record.id;
+      const isMulti = field.type === 'multiselect';
+      const draftValue = isEditing ? activeRecord.value : record.value;
+      const selected = isMulti ? parseMultiselect(draftValue) : draftValue ? [String(draftValue)] : [];
+
+      const toggle = (option: string) => {
+        if (isMulti) {
+          const next = selected.includes(option)
+            ? selected.filter(o => o !== option)
+            : [...selected, option];
+          setActiveRecord({ ...record, value: serializeMultiselect(next) });
+        } else {
+          setActiveRecord({ ...record, value: option });
+        }
+      };
+
+      return (
+        <div>
+          <List.ItemMeta
+            logo={<Icon width={24} icon={field.icon} />}
+            title={field.title}
+            rightComponent={
+              isEditing ? (
+                <>
+                  <Icon
+                    width={24}
+                    className={styles.icon}
+                    onClick={() => setActiveRecord(undefined)}
+                    icon="proicons:cancel"
+                  />
+                  <Icon
+                    width={24}
+                    className={styles.icon}
+                    onClick={() => {
+                      updateChecklistRecord(record.id, {
+                        checklistTemplateId: record.checklistTemplateId,
+                        value: activeRecord.value,
+                      });
+                      setRecord({ ...record, value: activeRecord.value });
+                      setActiveRecord(undefined);
+                    }}
+                    icon="material-symbols:check"
+                  />
+                </>
+              ) : (
+                <>
+                  <Typography.Text> {formatFieldValueForDisplay(field.type, record.value)}</Typography.Text>
+                  <Icon
+                    width={24}
+                    className={styles.iconEdit}
+                    onClick={() => setActiveRecord(record)}
+                    icon="solar:pen-2-line-duotone"
+                  />
+                </>
+              )
+            }
+          />
+          {isEditing && (
+            <div className={styles.optionList}>
+              {(field.options ?? []).map(option => (
+                <label key={option} className={styles.optionRow}>
+                  {isMulti ? (
+                    <Checkbox checked={selected.includes(option)} onChange={() => toggle(option)} />
+                  ) : (
+                    <input
+                      type="radio"
+                      className={styles.optionRadio}
+                      checked={selected.includes(option)}
+                      onChange={() => toggle(option)}
+                    />
+                  )}
+                  <Typography.Text>{option}</Typography.Text>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
       );
     }
     case 'number':

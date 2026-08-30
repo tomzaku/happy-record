@@ -16,6 +16,8 @@
 // reading local parts back out on the way out, is what keeps the calendar day/wall-clock time the
 // user actually picked from drifting by a day (or an hour) around that UTC/local seam.
 
+import { parseMultiselect } from './multiselectValue';
+
 const pad = (n: number): string => String(n).padStart(2, '0');
 
 /** `<input type="date">`'s own `onChange` value (`YYYY-MM-DD`) → a full ISO timestamp, local
@@ -42,17 +44,21 @@ export function isoToDatetimeLocalInputValue(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** Read-only display — History, the collapsed (non-editing) state of a field row. `text` is
- * itself already display-ready; `date`/`datetime` format the stored ISO timestamp down to what a
- * human actually wants to see (just the day, or the day plus a locale-formatted time) rather than
- * the raw ISO string. Tolerant of a value that isn't real date content (not yet a valid Date) —
- * falls back to the raw string rather than showing "Invalid Date". */
+/** Read-only display — History, the collapsed (non-editing) state of a field row. `text`/
+ * `select` are themselves already display-ready (a `select`'s own value is just the chosen
+ * option's own string); `multiselect` joins its own JSON-encoded array (see
+ * lib/multiselectValue.ts) with ", " into one readable line; `date`/`datetime` format the stored
+ * ISO timestamp down to what a human actually wants to see (just the day, or the day plus a
+ * locale-formatted time) rather than the raw ISO string. Tolerant of a value that isn't real date
+ * content (not yet a valid Date) — falls back to the raw string rather than showing "Invalid
+ * Date". */
 export function formatFieldValueForDisplay(
-  type: 'text' | 'date' | 'datetime',
+  type: 'text' | 'date' | 'datetime' | 'select' | 'multiselect',
   value: unknown,
 ): string {
   const raw = value == null ? '' : String(value);
-  if (type === 'text') return raw;
+  if (type === 'text' || type === 'select') return raw;
+  if (type === 'multiselect') return parseMultiselect(raw).join(', ');
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return raw;
   if (type === 'date') return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;

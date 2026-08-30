@@ -36,11 +36,14 @@ export type AiGeneratedField = {
   icon: string;
   // Mirrors RecordField.type (useRecordField.tsx) in full now, not just 'number'/'note' — see
   // ai-checklist-template/index.ts's own FieldType comment.
-  type: 'number' | 'note' | 'text' | 'date' | 'datetime';
+  type: 'number' | 'note' | 'text' | 'date' | 'datetime' | 'select' | 'multiselect';
   unit: string;
   description: string;
   /** number-only — see the server's own GeneratedField.defaultValue comment. */
   defaultValue?: number;
+  /** select/multiselect-only, and required for them — see the server's own GeneratedField.options
+   * comment. */
+  options?: string[];
 };
 
 // Mirrors supabase/functions/ai-checklist-template's own GeneratedNoteBlock — a short sequence of

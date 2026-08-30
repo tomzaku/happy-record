@@ -16,6 +16,8 @@ import {
   formatFieldValueForDisplay,
   isoToDatetimeLocalInputValue,
 } from '@dreamer/global/src/lib/fieldValueFormat';
+import { parseMultiselect, serializeMultiselect } from '@dreamer/global/src/lib/multiselectValue';
+import Checkbox from '@moon-ui/checkbox';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { Checklist, ChecklistTemplate, useAiNoteGenerate } from '@dreamer/global';
 import {
@@ -91,6 +93,15 @@ const ChecklistFieldGroupAdd = ({
   // one Submit shape — only the input control differs per type (see the render below).
   const textLikeFields = fields.filter(
     field => field.type === 'text' || field.type === 'date' || field.type === 'datetime',
+  );
+  // 'select'/'multiselect' share that exact same bucket too — a select's own value is a plain
+  // string (the chosen option), a multiselect's is a JSON-encoded array in that same string slot
+  // (see lib/multiselectValue.ts) — so both submit through the exact same `textFieldRecord`/
+  // `textEntries` machinery below, just with a list-of-options picker instead of a single-line
+  // input rendered separately further down (a tall options list doesn't fit `rightComponent` the
+  // way a compact Input/DatePicker does).
+  const selectLikeFields = fields.filter(
+    field => field.type === 'select' || field.type === 'multiselect',
   );
   // Pre-fills a number field's own default value (set via the Edit Field
   // form — see CoreFieldRecord) instead of always starting blank; still
@@ -306,8 +317,8 @@ const ChecklistFieldGroupAdd = ({
                 </React.Fragment>
               );
             } else {
-              // text/date/datetime — a plain formatted string, same read-only display
-              // ChecklistFieldGeneral's own collapsed state uses.
+              // text/date/datetime/select/multiselect — a plain formatted string, same
+              // read-only display ChecklistFieldGeneral's own collapsed state uses.
               const latestRecord = currentChecklistRecords.find(
                 record => record.fieldId === recordField.id,
               );
@@ -321,7 +332,10 @@ const ChecklistFieldGroupAdd = ({
                   title={recordField.title}
                   rightComponent={
                     <Typography.Text>
-                      {formatFieldValueForDisplay(recordField.type as 'text' | 'date' | 'datetime', latestRecord.value)}
+                      {formatFieldValueForDisplay(
+                        recordField.type as 'text' | 'date' | 'datetime' | 'select' | 'multiselect',
+                        latestRecord.value,
+                      )}
                     </Typography.Text>
                   }
                 />
@@ -431,6 +445,49 @@ const ChecklistFieldGroupAdd = ({
           }
         />
       ))}
+      {selectLikeFields.map(field => {
+        const isMulti = field.type === 'multiselect';
+        const selected = isMulti
+          ? parseMultiselect(textFieldRecord[field.id])
+          : textFieldRecord[field.id]
+            ? [textFieldRecord[field.id] as string]
+            : [];
+        const toggle = (option: string) => {
+          if (isMulti) {
+            const next = selected.includes(option)
+              ? selected.filter(o => o !== option)
+              : [...selected, option];
+            setTextFieldRecord({
+              ...textFieldRecord,
+              [field.id]: next.length ? serializeMultiselect(next) : undefined,
+            });
+          } else {
+            setTextFieldRecord({ ...textFieldRecord, [field.id]: option });
+          }
+        };
+        return (
+          <div key={`${field.id}-${newNoteKey}`} className={styles.selectField}>
+            <List.ItemMeta logo={<Icon width={24} icon={field.icon} />} title={field.title} />
+            <div className={styles.optionList}>
+              {(field.options ?? []).map(option => (
+                <label key={option} className={styles.optionRow}>
+                  {isMulti ? (
+                    <Checkbox checked={selected.includes(option)} onChange={() => toggle(option)} />
+                  ) : (
+                    <input
+                      type="radio"
+                      className={styles.optionRadio}
+                      checked={selected.includes(option)}
+                      onChange={() => toggle(option)}
+                    />
+                  )}
+                  <Typography.Text>{option}</Typography.Text>
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      })}
       <div className={styles.footerCenter}>
         {onOpenFieldSettings ? (
           <button

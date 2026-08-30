@@ -11,7 +11,7 @@ import cx from 'classnames';
 import IconPicker from '../../IconPicker';
 import Select from '@moon-ui/select';
 
-export type FieldType = 'number' | 'note' | 'text' | 'date' | 'datetime';
+export type FieldType = 'number' | 'note' | 'text' | 'date' | 'datetime' | 'select' | 'multiselect';
 
 export type FormState = {
   icon: string;
@@ -22,6 +22,9 @@ export type FormState = {
   description: string;
   /** number-only — pre-fills the daily submit screen's input for this field. */
   defaultValue?: number;
+  /** select/multiselect-only — the fixed list of choices this field offers. Required for those
+   * two types (see RecordField.options' own doc comment); ignored for every other type. */
+  options?: string[];
 };
 
 type Props = {
@@ -42,6 +45,79 @@ const RowIcon = ({ icon }: { icon: string }) => (
   </div>
 );
 
+type OptionsEditorProps = {
+  options: string[];
+  onChange: (options: string[]) => void;
+};
+
+/** select/multiselect's own "what are the choices" editor — type a name, Enter (or the + button)
+ * appends it, each existing one gets its own remove "x". Duplicate names (case-insensitive,
+ * trimmed) are silently ignored rather than added twice — nothing downstream (the Submit form's
+ * own radio/checkbox list, History's display) has a way to tell two identically-named options
+ * apart anyway. */
+const OptionsEditor = ({ options, onChange }: OptionsEditorProps) => {
+  const [draft, setDraft] = React.useState('');
+
+  const addOption = () => {
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+    if (options.some(o => o.toLowerCase() === trimmed.toLowerCase())) {
+      setDraft('');
+      return;
+    }
+    onChange([...options, trimmed]);
+    setDraft('');
+  };
+
+  const removeOption = (option: string) => onChange(options.filter(o => o !== option));
+
+  return (
+    <div className={styles.optionsEditor}>
+      {options.length > 0 && (
+        <div className={styles.optionChips}>
+          {options.map(option => (
+            <span key={option} className={styles.optionChip}>
+              {option}
+              <button
+                type="button"
+                className={styles.optionChipRemove}
+                onClick={() => removeOption(option)}
+                aria-label={`Remove ${option}`}
+              >
+                <Icon icon="material-symbols:close-rounded" width={12} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className={styles.optionAddRow}>
+        <Input
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          placeholder="Add an option"
+          border="dash"
+          className={styles.rowInput}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              addOption();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className={styles.optionAddButton}
+          onClick={addOption}
+          disabled={!draft.trim()}
+          aria-label="Add option"
+        >
+          <Icon icon="solar:add-circle-bold" width={22} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const CoreFieldRecord = ({
   className,
   initialValues = {},
@@ -51,15 +127,16 @@ const CoreFieldRecord = ({
 }: Props) => {
   const intl = useIntl();
 
-  // A Select dropdown, not the segmented Radio buttons this used to be — 5 options ("Number",
-  // "Note", "Short Text", "Date", "Date & Time") don't fit as inline buttons in this row on
-  // mobile the way 2 did.
+  // A Select dropdown, not the segmented Radio buttons this used to be — 7 options don't fit as
+  // inline buttons in this row on mobile the way 2 did.
   const typeOptions: { label: string; value: FieldType }[] = [
     { label: intl.formatMessage({ defaultMessage: 'Number', id: 'label-record-custom.type.number' }), value: 'number' },
     { label: intl.formatMessage({ defaultMessage: 'Note', id: 'label-record-custom.type.note' }), value: 'note' },
     { label: intl.formatMessage({ defaultMessage: 'Short Text', id: 'label-record-custom.type.text' }), value: 'text' },
     { label: intl.formatMessage({ defaultMessage: 'Date', id: 'label-record-custom.type.date' }), value: 'date' },
     { label: intl.formatMessage({ defaultMessage: 'Date & Time', id: 'label-record-custom.type.datetime' }), value: 'datetime' },
+    { label: intl.formatMessage({ defaultMessage: 'Multiple Choice', id: 'label-record-custom.type.select' }), value: 'select' },
+    { label: intl.formatMessage({ defaultMessage: 'Multiple Select', id: 'label-record-custom.type.multiselect' }), value: 'multiselect' },
   ];
 
   const [form, setForm] = React.useState<FormState>({
@@ -69,8 +146,15 @@ const CoreFieldRecord = ({
     title: '',
     unit: '',
     description: '',
+    options: [],
     ...initialValues,
   });
+
+  const isSelectType = form.type === 'select' || form.type === 'multiselect';
+  // Whichever type is selected, the Type row is only the *last* row in the card when nothing of
+  // its own follows it below (Field Unit/Default Value for "number", Options for select/
+  // multiselect) — every other type has nothing trailing, so Type itself is last there.
+  const typeRowIsLast = form.type !== 'number' && !isSelectType;
 
   // Form is already initialized with initialValues in useState above
   // No need for useEffect to sync since it's already handled in the initial state
@@ -132,9 +216,9 @@ const CoreFieldRecord = ({
             field). Sharing a checklist template resolves its own fields a different way (GET
             /fields?templateId=), without ever touching this column. So the "last row, no bottom
             border" styling now lands on whichever row is actually last: Default Value for a
-            number field, Type itself for every other type (no unit/default-value rows to
-            follow any of them). */}
-        <div className={cx(styles.formRow, form.type !== 'number' && styles.formRowLast)}>
+            number field, Options for select/multiselect, Type itself for every other type (no
+            trailing rows to follow any of them). */}
+        <div className={cx(styles.formRow, typeRowIsLast && styles.formRowLast)}>
           <List.ItemMeta
             noPaddingHorizontal
             className={styles.itemMeta}
@@ -216,6 +300,35 @@ const CoreFieldRecord = ({
             />
           </div>
         )}
+
+        {isSelectType && (
+          <div className={cx(styles.formRow, styles.formRowLast)}>
+            <List.ItemMeta
+              noPaddingHorizontal
+              className={styles.itemMeta}
+              logo={<RowIcon icon="solar:list-check-linear" />}
+              title={intl.formatMessage({
+                defaultMessage: 'Options',
+                id: 'label-record-custom.options.label',
+              })}
+              description={
+                form.type === 'select'
+                  ? intl.formatMessage({
+                    defaultMessage: 'The choices to pick one from',
+                    id: 'label-record-custom.options.description.select',
+                  })
+                  : intl.formatMessage({
+                    defaultMessage: 'The choices to pick any number of',
+                    id: 'label-record-custom.options.description.multiselect',
+                  })
+              }
+            />
+            <OptionsEditor
+              options={form.options ?? []}
+              onChange={options => setForm({ ...form, options })}
+            />
+          </div>
+        )}
       </div>
 
       <IconPicker
@@ -241,7 +354,18 @@ const CoreFieldRecord = ({
             })}
           </Button>
         )}
-        <Button block size="lg" type="primary" onClick={handleSubmit}>
+        {/* Only real client-side gate in this form — a select/multiselect field with no options
+            would otherwise save optimistically here (see handleSubmit) and then silently fail
+            server-side (fromRecordField's own "needs at least one option" — saveRecordField is
+            `quiet: true`, so nothing would ever surface that failure to undo the optimistic
+            write), leaving this device thinking it saved when it didn't. */}
+        <Button
+          block
+          size="lg"
+          type="primary"
+          onClick={handleSubmit}
+          disabled={isSelectType && (form.options ?? []).length === 0}
+        >
           {submitButtonText ||
             intl.formatMessage({
               defaultMessage: 'Save',

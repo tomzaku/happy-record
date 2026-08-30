@@ -13,9 +13,18 @@
 // 'number' was 'metric' until 20260829080000_field_type_metric_to_number.sql — no backfill of
 // existing rows, since this app has no real user data yet (a fresh `supabase db reset` is what
 // actually picks the rename up).
-export const FIELD_TYPES = ['number', 'note', 'text', 'date', 'datetime'] as const;
+//
+// 'select'/'multiselect' (20260829110000_field_types_select.sql) each need a real `options`
+// list to mean anything — validated below, not just documented. 'select''s own record value is
+// a plain string like 'text' already is; 'multiselect''s is a JSON-encoded array of strings in
+// that same `value_text` column — see that migration's own comment and
+// packages/global/src/lib/multiselectValue.ts's own serializeMultiselect/parseMultiselect for
+// where that encoding actually happens (never here; this file only ever touches the field's own
+// row, not a submitted record's value).
+export const FIELD_TYPES = ['number', 'note', 'text', 'date', 'datetime', 'select', 'multiselect'] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 export const isFieldType = (v: unknown): v is FieldType => (FIELD_TYPES as readonly string[]).includes(v as string);
+const SELECT_TYPES = new Set<FieldType>(['select', 'multiselect']);
 
 export function toRecordField(r: Record<string, unknown>) {
   return {
@@ -25,6 +34,7 @@ export function toRecordField(r: Record<string, unknown>) {
     description: (r.description as string) ?? '',
     type: r.type as string,
     unit: (r.unit as string) ?? '',
+    ...(Array.isArray(r.options) && r.options.length ? { options: r.options as string[] } : {}),
     visibility: (r.visibility as string) ?? 'private',
     ...(r.default_value_number !== null && r.default_value_number !== undefined
       ? { defaultValue: Number(r.default_value_number) }
@@ -43,6 +53,16 @@ export function fromRecordField(e: Record<string, unknown>) {
   if (typeof e.icon !== 'string' || !e.icon) throw new Error('Missing icon.');
   if (!isFieldType(e.type)) throw new Error('Invalid type.');
 
+  const options = Array.isArray(e.options)
+    ? e.options.filter((o): o is string => typeof o === 'string' && o.trim().length > 0)
+    : [];
+  // Same requirement the table's own `fields_options_required_for_select` CHECK enforces — caught
+  // here first so a select field with no real options gets a normal 400, not a raw Postgres
+  // constraint-violation error surfacing through the generic 500 handler.
+  if (SELECT_TYPES.has(e.type) && options.length === 0) {
+    throw new Error('A select/multiselect field needs at least one option.');
+  }
+
   return {
     id: e.id,
     title: e.title,
@@ -50,6 +70,7 @@ export function fromRecordField(e: Record<string, unknown>) {
     description: typeof e.description === 'string' ? e.description : '',
     type: e.type,
     unit: typeof e.unit === 'string' ? e.unit : '',
+    options: options.length ? options : null,
     // Never trusted from the client, regardless of what's sent — a public field would be usable
     // in *anyone's* checklist template (fields/index.ts's own "owner OR public" read rule), and
     // a real user's own field becoming that is never something this route should grant on

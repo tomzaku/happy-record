@@ -24,6 +24,7 @@ const EditFieldRecord = ({ className, onSubmit, recordField }: Props) => {
       unit: form.unit,
       description: form.description,
       defaultValue: form.defaultValue,
+      options: form.options,
     });
 
     if (updatedRecordField) {
@@ -43,6 +44,7 @@ const EditFieldRecord = ({ className, onSubmit, recordField }: Props) => {
       unit: recordField.unit,
       description: recordField.description,
       defaultValue: recordField.defaultValue,
+      options: recordField.options ?? [],
     };
   };
 
