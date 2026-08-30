@@ -35,12 +35,69 @@ a resource whose server schema *isn't* a 1:1 mirror of the client shape — see 
 
 | Layer | Where | Job |
 | --- | --- | --- |
-| Edge function | `supabase/functions/<resource>/index.ts` | One REST resource. Auth via `requireUser`, RLS-scoped client, returns client-shaped JSON |
-| Shared pieces | `supabase/shared/<resource>.ts` | Row mapping + validation for that resource; `shared/auth.ts` and `shared/cors.ts` are common to all |
+| Edge function | `supabase/functions/<resource>/index.ts` | Thin deploy entrypoint (Supabase requires this exact file/path) — CORS, `requireUser` for identity, dispatch, error shape |
+| Resource internals | `supabase/functions/<resource>/{api,model,services}/` | Every resource gets `api/` — one file per route plus a `<resource>-routes.ts` table — even a single-route resource (`me`), matching kakaonline core-server's own `features/<domain>/api` shape down to its smallest feature. `model/` (row mapping) and `services/` (DB-read helpers + the resource's own `checkPermission` functions) are added only when there's something resource-exclusive to put there — a resource with no real cross-user visibility decision (`flags`, `tags`, `checklists`, ...) has neither, just `api/` + a thin `index.ts` — see "Authorization: app layer, not RLS" below |
+| Shared pieces | `supabase/shared/<resource>.ts` | Row mapping/validation genuinely reused by *another* resource (e.g. `checklist-records` building a note row through `shared/notes.ts`'s `fromNote`) — not a dumping ground for anything resource-shaped; `shared/auth.ts`, `shared/cors.ts`, and `shared/authorize.ts` (`admin`/`compose`/`ForbiddenError`) are common to all |
 | Client module | `packages/<owning-package>/src/<resource>Api.ts` | One exported function per route, built on `packages/global/src/lib/api.ts` |
 | Caller | the domain's own hook (e.g. `useChecklist` in `checklists/useChecklists.tsx`) | Calls the API module, scoped to what's needed; falls back to whatever's already in the local store on `null` |
 
-Deploy: `supabase functions deploy checklists`.
+Deploy: `supabase functions deploy checklists`. `notes` and `challenges` are the fullest
+references for the `api`/`model`/`services` split — `challenges` specifically for a resource with
+real, multi-tier authorization logic (see below); `me` is the reference for the minimal shape
+(`api/` only, one route, no `model`/`services`).
+
+## Authorization: app layer, not RLS
+
+This app used to enforce every access rule with Postgres RLS — `using (auth.uid() = user_id)`
+policies, `auth.uid()`-reading SQL functions, the works. That's gone now: every table still has
+RLS *enabled* (harmless, since nothing queries through the caller's own JWT-scoped client
+anymore), but the policies themselves are inert leftovers, not what actually protects a row. Why:
+RLS policies and `auth.uid()` are Postgres/Supabase-specific — this app wants to be able to swap
+the database later without rewriting an authorization model that only exists as SQL, and without
+every new access rule requiring a migration.
+
+The replacement, in `supabase/shared/authorize.ts`:
+
+- **`admin()`** — a memoized service-role client. Bypasses RLS entirely. Every resource's route
+  handlers read and write through this now, not `requireUser`'s RLS-scoped one (that client still
+  exists, purely to verify the caller's identity via `auth.getUser()`).
+- **`ForbiddenError`** — 403, distinct from `requireUser`'s 401 (not signed in at all).
+- **`compose(checkPermission, core)`** — the actual pattern a route follows: `checkPermission`
+  gets the same ctx the route would, decides whether this call is allowed at all, and returns
+  whatever `core` actually needs once authorized (a loaded row, a filtered id list, an
+  existing-row-or-null for a write) — threaded into `core` as a second argument so a check that
+  already had to load something to decide access doesn't make `core` load it again.
+
+Three things to get right when writing or reviewing a `checkPermission`:
+
+1. **A `checkPermission` that finds nothing to authorize because an id doesn't exist throws
+   `ApiError(404, ...)`, not `ForbiddenError`** — same "unknown id and someone else's private id
+   both look empty from the outside" convention every by-id lookup in this app already follows.
+2. **A route that used to return an empty result when RLS silently filtered a row out (a
+   shared-template lookup, a batch read) must keep doing that** — a `checkPermission` for that
+   shape returns a "not visible" value (`null`, an empty array, a `visible: false` flag) for the
+   core to turn into `{ resource: [] }` or `{ resource: null }`, not a thrown error. Throwing
+   there would be a behavior change, not a faithful port. `field-groups`' scoped `list` and
+   `checklist-templates`' `?id=` branch are the reference for this.
+3. **A batch read that used to rely on RLS to narrow a broader query needs that narrowing written
+   out explicitly, not dropped.** `shared/repeats.ts`'s `fetchRepeats` is the cautionary example:
+   it used to have zero `user_id` filter of its own, relying entirely on RLS to keep a personal
+   reminder-time override private to the participant who set it. Moving its caller onto `admin()`
+   without adding that filter back would have leaked every participant's override to anyone who
+   could list the same template — caught and fixed while migrating `checklist-templates` (see
+   that commit). When porting a query off RLS, ask "what was the policy actually restricting?",
+   not just "does this query still return the same rows for the happy path?"
+
+A resource with **no real cross-user visibility rule** — every query is already an explicit
+`.eq('user_id', userId)`, own-row-only (`flags`, `tags`, `note-folders`, `checklists`,
+`checklist-records`, `me`) — needs no `compose`/`checkPermission` at all: just swap the client to
+`admin()`. Don't invent a permission check where the query was already self-scoped.
+
+`challenges` is the fullest example of a real multi-tier rule: the challenge row itself is visible
+to its owner or anyone if the underlying template is public, but the participant roster (and
+everything downstream — completions, ranking, targets) needs actual participation, strictly
+narrower than "the template happens to be public" — two separate `checkPermission`-shaped
+decisions replicated from what used to be two separate RLS policies on two different tables.
 
 ## Write them as normal REST APIs
 
@@ -457,8 +514,11 @@ file imports it" bar as `tasks-page-ui`/`pomodoro-mobile`/`pregnant-page-ui` bef
 
 - **Validate and clamp every caller-supplied value** in an edge function — especially list
   sizes. An unbounded `limit` is a free full table scan.
-- **RLS on every table.** `using (auth.uid() = user_id) with check (auth.uid() = user_id)`, no
-  exceptions — see `supabase/migrations/20260820010000_init_checklists.sql`.
+- **Authorization is app code now, not RLS.** Every table still has RLS enabled from when it was
+  the enforcement layer (`supabase/migrations/20260820010000_init_checklists.sql`'s
+  `using (auth.uid() = user_id) with check (auth.uid() = user_id)` shape, etc.) — those policies
+  are inert leftovers now, not load-bearing; see "Authorization: app layer, not RLS" below for why
+  and the actual pattern a new resource follows.
 - **Every table gets `updated_at timestamptz not null default now()`, and every write sets it
   explicitly** in the row-mapping function (`fromX`) — Postgres only fills a column default on
   insert, never on update, so an upsert that doesn't set it leaves a stale value. It's not
