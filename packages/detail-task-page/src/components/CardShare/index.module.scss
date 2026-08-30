@@ -179,11 +179,8 @@
 .targets {
   display: flex;
   flex-direction: column;
-  gap: $spacing-xxs;
+  gap: $spacing-xs;
   margin: $spacing-xs 0;
-  padding: $spacing-xs;
-  border: 1px dashed var(--input-border);
-  border-radius: 6px;
 }
 
 .targetsLabel {
@@ -193,17 +190,57 @@
   text-transform: uppercase;
 }
 
+// Same shell as CoreFieldRecord's `.formCard` / the Select Fields list's `.fieldsList` — a
+// bordered card grouping every row, rather than the old plain dashed box around bare text.
+.targetsCard {
+  border: 1px solid var(--division-color);
+  border-radius: 8px;
+  background: var(--background);
+}
+
 .targetRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: $spacing-xs;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  border-bottom: 1px solid var(--division-color);
 }
 
-.targetFieldName {
-  font-size: toRem(12px);
+.targetRowLast {
+  border-bottom: none;
+}
+
+.targetItemMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+// Matches ChecklistFieldGroupMenu's `.fieldIconBadge` / CoreFieldRecord's `.rowIconBadge` —
+// same icon treatment as every other field row in the app.
+.targetIconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--card-group-background);
+  color: var(--text-description-color);
 }
 
 .targetInput {
-  width: 110px;
+  width: 130px;
+  flex-shrink: 0;
+}
+
+// Passed via Input's `classes.input` — lands on the actual `<input>`, since `.targetInput`
+// itself only reaches the wrapper div (see @moon-ui/input). Bumped padding/font-size so this
+// reads at the same scale as the Type row's Select in CoreFieldRecord (`.typeSelectElement`'s
+// 32px min-height), rather than the small 12px text this used to be.
+.targetInputField {
+  padding: $spacing-sm $spacing-md;
+  font-size: toRem(15px);
+  min-height: 40px;
 }

@@ -275,9 +275,7 @@ const DetailTaskPageDesktop = () => {
                   one that lived right here for a participant) with an
                   actual leaderboard preview. index.mobile.tsx renders the
                   same widget in its own single-column flow. */}
-              {challenge && (challenge.shareRecords || challenge.commentsEnabled) && (
-                <MiniChallengeDashboard challengeId={challenge.id} userId={userId} />
-              )}
+              {challenge && <MiniChallengeDashboard challengeId={challenge.id} userId={userId} />}
 
               {!isOwner && challenge && (
                 <div className={styles.challengeActions}>

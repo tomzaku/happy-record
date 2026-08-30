@@ -481,7 +481,7 @@ const ChallengeDashboardPageUi = () => {
   }
   if (!dashboard.challenge) return null;
 
-  const hasRoster = dashboard.challenge.shareRecords && !!dashboard.participants.length;
+  const hasRoster = !!dashboard.participants.length;
 
   return (
     <div>
@@ -504,7 +504,7 @@ const ChallengeDashboardPageUi = () => {
           </Link>
         )}
         <div className={styles.mainColumn}>
-          {dashboard.challenge.shareRecords && !!dashboard.targets.length && (
+          {!!dashboard.targets.length && (
             <Card className={`${styles.card} ${styles.cardNoPadding}`}>
               <div className={styles.cardHeaderWash} style={{ background: 'rgba(42, 120, 214, 0.08)' }}>
                 <div className={styles.cardHeaderTitle}>
@@ -737,7 +737,7 @@ const ChallengeDashboardPageUi = () => {
             </div>
 
             <div className={styles.cardBody}>
-              {!dashboard.challenge.shareRecords ? null : !dashboard.participants.length ? (
+              {!dashboard.participants.length ? (
                 <Typography.Text>
                   {intl.formatMessage({
                     id: 'ChallengeDashboard.no-participants',
@@ -851,10 +851,10 @@ const ChallengeDashboardPageUi = () => {
                     // no avatar column) — the author's roster entry does, so
                     // this looks it up by userId instead of adding a column
                     // that would just duplicate what's already on their
-                    // participant row. Misses only for a comment from the owner
-                    // of a comments-only, not-shareRecords challenge — they
-                    // have no participant row at all, so it falls back to
-                    // initials same as anyone else with no photo.
+                    // participant row. Misses only for a comment from a
+                    // legacy challenge whose owner never got auto-enrolled
+                    // (before every owner was) — falls back to initials same
+                    // as anyone else with no photo.
                     const author = dashboard.participants.find(p => p.userId === c.userId);
                     // "Mine" (this device's own comment) gets no avatar/name
                     // label and sits on the right in its own accent color —
@@ -896,10 +896,11 @@ const ChallengeDashboardPageUi = () => {
                 </div>
                 <div className={styles.commentForm}>
                   {/* Only asked for at all when there's no known identity yet
-                      (no participant row — a comments-only, not-shareRecords
-                      challenge's owner is the one real case) — a known name
-                      needs no confirmation row of its own, same as the
-                      message bubbles above never re-labeling your own name. */}
+                      (no participant row — a legacy challenge's owner from
+                      before every owner was auto-enrolled is the one real
+                      case) — a known name needs no confirmation row of its
+                      own, same as the message bubbles above never
+                      re-labeling your own name. */}
                   {!knownName && (
                     <Input
                       value={commentName}

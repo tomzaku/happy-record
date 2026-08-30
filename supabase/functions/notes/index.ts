@@ -11,10 +11,17 @@
 // on a journal entry, which is what the unscoped GET groups by.
 //
 //   GET    /notes ?id=          → { notes }  one note, full content (`value` included) — this is
-//                                  the one route that actually opens a note in an editor
-//   GET    /notes ?ids=a,b      → { notes }  several at once, full content — the standalone
-//                                  notebook's own listing (one note per note-type field, by
-//                                  their ids), which renders each one inline
+//                                  the one route that actually opens a note in an editor. Caller's
+//                                  own or anyone's if it's a field-group's Home note on a
+//                                  `visibility: 'public'` template (see
+//                                  20260830010000_public_field_group_notes.sql) — RLS decides,
+//                                  same as checklist-templates' own `?id=` branch; this is what
+//                                  lets a challenge participant's `useNoteById` resolve the
+//                                  sharer's note instead of coming back empty.
+//   GET    /notes ?ids=a,b      → { notes }  several at once, full content, same public-note
+//                                  exception as `?id=` above — the standalone notebook's own
+//                                  listing (one note per note-type field, by their ids), which
+//                                  renders each one inline
 //   GET    /notes ?q=text&limit= → { notes }  title/search_text match, most recently updated
 //                                  first, summaries only (no `value` — see toNoteSummary's own
 //                                  comment) — a search UI's own results list, which only ever
@@ -71,7 +78,13 @@ async function list({ url, db, userId }: Ctx) {
   const q = url.searchParams.get('q');
 
   if (id || ids.length) {
-    let query = db.from('notes').select('*').eq('user_id', userId);
+    // No hard `user_id` filter here, unlike every other branch below — RLS alone decides what
+    // comes back (the caller's own rows, or a field-group's Home note whose template is public;
+    // see 20260830010000_public_field_group_notes.sql), the same "rely on RLS for a by-id
+    // lookup" shape checklist-templates' own `?id=` branch uses. This is what makes a challenge
+    // participant's `useNoteById(fieldGroup.noteId)` actually resolve to the sharer's note
+    // instead of coming back empty.
+    let query = db.from('notes').select('*');
     query = id ? query.eq('id', id) : query.in('id', ids);
     const { data, error } = await query;
     if (error) throw new Error(error.message);

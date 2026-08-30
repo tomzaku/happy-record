@@ -6,6 +6,7 @@ import Button from '@moon-ui/button';
 import Checkbox from '@moon-ui/checkbox';
 import Input from '@moon-ui/input';
 import Icon from '@moon-ui/icon/Icon';
+import List from '@moon-ui/list';
 import { Modal, BottomModal } from '@moon-ui/modal';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
@@ -80,19 +81,18 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
   const challenge = getChallengeForTemplate(checklistTemplateId);
   // The owner's name/photo on the group dashboard, straight from Google
   // (see useSession.ts) — no reason to ask them to type it again. Both
-  // `undefined` for an anonymous owner (shareRecords doesn't itself require
-  // signing in), same as before this existed: the participant row just
-  // gets saved with no name/photo.
+  // `undefined` for an anonymous owner (joining a challenge doesn't itself
+  // require signing in for the owner's own side), same as before this
+  // existed: the participant row just gets saved with no name/photo.
   const { displayName, avatarUrl } = useSession();
   // Local until the first share (there's nothing to persist yet); once a challenge row
   // exists it's the source of truth, so this only seeds from it — a later toggle/edit
   // writes straight through instead of drifting.
-  const [shareRecords, setShareRecords] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(false);
   const [fieldTargets, setFieldTargets] = useState<Record<string, number>>({});
-  // Applies to every share link, not only a "real" challenge (shareRecords/commentsEnabled
-  // on) — generateShareUrl below always writes a challenges row, so theme is always there
-  // to pick even for a plain "take it" share.
+  // Applies to every share link, not only a "real" challenge (every share is
+  // one now — see generateShareUrl's own comment) — generateShareUrl below
+  // always writes a challenges row, so theme is always there to pick.
   const [theme, setTheme] = useState<ChallengeThemeId>('classic');
   // A plain URL, not an upload (this app has no file-storage pipeline) — an
   // already-hosted photo shown behind the shared page in place of the
@@ -100,7 +100,6 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   React.useEffect(() => {
     if (challenge) {
-      setShareRecords(challenge.shareRecords);
       setCommentsEnabled(challenge.commentsEnabled);
       setFieldTargets(challenge.fieldTargets);
       setTheme(challenge.theme);
@@ -152,13 +151,17 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
       const result = await updateChecklistTemplate(data);
       updateChecklistTemplateLocal(data.checklistTemplate);
       await setChallengeOptions(checklistTemplateId, {
-        shareRecords,
+        // Every challenge shares everyone's check-ins on the group
+        // dashboard now — there's no private-roster mode, so this is no
+        // longer a checkbox (see the module's own history if you need the
+        // old toggle).
+        shareRecords: true,
         commentsEnabled,
         fieldTargets,
         theme,
         backgroundImageUrl: backgroundImageUrl.trim() || null,
-        ownerDisplayName: shareRecords ? displayName : undefined,
-        ownerAvatarUrl: shareRecords ? avatarUrl : undefined,
+        ownerDisplayName: displayName,
+        ownerAvatarUrl: avatarUrl,
       });
       const fullUrl = getSharedChecklistTemplateUrl(result.id);
       setShareUrl(fullUrl);
@@ -175,10 +178,9 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
     }
   };
 
-  // These only render inside the share config modal (before or after the first share — see
+  // Only renders inside the share config modal (before or after the first share — see
   // isShared below), so there's no "write straight through" case to handle here either way —
-  // generateShareUrl is what persists them, on submit.
-  const handleToggleShareRecords = (checked: boolean) => setShareRecords(checked);
+  // generateShareUrl is what persists it, on submit.
   const handleToggleComments = (checked: boolean) => setCommentsEnabled(checked);
   const handleTargetChange = (fieldId: string, value: string) => {
     const next = { ...fieldTargets };
@@ -226,18 +228,6 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
 
       <div className={styles.body}>
         <div className={styles.options}>
-          <label className={styles.optionRow}>
-            <Checkbox
-              checked={shareRecords}
-              onChange={e => handleToggleShareRecords(e.target.checked)}
-            />
-            <Typography.Text>
-              {intl.formatMessage({
-                id: 'CardShare.option-share-records',
-                defaultMessage: "Share everyone's check-ins on a group dashboard",
-              })}
-            </Typography.Text>
-          </label>
           <label className={styles.optionRow}>
             <Checkbox
               checked={commentsEnabled}
@@ -298,21 +288,40 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
                 defaultMessage: 'Group targets (optional)',
               })}
             </Typography.Text>
-            {numberFields.map(field => (
-              <div key={field.id} className={styles.targetRow}>
-                <Typography.Text className={styles.targetFieldName}>{field.title}</Typography.Text>
-                <Input
-                  value={fieldTargets[field.id] ?? ''}
-                  border="dash"
-                  type="number"
-                  placeholder={intl.formatMessage({ id: 'CardShare.no-target', defaultMessage: 'No target' })}
-                  onChange={e => handleTargetChange(field.id, e.target.value)}
-                  className={styles.targetInput}
-                  suffix={field.unit || undefined}
-                  renderRightInput={() => <></>}
-                />
-              </div>
-            ))}
+            {/* Same bordered-card, icon-badge row shell as the Select Fields list
+                (ChecklistFieldGroupMenu's `.fieldIconBadge`) / CoreFieldRecord's form rows —
+                a plain label+small-input pair read too cramped next to those, so each target
+                gets the same field-row treatment the rest of the app uses. */}
+            <div className={styles.targetsCard}>
+              {numberFields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className={cx(styles.targetRow, index === numberFields.length - 1 && styles.targetRowLast)}
+                >
+                  <List.ItemMeta
+                    noPaddingHorizontal
+                    className={styles.targetItemMeta}
+                    logo={
+                      <div className={styles.targetIconBadge}>
+                        <Icon width={18} icon={field.icon} />
+                      </div>
+                    }
+                    title={field.title}
+                  />
+                  <Input
+                    value={fieldTargets[field.id] ?? ''}
+                    border="dash"
+                    type="number"
+                    placeholder={intl.formatMessage({ id: 'CardShare.no-target', defaultMessage: 'No target' })}
+                    onChange={e => handleTargetChange(field.id, e.target.value)}
+                    className={styles.targetInput}
+                    classes={{ input: styles.targetInputField }}
+                    suffix={field.unit || undefined}
+                    renderRightInput={() => <></>}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

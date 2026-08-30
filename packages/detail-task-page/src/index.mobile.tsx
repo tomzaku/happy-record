@@ -164,9 +164,7 @@ const DetailTaskPageMobile = () => {
       {/* Same widget/condition as index.desktop.tsx's own side column — owner
           or participant either way, replacing the header's plain dashboard
           icon (and CardShare's old link) with an actual leaderboard preview. */}
-      {challenge && (challenge.shareRecords || challenge.commentsEnabled) && (
-        <MiniChallengeDashboard challengeId={challenge.id} userId={userId} />
-      )}
+      {challenge && <MiniChallengeDashboard challengeId={challenge.id} userId={userId} />}
       <ChecklistFieldGroup
         checklist={checklist}
         checklistTemplate={checklistTemplate}

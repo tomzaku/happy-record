@@ -40,7 +40,10 @@ export function useChecklistTemplateSharedPage() {
   // 20260828010000_challenge_owner_name_public.sql) once that's loaded, and
   // only to the generic "Someone" before/without either.
   const userName = searchParams.get('from') || challenge?.ownerDisplayName || 'Someone';
-  const isChallenge = !!challenge && (challenge.shareRecords || challenge.commentsEnabled);
+  // Every challenge shares everyone's check-ins now — there's no
+  // private-roster mode left to gate on (see CardShare), so any link with a
+  // challenge row at all is joinable.
+  const isChallenge = !!challenge;
   const navigate = useNavigate();
   const { getChecklistTemplateApi } = useGetChecklistTemplateApi();
 

@@ -47,7 +47,7 @@ const MiniChallengeDashboard = ({ challengeId, userId }: Props) => {
 
   if (!dashboard?.challenge) return null;
   const { challenge, participants, ranking, targets, completions } = dashboard;
-  const hasRoster = challenge.shareRecords && !!participants.length;
+  const hasRoster = !!participants.length;
   // Same ranking the real dashboard uses (challengeRanking.ts) — a mini
   // preview that ordered people differently from the page it's previewing
   // would be worse than not showing an order at all.
@@ -106,8 +106,8 @@ const MiniChallengeDashboard = ({ challengeId, userId }: Props) => {
           })}
         </ol>
       ) : (
-        // Comments-only (shareRecords off) — no roster to preview, just the
-        // one thing there is to say before the link down to the real page.
+        // Nobody's joined yet — just the one thing there is to say before
+        // the link down to the real page.
         <Typography.Text className={styles.emptyText}>
           {intl.formatMessage({
             id: 'DetailTaskPage.mini-challenge-comments-only',

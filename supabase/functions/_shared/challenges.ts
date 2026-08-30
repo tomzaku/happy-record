@@ -47,7 +47,8 @@ export function fromChallenge(e: Record<string, unknown>) {
   // Falls back to 'classic' rather than throwing — the DB's CHECK
   // constraint is the actual guard against garbage, and a client build
   // that's briefly behind (or a caller that just never sends a theme, e.g.
-  // toggling shareRecords via a stale payload) shouldn't 400 over it.
+  // re-saving only the comments toggle via a stale payload) shouldn't 400
+  // over it.
   const theme = CHALLENGE_THEMES.includes(e.theme as ChallengeTheme) ? (e.theme as ChallengeTheme) : 'classic';
 
   // Same "fall back rather than throw" treatment as theme above — the DB's

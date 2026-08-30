@@ -20,9 +20,9 @@ export type ChallengeThemeId = (typeof CHALLENGE_THEMES)[number];
 
 /**
  * Turns a shared checklist template into something joinable — see
- * CLAUDE.md's "Challenges" section. `shareRecords` gates the peer
- * completion grid (packages/global/src/store/challenge/useChallengeParticipants);
- * `commentsEnabled` gates the flat thread
+ * CLAUDE.md's "Challenges" section. Every challenge shows the peer
+ * completion grid (packages/global/src/store/challenge/useChallengeParticipants)
+ * to everyone who joins; `commentsEnabled` separately gates the flat thread
  * (packages/global/src/store/challenge/useChallengeComments). At most one
  * challenge per template — `checklistTemplateId` is unique server-side.
  */
@@ -30,6 +30,9 @@ export type Challenge = {
   id: string;
   checklistTemplateId: string;
   ownerId: string;
+  /** Always `true` now — every challenge shares everyone's check-ins, there's no private-roster
+   * mode left. Kept on the wire (rather than dropped) so an older client reading it, or a legacy
+   * row saved before this, doesn't need a shape change. */
   shareRecords: boolean;
   commentsEnabled: boolean;
   /**

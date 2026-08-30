@@ -5,9 +5,11 @@
 //     caller owns or has joined — the light listing behind challenge-list-page-ui's "My
 //     Challenges" page, not the per-challenge dashboard. One row per challenge: id,
 //     checklistTemplateId, the template's own title/avatar (joined in, not embedded in
-//     `challenges` itself), isOwner, shareRecords/commentsEnabled, participantCount, joinedAt
-//     (absent for an owner who never auto-enrolled — see save()'s own comment on when that
-//     happens), and this caller's own myCheckins/myStreak over the last DEFAULT_RANGE_DAYS days
+//     `challenges` itself), isOwner, shareRecords/commentsEnabled (shareRecords is always true
+//     now — every challenge shares everyone's check-ins, see save() — kept on the wire rather
+//     than dropped so an older client reading it doesn't need a shape change), participantCount,
+//     joinedAt (absent only for a legacy owner row saved before every owner was auto-enrolled —
+//     see save()'s own comment), and this caller's own myCheckins/myStreak over the last DEFAULT_RANGE_DAYS days
 //     — "how much effort you've put in," the actual point of the page, computed cheaply here
 //     (one pair of queries scoped to the caller alone, across every listed challenge's template
 //     at once) rather than one full per-challenge dashboard fetch per row. No *other*
@@ -28,7 +30,7 @@
 //     `checklist_records` peer-read RLS policies (see the migrations) — this
 //     function's own `db` client is still the caller's RLS-scoped one,
 //     nothing here is service-role.
-//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), also enrolls the owner as a participant when shareRecords is on — `challenge.ownerDisplayName`/`ownerAvatarUrl`, if given, become that participant row's name/photo (neither is a `challenges` column; omit either on a re-save that isn't touching it and the stored one is left alone). `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids. `challenge.theme` is one of CHALLENGE_THEMES (_shared/challenges.ts), falls back to 'classic' if omitted/invalid. `challenge.backgroundImageUrl` is a plain http(s) URL (an already-hosted photo, not an upload) shown behind the shared page instead of/over the theme's own background; anything that isn't a plausible http(s) URL clears it to null rather than failing the save.
+//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), always enrolls the owner as a participant too — `challenge.ownerDisplayName`/`ownerAvatarUrl`, if given, become that participant row's name/photo (neither is a `challenges` column; omit either on a re-save that isn't touching it and the stored one is left alone). `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids. `challenge.theme` is one of CHALLENGE_THEMES (_shared/challenges.ts), falls back to 'classic' if omitted/invalid. `challenge.backgroundImageUrl` is a plain http(s) URL (an already-hosted photo, not an upload) shown behind the shared page instead of/over the theme's own background; anything that isn't a plausible http(s) URL clears it to null rather than failing the save.
 //
 // Deploy: `supabase functions deploy challenges`
 
@@ -151,10 +153,10 @@ async function myContributionByChallenge(
  * Every challenge the caller owns or has joined, each with the caller's own effort on it — see
  * the module doc comment. Two separate queries for the challenge rows themselves rather than one
  * join because "owns" and "has joined" are genuinely different relationships (owner_id on
- * `challenges` vs. a row in `challenge_participants`) — an owner isn't necessarily enrolled as a
- * participant (only happens when shareRecords is on — see save() below), so relying on
- * `challenge_participants` alone would miss a comments-only challenge nobody (including its
- * owner) has "joined."
+ * `challenges` vs. a row in `challenge_participants`) — every owner is auto-enrolled as a
+ * participant on save() now, but a legacy challenge saved before that was unconditional can
+ * still have an owner with no participant row, so relying on `challenge_participants` alone
+ * would miss it.
  */
 async function listMine(db: SupabaseClient, userId: string) {
   const [{ data: ownedRows, error: ownedError }, { data: participantRows, error: participantError }] =
@@ -174,7 +176,7 @@ async function listMine(db: SupabaseClient, userId: string) {
   );
   const ownedIds = new Set(((ownedRows ?? []) as Record<string, unknown>[]).map(r => r.id as string));
   // Only fetch challenges seen in `challenge_participants` but not already covered by the owned
-  // query above — an owner who *is* also enrolled (shareRecords on) would otherwise show up twice.
+  // query above — an owner (always auto-enrolled now) would otherwise show up twice.
   const joinedOnlyIds = [...joinedAtByChallengeId.keys()].filter(id => !ownedIds.has(id));
 
   const { data: joinedRows, error: joinedError } = joinedOnlyIds.length
@@ -529,30 +531,30 @@ async function save({ req, db, userId }: Ctx) {
   if (error) throw new Error(error.message);
   const challenge = toChallenge(data as Record<string, unknown>);
 
-  // The sharer shows up on their own dashboard once records-sharing is on —
-  // their own template *is* the challenge's canonical checklist_template_id
-  // (the owner never forks their own template the way a joiner does — see
-  // useJoinChallenge.tsx — so their participant row just points at it directly).
-  // No `ignoreDuplicates` (unlike this used to be): a re-save with a new
-  // `ownerDisplayName` — someone fixing a blank name from before this field
-  // existed — has to actually reach an existing row, not silently no-op
-  // against it. supabase-js's default upsert resolution merges rather than
-  // clobbering the full row, so omitting `display_name` below (no name given
-  // this time) leaves whatever was already stored untouched.
-  if (challenge.shareRecords) {
-    const { error: participantError } = await db.from('challenge_participants').upsert(
-      {
-        id: `${challenge.id}:${userId}`,
-        challenge_id: challenge.id,
-        user_id: userId,
-        checklist_template_id: challenge.checklistTemplateId,
-        ...(ownerDisplayName ? { display_name: ownerDisplayName } : {}),
-        ...(ownerAvatarUrl ? { avatar_url: ownerAvatarUrl } : {}),
-      },
-      { onConflict: 'challenge_id,user_id' },
-    );
-    if (participantError) throw new Error(participantError.message);
-  }
+  // The sharer always shows up on their own dashboard — every challenge
+  // shares everyone's check-ins now, no private-roster mode left to gate
+  // this on. Their own template *is* the challenge's canonical
+  // checklist_template_id (the owner never forks their own template the way
+  // a joiner does — see useJoinChallenge.tsx — so their participant row just
+  // points at it directly). No `ignoreDuplicates` (unlike this used to be):
+  // a re-save with a new `ownerDisplayName` — someone fixing a blank name
+  // from before this field existed — has to actually reach an existing row,
+  // not silently no-op against it. supabase-js's default upsert resolution
+  // merges rather than clobbering the full row, so omitting `display_name`
+  // below (no name given this time) leaves whatever was already stored
+  // untouched.
+  const { error: participantError } = await db.from('challenge_participants').upsert(
+    {
+      id: `${challenge.id}:${userId}`,
+      challenge_id: challenge.id,
+      user_id: userId,
+      checklist_template_id: challenge.checklistTemplateId,
+      ...(ownerDisplayName ? { display_name: ownerDisplayName } : {}),
+      ...(ownerAvatarUrl ? { avatar_url: ownerAvatarUrl } : {}),
+    },
+    { onConflict: 'challenge_id,user_id' },
+  );
+  if (participantError) throw new Error(participantError.message);
 
   return { challenge };
 }

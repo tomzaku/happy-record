@@ -1,7 +1,9 @@
 // The `checklist-templates` resource — every read and write of
 // `checklist_templates`. See CLAUDE.md.
 //
-//   GET    /checklist-templates             → { templates }        caller's own
+//   GET    /checklist-templates             → { templates }        caller's own, plus any
+//     template they've joined a challenge for (see list()'s own comment) — that one always
+//     has someone else's `user_id` on it, not the caller's
 //   GET    /checklist-templates ?id=        → { templates }        one template,
 //     caller's own or anyone's if it's `visibility: 'public'` — this is what
 //     backs the `/checklist-template/shared/:id` route (see CLAUDE.md): the
@@ -33,6 +35,8 @@ import { fetchRepeats, pickRepeat, saveRepeat } from '../_shared/repeats.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
+
+const MAX_JOINED_TEMPLATES = 200;
 
 async function body(req: Request): Promise<Record<string, unknown>> {
   try {
@@ -70,18 +74,40 @@ async function list({ url, db, userId }: Ctx) {
     return { templates: rows.map(r => resolveTemplate(r, repeats, userId)) };
   }
 
-  const { data, error } = await db
-    .from('checklist_templates')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at');
-  if (error) throw new Error(error.message);
-  const rows = (data ?? []) as Record<string, unknown>[];
+  const [{ data: ownedData, error: ownedError }, { data: participantRows, error: participantError }] =
+    await Promise.all([
+      db.from('checklist_templates').select('*').eq('user_id', userId).order('created_at'),
+      // A joined challenge's template is owned by whoever shared it, not the caller — see
+      // useJoinChallenge.tsx's own comment on why joining never forks it into a caller-owned
+      // row. Without this, "all mine" only ever returns what the ownership filter above already
+      // covers, and a joined challenge silently never appears on the home/tasks page again after
+      // the in-memory store resets (a reload, a fresh sign-in) — the one real fetch of it (this
+      // route) is ownership-only, and useJoinChallenge.tsx's own merge is transient.
+      db.from('challenge_participants').select('checklist_template_id').eq('user_id', userId).limit(MAX_JOINED_TEMPLATES),
+    ]);
+  if (ownedError) throw new Error(ownedError.message);
+  if (participantError) throw new Error(participantError.message);
+
+  const ownedRows = (ownedData ?? []) as Record<string, unknown>[];
+  const ownedIds = new Set(ownedRows.map(r => r.id as string));
+  const joinedIds = [
+    ...new Set(((participantRows ?? []) as Record<string, unknown>[]).map(r => r.checklist_template_id as string)),
+  ].filter(id => !ownedIds.has(id));
+
+  // Readable with no extra RLS grant: sharing a template always flips it to `visibility:
+  // 'public'` (CardShare's generateShareUrl) before a challenge can even exist for it, so the
+  // existing "owner OR public" policy already covers a joined template here — same as the `?id=`
+  // branch above relies on for the shared page itself.
+  const { data: joinedData, error: joinedError } = joinedIds.length
+    ? await db.from('checklist_templates').select('*').in('id', joinedIds)
+    : { data: [] as Record<string, unknown>[], error: null };
+  if (joinedError) throw new Error(joinedError.message);
+
+  const rows = [...ownedRows, ...((joinedData ?? []) as Record<string, unknown>[])];
   const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(r => r.id as string));
-  // Always the caller's own templates here (the query above is hard-filtered to `user_id`), so
-  // resolveTemplate's own viewer/owner resolution is a no-op today (userId === ownerId for every
-  // row) — kept anyway so this stays correct the day this branch ever needs to include a joined
-  // challenge alongside the caller's own templates.
+  // resolveTemplate's viewer/owner resolution actually matters here now: a joined row's
+  // `user_id` is the sharer, not the caller, so a personal reminder override
+  // (`repeats.user_id === userId`) has to win over the owner's own schedule.
   return { templates: rows.map(r => resolveTemplate(r, repeats, userId)) };
 }
 
