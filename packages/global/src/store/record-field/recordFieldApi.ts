@@ -42,5 +42,5 @@ export function saveRecordField(field: RecordField): Promise<{ ok: true } | null
 }
 
 export function removeRecordField(id: string): Promise<{ ok: true } | null> {
-  return request.delete('/fields', { quiet: true, params: { id } });
+  return request.delete(`/fields/${encodeURIComponent(id)}`, { quiet: true });
 }

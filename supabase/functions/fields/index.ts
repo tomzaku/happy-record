@@ -7,7 +7,7 @@
 //                                      template's own field_groups reference — see
 //                                      api/list-fields-handler.ts
 //   POST   /fields  { field }       → { ok }
-//   DELETE /fields  ?id=            → { ok }
+//   DELETE /fields/:id              → { ok }
 //
 // GET (unscoped or `?ids=`) returns the caller's own fields *and* anyone's public ones — but
 // `visibility: 'public'` is never something a write through this resource can grant anymore (see
@@ -32,20 +32,21 @@
 import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
 import { requireUser } from '../../shared/auth.ts';
 import { admin } from '../../shared/authorize.ts';
+import { matchRoute } from '../../shared/router.ts';
 import { ROUTES, subPath } from './api/fields-routes.ts';
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const url = new URL(req.url);
-  const route = ROUTES[`${req.method} ${subPath(url)}`];
-  if (!route) return json(404, { error: 'Not found' });
+  const match = matchRoute(req.method, subPath(url), ROUTES);
+  if (!match) return json(404, { error: 'Not found' });
 
   const auth = await requireUser(req);
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await route({ url, req, db: admin(), userId: auth.user.id }));
+    return json(200, await match.handler({ url, req, db: admin(), userId: auth.user.id, id: match.id }));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[fields]', err);
