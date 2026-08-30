@@ -3,10 +3,10 @@
 // caller's own — no cross-user visibility rule, nothing to compose a `checkPermission` around.
 
 import { toChecklist } from '../../../dto/checklists/checklists-dto.ts';
-import { fetchChecklistById } from '../repository/checklists-repository.ts';
+import { getChecklistById } from '../services/checklists-service.ts';
 import type { Ctx } from './checklists-context.ts';
 
-export async function getChecklistHandler({ db, userId, id }: Ctx) {
-  const rows = await fetchChecklistById(db, userId, id!);
+export async function getChecklistHandler(ctx: Ctx) {
+  const rows = await getChecklistById(ctx, ctx.id!);
   return { checklists: rows.map(toChecklist) };
 }

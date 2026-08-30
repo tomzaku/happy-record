@@ -1,9 +1,9 @@
 // `DELETE /checklists/:id` — idempotent, always the caller's own row.
 
-import { deleteChecklist } from '../repository/checklists-repository.ts';
+import { deleteChecklist } from '../services/checklists-service.ts';
 import type { Ctx } from './checklists-context.ts';
 
-export async function deleteChecklistHandler({ id, db, userId }: Ctx) {
-  await deleteChecklist(db, userId, id!);
+export async function deleteChecklistHandler(ctx: Ctx) {
+  await deleteChecklist(ctx, ctx.id!);
   return { ok: true };
 }
