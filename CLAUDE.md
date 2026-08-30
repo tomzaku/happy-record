@@ -36,15 +36,16 @@ a resource whose server schema *isn't* a 1:1 mirror of the client shape — see 
 | Layer | Where | Job |
 | --- | --- | --- |
 | Edge function | `supabase/functions/<resource>/index.ts` | Thin deploy entrypoint (Supabase requires this exact file/path) — CORS, `requireUser` for identity, dispatch, error shape |
-| Resource internals | `supabase/functions/<resource>/{api,model,services}/` | Every resource gets `api/` — one file per route plus a `<resource>-routes.ts` table — even a single-route resource (`me`), matching kakaonline core-server's own `features/<domain>/api` shape down to its smallest feature. `model/` (row mapping) and `services/` (DB-read helpers + the resource's own `checkPermission` functions) are added only when there's something resource-exclusive to put there — a resource with no real cross-user visibility decision (`flags`, `tags`, `checklists`, ...) has neither, just `api/` + a thin `index.ts` — see "Authorization: app layer, not RLS" below |
-| Shared pieces | `supabase/shared/<resource>.ts` | Row mapping/validation genuinely reused by *another* resource (e.g. `checklist-records` building a note row through `shared/notes.ts`'s `fromNote`) — not a dumping ground for anything resource-shaped; `shared/auth.ts`, `shared/cors.ts`, and `shared/authorize.ts` (`admin`/`compose`/`ForbiddenError`) are common to all |
+| Resource internals | `supabase/functions/<resource>/{api,services}/` | Every resource gets `api/` — one file per route plus a `<resource>-routes.ts` table — even a single-route resource (`me`), matching kakaonline core-server's own `features/<domain>/api` shape down to its smallest feature. `services/` (DB-read helpers + the resource's own `checkPermission` functions) is added only when there's something resource-exclusive to put there — a resource with no real cross-user visibility decision (`flags`, `tags`, `checklists`, ...) has none, just `api/` + a thin `index.ts` — see "Authorization: app layer, not RLS" below |
+| Row↔wire mapping | `supabase/dto/<resource>/<resource>-dto.ts` | Every resource's `fromX`/`toX` row mapping and validation lives here, one folder per resource, regardless of whether only that resource uses it or several do (e.g. `checklist-records` building a note row through `dto/notes/notes-dto.ts`'s `fromNote`) — a real top-level sibling of `supabase/functions/`, not a resource-local `model/` folder, so there's one place for this regardless of consumer count. Matches kakaonline core-server's own `shared/dtos/<domain>` (folded into `shared/` there; a separate top-level `dto/` here, kept apart from `shared/`'s own infra/services) |
+| Shared infra/services | `supabase/shared/<name>.ts` | Cross-cutting infra (`auth.ts`, `cors.ts`, `authorize.ts` — `admin`/`compose`/`ForbiddenError`, `router.ts` — `matchRoute`) and small DB-querying services that aren't pure row mapping (`repeats.ts`, `proUsers.ts`) — if it only maps a row's shape with no I/O, it belongs in `dto/` instead, not here |
 | Client module | `packages/<owning-package>/src/<resource>Api.ts` | One exported function per route, built on `packages/global/src/lib/api.ts` |
 | Caller | the domain's own hook (e.g. `useChecklist` in `checklists/useChecklists.tsx`) | Calls the API module, scoped to what's needed; falls back to whatever's already in the local store on `null` |
 
 Deploy: `supabase functions deploy checklists`. `notes` and `challenges` are the fullest
-references for the `api`/`model`/`services` split — `challenges` specifically for a resource with
+references for the `api`/`services` + `dto` split — `challenges` specifically for a resource with
 real, multi-tier authorization logic (see below); `me` is the reference for the minimal shape
-(`api/` only, one route, no `model`/`services`).
+(`api/` only, one route, no `services`, no `dto` entry of its own).
 
 ## Authorization: app layer, not RLS
 
@@ -78,7 +79,7 @@ Three things to get right when writing or reviewing a `checkPermission`:
    shape returns a "not visible" value (`null`, an empty array, a `visible: false` flag) for the
    core to turn into `{ resource: [] }` or `{ resource: null }`, not a thrown error. Throwing
    there would be a behavior change, not a faithful port. `field-groups`' scoped `list` and
-   `checklist-templates`' `?id=` branch are the reference for this.
+   `checklist-templates`' `GET /:id` route are the reference for this.
 3. **A batch read that used to rely on RLS to narrow a broader query needs that narrowing written
    out explicitly, not dropped.** `shared/repeats.ts`'s `fetchRepeats` is the cautionary example:
    it used to have zero `user_id` filter of its own, relying entirely on RLS to keep a personal
@@ -105,8 +106,11 @@ A function is a **resource**, routed on HTTP method + path — not a dispatcher 
 field in the body, and not one function per operation.
 
 ```
-GET  /checklists  ?checklistTemplateId=&from=&to=   list, filtered
-POST /checklists  { checklist }                     create/update (upsert)
+GET    /checklists            ?checklistTemplateId=&from=&to=   list, filtered
+GET    /checklists/:id                                          one resource, by its own id
+POST   /checklists  { checklist }                                create/update (upsert)
+PATCH  /checklists/:id  { ...changes }                           partial update
+DELETE /checklists/:id                                           remove
 ```
 
 Rules that follow from that:
@@ -114,9 +118,18 @@ Rules that follow from that:
 - **The verb is the HTTP method.** `GET` reads and never changes anything; `POST` writes;
   `DELETE` removes and is idempotent (deleting what isn't there is a 200, not a 404).
 - **`GET` takes query parameters, not a body.**
-- **Identifiers that can contain spaces or slashes go in the query string**, not the path — ids
-  in this app are client-generated (`uniqueId()` in `packages/global/src/util.ts`), not proper
-  path segments.
+- **A single resource's own id is a path segment, `/resource/:id`, not `?id=`.** "List the
+  collection" and "get one resource" are different routes, matched by `shared/router.ts`'s
+  `matchRoute` (a tiny `:id`-segment matcher — this app never needs more than one dynamic segment
+  per resource). PATCH and DELETE of one resource address it the same way. A filter that narrows a
+  list without addressing one specific resource by its own id — `?checklistTemplateId=`,
+  `?from=&to=`, `?ids=a,b` (a *batch* of ids, still a list operation) — stays a query param on the
+  collection route; so does a foreign-key lookup like `challenges`' `?checklistTemplateId=`
+  (finding *the* challenge for a template isn't addressing that challenge by its own id). ids in
+  this app are client-generated (`uniqueId()` in `packages/global/src/util.ts`) and always
+  URL-safe (plain base-36), so there's no encoding hazard in using them as path segments — still
+  `encodeURIComponent` them on the client side and `decodeURIComponent` them in `matchRoute`
+  (already handled) on principle, not because a real id needs it today.
 - **Status codes are real.** 400 bad input, 401 signed out, 404 unknown route, 500 otherwise,
   and the body is always `{ error: string }`.
 - **One shape per route, regardless of outcome.** Empty results return the same keys with
@@ -219,9 +232,9 @@ edge function before assuming a shape): `fields` supports `?ids=` for a specific
 share-flow consumers use this — `CardShare`, `tasks-shared-page-ui`,
 `checklist-template-shared-page-ui`) alongside the unscoped "all mine + public" most consumers
 genuinely need (field pickers, the manage-fields screen, AI-generate context). `notes` supports
-`fieldIds`/`folderId`/`limit`. `checklist-templates` supports `?id=` (one, own or public) alongside
-"all mine." `checklists` supports `?id=` (one — added for `detail-task-page`, which already knows
-the exact id from the URL and has no reason to fetch a range and filter), `checklistTemplateId`,
+`fieldIds`/`folderId`/`limit`. `checklist-templates` supports `GET /:id` (one, own or public)
+alongside "all mine." `checklists` supports `GET /:id` (one — added for `detail-task-page`, which
+already knows the exact id from the URL and has no reason to fetch a range and filter), `checklistTemplateId`,
 and `from`/`to` (`getChecklistByGivingDate` fetches its one day directly — the shape a single-day
 view like `ChecklistToday` wants. A multi-day view calls `ensureChecklistsFetched` instead, once
 for its whole visible range, and reads each day via the non-fetching `getChecklistForDateWithoutFetching`
@@ -271,7 +284,7 @@ hand-roll `fetch`" above). There's no live push either — a scope already fetch
 load stays whatever it was until something re-triggers a fresh fetch for that exact scope (a
 reload, or navigating to a view that asks for a wider/different range); another device's edit
 doesn't appear here until then. What *is* fixed relative to the old model: a delete now really
-deletes server-side (`checklists` gained a `DELETE /checklists?id=` route specifically so
+deletes server-side (`checklists` gained a `DELETE /checklists/:id` route specifically so
 `EditChecklistForm`'s "delete every instance of this template" could stop reaching into
 `useLocalStorage('checklist', ...)` directly and actually delete rows), and since nothing is a
 merged-forever local copy anymore, a fresh fetch after a delete — on any device, including the one
@@ -374,8 +387,8 @@ field is a real indexed numeric aggregate instead of `(value->>'x')::numeric` on
 `checklist_records.checklist_template_id` is also denormalized onto the row (not only reachable
 by joining through `checklists`), because every history/chart read in the app queries "this
 template's records in this range" directly. The row-mapping functions
-(`_shared/checklistRecords.ts`) are exactly where that translation belongs — the client never
-learns the columns changed shape.
+(`dto/checklist-records/checklist-records-dto.ts`) are exactly where that translation belongs —
+the client never learns the columns changed shape.
 
 Config that's read whole and never filtered on (a template's `repeat` schedule, its
 `fieldGroups`) stays as jsonb — normalizing something nobody queries by is wasted effort in the
@@ -461,9 +474,10 @@ write sides — `CardShare` on `detail-task-page` and `tasks-shared-page-ui`) is
 now, not Firebase: sharing sets the template *and* every field its `fieldGroups` reference to
 `visibility: 'public'` (`useCreateChecklistTemplateApi.tsx`) — a template alone being public
 isn't enough, since a recipient can't resolve a field id that only resolves for the original
-owner. The link is the template's own id (`GET /checklist-templates?id=`, `_shared.ts`'s
-`toChecklistTemplate` and the "public checklist templates are readable by anyone" RLS policy
-already existed for exactly this before the route did), not a separate generated id — see
+owner. The link is the template's own id (`GET /checklist-templates/:id`, `dto/checklist-templates/
+checklist-templates-dto.ts`'s `toChecklistTemplate` and the "own or public" visibility check
+already existed for exactly this before the route did — see checkCanReadTemplateById), not a
+separate generated id — see
 `useGetChecklistTemplateApi.tsx`. A recipient's fields come back already public, so accepting a
 template merges them into local state as-is (`useRecordField`'s `mergeRecordFields`) rather than
 re-saving them as this device's own — that would race the sharer's row on `fields.id`'s global
