@@ -6,6 +6,27 @@ import { fetchRepeats, pickRepeat, type RepeatOwner } from '../../../shared/repe
 import { toFieldGroup } from '../../../dto/field-groups/field-groups-dto.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
+export async function fetchFieldGroupsByTemplate(db: SupabaseClient, templateId: string): Promise<Record<string, unknown>[]> {
+  const { data, error } = await db
+    .from('field_groups')
+    .select('*')
+    .eq('checklist_template_id', templateId)
+    .order('position');
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Record<string, unknown>[];
+}
+
+export async function fetchFieldGroupsByUser(db: SupabaseClient, userId: string): Promise<Record<string, unknown>[]> {
+  const { data, error } = await db.from('field_groups').select('*').eq('user_id', userId).order('position');
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Record<string, unknown>[];
+}
+
+export async function upsertFieldGroup(db: SupabaseClient, userId: string, row: Record<string, unknown>): Promise<void> {
+  const { error } = await db.from('field_groups').upsert({ user_id: userId, ...row });
+  if (error) throw new Error(error.message);
+}
+
 export async function fetchTemplateVisibility(
   db: SupabaseClient,
   templateId: string,
