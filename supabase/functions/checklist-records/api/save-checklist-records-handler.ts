@@ -1,10 +1,11 @@
 // `POST /checklist-records { records, checklistId, checklistTemplateId, createdAt,
-// submissionId }` — bulk-writes one submit's worth of fields, always the caller's own (hardcoded
-// `user_id` on every insert below). See this resource's own index.ts doc comment for the
-// note-type-field/`submissions` shape this writes alongside the plain-value rows.
+// submissionId }` — bulk-writes one submit's worth of fields, always the caller's own. See this
+// resource's own index.ts doc comment for the note-type-field/`submissions` shape this writes
+// alongside the plain-value rows.
 
 import { ApiError } from '../../../shared/cors.ts';
 import { fromChecklistFieldNoteEntry, fromRecordEntry, MAX_BULK } from '../../../dto/checklist-records/checklist-records-dto.ts';
+import { saveChecklistRecords } from '../services/checklist-records-service.ts';
 import { body, type Ctx } from './checklist-records-context.ts';
 
 /** Every field type but `note` has a plain `number | string` value (number, text, date,
@@ -20,8 +21,8 @@ function isNoteEntry(e: Record<string, unknown>): boolean {
   return typeof e.value !== 'number' && typeof e.value !== 'string';
 }
 
-export async function saveChecklistRecordsHandler({ req, db, userId }: Ctx) {
-  const params = await body(req);
+export async function saveChecklistRecordsHandler(ctx: Ctx) {
+  const params = await body(ctx.req);
   const { checklistId, checklistTemplateId, createdAt, submissionId } = params as Record<string, unknown>;
   if (typeof checklistId !== 'string' || !checklistId) throw new ApiError(400, 'Missing checklistId.');
   if (typeof checklistTemplateId !== 'string' || !checklistTemplateId) {
@@ -40,16 +41,8 @@ export async function saveChecklistRecordsHandler({ req, db, userId }: Ctx) {
   const valueEntries = entries.filter(e => !isNoteEntry(e as Record<string, unknown>));
   const noteEntries = entries.filter(e => isNoteEntry(e as Record<string, unknown>));
 
-  const { error: submissionError } = await db.from('submissions').upsert({
-    id: submissionId,
-    user_id: userId,
-    checklist_id: checklistId,
-    checklist_template_id: checklistTemplateId,
-    created_at: createdAt,
-  });
-  if (submissionError) throw new Error(submissionError.message);
-
   const recordRows: (ReturnType<typeof fromRecordEntry> | ReturnType<typeof fromChecklistFieldNoteEntry>['recordRow'])[] = [];
+  const noteRows: ReturnType<typeof fromChecklistFieldNoteEntry>['noteRow'][] = [];
 
   if (valueEntries.length) {
     try {
@@ -66,21 +59,15 @@ export async function saveChecklistRecordsHandler({ req, db, userId }: Ctx) {
     } catch (err) {
       throw new ApiError(400, err instanceof Error ? err.message : 'Invalid record.');
     }
-    // The `notes` rows first — `checklist_records.note_id` is a real FK, so the row it points at
-    // has to exist before the pointer row referencing it is written.
-    const { error: noteError } = await db
-      .from('notes')
-      .upsert(built.map(b => ({ user_id: userId, ...b.noteRow })));
-    if (noteError) throw new Error(noteError.message);
+    noteRows.push(...built.map(b => b.noteRow));
     recordRows.push(...built.map(b => b.recordRow));
   }
 
-  if (recordRows.length) {
-    const { error } = await db
-      .from('checklist_records')
-      .upsert(recordRows.map(row => ({ user_id: userId, ...row })));
-    if (error) throw new Error(error.message);
-  }
+  await saveChecklistRecords(ctx, {
+    submission: { id: submissionId, checklistId, checklistTemplateId, createdAt },
+    noteRows,
+    recordRows,
+  });
 
   return { ok: true };
 }
