@@ -18,5 +18,5 @@ export function postChallengeCommentApi(comment: {
 }
 
 export function deleteChallengeCommentApi(id: string): Promise<{ ok: true } | null> {
-  return request.delete('/challenge-comments', { quiet: true, params: { id } });
+  return request.delete(`/challenge-comments/${encodeURIComponent(id)}`, { quiet: true });
 }
