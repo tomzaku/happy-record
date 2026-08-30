@@ -1,7 +1,7 @@
 // `checkPermission` for the `fields` resource's `?templateId=` branch. See CLAUDE.md's
 // "Authorization: app layer, not RLS" and `shared/authorize.ts`'s own header for why this moved.
 
-import { fetchFieldIdsReferencedByTemplate, fetchPublicTemplateId } from './fields-repository.ts';
+import { fetchFieldIdsReferencedByTemplate, fetchPublicTemplateId } from '../repository/fields-repository.ts';
 import type { Ctx } from '../api/fields-context.ts';
 
 /** Every field id one checklist template's own field_groups reference, or `null` if this caller

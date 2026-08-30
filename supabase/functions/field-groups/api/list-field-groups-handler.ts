@@ -2,7 +2,7 @@
 
 import { compose } from '../../../shared/authorize.ts';
 import { checkCanReadFieldGroupsByTemplate, type TemplateGroupsAuthorization } from '../services/field-groups-access-service.ts';
-import { withRepeats } from '../services/field-groups-repository.ts';
+import { withRepeats } from '../repository/field-groups-repository.ts';
 import type { Ctx } from './field-groups-context.ts';
 
 /** `?checklistTemplateId=` — one template's own groups, the caller's own or anyone's if that

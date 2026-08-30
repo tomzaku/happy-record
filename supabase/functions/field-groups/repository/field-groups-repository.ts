@@ -1,5 +1,5 @@
 // Plain data access for `field-groups` — no authorization decisions here, just reads
-// `field-groups-access-service.ts` builds on. See `notes/services/notes-repository.ts` for the
+// `field-groups-access-service.ts` builds on. See `notes/repository/notes-repository.ts` for the
 // reference shape.
 
 import { fetchRepeats, pickRepeat, type RepeatOwner } from '../../../shared/repeats.ts';

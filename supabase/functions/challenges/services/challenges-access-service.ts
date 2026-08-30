@@ -10,7 +10,7 @@ import {
   fetchChallengeOwnerByTemplateId,
   fetchParticipantRow,
   fetchTemplateVisibility,
-} from './challenges-repository.ts';
+} from '../repository/challenges-repository.ts';
 import { body, type Ctx } from '../api/challenges-context.ts';
 
 export type DashboardAuthorization = { challengeRow: Record<string, unknown> | null; canSeeRoster: boolean };

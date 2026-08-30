@@ -4,7 +4,7 @@
 import { ApiError } from '../../../shared/cors.ts';
 import { ForbiddenError } from '../../../shared/authorize.ts';
 import { fromChallengeComment } from '../../../dto/challenge-comments/challenge-comments-dto.ts';
-import { fetchChallengeForPosting, fetchOwnedChallenge, fetchParticipantRow } from './challenge-comments-repository.ts';
+import { fetchChallengeForPosting, fetchOwnedChallenge, fetchParticipantRow } from '../repository/challenge-comments-repository.ts';
 import { body, type Ctx } from '../api/challenge-comments-context.ts';
 
 /** Same "participant or owner" rule as challenge-participants' own checkCanReadRoster — see that

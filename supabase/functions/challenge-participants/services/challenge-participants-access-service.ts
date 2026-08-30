@@ -3,7 +3,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { ForbiddenError } from '../../../shared/authorize.ts';
-import { fetchOwnedChallenge, fetchParticipantRow } from './challenge-participants-repository.ts';
+import { fetchOwnedChallenge, fetchParticipantRow } from '../repository/challenge-participants-repository.ts';
 import type { Ctx } from '../api/challenge-participants-context.ts';
 
 /** The old RLS policy's "self OR fellow participant" pair collapse into one check here — both

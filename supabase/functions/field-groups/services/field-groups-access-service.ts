@@ -1,7 +1,7 @@
 // `checkPermission` for the `field-groups` resource. See CLAUDE.md's "Authorization: app layer,
 // not RLS" and `shared/authorize.ts`'s own header for why this moved.
 
-import { fetchTemplateVisibility } from './field-groups-repository.ts';
+import { fetchTemplateVisibility } from '../repository/field-groups-repository.ts';
 import type { Ctx } from '../api/field-groups-context.ts';
 
 export type TemplateGroupsAuthorization = { checklistTemplateId: string; visible: boolean; isPublic: boolean };

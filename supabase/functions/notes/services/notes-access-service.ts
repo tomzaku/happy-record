@@ -7,7 +7,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { ForbiddenError } from '../../../shared/authorize.ts';
-import { fetchNoteRow, publicFieldGroupOwnerIds, type NoteRow } from './notes-repository.ts';
+import { fetchNoteRow, publicFieldGroupOwnerIds, type NoteRow } from '../repository/notes-repository.ts';
 import { body, type Ctx } from '../api/notes-context.ts';
 
 export type { NoteRow };

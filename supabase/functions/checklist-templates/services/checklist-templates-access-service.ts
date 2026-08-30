@@ -4,7 +4,7 @@
 
 import { pickRepeat, type RepeatOwner } from '../../../shared/repeats.ts';
 import { toChecklistTemplate } from '../../../dto/checklist-templates/checklist-templates-dto.ts';
-import { fetchTemplateRow } from './checklist-templates-repository.ts';
+import { fetchTemplateRow } from '../repository/checklist-templates-repository.ts';
 import type { Ctx } from '../api/checklist-templates-context.ts';
 
 /** The `RepeatOwner` `fetchRepeats` needs to know it's safe to surface a *non-caller* row for

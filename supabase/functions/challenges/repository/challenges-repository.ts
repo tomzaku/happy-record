@@ -1,5 +1,5 @@
 // Plain data access for `challenges` — no authorization decisions here, just reads
-// `challenges-access-service.ts` builds on. See `notes/services/notes-repository.ts` for the
+// `challenges-access-service.ts` builds on. See `notes/repository/notes-repository.ts` for the
 // reference shape.
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
