@@ -1,14 +1,17 @@
-// Row mapping + validation for the `notes` resource. See
-// packages/global/src/store/note/useNote.tsx for the client shape (`Note`) this mirrors.
-// `owner_type`/`owner_id` (which field or field group owns this note) are set once at creation
-// and immutable after — see 20260829020000_notes_title_search_owner.sql — but optional now
-// (20260829100000_notes_optional_owner.sql): a plain note created from the Notes page's own "+"
-// has neither, and isn't routed through any field at all. `checklist_id` (see
-// 20260829030000_notes_checklist_history.sql) tells apart the two shapes an `owner_type: 'field'`
-// note can be: unset is the field's own single current note (standalone notebook), set is one
-// day's journal entry for that field inside a checklist — many rows, one per submission.
-// `submission_id` (20260829040000_notes_via_checklist_records.sql) is only ever set for that
-// second shape, when it was created via `checklist-records`' own POST — see that function.
+// Cross-feature pieces of `notes` — not everything about the resource lives here anymore, only
+// what's genuinely reached from outside the `notes` feature folder (see CLAUDE.md's
+// package-per-domain reasoning, and kakaonline core-server's own `shared/dtos` for the same "only
+// promote what's actually reused" line):
+//
+//   - `computeSearchText`/`plainTextOf` — `checklist-records/index.ts` computes a note-type
+//     field's own `search_text` when it routes that entry into `notes` server-side (see
+//     20260829040000_notes_via_checklist_records.sql), without owning any of the rest of the note
+//     row shape.
+//   - `fromNote` — `_shared/checklistRecords.ts` builds a note-type field's per-day journal-entry
+//     row through this same write-side mapping, for the same reason.
+//
+// The read-side mapping (`toNote`/`toNoteSummary`) has no callers outside `notes` itself, so it
+// lives in `notes/model/notes-model.ts` instead.
 
 import { blockToPlainText, toBlocks } from './aiNoteGeneration.ts';
 
@@ -22,10 +25,10 @@ const MAX_TITLE_CHARS = 200;
 
 /** Plain text pulled out of a note's real Editor.js blocks — the shared extraction
  * `computeSearchText`, `preview`, and `deriveTitle` all build on, walked once per write (see
- * fromNote's own comment) rather than three times. `value` is the same not-yet-stringified shape
- * `fromNote`/`fromChecklistFieldNoteEntry` both receive it in — `toBlocks` already tolerates a
- * real object, a JSON string, or neither. */
-function plainTextOf(value: unknown): string {
+ * `fromNote`'s own comment) rather than three times. `value` is the same not-yet-stringified
+ * shape `fromNote`/`fromChecklistFieldNoteEntry` both receive it in — `toBlocks` already
+ * tolerates a real object, a JSON string, or neither. */
+export function plainTextOf(value: unknown): string {
   return toBlocks(value)
     .map(blockToPlainText)
     .filter(Boolean)
@@ -49,51 +52,6 @@ function deriveTitle(plainText: string): string {
   const sentenceEnd = text.search(/[.!?](\s|$)/);
   const sentence = sentenceEnd === -1 ? text : text.slice(0, sentenceEnd + 1);
   return sentence.slice(0, MAX_TITLE_CHARS).trim();
-}
-
-/** The full row — used for an id/ids fetch (the caller actually wants to open this note in an
- * editor). `search_text` never leaves this file — nothing client-side reads it; it exists purely
- * for `?q=`'s own server-side `ilike` match. */
-export function toNote(r: Record<string, unknown>) {
-  return {
-    id: r.id as string,
-    value: r.value as string,
-    title: (r.title as string) ?? '',
-    preview: (r.preview as string) ?? '',
-    createdAt: r.created_at as string,
-    updatedAt: r.updated_at as string,
-    // Absent entirely for a plain note with no field/field-group behind it, same convention as
-    // `folderId`/`checklistId` below — never `null` on the wire.
-    ...(r.owner_type ? { ownerType: r.owner_type as OwnerType } : {}),
-    ...(r.owner_id ? { ownerId: r.owner_id as string } : {}),
-    ...(r.folder_id ? { folderId: r.folder_id as string } : {}),
-    ...(r.checklist_id ? { checklistId: r.checklist_id as string } : {}),
-    ...(r.checklist_template_id ? { checklistTemplateId: r.checklist_template_id as string } : {}),
-    ...(r.submission_id ? { submissionId: r.submission_id as string } : {}),
-  };
-}
-
-/** Everything a note list row needs — title, preview, dates, and enough owner info to resolve a
- * folder/link — deliberately not `value`: a note's raw content can be large (embeds, long
- * documents), and a page rendering every note the user owns just to show a title and a short
- * preview has no reason to pull all of that over the wire. Used for the unscoped "every note"
- * read and `?q=` search results; `notes/index.ts` selects only these columns for both, so this
- * isn't just a narrower *response* shape, the query itself never reads `value` off disk for
- * them. */
-export function toNoteSummary(r: Record<string, unknown>) {
-  return {
-    id: r.id as string,
-    title: (r.title as string) ?? '',
-    preview: (r.preview as string) ?? '',
-    createdAt: r.created_at as string,
-    updatedAt: r.updated_at as string,
-    ...(r.owner_type ? { ownerType: r.owner_type as OwnerType } : {}),
-    ...(r.owner_id ? { ownerId: r.owner_id as string } : {}),
-    ...(r.folder_id ? { folderId: r.folder_id as string } : {}),
-    ...(r.checklist_id ? { checklistId: r.checklist_id as string } : {}),
-    ...(r.checklist_template_id ? { checklistTemplateId: r.checklist_template_id as string } : {}),
-    ...(r.submission_id ? { submissionId: r.submission_id as string } : {}),
-  };
 }
 
 export function fromNote(e: Record<string, unknown>) {
@@ -128,7 +86,7 @@ export function fromNote(e: Record<string, unknown>) {
     title: typeof e.title === 'string' && e.title.trim() ? e.title : deriveTitle(plainText),
     // Computed here, not trusted from the client — see computeSearchText's own comment. Same
     // for `preview` — a note list row's own display text, stored so a list read never has to
-    // touch `value`/re-derive this per render (see toNoteSummary's own comment).
+    // touch `value`/re-derive this per render (see notes/model/notes-model.ts's toNoteSummary).
     search_text: plainText.slice(0, MAX_SEARCH_TEXT_CHARS),
     preview: plainText.slice(0, MAX_PREVIEW_CHARS),
     owner_type: hasOwnerType ? e.ownerType : null,
