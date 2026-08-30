@@ -23,10 +23,18 @@
 // `updated_at`. No separate `submissions` resource exists; nothing reads one
 // on its own today.
 //
+// No `api`/`model`/`services` split here (see `notes/` for that shape) and no `compose` — every
+// query is already explicitly `.eq('user_id', userId)`, own-row-only with no cross-user
+// visibility rule (a challenge dashboard's own peer-read of *other* participants'
+// checklist_records happens in `challenges/index.ts`, on its own explicit query — see that
+// function), so there's nothing for a `checkPermission` to decide here; just off the RLS-scoped
+// client (see `_shared/authorize.ts`) and onto `admin()`.
+//
 // Deploy: `supabase functions deploy checklist-records`
 
 import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
+import { admin } from '../_shared/authorize.ts';
 import {
   fromChecklistFieldNoteEntry,
   fromRecordEntry,
@@ -325,7 +333,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await route({ url, req, db: auth.supabase, userId: auth.user.id }));
+    return json(200, await route({ url, req, db: admin(), userId: auth.user.id }));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[checklist-records]', err);
