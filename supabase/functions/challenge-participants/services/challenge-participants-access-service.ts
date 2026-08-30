@@ -3,6 +3,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { ForbiddenError } from '../../../shared/authorize.ts';
+import { fetchOwnedChallenge, fetchParticipantRow } from './challenge-participants-repository.ts';
 import type { Ctx } from '../api/challenge-participants-context.ts';
 
 /** The old RLS policy's "self OR fellow participant" pair collapse into one check here — both
@@ -14,12 +15,10 @@ export async function checkCanReadRoster({ db, userId, url }: Ctx): Promise<stri
   const challengeId = url.searchParams.get('challengeId');
   if (!challengeId) throw new ApiError(400, 'Missing challengeId.');
 
-  const [{ data: selfRow, error: selfError }, { data: ownedChallenge, error: ownedError }] = await Promise.all([
-    db.from('challenge_participants').select('id').eq('challenge_id', challengeId).eq('user_id', userId).maybeSingle(),
-    db.from('challenges').select('id').eq('id', challengeId).eq('owner_id', userId).maybeSingle(),
+  const [selfRow, ownedChallenge] = await Promise.all([
+    fetchParticipantRow(db, challengeId, userId),
+    fetchOwnedChallenge(db, challengeId, userId),
   ]);
-  if (selfError) throw new Error(selfError.message);
-  if (ownedError) throw new Error(ownedError.message);
   if (!selfRow && !ownedChallenge) throw new ForbiddenError();
   return challengeId;
 }
