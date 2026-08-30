@@ -2,6 +2,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { fromTag } from '../../../dto/tags/tags-dto.ts';
+import { saveTag } from '../repository/tags-repository.ts';
 import { body, type Ctx } from './tags-context.ts';
 
 export async function saveTagHandler({ req, db, userId }: Ctx) {
@@ -15,7 +16,6 @@ export async function saveTagHandler({ req, db, userId }: Ctx) {
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid tag.');
   }
 
-  const { error } = await db.from('tags').upsert({ user_id: userId, ...row });
-  if (error) throw new Error(error.message);
+  await saveTag(db, userId, row);
   return { ok: true };
 }
