@@ -10,7 +10,7 @@ import { body, type Ctx } from '../api/challenges-context.ts';
 export type DashboardAuthorization = { challengeRow: Record<string, unknown> | null; canSeeRoster: boolean };
 
 /**
- * For `GET ?id=` — two visibility tiers, replicated from what used to be two separate RLS checks
+ * For `GET /:id` — two visibility tiers, replicated from what used to be two separate RLS checks
  * on two different tables:
  *
  *  1. The `challenges` row itself: owner, or a `visibility: 'public'` template (same rule
@@ -23,9 +23,8 @@ export type DashboardAuthorization = { challengeRow: Record<string, unknown> | n
  *     template's challenge metadata but hasn't joined yet gets the challenge back with an empty
  *     roster, not a 403 — same as when RLS silently returned zero roster rows before.
  */
-export async function checkCanReadDashboard({ db, userId, url }: Ctx): Promise<DashboardAuthorization> {
-  const id = url.searchParams.get('id')!;
-  const { data: challengeRow, error } = await db.from('challenges').select('*').eq('id', id).maybeSingle();
+export async function checkCanReadDashboard({ db, userId, id }: Ctx): Promise<DashboardAuthorization> {
+  const { data: challengeRow, error } = await db.from('challenges').select('*').eq('id', id!).maybeSingle();
   if (error) throw new Error(error.message);
   if (!challengeRow) return { challengeRow: null, canSeeRoster: false };
   const row = challengeRow as Record<string, unknown>;

@@ -1,4 +1,4 @@
-// `GET /challenges ?id=&from=&to=` — the dashboard read. from/to default to the last 30 days
+// `GET /challenges/:id ?from=&to=` — the dashboard read. from/to default to the last 30 days
 // (targets are all-time, not scoped to this range — see getTargets). `completions` is sparse
 // (completed days only); the client fills the grid. `ranking` is participants sorted by
 // completions-in-range descending. `targets` is one entry per field the owner set a goal for

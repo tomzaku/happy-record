@@ -61,7 +61,7 @@ export function fetchChallengeDashboard(
     contributions: { userId: string; total: number }[];
   }[];
 }> {
-  return request.get('/challenges', { params: { id, from, to } });
+  return request.get(`/challenges/${encodeURIComponent(id)}`, { params: { from, to } });
 }
 
 export function saveChallenge(challenge: {
