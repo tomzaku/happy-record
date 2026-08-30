@@ -14,5 +14,5 @@ export function saveNoteFolder(folder: NoteFolder): Promise<{ ok: true } | null>
 }
 
 export function removeNoteFolder(id: string): Promise<{ ok: true } | null> {
-  return request.delete('/note-folders', { quiet: true, params: { id } });
+  return request.delete(`/note-folders/${encodeURIComponent(id)}`, { quiet: true });
 }
