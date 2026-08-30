@@ -19,14 +19,14 @@ export function fetchChecklists(opts: {
 
 /** One checklist by id — the shape `detail-task-page` needs, no range to filter. */
 export function fetchChecklistById(id: string): Promise<{ checklists: Checklist[] } | null> {
-  return request.get('/checklists', { quiet: true, params: { id } });
+  return request.get(`/checklists/${encodeURIComponent(id)}`, { quiet: true });
 }
 
-/** Create or update one checklist. Always the whole object — see `_shared/checklists.ts`. */
+/** Create or update one checklist. Always the whole object — see `checklists/model/checklists-model.ts`. */
 export function saveChecklist(checklist: Checklist): Promise<{ ok: true } | null> {
   return request.post('/checklists', { checklist }, { quiet: true });
 }
 
 export function removeChecklist(id: string): Promise<{ ok: true } | null> {
-  return request.delete('/checklists', { quiet: true, params: { id } });
+  return request.delete(`/checklists/${encodeURIComponent(id)}`, { quiet: true });
 }

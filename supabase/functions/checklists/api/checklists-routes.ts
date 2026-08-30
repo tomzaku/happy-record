@@ -1,14 +1,18 @@
-// Route table for the `checklists` resource.
+// Route table for the `checklists` resource. `/:id` is matched by `shared/router.ts`'s
+// `matchRoute`.
 
 import { listChecklistsHandler } from './list-checklists-handler.ts';
+import { getChecklistHandler } from './get-checklist-handler.ts';
 import { saveChecklistHandler } from './save-checklist-handler.ts';
 import { deleteChecklistHandler } from './delete-checklist-handler.ts';
 import type { Ctx } from './checklists-context.ts';
+import type { RouteTable } from '../../../shared/router.ts';
 
-export const ROUTES: Record<string, (ctx: Ctx) => Promise<unknown>> = {
+export const ROUTES: RouteTable<Ctx> = {
   'GET /': listChecklistsHandler,
+  'GET /:id': getChecklistHandler,
   'POST /': saveChecklistHandler,
-  'DELETE /': deleteChecklistHandler,
+  'DELETE /:id': deleteChecklistHandler,
 };
 
 export function subPath(url: URL): string {
