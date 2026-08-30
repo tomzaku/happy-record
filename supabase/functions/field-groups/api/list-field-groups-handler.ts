@@ -1,11 +1,8 @@
 // `GET /field-groups` — one route, two shapes depending on the query string.
 
 import { compose } from '../../../shared/authorize.ts';
-import {
-  checkCanReadFieldGroupsByTemplate,
-  withRepeats,
-  type TemplateGroupsAuthorization,
-} from '../services/field-groups-access-service.ts';
+import { checkCanReadFieldGroupsByTemplate, type TemplateGroupsAuthorization } from '../services/field-groups-access-service.ts';
+import { withRepeats } from '../services/field-groups-repository.ts';
 import type { Ctx } from './field-groups-context.ts';
 
 /** `?checklistTemplateId=` — one template's own groups, the caller's own or anyone's if that
