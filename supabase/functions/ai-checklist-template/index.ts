@@ -33,6 +33,7 @@ import {
   stripFences,
   underRateLimit,
 } from '../_shared/ai.ts';
+import { admin } from '../_shared/authorize.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 // Mirrors RecordField.type (packages/global/src/store/record-field/useRecordField.tsx) — every
@@ -364,12 +365,13 @@ export default async function handler(req: Request): Promise<Response> {
 
   const auth = await requireUser(req);
   if (!auth) return jsonResponse(401, { error: 'Please sign in to use AI features.' });
+  const db = admin();
 
-  if (!await underRateLimit(auth.supabase)) {
+  if (!await underRateLimit(db, auth.user.id)) {
     return jsonResponse(429, { error: 'Too many requests — please slow down and try again shortly.' });
   }
 
-  const denied = await proGateError(auth.supabase, auth.user.id);
+  const denied = await proGateError(db, auth.user.id);
   if (denied) return denied;
 
   let params: Record<string, unknown>;
@@ -381,7 +383,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   let availableFields: AvailableField[];
   try {
-    availableFields = await fetchAvailableFields(auth.supabase, auth.user.id);
+    availableFields = await fetchAvailableFields(db, auth.user.id);
   } catch (err) {
     console.error('[ai-checklist-template] fields fetch failed', err);
     return jsonResponse(500, { error: 'Something went wrong.' });

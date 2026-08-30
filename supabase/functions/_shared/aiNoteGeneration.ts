@@ -24,6 +24,7 @@ import {
   stripFences,
   underRateLimit,
 } from './ai.ts';
+import { admin } from './authorize.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 export const OPTIONS = ['video', 'quote', 'checklist', 'list'] as const;
@@ -236,9 +237,11 @@ export function toBlocks(stored: unknown): { type: string; data: Record<string, 
  * function), build the prompt, call the provider, validate + return blocks. ai-note/index.ts is
  * just this call plus its own `resolveContext`.
  *
- * `resolveContext` gets the caller's own RLS-scoped `db` (never service-role) + `userId` — never
- * client-sent text. `ai-note` itself passes a resolver that always returns empty strings; that's
- * the whole reason this exists as a parameter rather than being resolved inline here.
+ * `resolveContext` gets the service-role `db` (see `_shared/authorize.ts`) + `userId` — never
+ * client-sent text; `ai-note`'s own resolver explicitly scopes its note lookup to `userId` itself
+ * (see that function), the same "authorization is app code now, not RLS" shape every resource is
+ * moving onto. `ai-note` itself passes a resolver that always returns empty strings; that's the
+ * whole reason this exists as a parameter rather than being resolved inline here.
  */
 export async function runNoteGeneration(
   req: Request,
@@ -254,12 +257,13 @@ export async function runNoteGeneration(
 
   const auth = await requireUser(req);
   if (!auth) return jsonResponse(401, { error: 'Please sign in to use AI features.' });
+  const db = admin();
 
-  if (!await underRateLimit(auth.supabase)) {
+  if (!await underRateLimit(db, auth.user.id)) {
     return jsonResponse(429, { error: 'Too many requests — please slow down and try again shortly.' });
   }
 
-  const denied = await proGateError(auth.supabase, auth.user.id);
+  const denied = await proGateError(db, auth.user.id);
   if (denied) return denied;
 
   let params: Record<string, unknown>;
@@ -273,7 +277,7 @@ export async function runNoteGeneration(
   try {
     const prompt = reqStr(params, 'prompt', 500);
     const options = sanitizeOptions(params.options);
-    const { before, after } = await resolveContext(params, auth.supabase, auth.user.id);
+    const { before, after } = await resolveContext(params, db, auth.user.id);
     built = buildNotePrompt(prompt, options, before, after);
   } catch (err) {
     if (err instanceof BadRequest) return jsonResponse(400, { error: err.message });

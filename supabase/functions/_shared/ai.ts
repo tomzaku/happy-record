@@ -70,10 +70,11 @@ export async function requireUser(req: Request): Promise<{ supabase: SupabaseCli
 
 /**
  * Gate an action on an active Pro grant. Returns the Response to send back, or null when the
- * caller is Pro. The user-scoped client can only see the caller's own `pro_users` row (RLS), so
- * a returned row is proof this user has Pro. A NULL `expires_at` is a lifetime grant; otherwise
- * Pro lasts until that moment — see supabase/functions/_shared/proUsers.ts's `getProStatus`,
- * which this mirrors but as a ready-to-return 403 instead of a status object.
+ * caller is Pro. The query is explicitly `.eq('user_id', userId)` — not relying on RLS to scope
+ * it — so a returned row is proof this user has Pro regardless of which client (`supabase`) it's
+ * called with. A NULL `expires_at` is a lifetime grant; otherwise Pro lasts until that moment —
+ * see supabase/functions/_shared/proUsers.ts's `getProStatus`, which this mirrors but as a
+ * ready-to-return 403 instead of a status object.
  */
 export async function proGateError(supabase: SupabaseClient, userId: string): Promise<Response | null> {
   const { data: proRow, error } = await supabase
@@ -89,13 +90,18 @@ export async function proGateError(supabase: SupabaseClient, userId: string): Pr
   return null;
 }
 
-/** Per-user fixed-window rate limit. True if allowed (fails open on infra error). */
-export async function underRateLimit(supabase: SupabaseClient): Promise<boolean> {
+/** Per-user fixed-window rate limit. True if allowed (fails open on infra error). `userId` is
+ * passed explicitly now (20260830020000_ai_rate_limit_explicit_user.sql) rather than the RPC
+ * reading `auth.uid()` itself — that only resolved under the caller's own RLS-scoped connection,
+ * which every `ai-*` function is moving off of (see `_shared/authorize.ts`); `supabase` here is
+ * expected to be the service-role client now. */
+export async function underRateLimit(supabase: SupabaseClient, userId: string): Promise<boolean> {
   const limit = Number(Deno.env.get('AI_RATE_LIMIT')) || 20;
   const win = Number(Deno.env.get('AI_RATE_WINDOW_SECONDS')) || 60;
   const { data: allowed, error } = await supabase.rpc('check_ai_rate_limit', {
     p_limit: limit,
     p_window_seconds: win,
+    p_user_id: userId,
   });
   return !(allowed === false && !error);
 }

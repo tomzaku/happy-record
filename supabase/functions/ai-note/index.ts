@@ -20,12 +20,14 @@
 // `noteId` is a *position*, not content — this is deliberately NOT a client-sent context string:
 // a client that could send arbitrary "context" text would turn this endpoint into a free-form
 // text-to-LLM proxy, decoupled from any note it actually owns — sending an id instead means only
-// content this caller can already read (RLS-scoped, never service-role) is ever used. `noteId`
-// missing, `blockIndex` missing, or nothing resolving (wrong id, not this caller's, no note
-// written yet) degrades quietly to no context — never a hard error; generation still succeeds
-// either way, same as every "/ai" placeholder with no real, persisted note yet (a brand-new
-// composer in add-note-page-ui/note-manager-page-ui, or a field/field-group that has no note_id
-// yet).
+// content this caller can already read is ever used. `resolveNoteValue` below runs on the
+// service-role client (see `_shared/authorize.ts`) but explicitly filters `.eq('user_id',
+// userId)` itself — the app-layer check that replaces what used to be RLS scoping this by
+// connection identity. `noteId` missing, `blockIndex` missing, or nothing resolving (wrong id,
+// not this caller's, no note written yet) degrades quietly to no context — never a hard error;
+// generation still succeeds either way, same as every "/ai" placeholder with no real, persisted
+// note yet (a brand-new composer in add-note-page-ui/note-manager-page-ui, or a field/field-group
+// that has no note_id yet).
 //
 // SECURITY: params are validated in _shared/aiNoteGeneration.ts; the system prompt is fixed
 // there and never reaches the client. A signed-in Pro user is required and rate-limited — see
