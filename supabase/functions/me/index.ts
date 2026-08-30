@@ -2,11 +2,16 @@
 //
 //   GET /me → { isPro, isTrial, proExpiresAt }
 //
-// Read-only: there's no self-serve upgrade, so no other method exists here.
+// Read-only: there's no self-serve upgrade, so no other method exists here. No `api`/`model`/
+// `services` split here (see the other resources for that shape) — there's a single trivial
+// route and `getProStatus` already hard-filters `.eq('user_id', userId)` itself, so there's no
+// cross-user visibility decision to compose a `checkPermission` around.
+//
 // Deploy: `supabase functions deploy me`
 
 import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
+import { admin } from '../_shared/authorize.ts';
 import { getProStatus } from '../_shared/proUsers.ts';
 
 export default async function handler(req: Request): Promise<Response> {
@@ -17,7 +22,11 @@ export default async function handler(req: Request): Promise<Response> {
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await getProStatus(auth.supabase, auth.user.id));
+    // `admin()` (service-role, bypasses RLS) instead of the RLS-scoped client — see
+    // `_shared/authorize.ts`'s own header for why this app is moving off RLS as its enforcement
+    // layer resource by resource. Safe here specifically because the query itself is already
+    // explicitly scoped, not because RLS still happens to catch a mistake.
+    return json(200, await getProStatus(admin(), auth.user.id));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[me]', err);
