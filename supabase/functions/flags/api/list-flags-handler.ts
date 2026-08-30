@@ -2,10 +2,10 @@
 // `checkPermission` around (see CLAUDE.md's "Authorization: app layer, not RLS").
 
 import { toFlag } from '../../../dto/flags/flags-dto.ts';
-import { fetchFlags } from '../repository/flags-repository.ts';
+import { listFlags } from '../services/flags-service.ts';
 import type { Ctx } from './flags-context.ts';
 
-export async function listFlagsHandler({ db, userId }: Ctx) {
-  const rows = await fetchFlags(db, userId);
+export async function listFlagsHandler(ctx: Ctx) {
+  const rows = await listFlags(ctx);
   return { flags: rows.map(toFlag) };
 }
