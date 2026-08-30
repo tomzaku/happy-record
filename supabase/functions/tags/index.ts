@@ -4,10 +4,16 @@
 //   POST   /tags  { tag } → { ok }
 //   DELETE /tags  ?id=      → { ok }
 //
+// No `api`/`model`/`services` split here (see `notes/` for that shape) and no `compose` — every
+// query is already explicitly `.eq('user_id', userId)`, own-row-only with no cross-user
+// visibility rule, so there's nothing for a `checkPermission` to decide; just off the RLS-scoped
+// client (see `_shared/authorize.ts`) and onto `admin()`.
+//
 // Deploy: `supabase functions deploy tags`
 
 import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
+import { admin } from '../_shared/authorize.ts';
 import { fromTag, toTag } from '../_shared/tags.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
@@ -79,7 +85,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await route({ url, req, db: auth.supabase, userId: auth.user.id }));
+    return json(200, await route({ url, req, db: admin(), userId: auth.user.id }));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[tags]', err);
