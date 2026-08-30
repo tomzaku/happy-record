@@ -4,6 +4,7 @@
 import { ApiError } from '../../../shared/cors.ts';
 import { ForbiddenError } from '../../../shared/authorize.ts';
 import { fromChallengeComment } from '../../../dto/challenge-comments/challenge-comments-dto.ts';
+import { fetchChallengeForPosting, fetchOwnedChallenge, fetchParticipantRow } from './challenge-comments-repository.ts';
 import { body, type Ctx } from '../api/challenge-comments-context.ts';
 
 /** Same "participant or owner" rule as challenge-participants' own checkCanReadRoster — see that
@@ -12,12 +13,10 @@ export async function checkCanReadComments({ db, userId, url }: Ctx): Promise<st
   const challengeId = url.searchParams.get('challengeId');
   if (!challengeId) throw new ApiError(400, 'Missing challengeId.');
 
-  const [{ data: participant, error: participantError }, { data: ownedChallenge, error: ownedError }] = await Promise.all([
-    db.from('challenge_participants').select('id').eq('challenge_id', challengeId).eq('user_id', userId).maybeSingle(),
-    db.from('challenges').select('id').eq('id', challengeId).eq('owner_id', userId).maybeSingle(),
+  const [participant, ownedChallenge] = await Promise.all([
+    fetchParticipantRow(db, challengeId, userId),
+    fetchOwnedChallenge(db, challengeId, userId),
   ]);
-  if (participantError) throw new Error(participantError.message);
-  if (ownedError) throw new Error(ownedError.message);
   if (!participant && !ownedChallenge) throw new ForbiddenError();
   return challengeId;
 }
@@ -39,23 +38,12 @@ export async function checkCanPostComment({ req, db, userId }: Ctx): Promise<Pos
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid comment.');
   }
 
-  const { data: challenge, error: challengeError } = await db
-    .from('challenges')
-    .select('id, owner_id, comments_enabled')
-    .eq('id', row.challenge_id)
-    .maybeSingle();
-  if (challengeError) throw new Error(challengeError.message);
+  const challenge = await fetchChallengeForPosting(db, row.challenge_id as string);
   if (!challenge) throw new ApiError(400, 'Unknown challenge.');
   if (!challenge.comments_enabled) throw new ApiError(400, 'Comments are off for this challenge.');
 
   if (challenge.owner_id !== userId) {
-    const { data: participant, error: participantError } = await db
-      .from('challenge_participants')
-      .select('id')
-      .eq('challenge_id', row.challenge_id)
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (participantError) throw new Error(participantError.message);
+    const participant = await fetchParticipantRow(db, row.challenge_id as string, userId);
     if (!participant) throw new ApiError(400, 'Join this challenge before commenting.');
   }
 
