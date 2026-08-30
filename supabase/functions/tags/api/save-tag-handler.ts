@@ -1,12 +1,12 @@
-// `POST /tags { tag }` — always the caller's own (hardcoded `user_id` below).
+// `POST /tags { tag }` — always the caller's own, nothing to compose a `checkPermission` around.
 
 import { ApiError } from '../../../shared/cors.ts';
 import { fromTag } from '../../../dto/tags/tags-dto.ts';
-import { saveTag } from '../repository/tags-repository.ts';
+import { saveTag } from '../services/tags-service.ts';
 import { body, type Ctx } from './tags-context.ts';
 
-export async function saveTagHandler({ req, db, userId }: Ctx) {
-  const entry = (await body(req)).tag;
+export async function saveTagHandler(ctx: Ctx) {
+  const entry = (await body(ctx.req)).tag;
   if (!entry || typeof entry !== 'object') throw new ApiError(400, 'Missing tag.');
 
   let row: ReturnType<typeof fromTag>;
@@ -16,6 +16,6 @@ export async function saveTagHandler({ req, db, userId }: Ctx) {
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid tag.');
   }
 
-  await saveTag(db, userId, row);
+  await saveTag(ctx, row);
   return { ok: true };
 }
