@@ -14,5 +14,5 @@ export function saveFlag(flag: Flag): Promise<{ ok: true } | null> {
 }
 
 export function removeFlag(id: string): Promise<{ ok: true } | null> {
-  return request.delete('/flags', { quiet: true, params: { id } });
+  return request.delete(`/flags/${encodeURIComponent(id)}`, { quiet: true });
 }
