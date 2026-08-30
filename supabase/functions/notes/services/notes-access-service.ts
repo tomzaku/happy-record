@@ -7,7 +7,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { ForbiddenError } from '../../../shared/authorize.ts';
-import { fetchNoteRow, publicFieldGroupOwnerIds, type NoteRow } from '../repository/notes-repository.ts';
+import { fetchNoteRow, fetchNoteRowsByIds, publicFieldGroupOwnerIds, type NoteRow } from '../repository/notes-repository.ts';
 import { body, type Ctx } from '../api/notes-context.ts';
 
 export type { NoteRow };
@@ -42,9 +42,7 @@ export async function checkReadNote({ db, userId, id }: Ctx): Promise<NoteRow> {
 export async function checkReadNotes({ db, userId, url }: Ctx): Promise<NoteRow[]> {
   const ids = (url.searchParams.get('ids') ?? '').split(',').filter(Boolean);
   if (!ids.length) return [];
-  const { data, error } = await db.from('notes').select('*').in('id', ids);
-  if (error) throw new Error(error.message);
-  const rows = (data ?? []) as NoteRow[];
+  const rows = await fetchNoteRowsByIds(db, ids);
 
   const candidateGroupIds = rows
     .filter(r => r.owner_type === 'field_group' && r.user_id !== userId)

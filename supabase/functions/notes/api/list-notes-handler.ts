@@ -4,19 +4,13 @@
 import { compose } from '../../../shared/authorize.ts';
 import { toNote, toNoteSummary } from '../../../dto/notes/notes-dto.ts';
 import { checkReadNotes, type NoteRow } from '../services/notes-access-service.ts';
+import { listMyNotes } from '../services/notes-service.ts';
 import { limitFrom, type Ctx } from './notes-context.ts';
 
 const DEFAULT_SEARCH_LIMIT = 20;
 const MAX_SEARCH_LIMIT = 100;
 const DEFAULT_ALL_LIMIT = 300;
 const MAX_ALL_LIMIT = 1000;
-
-// What a list (summary) read actually needs — no `value`, no `search_text` (server-only, for
-// `?q=`'s own filter, never read back). See toNoteSummary's own comment for why this matters:
-// leaving `value` off the select means the query never reads a note's — potentially large —
-// content off disk for a row that's only ever going to show a title and a short preview.
-const SUMMARY_COLUMNS =
-  'id, title, preview, owner_type, owner_id, folder_id, checklist_id, checklist_template_id, submission_id, created_at, updated_at';
 
 // `GET /notes ?ids=a,b` — several at once, full content, same public-note exception `GET /:id`
 // has — the standalone notebook's own listing (one note per note-type field, by their ids),
@@ -33,28 +27,13 @@ const getNotesByIds = compose(checkReadNotes, async (_ctx, rows: NoteRow[]) => (
  * `?limit=` (nothing else given) → every note this user owns, most recently updated first,
  * summaries only — note-manager-page-ui's own Notes page, which fetches a selected note's own
  * full content separately via `GET /notes/:id` once someone actually opens it. */
-async function listMine({ db, userId, url }: Ctx) {
-  const q = url.searchParams.get('q');
-  let query = db.from('notes').select(SUMMARY_COLUMNS).eq('user_id', userId);
-  if (q) {
-    // A real substring, not user-controlled SQL: PostgREST's `.or()` filter string still needs
-    // `%`/commas/parens escaped out of it, since those are syntax there, not just in the ILIKE
-    // pattern itself.
-    const escaped = q.replace(/[%,()]/g, char => `\\${char}`);
-    const pattern = `%${escaped}%`;
-    query = query
-      .or(`title.ilike.${pattern},search_text.ilike.${pattern}`)
-      .order('updated_at', { ascending: false })
-      .limit(limitFrom(url, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT));
-  } else {
-    query = query
-      .order('updated_at', { ascending: false })
-      .limit(limitFrom(url, DEFAULT_ALL_LIMIT, MAX_ALL_LIMIT));
-  }
-
-  const { data, error } = await query;
-  if (error) throw new Error(error.message);
-  return { notes: ((data ?? []) as NoteRow[]).map(toNoteSummary) };
+async function listMine(ctx: Ctx) {
+  const q = ctx.url.searchParams.get('q');
+  const limit = q
+    ? limitFrom(ctx.url, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT)
+    : limitFrom(ctx.url, DEFAULT_ALL_LIMIT, MAX_ALL_LIMIT);
+  const rows = await listMyNotes(ctx, { q, limit });
+  return { notes: rows.map(toNoteSummary) };
 }
 
 export async function listNotesHandler(ctx: Ctx) {
