@@ -268,7 +268,6 @@ type Target = {
  */
 async function getTargets(
   db: SupabaseClient,
-  userId: string,
   challenge: ReturnType<typeof toChallenge>,
   participants: ReturnType<typeof toChallengeParticipant>[],
   visibleUserIds: string[],
@@ -276,13 +275,15 @@ async function getTargets(
   const targetFieldIds = Object.keys(challenge.fieldTargets);
   if (!targetFieldIds.length) return [];
 
-  // fieldMeta (title/unit/icon) — the plain "own row or public" visibility `fields`' own unscoped
-  // GET uses, same as before this moved off RLS: there was never a challenge-specific grant for
-  // *this* query, only for the forked copy and the checklist_records contribution rows below. A
-  // participant targeting a field they don't own and that isn't public sees blank title/unit/icon
-  // here — a pre-existing gap this migration preserves rather than changes.
+  // fieldMeta (title/unit/icon) — scoped to the *challenge owner's* own-or-public visibility, not
+  // the viewer's: `challenge.fieldTargets` is always keyed by the owner's own field ids (see
+  // save-challenge-handler.ts's own doc comment), so a target field a participant doesn't own and
+  // that isn't public would otherwise come back with a blank title/unit/icon for everyone but the
+  // owner — every participant needs to read this metadata to make sense of their own target
+  // progress, the same peer-read grant the 20260825000000_challenge_targets.sql migration's own
+  // RLS policy gave before this moved off RLS.
   const [fieldRows, forkedFieldRows] = await Promise.all([
-    fetchFieldsMetaForUser(db, targetFieldIds, userId),
+    fetchFieldsMetaForUser(db, targetFieldIds, challenge.ownerId),
     fetchForkedFields(db, visibleUserIds, targetFieldIds),
   ]);
 
@@ -395,7 +396,7 @@ export async function buildDashboard({ url, db, userId }: Ctx, challengeRow: Rec
   for (const c of completions) countByUser.set(c.userId, (countByUser.get(c.userId) ?? 0) + 1);
   const ranking = [...countByUser.entries()].map(([userId, count]) => ({ userId, count })).sort((a, b) => b.count - a.count);
 
-  const targets = await getTargets(db, userId, challenge, participants, visibleUserIds);
+  const targets = await getTargets(db, challenge, participants, visibleUserIds);
 
   return { challenge, participants, completions, ranking, targets };
 }
