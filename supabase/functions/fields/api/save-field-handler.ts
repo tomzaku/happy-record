@@ -1,11 +1,13 @@
-// `POST /fields { field }` — always the caller's own (hardcoded `user_id` below).
+// `POST /fields { field }` — always the caller's own, nothing to compose a `checkPermission`
+// around.
 
 import { ApiError } from '../../../shared/cors.ts';
 import { fromRecordField } from '../../../dto/fields/fields-dto.ts';
+import { saveField } from '../services/fields-service.ts';
 import { body, type Ctx } from './fields-context.ts';
 
-export async function saveFieldHandler({ req, db, userId }: Ctx) {
-  const entry = (await body(req)).field;
+export async function saveFieldHandler(ctx: Ctx) {
+  const entry = (await body(ctx.req)).field;
   if (!entry || typeof entry !== 'object') throw new ApiError(400, 'Missing field.');
 
   let row: ReturnType<typeof fromRecordField>;
@@ -15,7 +17,6 @@ export async function saveFieldHandler({ req, db, userId }: Ctx) {
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid field.');
   }
 
-  const { error } = await db.from('fields').upsert({ user_id: userId, ...row });
-  if (error) throw new Error(error.message);
+  await saveField(ctx, row);
   return { ok: true };
 }

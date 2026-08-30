@@ -3,6 +3,7 @@
 import { compose } from '../../../shared/authorize.ts';
 import { toRecordField } from '../../../dto/fields/fields-dto.ts';
 import { checkCanReadFieldsByTemplate } from '../services/fields-access-service.ts';
+import { listFieldsByIds, listOwnOrPublicFields } from '../services/fields-service.ts';
 import type { Ctx } from './fields-context.ts';
 
 /**
@@ -16,27 +17,18 @@ import type { Ctx } from './fields-context.ts';
  * blanket "read any field" grant; this was the only place in this app that reached for the
  * service role before every resource started moving onto it (see `shared/authorize.ts`).
  */
-const getFieldsByTemplate = compose(checkCanReadFieldsByTemplate, async ({ db }: Ctx, fieldIds: string[] | null) => {
+const getFieldsByTemplate = compose(checkCanReadFieldsByTemplate, async (ctx: Ctx, fieldIds: string[] | null) => {
   if (!fieldIds || !fieldIds.length) return { fields: [] };
-  const { data, error } = await db.from('fields').select('*').in('id', fieldIds);
-  if (error) throw new Error(error.message);
-  return { fields: ((data ?? []) as Record<string, unknown>[]).map(toRecordField) };
+  const rows = await listFieldsByIds(ctx, fieldIds);
+  return { fields: rows.map(toRecordField) };
 });
 
 /** No `templateId` (optionally `?ids=`) — own fields plus anyone's public ones — already an
  * explicit rule, not an implicit RLS filter, so it needs no `checkPermission` of its own. */
-async function listMine({ url, db, userId }: Ctx) {
-  const ids = (url.searchParams.get('ids') ?? '').split(',').filter(Boolean);
-
-  let query = db
-    .from('fields')
-    .select('*')
-    .or(`user_id.eq.${userId},visibility.eq.public`);
-  if (ids.length) query = query.in('id', ids);
-
-  const { data, error } = await query.order('created_at');
-  if (error) throw new Error(error.message);
-  return { fields: ((data ?? []) as Record<string, unknown>[]).map(toRecordField) };
+async function listMine(ctx: Ctx) {
+  const ids = (ctx.url.searchParams.get('ids') ?? '').split(',').filter(Boolean);
+  const rows = await listOwnOrPublicFields(ctx, ids);
+  return { fields: rows.map(toRecordField) };
 }
 
 export async function listFieldsHandler(ctx: Ctx) {
