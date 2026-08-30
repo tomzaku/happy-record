@@ -15,7 +15,7 @@
 // reason to trust it when the real data is one query away with the caller's own id already in
 // hand.
 //
-// SECURITY: params are validated in model/ai-checklist-template-model.ts and
+// SECURITY: params are validated in dto/ai-checklist-template/ai-checklist-template-dto.ts and
 // api/generate-checklist-template-handler.ts; the system prompt is fixed in the latter and never
 // reaches the client. A signed-in Pro user is required and rate-limited — see shared/ai.ts,
 // ported from the sibling project's own ai-* functions rather than re-derived.
@@ -23,7 +23,7 @@
 // Supabase requires this exact file as the deploy target (`supabase functions deploy
 // ai-checklist-template`), so it stays a thin entrypoint — the request lifecycle lives in
 // `api/generate-checklist-template-handler.ts`, the generated-output types + validation in
-// `model/ai-checklist-template-model.ts`.
+// `dto/ai-checklist-template/ai-checklist-template-dto.ts`.
 //
 // Deploy: `supabase functions deploy ai-checklist-template`
 

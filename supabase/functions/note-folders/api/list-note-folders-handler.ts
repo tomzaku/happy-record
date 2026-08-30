@@ -1,6 +1,6 @@
 // `GET /note-folders` — always the caller's own, nothing to compose a `checkPermission` around.
 
-import { toNoteFolder } from '../model/note-folders-model.ts';
+import { toNoteFolder } from '../../../dto/note-folders/note-folders-dto.ts';
 import type { Ctx } from './note-folders-context.ts';
 
 export async function listNoteFoldersHandler({ db, userId }: Ctx) {

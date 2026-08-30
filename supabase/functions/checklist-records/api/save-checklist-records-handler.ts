@@ -4,7 +4,7 @@
 // note-type-field/`submissions` shape this writes alongside the plain-value rows.
 
 import { ApiError } from '../../../shared/cors.ts';
-import { fromChecklistFieldNoteEntry, fromRecordEntry, MAX_BULK } from '../model/checklist-records-model.ts';
+import { fromChecklistFieldNoteEntry, fromRecordEntry, MAX_BULK } from '../../../dto/checklist-records/checklist-records-dto.ts';
 import { body, type Ctx } from './checklist-records-context.ts';
 
 /** Every field type but `note` has a plain `number | string` value (number, text, date,

@@ -25,7 +25,7 @@
 //
 // Supabase requires this exact file as the deploy target (`supabase functions deploy
 // checklist-templates`), so it stays a thin entrypoint: CORS, identity, dispatch, error shape.
-// Route handlers live in `api/`, row mapping in `model/`, the real permission check + shared
+// Route handlers live in `api/`, row mapping in `supabase/dto/`, the real permission check + shared
 // resolution helpers in `services/` — see `notes/index.ts` for the fuller version of this shape,
 // and CLAUDE.md's "Authorization: app layer, not RLS" for the rationale. `/:id` is matched by
 // `shared/router.ts`'s `matchRoute` — a real path segment, not `?id=` in the query string (see

@@ -3,7 +3,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { ForbiddenError } from '../../../shared/authorize.ts';
-import { fromChallengeComment } from '../model/challenge-comments-model.ts';
+import { fromChallengeComment } from '../../../dto/challenge-comments/challenge-comments-dto.ts';
 import { body, type Ctx } from '../api/challenge-comments-context.ts';
 
 /** Same "participant or owner" rule as challenge-participants' own checkCanReadRoster — see that

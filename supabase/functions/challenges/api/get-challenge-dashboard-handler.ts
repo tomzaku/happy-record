@@ -12,7 +12,7 @@
 // the full dashboard.
 
 import { compose } from '../../../shared/authorize.ts';
-import { toChallenge } from '../model/challenges-model.ts';
+import { toChallenge } from '../../../dto/challenges/challenges-dto.ts';
 import { toChallengeParticipant } from '../../../dto/challenge-participants/challenge-participants-dto.ts';
 import { checkCanReadDashboard, type DashboardAuthorization } from '../services/challenges-access-service.ts';
 import type { Ctx } from './challenges-context.ts';

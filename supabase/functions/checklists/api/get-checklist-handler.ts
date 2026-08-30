@@ -2,7 +2,7 @@
 // checklist id from the URL, no reason to fetch a whole range and filter client-side. Always the
 // caller's own — no cross-user visibility rule, nothing to compose a `checkPermission` around.
 
-import { toChecklist } from '../model/checklists-model.ts';
+import { toChecklist } from '../../../dto/checklists/checklists-dto.ts';
 import type { Ctx } from './checklists-context.ts';
 
 export async function getChecklistHandler({ db, userId, id }: Ctx) {

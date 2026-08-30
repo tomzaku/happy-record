@@ -13,7 +13,7 @@
 //
 // Supabase requires this exact file as the deploy target (`supabase functions deploy
 // challenge-comments`), so it stays a thin entrypoint: CORS, identity, dispatch, error shape.
-// Route handlers live in `api/`, row mapping in `model/`, the real permission checks in
+// Route handlers live in `api/`, row mapping in `supabase/dto/`, the real permission checks in
 // `services/` — see `notes/index.ts` for the fuller version of this shape, and CLAUDE.md's
 // "Authorization: app layer, not RLS" for the rationale.
 //

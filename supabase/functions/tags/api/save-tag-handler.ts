@@ -1,7 +1,7 @@
 // `POST /tags { tag }` — always the caller's own (hardcoded `user_id` below).
 
 import { ApiError } from '../../../shared/cors.ts';
-import { fromTag } from '../model/tags-model.ts';
+import { fromTag } from '../../../dto/tags/tags-dto.ts';
 import { body, type Ctx } from './tags-context.ts';
 
 export async function saveTagHandler({ req, db, userId }: Ctx) {

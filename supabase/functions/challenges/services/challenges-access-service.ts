@@ -4,7 +4,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { ForbiddenError } from '../../../shared/authorize.ts';
-import { fromChallenge } from '../model/challenges-model.ts';
+import { fromChallenge } from '../../../dto/challenges/challenges-dto.ts';
 import { body, type Ctx } from '../api/challenges-context.ts';
 
 export type DashboardAuthorization = { challengeRow: Record<string, unknown> | null; canSeeRoster: boolean };

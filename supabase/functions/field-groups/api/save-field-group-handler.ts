@@ -4,7 +4,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { saveRepeat } from '../../../shared/repeats.ts';
-import { fromFieldGroup } from '../model/field-groups-model.ts';
+import { fromFieldGroup } from '../../../dto/field-groups/field-groups-dto.ts';
 import { body, type Ctx } from './field-groups-context.ts';
 
 export async function saveFieldGroupHandler({ req, db, userId }: Ctx) {

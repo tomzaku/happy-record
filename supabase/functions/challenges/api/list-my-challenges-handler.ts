@@ -11,7 +11,7 @@
 // per-challenge dashboard fetch per row. No *other* participant's numbers here, and no rank — the
 // full peer breakdown is still the per-challenge dashboard, which this listing links out to.
 
-import { toChallenge } from '../model/challenges-model.ts';
+import { toChallenge } from '../../../dto/challenges/challenges-dto.ts';
 import type { Ctx } from './challenges-context.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 

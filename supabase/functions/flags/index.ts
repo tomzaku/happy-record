@@ -6,7 +6,7 @@
 //
 // Supabase requires this exact file as the deploy target (`supabase functions deploy flags`), so
 // it stays a thin entrypoint: CORS, identity, dispatch, error shape. Route handlers live in
-// `api/`, row mapping in `model/` — see `notes/index.ts` for the fuller version of this shape.
+// `api/`, row mapping in `supabase/dto/` — see `notes/index.ts` for the fuller version of this shape.
 //
 // No `services/` here and no `compose` — every query is already explicitly
 // `.eq('user_id', userId)`, own-row-only with no cross-user visibility rule, so there's nothing

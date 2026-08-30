@@ -1,7 +1,7 @@
 // `POST /note-folders { folder }` — always the caller's own (hardcoded `user_id` below).
 
 import { ApiError } from '../../../shared/cors.ts';
-import { fromNoteFolder } from '../model/note-folders-model.ts';
+import { fromNoteFolder } from '../../../dto/note-folders/note-folders-dto.ts';
 import { body, type Ctx } from './note-folders-context.ts';
 
 export async function saveNoteFolderHandler({ req, db, userId }: Ctx) {

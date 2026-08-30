@@ -3,7 +3,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { saveRepeat } from '../../../shared/repeats.ts';
-import { fromChecklistTemplate } from '../model/checklist-templates-model.ts';
+import { fromChecklistTemplate } from '../../../dto/checklist-templates/checklist-templates-dto.ts';
 import { body, type Ctx } from './checklist-templates-context.ts';
 
 export async function saveChecklistTemplateHandler({ req, db, userId }: Ctx) {

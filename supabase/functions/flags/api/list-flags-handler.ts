@@ -1,7 +1,7 @@
 // `GET /flags` — always the caller's own, a plain explicit filter with nothing to compose a
 // `checkPermission` around (see CLAUDE.md's "Authorization: app layer, not RLS").
 
-import { toFlag } from '../model/flags-model.ts';
+import { toFlag } from '../../../dto/flags/flags-dto.ts';
 import type { Ctx } from './flags-context.ts';
 
 export async function listFlagsHandler({ db, userId }: Ctx) {

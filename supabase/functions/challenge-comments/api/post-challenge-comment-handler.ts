@@ -1,7 +1,7 @@
 // `POST /challenge-comments { comment }` — `compose(checkCanPostComment, core)`.
 
 import { compose } from '../../../shared/authorize.ts';
-import { toChallengeComment } from '../model/challenge-comments-model.ts';
+import { toChallengeComment } from '../../../dto/challenge-comments/challenge-comments-dto.ts';
 import { checkCanPostComment, type PostAuthorization } from '../services/challenge-comments-access-service.ts';
 import type { Ctx } from './challenge-comments-context.ts';
 

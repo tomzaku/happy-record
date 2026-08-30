@@ -2,11 +2,13 @@
 //
 // Supabase requires this exact file as the deploy target (`supabase functions deploy notes`), so
 // it stays a thin entrypoint: CORS, identity, dispatch, error shape. The actual route handlers
-// live in `api/` (one file per route, `api/notes-routes.ts` for the table), the read-side row
-// mapping in `model/`, and the DB reads + permission checks in `services/` — this is the
-// `features/<domain>/{api,model,services}` split (adapted from kakaonline core-server's own
-// `features/<domain>/{api,services}` + top-level `shared/`, which `supabase/shared/` plays the
-// same role as here, one level up from every resource instead of nested inside `functions/`).
+// live in `api/` (one file per route, `api/notes-routes.ts` for the table), the row↔wire mapping
+// in `supabase/dto/notes/notes-dto.ts`, and the DB reads + permission checks in `services/` —
+// this is the `features/<domain>/{api,services}` + top-level `dto`/`shared` split (adapted from
+// kakaonline core-server's own `features/<domain>/{api,services}` + `shared/{dtos,...}`, kept as
+// two separate top-level folders here — `supabase/dto/` and `supabase/shared/` — rather than one
+// `shared/dtos/` nested inside the other, both one level up from every resource instead of
+// nested inside `functions/`).
 //
 // First resource moved off RLS onto the app-layer `compose(checkPermission, core)` pattern (see
 // `shared/authorize.ts`) — every route reads/writes through the service-role client (`admin()`,

@@ -11,7 +11,7 @@
 //
 // GET (unscoped or `?ids=`) returns the caller's own fields *and* anyone's public ones — but
 // `visibility: 'public'` is never something a write through this resource can grant anymore (see
-// shared/fields.ts's own comment): the only public rows that exist are the three seeded
+// dto/fields/fields-dto.ts's own comment): the only public rows that exist are the three seeded
 // defaults (20260821000000_seed_system_fields.sql), written by a migration under the service
 // role. A shared checklist template's own (private) fields are resolved a different way —
 // `?templateId=` above — authorized by the template being public, not by flipping the field
@@ -23,9 +23,10 @@
 // Supabase requires this exact file as the deploy target (`supabase functions deploy fields`),
 // so it stays a thin entrypoint: CORS, identity, dispatch, error shape. Route handlers live in
 // `api/`, the one real permission check in `services/` — see `notes/index.ts` for the fuller
-// version of this shape. No `model/` here: `fromRecordField`/`toRecordField` live in
-// `shared/fields.ts` since `checklist-records` and `ai-checklist-template` use them too — see
-// CLAUDE.md's "Authorization: app layer, not RLS" for the full rationale on all of this.
+// version of this shape. `fromRecordField`/`toRecordField` live in
+// `supabase/dto/fields/fields-dto.ts`, not under this resource itself, since `checklist-records`
+// and `ai-checklist-template` use them too — see CLAUDE.md's "Authorization: app layer, not RLS"
+// for the full rationale on all of this.
 //
 // Deploy: `supabase functions deploy fields`
 

@@ -7,7 +7,7 @@
 //
 // Supabase requires this exact file as the deploy target (`supabase functions deploy
 // note-folders`), so it stays a thin entrypoint: CORS, identity, dispatch, error shape. Route
-// handlers live in `api/`, row mapping in `model/` — see `notes/index.ts` for the fuller version
+// handlers live in `api/`, row mapping in `supabase/dto/` — see `notes/index.ts` for the fuller version
 // of this shape.
 //
 // No `services/` here and no `compose` — every query is already explicitly

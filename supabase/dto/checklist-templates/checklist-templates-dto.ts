@@ -20,7 +20,7 @@
 // useChecklistTemplates.tsx) so the client can tell "this is my personal reminder" from "this is
 // just the group's default" without knowing anything about how it was resolved.
 
-import { toRepeat } from '../../../shared/repeats.ts';
+import { toRepeat } from '../../shared/repeats.ts';
 
 export function toChecklistTemplate(
   r: Record<string, unknown>,

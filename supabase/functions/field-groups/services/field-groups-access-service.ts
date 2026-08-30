@@ -3,7 +3,7 @@
 // this moved.
 
 import { fetchRepeats, pickRepeat, type RepeatOwner } from '../../../shared/repeats.ts';
-import { toFieldGroup } from '../model/field-groups-model.ts';
+import { toFieldGroup } from '../../../dto/field-groups/field-groups-dto.ts';
 import type { Ctx } from '../api/field-groups-context.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 

@@ -23,7 +23,7 @@ import {
   isFieldType,
   SELECT_FIELD_TYPES,
   validate,
-} from '../model/ai-checklist-template-model.ts';
+} from '../../../dto/ai-checklist-template/ai-checklist-template-dto.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 /** The caller's own reusable field catalog — fetched here, not trusted from the client (see this

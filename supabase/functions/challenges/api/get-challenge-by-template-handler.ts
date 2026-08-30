@@ -3,7 +3,7 @@
 // 20260828010000_challenge_owner_name_public.sql) — the shared page's greeting uses them in
 // place of a generic fallback.
 
-import { toChallenge } from '../model/challenges-model.ts';
+import { toChallenge } from '../../../dto/challenges/challenges-dto.ts';
 import type { Ctx } from './challenges-context.ts';
 
 /** The challenge is visible to its owner unconditionally, or to anyone at all once the template

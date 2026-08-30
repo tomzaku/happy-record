@@ -2,7 +2,7 @@
 // around. A challenge dashboard's own peer-read of *other* participants' checklist_records
 // happens in `challenges/index.ts`, on its own explicit query — not here.
 
-import { limitOf, toChecklistRecord } from '../model/checklist-records-model.ts';
+import { limitOf, toChecklistRecord } from '../../../dto/checklist-records/checklist-records-dto.ts';
 import type { Ctx } from './checklist-records-context.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 

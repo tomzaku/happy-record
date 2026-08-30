@@ -2,7 +2,7 @@
 // compose a `checkPermission` around.
 
 import { ApiError } from '../../../shared/cors.ts';
-import { fromFlag } from '../model/flags-model.ts';
+import { fromFlag } from '../../../dto/flags/flags-dto.ts';
 import { body, type Ctx } from './flags-context.ts';
 
 export async function saveFlagHandler({ req, db, userId }: Ctx) {

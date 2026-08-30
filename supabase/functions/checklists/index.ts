@@ -8,7 +8,7 @@
 //
 // Supabase requires this exact file as the deploy target (`supabase functions deploy
 // checklists`), so it stays a thin entrypoint: CORS, identity, dispatch, error shape. Route
-// handlers live in `api/`, row mapping in `model/` — see `notes/index.ts` for the fuller version
+// handlers live in `api/`, row mapping in `supabase/dto/` — see `notes/index.ts` for the fuller version
 // of this shape. `/:id` is matched by `shared/router.ts`'s `matchRoute` — a real path segment,
 // not `?id=` in the query string (see CLAUDE.md's "Write them as normal REST APIs").
 //

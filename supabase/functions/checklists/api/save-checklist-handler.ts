@@ -4,7 +4,7 @@
 // `updateTask`.
 
 import { ApiError } from '../../../shared/cors.ts';
-import { fromChecklist } from '../model/checklists-model.ts';
+import { fromChecklist } from '../../../dto/checklists/checklists-dto.ts';
 import { body, type Ctx } from './checklists-context.ts';
 
 export async function saveChecklistHandler({ req, db, userId }: Ctx) {

@@ -5,7 +5,7 @@
 // day-instance of a template, never shared directly; a challenge dashboard's own peer-read of
 // *other* participants' checklists happens in `challenges/index.ts`, on its own explicit query).
 
-import { toChecklist } from '../model/checklists-model.ts';
+import { toChecklist } from '../../../dto/checklists/checklists-dto.ts';
 import type { Ctx } from './checklists-context.ts';
 
 const MAX_LIMIT = 2000;

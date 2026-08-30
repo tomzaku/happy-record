@@ -13,7 +13,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { saveRepeat } from '../../../shared/repeats.ts';
-import { patchChecklistTemplate } from '../model/checklist-templates-model.ts';
+import { patchChecklistTemplate } from '../../../dto/checklist-templates/checklist-templates-dto.ts';
 import { body, type Ctx } from './checklist-templates-context.ts';
 
 export async function updateChecklistTemplateHandler({ req, db, userId, id }: Ctx) {
