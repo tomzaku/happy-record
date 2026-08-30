@@ -1,14 +1,15 @@
-// Route table for the `tags` resource.
+// Route table for the `tags` resource. `/:id` is matched by `shared/router.ts`'s `matchRoute`.
 
 import { listTagsHandler } from './list-tags-handler.ts';
 import { saveTagHandler } from './save-tag-handler.ts';
 import { deleteTagHandler } from './delete-tag-handler.ts';
 import type { Ctx } from './tags-context.ts';
+import type { RouteTable } from '../../../shared/router.ts';
 
-export const ROUTES: Record<string, (ctx: Ctx) => Promise<unknown>> = {
+export const ROUTES: RouteTable<Ctx> = {
   'GET /': listTagsHandler,
   'POST /': saveTagHandler,
-  'DELETE /': deleteTagHandler,
+  'DELETE /:id': deleteTagHandler,
 };
 
 export function subPath(url: URL): string {

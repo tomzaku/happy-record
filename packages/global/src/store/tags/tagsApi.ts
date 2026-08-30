@@ -14,5 +14,5 @@ export function saveTag(tag: Tag): Promise<{ ok: true } | null> {
 }
 
 export function removeTag(id: string): Promise<{ ok: true } | null> {
-  return request.delete('/tags', { quiet: true, params: { id } });
+  return request.delete(`/tags/${encodeURIComponent(id)}`, { quiet: true });
 }

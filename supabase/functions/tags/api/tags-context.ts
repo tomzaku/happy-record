@@ -4,7 +4,8 @@
 import { ApiError } from '../../../shared/cors.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
-export type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
+// `id` is set by the router (see index.ts) for a `/:id` route match.
+export type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string; id?: string };
 
 export async function body(req: Request): Promise<Record<string, unknown>> {
   try {
