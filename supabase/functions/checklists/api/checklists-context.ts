@@ -1,0 +1,15 @@
+// Request-scoped ctx shape + tiny body-parsing helper every checklists/api handler needs. Kept
+// local rather than promoted to `shared/` since nothing outside `checklists` needs them.
+
+import { ApiError } from '../../../shared/cors.ts';
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+
+export type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
+
+export async function body(req: Request): Promise<Record<string, unknown>> {
+  try {
+    return ((await req.json()) ?? {}) as Record<string, unknown>;
+  } catch {
+    throw new ApiError(400, 'Invalid JSON body.');
+  }
+}
