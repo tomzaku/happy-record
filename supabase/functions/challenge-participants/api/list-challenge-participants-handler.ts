@@ -4,17 +4,10 @@
 import { compose } from '../../../shared/authorize.ts';
 import { toChallengeParticipant } from '../../../dto/challenge-participants/challenge-participants-dto.ts';
 import { checkCanReadRoster } from '../services/challenge-participants-access-service.ts';
+import { listRoster } from '../services/challenge-participants-service.ts';
 import type { Ctx } from './challenge-participants-context.ts';
 
-const MAX_LIMIT = 500;
-
-export const listChallengeParticipantsHandler = compose(checkCanReadRoster, async ({ db }: Ctx, challengeId: string) => {
-  const { data, error } = await db
-    .from('challenge_participants')
-    .select('*')
-    .eq('challenge_id', challengeId)
-    .order('joined_at')
-    .limit(MAX_LIMIT);
-  if (error) throw new Error(error.message);
-  return { participants: ((data ?? []) as Record<string, unknown>[]).map(toChallengeParticipant) };
+export const listChallengeParticipantsHandler = compose(checkCanReadRoster, async (ctx: Ctx, challengeId: string) => {
+  const rows = await listRoster(ctx, challengeId);
+  return { participants: rows.map(toChallengeParticipant) };
 });

@@ -33,3 +33,37 @@ export async function fetchOwnedChallenge(
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function fetchRoster(
+  db: SupabaseClient,
+  challengeId: string,
+  limit: number,
+): Promise<Record<string, unknown>[]> {
+  const { data, error } = await db
+    .from('challenge_participants')
+    .select('*')
+    .eq('challenge_id', challengeId)
+    .order('joined_at')
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Record<string, unknown>[];
+}
+
+export async function upsertParticipant(
+  db: SupabaseClient,
+  userId: string,
+  row: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const { data, error } = await db
+    .from('challenge_participants')
+    .upsert({ user_id: userId, ...row }, { onConflict: 'challenge_id,user_id' })
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Record<string, unknown>;
+}
+
+export async function removeParticipant(db: SupabaseClient, userId: string, challengeId: string): Promise<void> {
+  const { error } = await db.from('challenge_participants').delete().eq('user_id', userId).eq('challenge_id', challengeId);
+  if (error) throw new Error(error.message);
+}

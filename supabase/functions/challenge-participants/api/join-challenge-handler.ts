@@ -4,10 +4,11 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { fromChallengeParticipant, toChallengeParticipant } from '../../../dto/challenge-participants/challenge-participants-dto.ts';
+import { joinChallenge } from '../services/challenge-participants-service.ts';
 import { body, type Ctx } from './challenge-participants-context.ts';
 
-export async function joinChallengeHandler({ req, db, userId }: Ctx) {
-  const entry = (await body(req)).participant;
+export async function joinChallengeHandler(ctx: Ctx) {
+  const entry = (await body(ctx.req)).participant;
   if (!entry || typeof entry !== 'object') throw new ApiError(400, 'Missing participant.');
 
   let row: ReturnType<typeof fromChallengeParticipant>;
@@ -18,14 +19,10 @@ export async function joinChallengeHandler({ req, db, userId }: Ctx) {
   }
 
   // No `checkPermission` here on purpose, same as before this moved off RLS: `user_id` is always
-  // the caller's own (set below, ignoring anything the body sent), so joining a `challengeId`
-  // this caller can't otherwise read isn't a privilege escalation — it just never resolves again
-  // on any of their own later reads (`challenges`'s own visibility rule, `checklist-templates`'s).
-  const { data, error } = await db
-    .from('challenge_participants')
-    .upsert({ user_id: userId, ...row }, { onConflict: 'challenge_id,user_id' })
-    .select('*')
-    .single();
-  if (error) throw new Error(error.message);
-  return { participant: toChallengeParticipant(data as Record<string, unknown>) };
+  // the caller's own (set by the repository, ignoring anything the body sent), so joining a
+  // `challengeId` this caller can't otherwise read isn't a privilege escalation — it just never
+  // resolves again on any of their own later reads (`challenges`'s own visibility rule,
+  // `checklist-templates`'s).
+  const data = await joinChallenge(ctx, row);
+  return { participant: toChallengeParticipant(data) };
 }
