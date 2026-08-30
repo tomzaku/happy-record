@@ -379,11 +379,16 @@ const AiChecklistGenerate = ({
   // mid-viewport instead of behaving like every other mobile sheet in this app. BottomModal
   // (already how ChecklistGenericInfo's own Icon/Schedule/Tags edits behave on mobile) gives
   // it the native full-width, slide-up-from-bottom, swipe-to-dismiss treatment instead.
+  //
+  // `closeOnOverlayClick={false}` on both — a real generation (or an already-proposed template
+  // sitting there for review) is easy to lose to a stray click on the backdrop; this dialog only
+  // closes via its own explicit close X / Cancel now, not an accidental miss-click outside it.
   return isMobile ? (
     <BottomModal
       visible={visible}
       onDismiss={handleDismiss}
       content={<div className={styles.mobileSheet}>{content}</div>}
+      closeOnOverlayClick={false}
     />
   ) : (
     <Modal
@@ -391,6 +396,7 @@ const AiChecklistGenerate = ({
       onDismiss={handleDismiss}
       content={content}
       className={styles.modalShell}
+      closeOnOverlayClick={false}
     />
   );
 };

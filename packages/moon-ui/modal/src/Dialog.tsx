@@ -31,6 +31,10 @@ export type DialogProps = {
   /** Escape hatch for content that already brings its own outer padding (ScheduleModalContent's
    *  own `.modalContent` wrapper, say) — merged onto `.body` instead of doubling up on it. */
   bodyClassName?: string;
+  /** Set false for a dialog that shouldn't be dismissible by clicking/tapping outside it — see
+   *  Modal/BottomModal's own comment on the same prop, which this just passes through. The
+   *  header close X (or `headerAction`) still closes it either way. */
+  closeOnOverlayClick?: boolean;
   children: React.ReactNode;
 };
 
@@ -61,6 +65,7 @@ const Dialog = ({
   headerAction,
   footer,
   bodyClassName,
+  closeOnOverlayClick = true,
   children,
 }: DialogProps) => {
   const intl = useIntl();
@@ -102,9 +107,16 @@ const Dialog = ({
       visible={visible}
       onDismiss={onDismiss}
       content={<div className={styles.mobileSheet}>{content}</div>}
+      closeOnOverlayClick={closeOnOverlayClick}
     />
   ) : (
-    <Modal visible={visible} onDismiss={onDismiss} content={content} className={styles.modalShell} />
+    <Modal
+      visible={visible}
+      onDismiss={onDismiss}
+      content={content}
+      className={styles.modalShell}
+      closeOnOverlayClick={closeOnOverlayClick}
+    />
   );
 };
 

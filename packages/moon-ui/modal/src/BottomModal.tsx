@@ -15,9 +15,13 @@ type Props = {
   visible: boolean;
   content?: React.ReactNode;
   onDismiss: () => void;
+  /** Set false for a sheet that shouldn't be dismissible by tapping the overlay behind it — see
+   *  Modal.tsx's own comment on the same prop. The drag-down-to-close gesture below is
+   *  unaffected either way; this only gates the overlay's own tap. */
+  closeOnOverlayClick?: boolean;
 };
 
-export default function BottomModal({ visible, content, onDismiss }: Props) {
+export default function BottomModal({ visible, content, onDismiss, closeOnOverlayClick = true }: Props) {
   const height = 300;
   const [{ y }, api] = useSpring(() => ({ y: height }));
 
@@ -92,10 +96,14 @@ export default function BottomModal({ visible, content, onDismiss }: Props) {
     <>
       <a.div
         className={cx(styles.overlay, visible && styles.overlayVisible)}
-        onClick={() => {
-          close();
-          onDismiss();
-        }}
+        onClick={
+          closeOnOverlayClick
+            ? () => {
+              close();
+              onDismiss();
+            }
+            : undefined
+        }
         style={bgStyle}
       />
       <a.div className={styles.sheet} {...bind()} style={{ display, y }}>
