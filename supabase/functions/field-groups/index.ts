@@ -20,7 +20,7 @@
 import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
 import { fromFieldGroup, toFieldGroup } from '../_shared/fieldGroups.ts';
-import { fetchRepeats, saveRepeat } from '../_shared/repeats.ts';
+import { fetchRepeats, pickRepeat, saveRepeat } from '../_shared/repeats.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
@@ -55,7 +55,13 @@ async function list({ url, db, userId }: Ctx) {
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as Record<string, unknown>[];
   const repeats = await fetchRepeats(db, 'fieldGroupId', rows.map(r => r.id as string));
-  return { fieldGroups: rows.map(r => toFieldGroup(r, repeats[r.id as string])) };
+  // No participant-override concept for a group's own schedule today — only its owner ever
+  // writes one (see save() below) — but resolving through pickRepeat rather than assuming "the
+  // only row" keeps this consistent with checklist-templates' own resolution, and correct without
+  // changes if that ever stops being true.
+  return {
+    fieldGroups: rows.map(r => toFieldGroup(r, pickRepeat(repeats[r.id as string], userId, r.user_id as string))),
+  };
 }
 
 async function save({ req, db, userId }: Ctx) {

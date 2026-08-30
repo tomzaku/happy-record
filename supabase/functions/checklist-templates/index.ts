@@ -16,6 +16,10 @@
 // either (see `repeats` — 20260830000000_repeats_table.sql), but it stays part of `template` on
 // the wire: every route below fetches/writes the matching `repeats` row alongside its own.
 //
+// PATCH is also how a challenge participant sets their own reminder time, distinct from the
+// owner's — see update()'s own comment. Everything else here (title, avatar, tags, visibility,
+// flagId) stays owner-only, enforced by the `.eq('user_id', userId)` on the actual row update.
+//
 // Deploy: `supabase functions deploy checklist-templates`
 
 import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
@@ -25,7 +29,7 @@ import {
   patchChecklistTemplate,
   toChecklistTemplate,
 } from '../_shared/checklistTemplates.ts';
-import { fetchRepeats, saveRepeat } from '../_shared/repeats.ts';
+import { fetchRepeats, pickRepeat, saveRepeat } from '../_shared/repeats.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
@@ -53,7 +57,11 @@ async function list({ url, db, userId }: Ctx) {
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as Record<string, unknown>[];
     const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(r => r.id as string));
-    return { templates: rows.map(r => toChecklistTemplate(r, repeats[r.id as string])) };
+    return {
+      templates: rows.map(r =>
+        toChecklistTemplate(r, pickRepeat(repeats[r.id as string], userId, r.user_id as string)),
+      ),
+    };
   }
 
   const { data, error } = await db
@@ -64,7 +72,13 @@ async function list({ url, db, userId }: Ctx) {
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as Record<string, unknown>[];
   const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(r => r.id as string));
-  return { templates: rows.map(r => toChecklistTemplate(r, repeats[r.id as string])) };
+  // Always the caller's own templates here (the query above is hard-filtered to `user_id`), so
+  // the caller is always the owner — pickRepeat still goes through the same viewer/owner
+  // resolution as the scoped branch above rather than assuming that, so this stays correct the
+  // day this branch ever needs to include a joined challenge alongside the caller's own templates.
+  return {
+    templates: rows.map(r => toChecklistTemplate(r, pickRepeat(repeats[r.id as string], userId, r.user_id as string))),
+  };
 }
 
 async function save({ req, db, userId }: Ctx) {
@@ -90,6 +104,13 @@ async function save({ req, db, userId }: Ctx) {
  * Edits only the fields the caller actually changed — a schedule/tag/flag edit sends a diff, not
  * the whole template, so an in-flight edit to a field nobody touched here can't get clobbered by
  * a stale client copy the way `save`'s full-row upsert would.
+ *
+ * `repeat` is deliberately not gated by the same `.eq('user_id', userId)` ownership check as the
+ * rest of `patch` — `saveRepeat` always writes to the *caller's own* row (see its own comment),
+ * so a challenge participant PATCHing `{ id: <the owner's template id>, repeat: {...} }` sets
+ * their own personal reminder time without touching the owner's schedule or needing to own the
+ * template at all; sending anything else in the same call (title, tags, ...) still silently no-ops
+ * for them, same as before, since that part of the update only ever matches the owner's own row.
  */
 async function update({ req, db, userId }: Ctx) {
   const params = await body(req);
@@ -108,8 +129,6 @@ async function update({ req, db, userId }: Ctx) {
     .eq('user_id', userId)
     .eq('id', params.id);
   if (error) throw new Error(error.message);
-  // Not a column on `patch` anymore — write it to `repeats` directly, only when the caller
-  // actually sent one (same "only touch what changed" rule as every other key here).
   if ('repeat' in params) {
     await saveRepeat(db, params.repeat, { userId, checklistTemplateId: params.id });
   }
