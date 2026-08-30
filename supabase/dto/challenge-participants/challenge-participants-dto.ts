@@ -1,6 +1,9 @@
-// Row mapping + validation for the `challenge-participants` resource. See
-// packages/global/src/store/challenge/useChallengeParticipants.tsx for the
-// client shape this mirrors.
+// Row mapping + validation for the `challenge-participants` resource. Lives in `supabase/dto/`
+// rather than under `challenge-participants/` itself because `challenges` reaches into it too —
+// see `fields-dto.ts`'s own header for the full reasoning.
+//
+// See packages/global/src/store/challenge/useChallengeParticipants.tsx for the client shape this
+// mirrors.
 
 export function toChallengeParticipant(r: Record<string, unknown>) {
   return {

@@ -2,7 +2,7 @@
 // by its own id is a separate route now — see `get-note-handler.ts`'s `GET /notes/:id`.
 
 import { compose } from '../../../shared/authorize.ts';
-import { toNote, toNoteSummary } from '../model/notes-model.ts';
+import { toNote, toNoteSummary } from '../../../dto/notes/notes-dto.ts';
 import { checkReadNotes, type NoteRow } from '../services/notes-access-service.ts';
 import { limitFrom, type Ctx } from './notes-context.ts';
 

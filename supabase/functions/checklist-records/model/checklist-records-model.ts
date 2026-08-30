@@ -16,7 +16,7 @@
 // index.ts's own `resolveNotes`) to present the merged shape, rather than a second table's rows
 // merged into the result set client-side.
 
-import { fromNote } from '../../../shared/notes.ts';
+import { fromNote } from '../../../dto/notes/notes-dto.ts';
 
 export const MAX_LIMIT = 5000;
 export const MAX_BULK = 200;

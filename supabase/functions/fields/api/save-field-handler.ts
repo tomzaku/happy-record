@@ -1,7 +1,7 @@
 // `POST /fields { field }` — always the caller's own (hardcoded `user_id` below).
 
 import { ApiError } from '../../../shared/cors.ts';
-import { fromRecordField } from '../../../shared/fields.ts';
+import { fromRecordField } from '../../../dto/fields/fields-dto.ts';
 import { body, type Ctx } from './fields-context.ts';
 
 export async function saveFieldHandler({ req, db, userId }: Ctx) {

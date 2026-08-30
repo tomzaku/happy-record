@@ -4,7 +4,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { compose } from '../../../shared/authorize.ts';
-import { fromNote } from '../../../shared/notes.ts';
+import { fromNote } from '../../../dto/notes/notes-dto.ts';
 import { checkWriteNote, type WriteAuthorization } from '../services/notes-access-service.ts';
 import type { Ctx } from './notes-context.ts';
 

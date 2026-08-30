@@ -4,7 +4,7 @@
 // back empty.
 
 import { compose } from '../../../shared/authorize.ts';
-import { toNote } from '../model/notes-model.ts';
+import { toNote } from '../../../dto/notes/notes-dto.ts';
 import { checkReadNote } from '../services/notes-access-service.ts';
 import type { NoteRow } from '../services/notes-access-service.ts';
 

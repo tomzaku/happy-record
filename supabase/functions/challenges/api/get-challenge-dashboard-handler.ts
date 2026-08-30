@@ -13,7 +13,7 @@
 
 import { compose } from '../../../shared/authorize.ts';
 import { toChallenge } from '../model/challenges-model.ts';
-import { toChallengeParticipant } from '../../../shared/challengeParticipants.ts';
+import { toChallengeParticipant } from '../../../dto/challenge-participants/challenge-participants-dto.ts';
 import { checkCanReadDashboard, type DashboardAuthorization } from '../services/challenges-access-service.ts';
 import type { Ctx } from './challenges-context.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';

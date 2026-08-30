@@ -2,7 +2,7 @@
 // core)`.
 
 import { compose } from '../../../shared/authorize.ts';
-import { toChallengeParticipant } from '../../../shared/challengeParticipants.ts';
+import { toChallengeParticipant } from '../../../dto/challenge-participants/challenge-participants-dto.ts';
 import { checkCanReadRoster } from '../services/challenge-participants-access-service.ts';
 import type { Ctx } from './challenge-participants-context.ts';
 

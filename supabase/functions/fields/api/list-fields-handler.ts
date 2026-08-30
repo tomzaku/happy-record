@@ -1,7 +1,7 @@
 // `GET /fields` — one route, two shapes depending on the query string.
 
 import { compose } from '../../../shared/authorize.ts';
-import { toRecordField } from '../../../shared/fields.ts';
+import { toRecordField } from '../../../dto/fields/fields-dto.ts';
 import { checkCanReadFieldsByTemplate } from '../services/fields-access-service.ts';
 import type { Ctx } from './fields-context.ts';
 

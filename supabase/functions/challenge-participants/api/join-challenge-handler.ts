@@ -3,7 +3,7 @@
 // so there's nothing to compose a `checkPermission` around.
 
 import { ApiError } from '../../../shared/cors.ts';
-import { fromChallengeParticipant, toChallengeParticipant } from '../../../shared/challengeParticipants.ts';
+import { fromChallengeParticipant, toChallengeParticipant } from '../../../dto/challenge-participants/challenge-participants-dto.ts';
 import { body, type Ctx } from './challenge-participants-context.ts';
 
 export async function joinChallengeHandler({ req, db, userId }: Ctx) {

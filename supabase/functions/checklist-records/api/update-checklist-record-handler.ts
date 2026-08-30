@@ -2,7 +2,7 @@
 // for a note-type field's own entry, its title) in place, always the caller's own row.
 
 import { ApiError } from '../../../shared/cors.ts';
-import { computeSearchText } from '../../../shared/notes.ts';
+import { computeSearchText } from '../../../dto/notes/notes-dto.ts';
 import { body, type Ctx } from './checklist-records-context.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 

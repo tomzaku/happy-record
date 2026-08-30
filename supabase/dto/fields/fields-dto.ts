@@ -1,5 +1,10 @@
-// Row mapping + validation for the `fields` resource (table: `fields`). See
-// packages/global/src/store/record-field/useRecordField.tsx for the client
+// Row mapping + validation for the `fields` resource (table: `fields`). Lives in `supabase/dto/`
+// rather than under `fields/` itself because `checklist-records` and `ai-checklist-template` both
+// reach into it too — see CLAUDE.md's "Authorization: app layer, not RLS" section and
+// kakaonline core-server's own `shared/dtos/<domain>` for the same "one place for row↔wire
+// mapping regardless of which resource(s) call it" shape.
+//
+// See packages/global/src/store/record-field/useRecordField.tsx for the client
 // shape (RecordField) this mirrors — only the table/resource dropped the
 // "record" prefix, not the client-side type or hook.
 
