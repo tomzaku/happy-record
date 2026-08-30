@@ -49,3 +49,37 @@ export async function fetchChallengeForPosting(
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function fetchComments(
+  db: SupabaseClient,
+  challengeId: string,
+  limit: number,
+): Promise<Record<string, unknown>[]> {
+  const { data, error } = await db
+    .from('challenge_comments')
+    .select('*')
+    .eq('challenge_id', challengeId)
+    .order('created_at')
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Record<string, unknown>[];
+}
+
+export async function insertComment(
+  db: SupabaseClient,
+  userId: string,
+  row: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const { data, error } = await db
+    .from('challenge_comments')
+    .insert({ user_id: userId, ...row })
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Record<string, unknown>;
+}
+
+export async function removeComment(db: SupabaseClient, userId: string, id: string): Promise<void> {
+  const { error } = await db.from('challenge_comments').delete().eq('user_id', userId).eq('id', id);
+  if (error) throw new Error(error.message);
+}

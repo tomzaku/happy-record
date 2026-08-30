@@ -3,14 +3,10 @@
 import { compose } from '../../../shared/authorize.ts';
 import { toChallengeComment } from '../../../dto/challenge-comments/challenge-comments-dto.ts';
 import { checkCanPostComment, type PostAuthorization } from '../services/challenge-comments-access-service.ts';
+import { postComment } from '../services/challenge-comments-service.ts';
 import type { Ctx } from './challenge-comments-context.ts';
 
-export const postChallengeCommentHandler = compose(checkCanPostComment, async ({ db, userId }: Ctx, { row }: PostAuthorization) => {
-  const { data, error } = await db
-    .from('challenge_comments')
-    .insert({ user_id: userId, ...row })
-    .select('*')
-    .single();
-  if (error) throw new Error(error.message);
-  return { comment: toChallengeComment(data as Record<string, unknown>) };
+export const postChallengeCommentHandler = compose(checkCanPostComment, async (ctx: Ctx, { row }: PostAuthorization) => {
+  const data = await postComment(ctx, row);
+  return { comment: toChallengeComment(data) };
 });
