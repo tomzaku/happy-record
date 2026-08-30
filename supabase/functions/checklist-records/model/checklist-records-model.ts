@@ -16,7 +16,7 @@
 // index.ts's own `resolveNotes`) to present the merged shape, rather than a second table's rows
 // merged into the result set client-side.
 
-import { fromNote } from './notes.ts';
+import { fromNote } from '../../../shared/notes.ts';
 
 export const MAX_LIMIT = 5000;
 export const MAX_BULK = 200;
@@ -92,7 +92,7 @@ export function fromRecordEntry(
 /**
  * The other kind of bulk-submit entry — a `type: 'note'` field's own value. Same `{ id, fieldId,
  * value, title? }` shape `fromRecordEntry` takes; `value` arrives as real Editor.js `OutputData`
- * (an object), not a string — `fromNote` (_shared/notes.ts) needs it JSON-stringified first, same
+ * (an object), not a string — `fromNote` (shared/notes.ts) needs it JSON-stringified first, same
  * boundary noteApi.ts used to own client-side before this moved server-side.
  *
  * Returns *two* rows now (see 20260829050000_checklist_records_note_id.sql): `noteRow` is the
