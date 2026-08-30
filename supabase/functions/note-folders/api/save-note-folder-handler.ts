@@ -2,6 +2,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { fromNoteFolder } from '../../../dto/note-folders/note-folders-dto.ts';
+import { saveNoteFolder } from '../repository/note-folders-repository.ts';
 import { body, type Ctx } from './note-folders-context.ts';
 
 export async function saveNoteFolderHandler({ req, db, userId }: Ctx) {
@@ -15,7 +16,6 @@ export async function saveNoteFolderHandler({ req, db, userId }: Ctx) {
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid folder.');
   }
 
-  const { error } = await db.from('note_folders').upsert({ user_id: userId, ...row });
-  if (error) throw new Error(error.message);
+  await saveNoteFolder(db, userId, row);
   return { ok: true };
 }
