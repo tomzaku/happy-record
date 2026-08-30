@@ -4,14 +4,14 @@
 //   GET    /checklist-templates             → { templates }        caller's own, plus any
 //     template they've joined a challenge for (see api/list-checklist-templates-handler.ts) —
 //     that one always has someone else's `user_id` on it, not the caller's
-//   GET    /checklist-templates ?id=        → { templates }        one template,
+//   GET    /checklist-templates/:id         → { templates }        one template,
 //     caller's own or anyone's if it's `visibility: 'public'` — this is what backs the
 //     `/checklist-template/shared/:id` route (see CLAUDE.md);
 //     services/checklist-templates-access-service.ts's checkCanReadTemplateById is what makes a
 //     non-owner's lookup return anything at all.
-//   POST   /checklist-templates { template } → { ok }
-//   PATCH  /checklist-templates { id, ...changes } → { ok }
-//   DELETE /checklist-templates  ?id=        → { ok }
+//   POST   /checklist-templates { template }        → { ok }
+//   PATCH  /checklist-templates/:id { ...changes }   → { ok }
+//   DELETE /checklist-templates/:id                  → { ok }
 //
 // field_groups isn't part of this resource anymore — see `field-groups`
 // (20260829010000_notes_note_id_ownership.sql). `repeat` isn't a column on this row anymore
@@ -27,27 +27,30 @@
 // checklist-templates`), so it stays a thin entrypoint: CORS, identity, dispatch, error shape.
 // Route handlers live in `api/`, row mapping in `model/`, the real permission check + shared
 // resolution helpers in `services/` — see `notes/index.ts` for the fuller version of this shape,
-// and CLAUDE.md's "Authorization: app layer, not RLS" for the rationale.
+// and CLAUDE.md's "Authorization: app layer, not RLS" for the rationale. `/:id` is matched by
+// `shared/router.ts`'s `matchRoute` — a real path segment, not `?id=` in the query string (see
+// CLAUDE.md's "Write them as normal REST APIs").
 //
 // Deploy: `supabase functions deploy checklist-templates`
 
 import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
 import { requireUser } from '../../shared/auth.ts';
 import { admin } from '../../shared/authorize.ts';
+import { matchRoute } from '../../shared/router.ts';
 import { ROUTES, subPath } from './api/checklist-templates-routes.ts';
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const url = new URL(req.url);
-  const route = ROUTES[`${req.method} ${subPath(url)}`];
-  if (!route) return json(404, { error: 'Not found' });
+  const match = matchRoute(req.method, subPath(url), ROUTES);
+  if (!match) return json(404, { error: 'Not found' });
 
   const auth = await requireUser(req);
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await route({ url, req, db: admin(), userId: auth.user.id }));
+    return json(200, await match.handler({ url, req, db: admin(), userId: auth.user.id, id: match.id }));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[checklist-templates]', err);

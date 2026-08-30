@@ -28,14 +28,13 @@ export function resolveTemplate(
   return toChecklistTemplate(r, repeatRow, isPersonalOverride);
 }
 
-/** For `GET ?id=` — loads the row (there's nothing to authorize without it) and decides whether
+/** For `GET /:id` — loads the row (there's nothing to authorize without it) and decides whether
  * this caller may see it: their own, or a `visibility: 'public'` one. `null` for "no," not a
  * thrown error — this used to be RLS silently filtering the row out, and every caller of this
  * route already expects "someone else's private template by id" and "no such id at all" to look
  * identical: an empty `templates` array. */
-export async function checkCanReadTemplateById({ db, userId, url }: Ctx): Promise<Record<string, unknown> | null> {
-  const id = url.searchParams.get('id')!;
-  const { data, error } = await db.from('checklist_templates').select('*').eq('id', id).maybeSingle();
+export async function checkCanReadTemplateById({ db, userId, id }: Ctx): Promise<Record<string, unknown> | null> {
+  const { data, error } = await db.from('checklist_templates').select('*').eq('id', id!).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
   const row = data as Record<string, unknown>;

@@ -1,24 +1,16 @@
-// `GET /checklist-templates` — one route, two shapes depending on the query string.
+// `GET /checklist-templates` — "all mine, plus anything I've joined a challenge for." A single
+// template by its own id is a separate route now — see `get-checklist-template-handler.ts`'s
+// `GET /checklist-templates/:id`. No single `checkPermission` to compose here: the owned half is
+// a plain explicit filter, and the joined half's own visibility check is a batch filter over rows
+// already scoped to ids this caller is known to have joined, not a single allow/deny decision.
 
-import { compose } from '../../../shared/authorize.ts';
 import { fetchRepeats } from '../../../shared/repeats.ts';
-import { checkCanReadTemplateById, repeatOwnerOf, resolveTemplate } from '../services/checklist-templates-access-service.ts';
+import { repeatOwnerOf, resolveTemplate } from '../services/checklist-templates-access-service.ts';
 import type { Ctx } from './checklist-templates-context.ts';
 
 const MAX_JOINED_TEMPLATES = 200;
 
-/** `?id=` — one template, `compose(checkCanReadTemplateById, core)`. */
-const getTemplateById = compose(checkCanReadTemplateById, async ({ db, userId }: Ctx, row: Record<string, unknown> | null) => {
-  if (!row) return { templates: [] };
-  const repeats = await fetchRepeats(db, 'checklistTemplateId', [repeatOwnerOf(row)], userId);
-  return { templates: [resolveTemplate(row, repeats, userId)] };
-});
-
-/** No `id` — "all mine, plus anything I've joined a challenge for." No single `checkPermission`
- * to compose here (unlike `getTemplateById` above): the owned half is a plain explicit filter,
- * and the joined half's own visibility check is a batch filter over rows already scoped to ids
- * this caller is known to have joined, not a single allow/deny decision. */
-async function listMine({ db, userId }: Ctx) {
+export async function listChecklistTemplatesHandler({ db, userId }: Ctx) {
   const [{ data: ownedData, error: ownedError }, { data: participantRows, error: participantError }] =
     await Promise.all([
       db.from('checklist_templates').select('*').eq('user_id', userId).order('created_at'),
@@ -57,8 +49,4 @@ async function listMine({ db, userId }: Ctx) {
   // `user_id` is the sharer, not the caller, so a personal reminder override
   // (`repeats.user_id === userId`) has to win over the owner's own schedule.
   return { templates: rows.map(r => resolveTemplate(r, repeats, userId)) };
-}
-
-export async function listChecklistTemplatesHandler(ctx: Ctx) {
-  return ctx.url.searchParams.get('id') ? getTemplateById(ctx) : listMine(ctx);
 }

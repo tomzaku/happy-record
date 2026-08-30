@@ -11,14 +11,14 @@ export function fetchChecklistTemplates(): Promise<{ templates: ChecklistTemplat
 }
 
 /**
- * The `/checklist-template/shared/:id` lookup — the caller's own template or
- * anyone's if it's `visibility: 'public'` (see the edge function's RLS-backed
- * `?id=` branch). `null` here can mean offline, or the template genuinely
- * isn't public/doesn't exist — same "use what's already there, else nothing"
- * shape as everywhere else in this app; the caller renders its own empty state.
+ * The `/checklist-template/shared/:id` lookup — the caller's own template or anyone's if it's
+ * `visibility: 'public'` (see the edge function's own checkCanReadTemplateById). `null` here can
+ * mean offline, or the template genuinely isn't public/doesn't exist — same "use what's already
+ * there, else nothing" shape as everywhere else in this app; the caller renders its own empty
+ * state.
  */
 export function fetchChecklistTemplateById(id: string): Promise<{ templates: ChecklistTemplate[] } | null> {
-  return request.get('/checklist-templates', { quiet: true, params: { id } });
+  return request.get(`/checklist-templates/${encodeURIComponent(id)}`, { quiet: true });
 }
 
 export function saveChecklistTemplate(template: ChecklistTemplate): Promise<{ ok: true } | null> {
@@ -43,9 +43,9 @@ export function patchChecklistTemplate(
     repeat?: ChecklistTemplate['repeat'] | null;
   },
 ): Promise<{ ok: true } | null> {
-  return request.patch('/checklist-templates', { id, ...changes }, { quiet: true });
+  return request.patch(`/checklist-templates/${encodeURIComponent(id)}`, changes, { quiet: true });
 }
 
 export function removeChecklistTemplate(id: string): Promise<{ ok: true } | null> {
-  return request.delete('/checklist-templates', { quiet: true, params: { id } });
+  return request.delete(`/checklist-templates/${encodeURIComponent(id)}`, { quiet: true });
 }
