@@ -15,10 +15,14 @@
 //     set/clear noteId, or set archivedAt (soft delete; there's no hard-delete route, matching
 //     the convention this replaced).
 //
+// Moved off RLS onto the app-layer `compose(checkPermission, core)` pattern — see
+// `shared/authorize.ts` and `notes/index.ts` for the full rationale.
+//
 // Deploy: `supabase functions deploy field-groups`
 
 import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
 import { requireUser } from '../../shared/auth.ts';
+import { admin, compose } from '../../shared/authorize.ts';
 import { fromFieldGroup, toFieldGroup } from '../../shared/fieldGroups.ts';
 import { fetchRepeats, pickRepeat, saveRepeat } from '../../shared/repeats.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
@@ -33,35 +37,60 @@ async function body(req: Request): Promise<Record<string, unknown>> {
   }
 }
 
-async function list({ url, db, userId }: Ctx) {
-  const checklistTemplateId = url.searchParams.get('checklistTemplateId');
-
-  let q = db.from('field_groups').select('*').order('position');
-  if (checklistTemplateId) {
-    // Scoped to one exact template — not hard-filtering by user_id here, unlike the unscoped
-    // branch below: RLS itself decides whether this caller may see it (their own groups, or a
-    // template that's genuinely public — see 20260829060000_public_template_field_groups.sql).
-    // Safe precisely because it's narrowed to one id, not a fan-out risk the way dropping the
-    // filter in the unscoped branch would be.
-    q = q.eq('checklist_template_id', checklistTemplateId);
-  } else {
-    // Unscoped ("all mine", the home page's own schedule-matching) — always the caller's own
-    // only. Must stay a hard filter, not left to RLS alone: the public-template policy above
-    // would otherwise also surface every other user's public template's groups here.
-    q = q.eq('user_id', userId);
-  }
-
-  const { data, error } = await q;
-  if (error) throw new Error(error.message);
-  const rows = (data ?? []) as Record<string, unknown>[];
+/** Attaches each row's own schedule the same way regardless of which branch of `list` produced
+ * the rows — shared so that logic lives in exactly one place. */
+async function withRepeats(db: SupabaseClient, userId: string, rows: Record<string, unknown>[]) {
   const repeats = await fetchRepeats(db, 'fieldGroupId', rows.map(r => r.id as string));
   // No participant-override concept for a group's own schedule today — only its owner ever
   // writes one (see save() below) — but resolving through pickRepeat rather than assuming "the
   // only row" keeps this consistent with checklist-templates' own resolution, and correct without
   // changes if that ever stops being true.
-  return {
-    fieldGroups: rows.map(r => toFieldGroup(r, pickRepeat(repeats[r.id as string], userId, r.user_id as string))),
-  };
+  return rows.map(r => toFieldGroup(r, pickRepeat(repeats[r.id as string], userId, r.user_id as string)));
+}
+
+type TemplateGroupsAuthorization = { checklistTemplateId: string; visible: boolean };
+
+/** Whether the caller may see *this* template's field groups at all — own template, or a
+ * `visibility: 'public'` one. A `false` result isn't a 403: the old RLS policy just silently
+ * filtered every row out for a template that doesn't exist or isn't visible, the same "empty,
+ * never an error" contract `checklist-templates`' own `?id=` branch documents — so the core below
+ * returns `{ fieldGroups: [] }` rather than the composed handler throwing. */
+async function checkCanReadFieldGroupsByTemplate({ db, userId, url }: Ctx): Promise<TemplateGroupsAuthorization> {
+  const checklistTemplateId = url.searchParams.get('checklistTemplateId')!;
+  const { data: template, error } = await db
+    .from('checklist_templates')
+    .select('user_id, visibility')
+    .eq('id', checklistTemplateId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const visible = !!template && (template.user_id === userId || template.visibility === 'public');
+  return { checklistTemplateId, visible };
+}
+
+const getGroupsByTemplate = compose(
+  checkCanReadFieldGroupsByTemplate,
+  async ({ db, userId }: Ctx, { checklistTemplateId, visible }: TemplateGroupsAuthorization) => {
+    if (!visible) return { fieldGroups: [] };
+    const { data, error } = await db
+      .from('field_groups')
+      .select('*')
+      .eq('checklist_template_id', checklistTemplateId)
+      .order('position');
+    if (error) throw new Error(error.message);
+    return { fieldGroups: await withRepeats(db, userId, (data ?? []) as Record<string, unknown>[]) };
+  },
+);
+
+/** Unscoped ("all mine", the home page's own schedule-matching) — always the caller's own only,
+ * a plain explicit filter with nothing to compose a `checkPermission` around. */
+async function listMine({ db, userId }: Ctx) {
+  const { data, error } = await db.from('field_groups').select('*').eq('user_id', userId).order('position');
+  if (error) throw new Error(error.message);
+  return { fieldGroups: await withRepeats(db, userId, (data ?? []) as Record<string, unknown>[]) };
+}
+
+async function list(ctx: Ctx) {
+  return ctx.url.searchParams.get('checklistTemplateId') ? getGroupsByTemplate(ctx) : listMine(ctx);
 }
 
 async function save({ req, db, userId }: Ctx) {
@@ -105,7 +134,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await route({ url, req, db: auth.supabase, userId: auth.user.id }));
+    return json(200, await route({ url, req, db: admin(), userId: auth.user.id }));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[field-groups]', err);
