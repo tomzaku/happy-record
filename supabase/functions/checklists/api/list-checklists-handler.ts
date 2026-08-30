@@ -6,21 +6,14 @@
 // *other* participants' checklists happens in `challenges/index.ts`, on its own explicit query).
 
 import { toChecklist } from '../../../dto/checklists/checklists-dto.ts';
+import { fetchChecklists } from '../repository/checklists-repository.ts';
 import type { Ctx } from './checklists-context.ts';
 
-const MAX_LIMIT = 2000;
-
 export async function listChecklistsHandler({ db, userId, url }: Ctx) {
-  const templateId = url.searchParams.get('checklistTemplateId');
-  const from = url.searchParams.get('from');
-  const to = url.searchParams.get('to');
-
-  let q = db.from('checklists').select('*').eq('user_id', userId).order('started_at', { ascending: false }).limit(MAX_LIMIT);
-  if (templateId) q = q.eq('checklist_template_id', templateId);
-  if (from) q = q.gte('started_at', from);
-  if (to) q = q.lte('started_at', to);
-
-  const { data, error } = await q;
-  if (error) throw new Error(error.message);
-  return { checklists: ((data ?? []) as Record<string, unknown>[]).map(toChecklist) };
+  const rows = await fetchChecklists(db, userId, {
+    templateId: url.searchParams.get('checklistTemplateId'),
+    from: url.searchParams.get('from'),
+    to: url.searchParams.get('to'),
+  });
+  return { checklists: rows.map(toChecklist) };
 }
