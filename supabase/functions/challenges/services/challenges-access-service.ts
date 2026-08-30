@@ -5,6 +5,12 @@
 import { ApiError } from '../../../shared/cors.ts';
 import { ForbiddenError } from '../../../shared/authorize.ts';
 import { fromChallenge } from '../../../dto/challenges/challenges-dto.ts';
+import {
+  fetchChallengeById,
+  fetchChallengeOwnerByTemplateId,
+  fetchParticipantRow,
+  fetchTemplateVisibility,
+} from './challenges-repository.ts';
 import { body, type Ctx } from '../api/challenges-context.ts';
 
 export type DashboardAuthorization = { challengeRow: Record<string, unknown> | null; canSeeRoster: boolean };
@@ -24,30 +30,16 @@ export type DashboardAuthorization = { challengeRow: Record<string, unknown> | n
  *     roster, not a 403 — same as when RLS silently returned zero roster rows before.
  */
 export async function checkCanReadDashboard({ db, userId, id }: Ctx): Promise<DashboardAuthorization> {
-  const { data: challengeRow, error } = await db.from('challenges').select('*').eq('id', id!).maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!challengeRow) return { challengeRow: null, canSeeRoster: false };
-  const row = challengeRow as Record<string, unknown>;
+  const row = await fetchChallengeById(db, id!);
+  if (!row) return { challengeRow: null, canSeeRoster: false };
 
   const isOwner = row.owner_id === userId;
   if (isOwner) return { challengeRow: row, canSeeRoster: true };
 
-  const { data: template, error: templateError } = await db
-    .from('checklist_templates')
-    .select('visibility')
-    .eq('id', row.checklist_template_id as string)
-    .maybeSingle();
-  if (templateError) throw new Error(templateError.message);
+  const template = await fetchTemplateVisibility(db, row.checklist_template_id as string);
   if (template?.visibility !== 'public') return { challengeRow: null, canSeeRoster: false };
 
-  const { data: participantRow, error: participantError } = await db
-    .from('challenge_participants')
-    .select('id')
-    .eq('challenge_id', id)
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (participantError) throw new Error(participantError.message);
-
+  const participantRow = await fetchParticipantRow(db, id!, userId);
   return { challengeRow: row, canSeeRoster: !!participantRow };
 }
 
@@ -74,12 +66,7 @@ export async function checkCanWriteChallenge({ req, db, userId }: Ctx): Promise<
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid challenge.');
   }
 
-  const { data: existing, error } = await db
-    .from('challenges')
-    .select('owner_id')
-    .eq('checklist_template_id', row.checklist_template_id as string)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
+  const existing = await fetchChallengeOwnerByTemplateId(db, row.checklist_template_id as string);
   if (existing && existing.owner_id !== userId) throw new ForbiddenError();
 
   return { row, entry: entry as Record<string, unknown> };
