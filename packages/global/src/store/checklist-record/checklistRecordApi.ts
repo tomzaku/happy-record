@@ -57,9 +57,9 @@ export function updateChecklistRecordValue(
   id: string,
   data: { value?: unknown; title?: string; folderId?: string },
 ): Promise<{ ok: true } | null> {
-  return request.patch('/checklist-records', { id, ...data }, { quiet: true });
+  return request.patch(`/checklist-records/${encodeURIComponent(id)}`, data, { quiet: true });
 }
 
 export function removeChecklistRecord(id: string): Promise<{ ok: true } | null> {
-  return request.delete('/checklist-records', { quiet: true, params: { id } });
+  return request.delete(`/checklist-records/${encodeURIComponent(id)}`, { quiet: true });
 }

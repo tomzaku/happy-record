@@ -1,4 +1,4 @@
-// `PATCH /checklist-records { id, value, title?, folderId? }` — edits one record's value (and,
+// `PATCH /checklist-records/:id { value?, title?, folderId? }` — edits one record's value (and,
 // for a note-type field's own entry, its title) in place, always the caller's own row.
 
 import { ApiError } from '../../../shared/cors.ts';
@@ -27,17 +27,17 @@ async function bumpSubmission(
  * A number/text/date/datetime field's own `value` is always `number | string`, decided the same
  * way the save handler's own `isNoteEntry` is; a note-type field's is real Editor.js `OutputData`
  * (an object) or entirely absent (a title-only edit), which reaches for `notes` instead — same id
- * as this record (see this resource's own model doc comment), so `params.id` addresses both rows
- * without the client ever needing to know there are two. That row's own
+ * as this record (see this resource's own model doc comment), so the path `id` addresses both
+ * rows without the client ever needing to know there are two. That row's own
  * `checklist_records.updated_at` gets bumped alongside the content edit — `toChecklistRecord`
  * reads `updated_at` off the `checklist_records` row even for a note-type record, and the
  * client's own last-write-wins merge (useChecklistRecord.ts's getChecklistRecords) trusts that
  * timestamp to know a fetched row is actually newer than what it already has; leaving it stale
  * here would make a real content edit look like a no-op on the next fetch.
  */
-export async function updateChecklistRecordHandler({ req, db, userId }: Ctx) {
+export async function updateChecklistRecordHandler({ req, db, userId, id }: Ctx) {
+  if (!id) throw new ApiError(400, 'Missing id.');
   const params = await body(req);
-  if (typeof params.id !== 'string' || !params.id) throw new ApiError(400, 'Missing id.');
 
   const now = new Date().toISOString();
 
@@ -53,7 +53,7 @@ export async function updateChecklistRecordHandler({ req, db, userId }: Ctx) {
       .from('checklist_records')
       .update(patch)
       .eq('user_id', userId)
-      .eq('id', params.id)
+      .eq('id', id)
       .select('submission_id')
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -76,7 +76,7 @@ export async function updateChecklistRecordHandler({ req, db, userId }: Ctx) {
     .from('notes')
     .update(notePatch)
     .eq('user_id', userId)
-    .eq('id', params.id)
+    .eq('id', id)
     .select('submission_id')
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -86,7 +86,7 @@ export async function updateChecklistRecordHandler({ req, db, userId }: Ctx) {
     .from('checklist_records')
     .update({ updated_at: now })
     .eq('user_id', userId)
-    .eq('id', params.id);
+    .eq('id', id);
   if (bumpError) throw new Error(bumpError.message);
 
   await bumpSubmission(db, userId, data.submission_id as string | null, now);

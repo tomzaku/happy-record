@@ -3,8 +3,8 @@
 //
 //   GET    /checklist-records  ?checklistTemplateId=&from=&to=&fieldIds=&limit=  → { records }
 //   POST   /checklist-records  { records, checklistId, checklistTemplateId, createdAt, submissionId } → { ok }
-//   PATCH  /checklist-records  { id, value, title?, folderId? }                  → { ok }
-//   DELETE /checklist-records  ?id=                                             → { ok }
+//   PATCH  /checklist-records/:id { value?, title?, folderId? }                  → { ok }
+//   DELETE /checklist-records/:id                                               → { ok }
 //
 // `checklistTemplateId` is optional on GET — omitted, it reads across every
 // template the caller owns.
@@ -40,20 +40,21 @@
 import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
 import { requireUser } from '../../shared/auth.ts';
 import { admin } from '../../shared/authorize.ts';
+import { matchRoute } from '../../shared/router.ts';
 import { ROUTES, subPath } from './api/checklist-records-routes.ts';
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const url = new URL(req.url);
-  const route = ROUTES[`${req.method} ${subPath(url)}`];
-  if (!route) return json(404, { error: 'Not found' });
+  const match = matchRoute(req.method, subPath(url), ROUTES);
+  if (!match) return json(404, { error: 'Not found' });
 
   const auth = await requireUser(req);
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await route({ url, req, db: admin(), userId: auth.user.id }));
+    return json(200, await match.handler({ url, req, db: admin(), userId: auth.user.id, id: match.id }));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[checklist-records]', err);
