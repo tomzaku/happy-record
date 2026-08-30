@@ -86,12 +86,15 @@ const AiChecklistGenerate = ({
   };
 
   // Shared by a fresh generation and a feedback-driven revision — only what varies (whether this
-  // is a follow-up on a previous proposal) is passed in.
+  // is a follow-up on a previous proposal) is passed in. `allFields` here is only for resolving
+  // `existing.fieldGroups[].fields` (ids → titles) below — the reuse-an-existing-field catalog
+  // itself is no longer a param at all; the edge function fetches the caller's own real fields
+  // directly instead of trusting whatever this page happened to have loaded (see
+  // ai-checklist-template/index.ts's own doc comment).
   const buildParams = (refine?: { previous: AiGeneratedChecklistTemplate; feedback: string }) => {
     const allFields = getAllRecordFields();
     return {
       prompt: prompt.trim(),
-      availableFields: allFields.map(f => ({ title: f.title, icon: f.icon, type: f.type, unit: f.unit })),
       ...(mode === 'existing' && existingTemplate
         ? {
           existing: {

@@ -12,13 +12,6 @@ import type { AiGeneratedNoteBlock } from '../../lib/editorJsNoteBlocks';
 
 export type { AiGeneratedNoteBlock };
 
-export type AiAvailableField = {
-  title: string;
-  icon: string;
-  type: 'number' | 'note';
-  unit: string;
-};
-
 export type AiGenerateChecklistTemplateParams = {
   prompt: string;
   /** Present only when generating additions for an existing template (the task detail page). */
@@ -26,8 +19,6 @@ export type AiGenerateChecklistTemplateParams = {
     title: string;
     fieldGroups: { title: string; fields: string[] }[];
   };
-  /** The caller's own + public fields, so the model reuses one instead of inventing a duplicate. */
-  availableFields: AiAvailableField[];
   /**
    * Present when this is a feedback-driven follow-up on an already-generated proposal, not a
    * fresh generation — `previous` is echoed straight back as context and `feedback` is the
@@ -43,9 +34,13 @@ export type AiGenerateChecklistTemplateParams = {
 export type AiGeneratedField = {
   title: string;
   icon: string;
-  type: 'number' | 'note';
+  // Mirrors RecordField.type (useRecordField.tsx) in full now, not just 'number'/'note' — see
+  // ai-checklist-template/index.ts's own FieldType comment.
+  type: 'number' | 'note' | 'text' | 'date' | 'datetime';
   unit: string;
   description: string;
+  /** number-only — see the server's own GeneratedField.defaultValue comment. */
+  defaultValue?: number;
 };
 
 // Mirrors supabase/functions/ai-checklist-template's own GeneratedNoteBlock — a short sequence of

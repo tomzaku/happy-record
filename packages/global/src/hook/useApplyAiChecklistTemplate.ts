@@ -67,6 +67,7 @@ export const useApplyAiChecklistTemplate = () => {
         description: field.description,
         type: field.type,
         unit: field.unit,
+        ...(field.defaultValue !== undefined ? { defaultValue: field.defaultValue } : {}),
       });
       existing.push(created);
       return created.id;
