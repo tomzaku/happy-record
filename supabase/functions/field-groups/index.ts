@@ -17,10 +17,10 @@
 //
 // Deploy: `supabase functions deploy field-groups`
 
-import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
-import { fromFieldGroup, toFieldGroup } from '../_shared/fieldGroups.ts';
-import { fetchRepeats, pickRepeat, saveRepeat } from '../_shared/repeats.ts';
+import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
+import { requireUser } from '../../shared/auth.ts';
+import { fromFieldGroup, toFieldGroup } from '../../shared/fieldGroups.ts';
+import { fetchRepeats, pickRepeat, saveRepeat } from '../../shared/repeats.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };

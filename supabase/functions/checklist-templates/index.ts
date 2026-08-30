@@ -24,14 +24,14 @@
 //
 // Deploy: `supabase functions deploy checklist-templates`
 
-import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
+import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
+import { requireUser } from '../../shared/auth.ts';
 import {
   fromChecklistTemplate,
   patchChecklistTemplate,
   toChecklistTemplate,
-} from '../_shared/checklistTemplates.ts';
-import { fetchRepeats, pickRepeat, saveRepeat } from '../_shared/repeats.ts';
+} from '../../shared/checklistTemplates.ts';
+import { fetchRepeats, pickRepeat, saveRepeat } from '../../shared/repeats.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };

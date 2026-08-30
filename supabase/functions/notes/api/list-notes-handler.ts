@@ -1,7 +1,7 @@
 // `GET /notes` — one route, three shapes depending on what's in the query string. See this
 // resource's own index.ts for the full route table.
 
-import { compose } from '../../_shared/authorize.ts';
+import { compose } from '../../../shared/authorize.ts';
 import { toNote, toNoteSummary } from '../model/notes-model.ts';
 import { checkReadNote, checkReadNotes, type NoteRow } from '../services/notes-access-service.ts';
 import { limitFrom, type Ctx } from './notes-context.ts';

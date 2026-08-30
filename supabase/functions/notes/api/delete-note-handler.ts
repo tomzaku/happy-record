@@ -2,7 +2,7 @@
 // notes-permissions.ts) loads the row and confirms ownership (or that it's already gone); this
 // is just the deletion itself once that's settled.
 
-import { compose } from '../../_shared/authorize.ts';
+import { compose } from '../../../shared/authorize.ts';
 import { checkDeleteNote, type NoteRow } from '../services/notes-access-service.ts';
 import type { Ctx } from './notes-context.ts';
 

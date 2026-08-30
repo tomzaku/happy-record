@@ -73,7 +73,7 @@ export async function requireUser(req: Request): Promise<{ supabase: SupabaseCli
  * caller is Pro. The query is explicitly `.eq('user_id', userId)` — not relying on RLS to scope
  * it — so a returned row is proof this user has Pro regardless of which client (`supabase`) it's
  * called with. A NULL `expires_at` is a lifetime grant; otherwise Pro lasts until that moment —
- * see supabase/functions/_shared/proUsers.ts's `getProStatus`, which this mirrors but as a
+ * see supabase/shared/proUsers.ts's `getProStatus`, which this mirrors but as a
  * ready-to-return 403 instead of a status object.
  */
 export async function proGateError(supabase: SupabaseClient, userId: string): Promise<Response | null> {

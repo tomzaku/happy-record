@@ -14,14 +14,14 @@
 //     the caller's own row
 //
 // Moved off RLS onto the app-layer `compose(checkPermission, core)` pattern — see
-// `_shared/authorize.ts` and `notes/index.ts` for the full rationale.
+// `shared/authorize.ts` and `notes/index.ts` for the full rationale.
 //
 // Deploy: `supabase functions deploy challenge-participants`
 
-import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
-import { admin, compose, ForbiddenError } from '../_shared/authorize.ts';
-import { fromChallengeParticipant, toChallengeParticipant } from '../_shared/challengeParticipants.ts';
+import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
+import { requireUser } from '../../shared/auth.ts';
+import { admin, compose, ForbiddenError } from '../../shared/authorize.ts';
+import { fromChallengeParticipant, toChallengeParticipant } from '../../shared/challengeParticipants.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 const MAX_LIMIT = 500;

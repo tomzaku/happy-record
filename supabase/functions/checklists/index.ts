@@ -6,7 +6,7 @@
 //   POST   /checklists  { checklist }                     → { ok }
 //   DELETE /checklists  ?id=                               → { ok }
 //
-// `save` always takes the *whole* checklist (see `_shared/checklists.ts`): a
+// `save` always takes the *whole* checklist (see `shared/checklists.ts`): a
 // caller doing a partial update (e.g. just setting `completedAt`) merges
 // with its local copy first, same as `tasks`' `updateTask`.
 //
@@ -15,14 +15,14 @@
 // visibility rule (a checklist is one user's own day-instance of a template, never shared
 // directly — a challenge dashboard reads *checklist_records*, not this table, for peer data; see
 // `challenges/index.ts`), so there's nothing for a `checkPermission` to decide; just off the
-// RLS-scoped client (see `_shared/authorize.ts`) and onto `admin()`.
+// RLS-scoped client (see `shared/authorize.ts`) and onto `admin()`.
 //
 // Deploy: `supabase functions deploy checklists`
 
-import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
-import { admin } from '../_shared/authorize.ts';
-import { fromChecklist, toChecklist } from '../_shared/checklists.ts';
+import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
+import { requireUser } from '../../shared/auth.ts';
+import { admin } from '../../shared/authorize.ts';
+import { fromChecklist, toChecklist } from '../../shared/checklists.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 const MAX_LIMIT = 2000;

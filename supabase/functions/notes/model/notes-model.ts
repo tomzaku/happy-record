@@ -1,11 +1,11 @@
 // Read-side row mapping for the `notes` resource — the `notes` feature's own model. The write
 // side (`fromNote`) and the text-extraction it shares with `checklist-records` live in
-// `_shared/notes.ts` instead, since those are genuinely reached from outside this feature — see
+// `shared/notes.ts` instead, since those are genuinely reached from outside this feature — see
 // that file's own header. Nothing outside `notes` reads a row back into wire shape, so this half
 // stays local. See packages/global/src/store/note/useNote.tsx for the client shape (`Note`) this
 // mirrors.
 
-import type { OwnerType } from '../../_shared/notes.ts';
+import type { OwnerType } from '../../../shared/notes.ts';
 
 /** The full row — used for an id/ids fetch (the caller actually wants to open this note in an
  * editor). `search_text` never leaves this file — nothing client-side reads it; it exists purely

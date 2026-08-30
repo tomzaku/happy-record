@@ -9,10 +9,10 @@
 //
 // Deploy: `supabase functions deploy me`
 
-import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
-import { admin } from '../_shared/authorize.ts';
-import { getProStatus } from '../_shared/proUsers.ts';
+import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
+import { requireUser } from '../../shared/auth.ts';
+import { admin } from '../../shared/authorize.ts';
+import { getProStatus } from '../../shared/proUsers.ts';
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -23,7 +23,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     // `admin()` (service-role, bypasses RLS) instead of the RLS-scoped client — see
-    // `_shared/authorize.ts`'s own header for why this app is moving off RLS as its enforcement
+    // `shared/authorize.ts`'s own header for why this app is moving off RLS as its enforcement
     // layer resource by resource. Safe here specifically because the query itself is already
     // explicitly scoped, not because RLS still happens to catch a mistake.
     return json(200, await getProStatus(admin(), auth.user.id));

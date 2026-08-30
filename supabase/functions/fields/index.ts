@@ -11,7 +11,7 @@
 //
 // GET (unscoped or `?ids=`) returns the caller's own fields *and* anyone's public ones — but
 // `visibility: 'public'` is never something a write through this resource can grant anymore (see
-// _shared/fields.ts's own comment): the only public rows that exist are the three seeded
+// shared/fields.ts's own comment): the only public rows that exist are the three seeded
 // defaults (20260821000000_seed_system_fields.sql), written by a migration under the service
 // role. A shared checklist template's own (private) fields are resolved a different way —
 // `?templateId=` below — authorized by the template being public, not by flipping the field
@@ -22,9 +22,9 @@
 //
 // Deploy: `supabase functions deploy fields`
 
-import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
-import { fromRecordField, toRecordField } from '../_shared/fields.ts';
+import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
+import { requireUser } from '../../shared/auth.ts';
+import { fromRecordField, toRecordField } from '../../shared/fields.ts';
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };

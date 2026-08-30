@@ -30,14 +30,14 @@
 //     `checklist_records` peer-read RLS policies (see the migrations) — this
 //     function's own `db` client is still the caller's RLS-scoped one,
 //     nothing here is service-role.
-//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), always enrolls the owner as a participant too — `challenge.ownerDisplayName`/`ownerAvatarUrl`, if given, become that participant row's name/photo (neither is a `challenges` column; omit either on a re-save that isn't touching it and the stored one is left alone). `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids. `challenge.theme` is one of CHALLENGE_THEMES (_shared/challenges.ts), falls back to 'classic' if omitted/invalid. `challenge.backgroundImageUrl` is a plain http(s) URL (an already-hosted photo, not an upload) shown behind the shared page instead of/over the theme's own background; anything that isn't a plausible http(s) URL clears it to null rather than failing the save.
+//   POST /challenges  { challenge }                  → { challenge }        owner-only upsert (RLS), always enrolls the owner as a participant too — `challenge.ownerDisplayName`/`ownerAvatarUrl`, if given, become that participant row's name/photo (neither is a `challenges` column; omit either on a re-save that isn't touching it and the stored one is left alone). `challenge.fieldTargets` is `{ [fieldId]: target }`, keyed by the owner's own field ids. `challenge.theme` is one of CHALLENGE_THEMES (shared/challenges.ts), falls back to 'classic' if omitted/invalid. `challenge.backgroundImageUrl` is a plain http(s) URL (an already-hosted photo, not an upload) shown behind the shared page instead of/over the theme's own background; anything that isn't a plausible http(s) URL clears it to null rather than failing the save.
 //
 // Deploy: `supabase functions deploy challenges`
 
-import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
-import { fromChallenge, toChallenge } from '../_shared/challenges.ts';
-import { toChallengeParticipant } from '../_shared/challengeParticipants.ts';
+import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
+import { requireUser } from '../../shared/auth.ts';
+import { fromChallenge, toChallenge } from '../../shared/challenges.ts';
+import { toChallengeParticipant } from '../../shared/challengeParticipants.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 const MAX_PARTICIPANTS = 500;
@@ -59,7 +59,7 @@ const daysBetween = (a: string, b: string) => Math.round((new Date(b).getTime() 
 
 /** Consecutive days ending at `datesDesc[0]` — most-recent-first, no gaps. Same convention as
  * packages/global's challengeRanking.ts (not imported directly — edge functions only pull from
- * `_shared/`, and this is small enough that duplicating it here beats reaching across packages). */
+ * `shared/`, and this is small enough that duplicating it here beats reaching across packages). */
 const runLength = (datesDesc: string[]) => {
   let streak = 0;
   let cursor: string | null = null;

@@ -11,7 +11,7 @@
 // toggled on in the composer — a subset of "video"/"quote"/"checklist"/"list".
 //
 // The actual generation pipeline (prompt template, block-type docs, validation) lives in
-// _shared/aiNoteGeneration.ts. Everything below `resolveContext` is the one thing that's actually
+// shared/aiNoteGeneration.ts. Everything below `resolveContext` is the one thing that's actually
 // specific to this function: every note surface in the app is addressed by a plain `notes.id`
 // now (see 20260829010000_notes_note_id_ownership.sql — the owning field/field-group holds its
 // own `note_id`, not the other way around), so "resolve this note's real existing content" is
@@ -21,7 +21,7 @@
 // a client that could send arbitrary "context" text would turn this endpoint into a free-form
 // text-to-LLM proxy, decoupled from any note it actually owns — sending an id instead means only
 // content this caller can already read is ever used. `resolveNoteValue` below runs on the
-// service-role client (see `_shared/authorize.ts`) but explicitly filters `.eq('user_id',
+// service-role client (see `shared/authorize.ts`) but explicitly filters `.eq('user_id',
 // userId)` itself — the app-layer check that replaces what used to be RLS scoping this by
 // connection identity. `noteId` missing, `blockIndex` missing, or nothing resolving (wrong id,
 // not this caller's, no note written yet) degrades quietly to no context — never a hard error;
@@ -29,13 +29,13 @@
 // note yet (a brand-new composer in add-note-page-ui/note-manager-page-ui, or a field/field-group
 // that has no note_id yet).
 //
-// SECURITY: params are validated in _shared/aiNoteGeneration.ts; the system prompt is fixed
+// SECURITY: params are validated in shared/aiNoteGeneration.ts; the system prompt is fixed
 // there and never reaches the client. A signed-in Pro user is required and rate-limited — see
-// _shared/ai.ts.
+// shared/ai.ts.
 //
 // Deploy: `supabase functions deploy ai-note`
 
-import { extractContext, runNoteGeneration, toBlocks } from '../_shared/aiNoteGeneration.ts';
+import { extractContext, runNoteGeneration, toBlocks } from '../../shared/aiNoteGeneration.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 async function resolveNoteValue(db: SupabaseClient, userId: string, noteId: string): Promise<unknown> {

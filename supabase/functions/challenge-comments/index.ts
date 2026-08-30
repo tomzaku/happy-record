@@ -7,9 +7,9 @@
 //
 // Deploy: `supabase functions deploy challenge-comments`
 
-import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
-import { fromChallengeComment, toChallengeComment } from '../_shared/challengeComments.ts';
+import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
+import { requireUser } from '../../shared/auth.ts';
+import { fromChallengeComment, toChallengeComment } from '../../shared/challengeComments.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 const DEFAULT_LIMIT = 100;

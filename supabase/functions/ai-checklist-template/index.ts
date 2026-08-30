@@ -16,7 +16,7 @@
 // hand.
 //
 // SECURITY: params are validated below; the system prompt is fixed here and never reaches the
-// client. A signed-in Pro user is required and rate-limited — see _shared/ai.ts, ported from the
+// client. A signed-in Pro user is required and rate-limited — see shared/ai.ts, ported from the
 // sibling project's own ai-* functions rather than re-derived.
 //
 // Deploy: `supabase functions deploy ai-checklist-template`
@@ -32,8 +32,8 @@ import {
   requireUser,
   stripFences,
   underRateLimit,
-} from '../_shared/ai.ts';
-import { admin } from '../_shared/authorize.ts';
+} from '../../shared/ai.ts';
+import { admin } from '../../shared/authorize.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 // Mirrors RecordField.type (packages/global/src/store/record-field/useRecordField.tsx) — every
@@ -66,7 +66,7 @@ interface GeneratedField {
   // starting value for.
   defaultValue?: number;
   // select/multiselect-only, and required for them (see RecordField.options' own comment and
-  // _shared/fields.ts's own validation) — the fixed list of choices this field offers.
+  // shared/fields.ts's own validation) — the fixed list of choices this field offers.
   options?: string[];
 }
 
@@ -330,7 +330,7 @@ function validate(parsed: unknown): GeneratedTemplate {
             .map((o) => o.trim().slice(0, 60))
             .slice(0, 8)
           : [];
-        // A select/multiselect field genuinely needs real options — _shared/fields.ts's own
+        // A select/multiselect field genuinely needs real options — shared/fields.ts's own
         // validation rejects one that doesn't when this actually gets applied. Rather than
         // failing the whole proposal over one malformed field, this one field quietly becomes
         // "text" instead (same shape it'd have anyway: no unit, no options).

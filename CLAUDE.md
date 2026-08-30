@@ -36,7 +36,7 @@ a resource whose server schema *isn't* a 1:1 mirror of the client shape — see 
 | Layer | Where | Job |
 | --- | --- | --- |
 | Edge function | `supabase/functions/<resource>/index.ts` | One REST resource. Auth via `requireUser`, RLS-scoped client, returns client-shaped JSON |
-| Shared pieces | `supabase/functions/_shared/<resource>.ts` | Row mapping + validation for that resource; `_shared/auth.ts` and `_shared/cors.ts` are common to all |
+| Shared pieces | `supabase/shared/<resource>.ts` | Row mapping + validation for that resource; `shared/auth.ts` and `shared/cors.ts` are common to all |
 | Client module | `packages/<owning-package>/src/<resource>Api.ts` | One exported function per route, built on `packages/global/src/lib/api.ts` |
 | Caller | the domain's own hook (e.g. `useChecklist` in `checklists/useChecklists.tsx`) | Calls the API module, scoped to what's needed; falls back to whatever's already in the local store on `null` |
 
@@ -93,7 +93,7 @@ that section's own note on what this doesn't solve).
 ### Identity comes from the session
 
 Never take a `user_id` from a request body. It's read from the caller's session, server-side
-(`requireUser` in `supabase/functions/_shared/auth.ts`) — otherwise a client could act as
+(`requireUser` in `supabase/shared/auth.ts`) — otherwise a client could act as
 someone else regardless of what the UI sends.
 
 There's no signup screen: `packages/global/src/hook/useSession.ts` signs every device in

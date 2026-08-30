@@ -2,12 +2,14 @@
 //
 // Supabase requires this exact file as the deploy target (`supabase functions deploy notes`), so
 // it stays a thin entrypoint: CORS, identity, dispatch, error shape. The actual route handlers
-// live in `api/` (one file per route, `api/notes-routes.ts` for the table), permission checks in
-// `api/notes-permissions.ts` — this is the `features/<domain>/api` + `shared/` split (adapted
-// from kakaonline's core-server), with `_shared/` playing `shared/`'s role across every resource.
+// live in `api/` (one file per route, `api/notes-routes.ts` for the table), the read-side row
+// mapping in `model/`, and the DB reads + permission checks in `services/` — this is the
+// `features/<domain>/{api,model,services}` split (adapted from kakaonline core-server's own
+// `features/<domain>/{api,services}` + top-level `shared/`, which `supabase/shared/` plays the
+// same role as here, one level up from every resource instead of nested inside `functions/`).
 //
 // First resource moved off RLS onto the app-layer `compose(checkPermission, core)` pattern (see
-// `_shared/authorize.ts`) — every route reads/writes through the service-role client (`admin()`,
+// `shared/authorize.ts`) — every route reads/writes through the service-role client (`admin()`,
 // bypasses RLS) and its own `checkPermission` function decides who's allowed to touch which row,
 // in plain TypeScript instead of a Postgres policy. Why: RLS and `auth.uid()` are
 // Postgres/Supabase-specific — this app wants to be able to swap the database later without
@@ -35,9 +37,9 @@
 //
 // Deploy: `supabase functions deploy notes`
 
-import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
-import { admin } from '../_shared/authorize.ts';
+import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
+import { requireUser } from '../../shared/auth.ts';
+import { admin } from '../../shared/authorize.ts';
 import { ROUTES, subPath } from './api/notes-routes.ts';
 
 export default async function handler(req: Request): Promise<Response> {

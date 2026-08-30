@@ -2,9 +2,9 @@
 // notes-permissions.ts) parses the body and confirms ownership of an existing id; this is just
 // the write itself once that's settled.
 
-import { ApiError } from '../../_shared/cors.ts';
-import { compose } from '../../_shared/authorize.ts';
-import { fromNote } from '../../_shared/notes.ts';
+import { ApiError } from '../../../shared/cors.ts';
+import { compose } from '../../../shared/authorize.ts';
+import { fromNote } from '../../../shared/notes.ts';
 import { checkWriteNote, type WriteAuthorization } from '../services/notes-access-service.ts';
 import type { Ctx } from './notes-context.ts';
 

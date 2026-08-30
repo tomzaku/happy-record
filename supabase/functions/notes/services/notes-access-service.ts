@@ -1,12 +1,12 @@
 // `checkPermission` functions for the `notes` resource — the app-layer authorization decisions
-// that used to be Postgres RLS policies (see CLAUDE.md and `_shared/authorize.ts`'s own header
+// that used to be Postgres RLS policies (see CLAUDE.md and `shared/authorize.ts`'s own header
 // for why this moved). Each handler in `../api/` is `compose(one of these, its own core)`.
 // Analogous to kakaonline core-server's `accessControlMiddleware` + per-handler
 // `user.hasPermission(...)` check, minus the framework: here the "check" is its own function so
 // it can be composed in explicitly per route rather than living inline at the top of a handler.
 
-import { ApiError } from '../../_shared/cors.ts';
-import { ForbiddenError } from '../../_shared/authorize.ts';
+import { ApiError } from '../../../shared/cors.ts';
+import { ForbiddenError } from '../../../shared/authorize.ts';
 import { fetchNoteRow, publicFieldGroupOwnerIds, type NoteRow } from './notes-repository.ts';
 import { body, type Ctx } from '../api/notes-context.ts';
 

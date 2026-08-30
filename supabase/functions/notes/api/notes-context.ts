@@ -1,12 +1,12 @@
 // Small shared bits every notes/api handler needs — the request-scoped ctx shape, and the two
 // tiny parsing helpers every route on this resource reaches for. Kept local to this feature
-// rather than promoted to `_shared/` since nothing outside `notes` needs them yet — see
+// rather than promoted to `shared/` since nothing outside `notes` needs them yet — see
 // CLAUDE.md's "a resource is a thing in the domain" convention for the same "don't share until
 // something else actually needs it" reasoning. Mirrors kakaonline's core-server
 // features/<domain>/api split, adapted to Supabase's constraint that a function's deploy target
 // must stay `index.ts` (see this resource's own index.ts).
 
-import { ApiError } from '../../_shared/cors.ts';
+import { ApiError } from '../../../shared/cors.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 export type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };

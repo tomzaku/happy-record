@@ -28,21 +28,21 @@
 // visibility rule (a challenge dashboard's own peer-read of *other* participants'
 // checklist_records happens in `challenges/index.ts`, on its own explicit query — see that
 // function), so there's nothing for a `checkPermission` to decide here; just off the RLS-scoped
-// client (see `_shared/authorize.ts`) and onto `admin()`.
+// client (see `shared/authorize.ts`) and onto `admin()`.
 //
 // Deploy: `supabase functions deploy checklist-records`
 
-import { ApiError, corsHeaders, json } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
-import { admin } from '../_shared/authorize.ts';
+import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
+import { requireUser } from '../../shared/auth.ts';
+import { admin } from '../../shared/authorize.ts';
 import {
   fromChecklistFieldNoteEntry,
   fromRecordEntry,
   limitOf,
   MAX_BULK,
   toChecklistRecord,
-} from '../_shared/checklistRecords.ts';
-import { computeSearchText } from '../_shared/notes.ts';
+} from '../../shared/checklistRecords.ts';
+import { computeSearchText } from '../../shared/notes.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 const DEFAULT_PAGE = 1000;
@@ -122,7 +122,7 @@ async function list({ url, db, userId }: Ctx) {
 }
 
 /** Every field type but `note` has a plain `number | string` value (number, text, date,
- * datetime — see _shared/fields.ts's own FIELD_TYPES comment); a note-type field's own entry is
+ * datetime — see shared/fields.ts's own FIELD_TYPES comment); a note-type field's own entry is
  * real Editor.js `OutputData` (an object) instead — same shape-based split `update()` below
  * already uses, not a `fields` table lookup. Deliberately not looking the field up: a lookup can
  * only ever be as reliable as `fields` having a row for this id, and the value's own shape
