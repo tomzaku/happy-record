@@ -2,7 +2,8 @@ import React from 'react';
 import { useSessionStore } from '../../hook/useSessionStore';
 import { useSession } from '../../hook/useSession';
 import { uniqueId } from '../../util';
-import { fetchChallengeDashboard, fetchChallengeForTemplate, saveChallenge } from './challengesApi';
+import { fetchChallengeDashboard, fetchChallengeForTemplate, fetchMyChallenges, saveChallenge } from './challengesApi';
+export type { MyChallengeRow } from './challengesApi';
 
 const CHALLENGE_KEY = 'challenge';
 
@@ -141,5 +142,11 @@ export const useChallenge = () => {
     // handler" rule), so this awaits the fetch and returns it directly
     // instead of reading back through the store.
     getChallengeDashboard: fetchChallengeDashboard,
+    // Same shape, same reasoning — challenge-list-page-ui is a dedicated page that wants its
+    // whole roster fresh on load, not a value other components read reactively, so this is a
+    // plain imperative fetch (like getChallengeDashboard above) rather than a useSessionStore-
+    // backed "all mine" store the way useChecklistTemplates.tsx's ensureAllTemplatesFetched is —
+    // nothing else in the app needs this list outside that one page today.
+    getMyChallenges: fetchMyChallenges,
   };
 };

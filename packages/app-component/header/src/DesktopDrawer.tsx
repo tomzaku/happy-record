@@ -34,6 +34,14 @@ const DesktopDrawer = () => {
       path: '/notes',
       action: () => navigate('/notes')
     },
+    {
+      id: 'challenges',
+      label: 'Challenges',
+      icon: 'solar:cup-star-line-duotone',
+      description: 'See what you\'ve joined and your progress',
+      path: '/challenges',
+      action: () => navigate('/challenges')
+    },
     // Settings is reachable via the account row in the drawer footer (AccountStatus
     // navigates there once signed in), so no separate settings nav item here.
   ];

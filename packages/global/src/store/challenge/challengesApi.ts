@@ -9,6 +9,34 @@ export function fetchChallengeForTemplate(checklistTemplateId: string): Promise<
   return request.get('/challenges', { quiet: true, params: { checklistTemplateId } });
 }
 
+/** One row of the "My Challenges" listing — see the edge function's own module doc comment for
+ * what each field means, `myCheckins`/`myStreak` especially (the caller's own effort on this
+ * challenge, over the last 30 days). */
+export type MyChallengeRow = {
+  id: string;
+  checklistTemplateId: string;
+  title: string;
+  avatar: { type: string; name: string; color?: string };
+  isOwner: boolean;
+  shareRecords: boolean;
+  commentsEnabled: boolean;
+  participantCount: number;
+  myCheckins: number;
+  myStreak: number;
+  createdAt: string;
+  joinedAt?: string;
+};
+
+/**
+ * Every challenge the caller owns or has joined, each with the caller's own effort on it — same
+ * "not quiet" reasoning as fetchChallengeDashboard below: challenge-list-page-ui wants the real
+ * data on load, not a value that's fine to start empty, so a real failure needs to reach the page
+ * as a real failure rather than resolving to an indistinguishable empty list.
+ */
+export function fetchMyChallenges(): Promise<{ challenges: MyChallengeRow[] }> {
+  return request.get('/challenges');
+}
+
 /**
  * The dashboard read — a one-shot imperative fetch (the page wants the real
  * data on load, not a value that fills in over a later render), so it's not

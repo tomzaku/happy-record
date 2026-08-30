@@ -24,6 +24,7 @@ import LocalStorageEditor from './local-storage-editor';
 import TasksSharedPage from '@happy-record/tasks-shared-page-ui';
 import ChecklistTemplateSharedPageUi from '@happy-record/checklist-template-shared-page-ui';
 import ChallengeDashboardPageUi from '@happy-record/challenge-dashboard-page-ui';
+import ChallengeListPageUi from '@happy-record/challenge-list-page-ui';
 import FocusZoneModal from '@dreamer/focus-zone-modal-ui';
 import { useIsMobile, useResumePendingChallengeJoin } from '@dreamer/global';
 
@@ -112,6 +113,14 @@ const AppRouter = () => {
             element={
               <AnimationRoute>
                 <ChallengeDashboardPageUi />
+              </AnimationRoute>
+            }
+          />
+          <Route
+            path="/challenges"
+            element={
+              <AnimationRoute>
+                <ChallengeListPageUi />
               </AnimationRoute>
             }
           />

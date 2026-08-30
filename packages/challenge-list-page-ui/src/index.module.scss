@@ -1,0 +1,169 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+@use 'include-media/dist/include-media' as media;
+
+// Same width cap/responsive-grid idea as challenge-dashboard-page-ui's own `.page` — a plain
+// single column here (no side rail to split into, unlike that page's Comments column), just
+// capped so a card grid doesn't stretch into unreadably wide rows on a real desktop viewport.
+.page {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md $spacing-xl;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  @include media.media('<=tablet') {
+    padding: $spacing-sm;
+  }
+}
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+}
+
+.pageTitle {
+  margin: 0;
+}
+
+.pageSubtitle {
+  color: var(--text-color-secondary, var(--text-color));
+  font-size: toRem(13px);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-md;
+
+  @include media.media('>tablet') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.cardIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--input-background);
+}
+
+.cardTitleCol {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardTitle {
+  font-weight: 700;
+  font-size: toRem(15px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Owner vs. joined — same idea as ChallengeDashboard's participant pill, just distinguishing
+// "yours" from "joined" rather than a count.
+.roleBadge {
+  align-self: flex-start;
+  font-size: toRem(11px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+  background: var(--input-background);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.roleBadge[data-owner='true'] {
+  color: #2a78d6;
+  background: rgba(42, 120, 214, 0.12);
+}
+
+.statRow {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--division-color);
+  padding-top: $spacing-sm;
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+
+  & + & {
+    border-left: 1px solid var(--division-color);
+  }
+}
+
+.statValue {
+  font-weight: 800;
+  font-size: toRem(18px);
+}
+
+.statLabel {
+  font-size: toRem(11px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: toRem(12px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+// ─── Empty state ───
+
+.emptyCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: $spacing-xs;
+  padding: $spacing-xl $spacing-lg;
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+// ─── Loading skeleton — mirrors .card/.cardHeader/.statRow above so the swap
+// from skeleton to real content lands with no layout jump. ───
+
+.skeletonCard {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+}

@@ -24,6 +24,14 @@ const Header = () => {
             navigate('/notes');
           }}
         />
+        <Icon
+          className={styles.rightIcon}
+          width={24}
+          icon="solar:cup-star-line-duotone"
+          onClick={() => {
+            navigate('/challenges');
+          }}
+        />
         <TaskSearch variant="header" className={styles.rightIcon} />
         {/* Settings is reachable via the account icon below (AccountStatus navigates
             there once signed in), so no separate settings icon here. */}
