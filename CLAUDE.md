@@ -36,7 +36,7 @@ a resource whose server schema *isn't* a 1:1 mirror of the client shape — see 
 | Layer | Where | Job |
 | --- | --- | --- |
 | Edge function | `supabase/functions/<resource>/index.ts` | Thin deploy entrypoint (Supabase requires this exact file/path) — CORS, `requireUser` for identity, dispatch, error shape |
-| Resource internals | `supabase/functions/<resource>/{api,services}/` | Every resource gets `api/` — one file per route plus a `<resource>-routes.ts` table — even a single-route resource (`me`), matching kakaonline core-server's own `features/<domain>/api` shape down to its smallest feature. `services/` is added only when there's a real cross-user visibility decision to make — a resource that's just explicit `.eq('user_id', userId)` everywhere (`flags`, `tags`, `checklists`, ...) has none, just `api/` + a thin `index.ts`. When `services/` exists it's always split in two: `<resource>-repository.ts` (plain DB reads, no authorization logic — see "Authorization: app layer, not RLS" below) and `<resource>-access-service.ts` (the actual `checkPermission` functions, which call the repository rather than querying the DB directly themselves) |
+| Resource internals | `supabase/functions/<resource>/{api,repository,services}/` | Every resource gets `api/` — one file per route plus a `<resource>-routes.ts` table — even a single-route resource (`me`), matching kakaonline core-server's own `features/<domain>/api` shape down to its smallest feature. `repository/` and `services/` are added only when there's a real cross-user visibility decision to make — a resource that's just explicit `.eq('user_id', userId)` everywhere (`flags`, `tags`, `checklists`, ...) has neither, just `api/` + a thin `index.ts`. When they exist they're two real sibling folders, not two files in one: `repository/<resource>-repository.ts` (plain DB reads, no authorization logic — see "Authorization: app layer, not RLS" below) and `services/<resource>-access-service.ts` (the actual `checkPermission` functions, which call the repository rather than querying the DB directly themselves) |
 | Row↔wire mapping | `supabase/dto/<resource>/<resource>-dto.ts` | Every resource's `fromX`/`toX` row mapping and validation lives here, one folder per resource, regardless of whether only that resource uses it or several do (e.g. `checklist-records` building a note row through `dto/notes/notes-dto.ts`'s `fromNote`) — a real top-level sibling of `supabase/functions/`, not a resource-local `model/` folder, so there's one place for this regardless of consumer count. Matches kakaonline core-server's own `shared/dtos/<domain>` (folded into `shared/` there; a separate top-level `dto/` here, kept apart from `shared/`'s own infra/services) |
 | Shared infra/services | `supabase/shared/<name>.ts` | Cross-cutting infra (`auth.ts`, `cors.ts`, `authorize.ts` — `admin`/`compose`/`ForbiddenError`, `router.ts` — `matchRoute`) and small DB-querying services that aren't pure row mapping (`repeats.ts`, `proUsers.ts`) — if it only maps a row's shape with no I/O, it belongs in `dto/` instead, not here |
 | Client module | `packages/<owning-package>/src/<resource>Api.ts` | One exported function per route, built on `packages/global/src/lib/api.ts` |
@@ -69,13 +69,13 @@ The replacement, in `supabase/shared/authorize.ts`:
   existing-row-or-null for a write) — threaded into `core` as a second argument so a check that
   already had to load something to decide access doesn't make `core` load it again.
 
-`checkPermission` itself never queries the DB inline — it calls a `<resource>-repository.ts`
+`checkPermission` itself never queries the DB inline — it calls a `repository/<resource>-repository.ts`
 function (plain `.select()`/`.eq()`, no decision-making) and makes the allow/deny call over what
 comes back. Splitting "fetch" from "decide" this way means a repository read is trivially reused
 (a batch check calling the same single-row fetch twice, say) and a permission bug is easy to spot
 in a diff — the repository file should never grow an `if` that changes what it returns based on
-who's asking. `notes/services/` is the reference: `notes-repository.ts`'s `fetchNoteRow`/
-`publicFieldGroupOwnerIds` vs. `notes-access-service.ts`'s `checkReadNote`/`checkWriteNote`/etc.
+who's asking. `notes/` is the reference: `repository/notes-repository.ts`'s `fetchNoteRow`/
+`publicFieldGroupOwnerIds` vs. `services/notes-access-service.ts`'s `checkReadNote`/`checkWriteNote`/etc.
 
 Three things to get right when writing or reviewing a `checkPermission`:
 
