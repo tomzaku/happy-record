@@ -80,3 +80,19 @@
   font-size: 14px;
   color: var(--text-color);
 }
+
+// Small "· Personal" suffix on the Schedule row's description for a participant who's set their
+// own reminder — same accent as the Save button above, not the plain text color, so it reads as
+// a distinct state rather than part of the schedule summary itself.
+.personalBadge {
+  color: var(--icon-primary);
+}
+
+// Below ScheduleModalContent in the "My Reminder" dialog — only rendered once there's actually a
+// personal override to clear (see checklistTemplate.repeat?.isPersonal), so this never floats
+// under the group's own default with nothing to reset.
+.resetReminderRow {
+  padding: $spacing-sm $spacing-lg $spacing-lg;
+  display: flex;
+  justify-content: center;
+}

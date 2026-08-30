@@ -137,6 +137,15 @@ export type ChecklistTemplate = {
     dayOfWeek: string;
     startedAt: string;
     completedAt?: string;
+    /**
+     * Set only when this schedule is a challenge participant's own override, distinct from the
+     * template owner's default (see 20260830000000_repeats_table.sql / _shared/repeats.ts's
+     * `pickRepeat`) — never present for the owner's own view of their own template, since "my
+     * schedule" and "the default" are the same thing there. Absent (or `false`) means what's here
+     * is the owner's schedule, whether the viewer is the owner or a participant who hasn't set
+     * their own. Read-only, server-computed — never send this back on a write.
+     */
+    isPersonal?: boolean;
   };
   avatar: {
     type: string;
@@ -469,6 +478,27 @@ export const useChecklistTemplates = () => {
     [selectedChecklistTemplates, checklistTemplate, ensureAllTemplatesFetched, ensureAllFieldGroupsFetched, withFieldGroups],
   );
 
+  /**
+   * Sets (or clears, passing `null`) the *caller's own* reminder schedule for a template —
+   * always safe to call whether or not the caller owns it: a challenge participant uses this to
+   * follow a different day/time than the owner's default, without needing a writable copy of
+   * anything else about the template (see useJoinChallenge.tsx on why joining doesn't fork one).
+   * The backend enforces this is scoped to the caller no matter what `id` is passed — see
+   * checklist-templates/index.ts's own comment on `update()`.
+   *
+   * Unlike `updateChecklistTemplate`'s diff-against-local-copy shape, this always re-fetches
+   * afterward instead of trusting the local store: clearing an override needs the server's own
+   * fallback-to-the-owner's-schedule value, which nothing on this device ever had a copy of to
+   * fall back to. Bypasses `getChecklistTemplate`'s own dedupe (`fetchedScopes`) on purpose —
+   * that scope was already marked fetched before this write, so a plain `getChecklistTemplate`
+   * call here would just hand back the pre-write copy.
+   */
+  const updateMyReminder = async (id: string, repeat: ChecklistTemplate['repeat'] | null) => {
+    await patchChecklistTemplate(id, { repeat });
+    const result = await fetchChecklistTemplateById(id);
+    if (result) mergeTemplates(result.templates);
+  };
+
   const getChecklistTemplate = React.useCallback(
     (id: string) => {
       const scopeKey = JSON.stringify({ userId, id });
@@ -494,6 +524,7 @@ export const useChecklistTemplates = () => {
     getChecklistTemplate,
     addChecklistTemplate,
     updateChecklistTemplate,
+    updateMyReminder,
     deleteChecklistTemplate,
     selectedChecklistTemplates,
     updateSelectedChecklistTemplate,

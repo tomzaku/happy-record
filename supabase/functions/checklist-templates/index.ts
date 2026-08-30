@@ -42,6 +42,16 @@ async function body(req: Request): Promise<Record<string, unknown>> {
   }
 }
 
+/** Resolves one row's effective schedule for `userId` and maps it to the wire shape — shared by
+ * both branches of list() below so "which row wins, and is it a personal override" is decided in
+ * exactly one place. */
+function resolveTemplate(r: Record<string, unknown>, repeatsByTemplate: Record<string, Record<string, unknown>[]>, userId: string) {
+  const ownerId = r.user_id as string;
+  const repeatRow = pickRepeat(repeatsByTemplate[r.id as string], userId, ownerId);
+  const isPersonalOverride = !!repeatRow && repeatRow.user_id === userId && userId !== ownerId;
+  return toChecklistTemplate(r, repeatRow, isPersonalOverride);
+}
+
 async function list({ url, db, userId }: Ctx) {
   const id = url.searchParams.get('id');
 
@@ -57,11 +67,7 @@ async function list({ url, db, userId }: Ctx) {
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as Record<string, unknown>[];
     const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(r => r.id as string));
-    return {
-      templates: rows.map(r =>
-        toChecklistTemplate(r, pickRepeat(repeats[r.id as string], userId, r.user_id as string)),
-      ),
-    };
+    return { templates: rows.map(r => resolveTemplate(r, repeats, userId)) };
   }
 
   const { data, error } = await db
@@ -73,12 +79,10 @@ async function list({ url, db, userId }: Ctx) {
   const rows = (data ?? []) as Record<string, unknown>[];
   const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(r => r.id as string));
   // Always the caller's own templates here (the query above is hard-filtered to `user_id`), so
-  // the caller is always the owner — pickRepeat still goes through the same viewer/owner
-  // resolution as the scoped branch above rather than assuming that, so this stays correct the
-  // day this branch ever needs to include a joined challenge alongside the caller's own templates.
-  return {
-    templates: rows.map(r => toChecklistTemplate(r, pickRepeat(repeats[r.id as string], userId, r.user_id as string))),
-  };
+  // resolveTemplate's own viewer/owner resolution is a no-op today (userId === ownerId for every
+  // row) — kept anyway so this stays correct the day this branch ever needs to include a joined
+  // challenge alongside the caller's own templates.
+  return { templates: rows.map(r => resolveTemplate(r, repeats, userId)) };
 }
 
 async function save({ req, db, userId }: Ctx) {

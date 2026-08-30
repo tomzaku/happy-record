@@ -25,7 +25,7 @@ import MiniChallengeDashboard from './components/MiniChallengeDashboard';
 const DetailTaskPageMobile = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
-  const { getChecklistTemplate, updateChecklistTemplate, deleteChecklistTemplate } =
+  const { getChecklistTemplate, updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
   const { getAllRecordFields } = useRecordField();
@@ -184,6 +184,7 @@ const DetailTaskPageMobile = () => {
         onUpdate={isOwner ? (updatedTemplate) => updateChecklistTemplate(updatedTemplate) : () => {}}
         onDelete={isOwner ? handleDeleteTask : undefined}
         readOnly={!isOwner}
+        onUpdateMyReminder={!isOwner && challenge ? repeat => updateMyReminder(id, repeat) : undefined}
       >
         {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
       </ChecklistGenericInfo>

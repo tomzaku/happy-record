@@ -31,10 +31,17 @@ export function saveChecklistTemplate(template: ChecklistTemplate): Promise<{ ok
  * (a schedule, a tag) doesn't overwrite whatever else changed the row
  * server-side since this device's last read. `fieldGroups` isn't part of this
  * row anymore — see useFieldGroups.tsx's own `updateFieldGroup`.
+ *
+ * `repeat` accepts `null` in addition to `ChecklistTemplate['repeat']` — not just omitting the
+ * key — so a caller can explicitly clear a schedule (see updateMyReminder's own comment on why
+ * `undefined` can't do this: `JSON.stringify` drops an `undefined`-valued key entirely, same
+ * footgun FieldGroup.archivedAt has).
  */
 export function patchChecklistTemplate(
   id: string,
-  changes: Partial<Omit<ChecklistTemplate, 'id' | 'createdAt' | 'fieldGroups'>>,
+  changes: Partial<Omit<ChecklistTemplate, 'id' | 'createdAt' | 'fieldGroups' | 'repeat'>> & {
+    repeat?: ChecklistTemplate['repeat'] | null;
+  },
 ): Promise<{ ok: true } | null> {
   return request.patch('/checklist-templates', { id, ...changes }, { quiet: true });
 }

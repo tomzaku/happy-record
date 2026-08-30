@@ -14,15 +14,25 @@
 // migration later — see 20260830000000_repeats_table.sql — except it's still embedded in this
 // row on the wire: `toChecklistTemplate`'s caller (checklist-templates/index.ts) fetches the
 // matching `repeats` row itself and passes it in, so the client-facing shape never changed.
+// `isPersonalOverride` is the one addition: true when the caller (checklist-templates/index.ts)
+// determined the resolved `repeatRow` is a challenge participant's own row, not the owner's —
+// annotated onto `repeat.isPersonal` (see ChecklistTemplate['repeat'] in
+// useChecklistTemplates.tsx) so the client can tell "this is my personal reminder" from "this is
+// just the group's default" without knowing anything about how it was resolved.
 
 import { toRepeat } from './repeats.ts';
 
-export function toChecklistTemplate(r: Record<string, unknown>, repeatRow: Record<string, unknown> | undefined) {
+export function toChecklistTemplate(
+  r: Record<string, unknown>,
+  repeatRow: Record<string, unknown> | undefined,
+  isPersonalOverride: boolean,
+) {
+  const repeat = toRepeat(repeatRow);
   return {
     id: r.id as string,
     title: r.title as string,
     avatar: (r.avatar as Record<string, unknown>) ?? {},
-    repeat: toRepeat(repeatRow),
+    repeat: repeat && isPersonalOverride ? { ...repeat, isPersonal: true } : repeat,
     createdAt: r.created_at as string,
     records: [] as string[],
     tags: (r.tags as string[]) ?? [],

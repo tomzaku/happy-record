@@ -45,6 +45,16 @@ type Props = {
   // (the no-op onUpdate swallowing it), no different-looking from a real save. Hides the edit
   // affordance instead, same as onDelete already does.
   readOnly?: boolean;
+  /**
+   * Present only for a challenge participant (never the owner — see index.desktop.tsx/
+   * index.mobile.tsx's own `!isOwner && challenge` gate) — lets them set their own reminder
+   * day/time distinct from the owner's, without needing `readOnly` lifted for anything else
+   * about the template. Passing `null` clears the override, falling back to the owner's
+   * schedule (see useChecklistTemplates.tsx's `updateMyReminder`). Undefined for the owner's own
+   * view, or for a template with no challenge at all — the Schedule row stays plain read-only
+   * (no edit affordance) in both those cases, same as before this existed.
+   */
+  onUpdateMyReminder?: (repeat: ChecklistTemplate['repeat'] | null) => void;
   // Extra rows rendered in this same card, after Archived Groups and before Delete Task
   // (the one destructive row stays last on purpose) — CardShare is the one caller today,
   // so Share reads as part of General Settings instead of a second card floating below it.
@@ -57,9 +67,18 @@ enum EditModal {
   Schedule,
   Tags,
   Archived,
+  MyReminder,
 }
 
-const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed, onDelete, readOnly, children }: Props) => {
+const ChecklistGenericInfo = ({
+  checklistTemplate,
+  onUpdate,
+  isDefaultCollapsed,
+  onDelete,
+  readOnly,
+  onUpdateMyReminder,
+  children,
+}: Props) => {
   const intl = useIntl();
   // `fieldGroups` isn't part of the template's own row anymore — a schedule edit
   // (GroupScheduleList, below) or a group restore is its own write now, one row at a time (see
@@ -189,6 +208,32 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
         }
       });
     }
+    setActiveModal(EditModal.None);
+  };
+
+  // Same tempWeeklyHobbies/tempTime/tempStartDay staging as handleSaveSchedule above — the modal
+  // starts from whatever's currently effective (the owner's default, or this participant's own
+  // override — see resetModalStates), just written through onUpdateMyReminder instead of onUpdate
+  // so it lands on the caller's own row, never the owner's (see checklist-templates/index.ts's
+  // update()). No field-group handling here: a participant can't override a group's own schedule,
+  // only the template's top-level one — ScheduleModalContent isn't given `fieldGroups` in this
+  // dialog for exactly that reason (see its own render below).
+  const handleSaveMyReminder = () => {
+    const repeat = calculateRepeat({
+      weeklyHobbies: tempWeeklyHobbies,
+      selectedTime: tempTime,
+    });
+    onUpdateMyReminder?.({
+      ...repeat,
+      startedAt: new Date(tempStartDay).toISOString(),
+    });
+    setActiveModal(EditModal.None);
+  };
+
+  // Clears this participant's override — the row reappears showing the owner's default on the
+  // next fetch (see updateMyReminder's own comment on why this always re-fetches).
+  const handleResetMyReminder = () => {
+    onUpdateMyReminder?.(null);
     setActiveModal(EditModal.None);
   };
 
@@ -337,7 +382,20 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
                     })}
                   />
                 ) : (
-                  `${formatDisplayDays()} at ${formatDisplayTime()}`
+                  <>
+                    {`${formatDisplayDays()} at ${formatDisplayTime()}`}
+                    {/* Only ever set for a participant who's overridden the owner's default —
+                        see ChecklistTemplate['repeat'].isPersonal's own comment. */}
+                    {checklistTemplate.repeat?.isPersonal && (
+                      <Typography.Text className={styles.personalBadge}>
+                        {' · '}
+                        {intl.formatMessage({
+                          id: 'checklist-generic-info.personal-reminder-badge',
+                          defaultMessage: 'Your reminder',
+                        })}
+                      </Typography.Text>
+                    )}
+                  </>
                 )
               }
               rightComponent={
@@ -357,15 +415,35 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
                       }}
                     />
                   )}
+                  {/* A participant can't edit the shared schedule (readOnly), but can still set
+                      their own reminder time on top of it — see onUpdateMyReminder's own comment
+                      on why this is a separate write from the owner's. */}
+                  {readOnly && onUpdateMyReminder && (
+                    <Icon
+                      width={16}
+                      icon="solar:bell-bing-line-duotone"
+                      className={styles.editIcon}
+                      onClick={e => {
+                        e.stopPropagation();
+                        resetModalStates();
+                        setActiveModal(EditModal.MyReminder);
+                      }}
+                    />
+                  )}
                 </div>
               }
               onClick={
-                readOnly
-                  ? undefined
-                  : () => {
+                !readOnly
+                  ? () => {
                       resetModalStates();
                       setActiveModal(EditModal.Schedule);
                     }
+                  : onUpdateMyReminder
+                    ? () => {
+                        resetModalStates();
+                        setActiveModal(EditModal.MyReminder);
+                      }
+                    : undefined
               }
             />
 
@@ -486,6 +564,49 @@ const ChecklistGenericInfo = ({ checklistTemplate, onUpdate, isDefaultCollapsed,
           fieldGroups={tempFieldGroups}
           onFieldGroupsChange={setTempFieldGroups}
         />
+      </Dialog>
+
+      {/* My Reminder Modal — a challenge participant's own override, distinct from the Schedule
+          modal above (owner-only, edits the shared row). No `fieldGroups` passed to
+          ScheduleModalContent: a participant can't override a group's own schedule, only the
+          template's top-level day/time, so this always shows the plain day+time picker even for
+          a template that itself has field groups (see getEffectiveDayOfWeek's own comment on
+          when a template-level dayOfWeek is actually load-bearing vs. purely display/notification
+          metadata). */}
+      <Dialog
+        visible={activeModal === EditModal.MyReminder}
+        onDismiss={handleModalClose}
+        icon="solar:bell-bing-line-duotone"
+        closeOnOverlayClick={false}
+        title={intl.formatMessage({
+          id: 'checklist-generic-info.edit-my-reminder-title',
+          defaultMessage: 'My Reminder',
+        })}
+        headerAction={
+          <Button onClick={handleSaveMyReminder} className={styles.headerSaveButton}>
+            {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+          </Button>
+        }
+        bodyClassName={styles.noBodyPadding}
+      >
+        <ScheduleModalContent
+          tempWeeklyHobbies={tempWeeklyHobbies}
+          setTempWeeklyHobbies={setTempWeeklyHobbies}
+          tempDate={tempStartDay}
+          setTempDate={setTempStartDay}
+          tempTime={tempTime}
+          setTempTime={setTempTime}
+        />
+        {checklistTemplate.repeat?.isPersonal && (
+          <div className={styles.resetReminderRow}>
+            <Button type="ghost" size="sm" onClick={handleResetMyReminder}>
+              {intl.formatMessage({
+                id: 'checklist-generic-info.reset-my-reminder',
+                defaultMessage: 'Reset to group schedule',
+              })}
+            </Button>
+          </div>
+        )}
       </Dialog>
 
       {/* Tags Edit Modal */}

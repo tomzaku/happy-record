@@ -28,7 +28,7 @@ import WarningModal from '@moon-ui/modal/src/WarningModal';
 const DetailTaskPageDesktop = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
-  const { getChecklistTemplate, updateChecklistTemplate, deleteChecklistTemplate } =
+  const { getChecklistTemplate, updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
   const { getAllRecordFields } = useRecordField();
@@ -263,6 +263,9 @@ const DetailTaskPageDesktop = () => {
                 onUpdate={isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}}
                 onDelete={isOwner ? handleDeleteTask : undefined}
                 readOnly={!isOwner}
+                onUpdateMyReminder={
+                  !isOwner && challenge ? repeat => updateMyReminder(id, repeat) : undefined
+                }
               >
                 {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
               </ChecklistGenericInfo>
