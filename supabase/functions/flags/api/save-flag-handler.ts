@@ -3,6 +3,7 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { fromFlag } from '../../../dto/flags/flags-dto.ts';
+import { saveFlag } from '../repository/flags-repository.ts';
 import { body, type Ctx } from './flags-context.ts';
 
 export async function saveFlagHandler({ req, db, userId }: Ctx) {
@@ -16,7 +17,6 @@ export async function saveFlagHandler({ req, db, userId }: Ctx) {
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid flag.');
   }
 
-  const { error } = await db.from('flags').upsert({ user_id: userId, ...row });
-  if (error) throw new Error(error.message);
+  await saveFlag(db, userId, row);
   return { ok: true };
 }
