@@ -6,7 +6,7 @@ import { v4 } from 'uuid';
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
 // fallback, unchanged.
-import { fetchNotes, removeNote as removeNoteApi, saveNote } from './noteApi';
+import { fetchNoteById, fetchNotes, removeNote as removeNoteApi, saveNote } from './noteApi';
 
 const NOTE_KEY = 'note';
 const NOTE_LOADING_KEY = 'note_loading';
@@ -155,9 +155,9 @@ export const useNote = () => {
    * needs: "do I have a `noteId`? If so, is its content here yet, and is it still loading?"
    * `noteId` undefined means the owner has no note yet (nothing to fetch, not loading). "Here
    * yet" means the *full* note, `value` included — a note this device only has a summary of
-   * (from getAllNotes/searchNotes) still needs its own `?id=` fetch; checking mere presence in
-   * `notes` would wrongly treat that summary as already-loaded and never fetch the real content
-   * at all.
+   * (from getAllNotes/searchNotes) still needs its own `GET /notes/:id` fetch; checking mere
+   * presence in `notes` would wrongly treat that summary as already-loaded and never fetch the
+   * real content at all.
    */
   const getNote = React.useCallback(
     (noteId: string | undefined): { note: Note | undefined; loading: boolean } => {
@@ -165,7 +165,7 @@ export const useNote = () => {
       if (ready && notes[noteId]?.value === undefined && !fetchedIds.has(noteId)) {
         fetchedIds.add(noteId);
         setLoading([noteId], true);
-        fetchNotes({ ids: [noteId] }).then(result => mergeFetched(result, [noteId]));
+        fetchNoteById(noteId).then(result => mergeFetched(result, [noteId]));
       }
       return { note: notes[noteId], loading: !!loadingIds[noteId] };
     },
@@ -191,7 +191,7 @@ export const useNote = () => {
   /**
    * Every note this user owns, most recently updated first — standalone (one per note-type
    * field), a field-group's own Home note, and every checklist journal entry alike, all in one
-   * fetch (see fetchNotes' own comment: none of `id`/`ids`/`q` given means "list everything").
+   * fetch (see fetchNotes' own comment: neither `ids` nor `q` given means "list everything").
    * note-manager-page-ui's own Notes page is the one consumer that genuinely wants all three at
    * once; nothing scopes this further server-side beyond the fixed page size `notes/index.ts`
    * itself caps at.

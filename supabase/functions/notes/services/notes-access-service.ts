@@ -20,12 +20,11 @@ function isReadable(row: NoteRow, userId: string, publicGroupIds: Set<string>): 
   return row.owner_type === 'field_group' && publicGroupIds.has(row.owner_id as string);
 }
 
-/** For `GET /notes ?id=` — loads the row (there's nothing to authorize without it) and decides
+/** For `GET /notes/:id` — loads the row (there's nothing to authorize without it) and decides
  * whether this caller may see it. 404 for a missing id, 403 for one that exists but isn't this
  * caller's and isn't a public field-group note — either way the handler's own core never has to
  * touch the database again, it just maps the row this already loaded. */
-export async function checkReadNote({ db, userId, url }: Ctx): Promise<NoteRow> {
-  const id = url.searchParams.get('id');
+export async function checkReadNote({ db, userId, id }: Ctx): Promise<NoteRow> {
   if (!id) throw new ApiError(400, 'Missing id.');
   const row = await fetchNoteRow(db, id);
   if (!row) throw new ApiError(404, 'Note not found.');
@@ -70,11 +69,10 @@ export async function checkWriteNote({ req, db, userId }: Ctx): Promise<WriteAut
   return { entry: note as Record<string, unknown>, existing };
 }
 
-/** For `DELETE /notes ?id=` — a missing row authorizes a no-op delete (idempotent, matches the
+/** For `DELETE /notes/:id` — a missing row authorizes a no-op delete (idempotent, matches the
  * rest of this app's "deleting what isn't there is a 200" convention); an existing row that isn't
  * this caller's own is a 403, not a silent no-op. */
-export async function checkDeleteNote({ db, userId, url }: Ctx): Promise<NoteRow | null> {
-  const id = url.searchParams.get('id');
+export async function checkDeleteNote({ db, userId, id }: Ctx): Promise<NoteRow | null> {
   if (!id) throw new ApiError(400, 'Missing id.');
   const existing = await fetchNoteRow(db, id);
   if (existing && existing.user_id !== userId) throw new ForbiddenError();

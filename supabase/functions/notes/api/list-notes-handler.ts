@@ -1,9 +1,9 @@
-// `GET /notes` — one route, three shapes depending on what's in the query string. See this
-// resource's own index.ts for the full route table.
+// `GET /notes` — the collection route, two shapes depending on the query string. A single note
+// by its own id is a separate route now — see `get-note-handler.ts`'s `GET /notes/:id`.
 
 import { compose } from '../../../shared/authorize.ts';
 import { toNote, toNoteSummary } from '../model/notes-model.ts';
-import { checkReadNote, checkReadNotes, type NoteRow } from '../services/notes-access-service.ts';
+import { checkReadNotes, type NoteRow } from '../services/notes-access-service.ts';
 import { limitFrom, type Ctx } from './notes-context.ts';
 
 const DEFAULT_SEARCH_LIMIT = 20;
@@ -18,15 +18,10 @@ const MAX_ALL_LIMIT = 1000;
 const SUMMARY_COLUMNS =
   'id, title, preview, owner_type, owner_id, folder_id, checklist_id, checklist_template_id, submission_id, created_at, updated_at';
 
-// `GET /notes ?id=` — one note, full content (`value` included). Caller's own, or anyone's if
-// it's a field-group's Home note on a `visibility: 'public'` template (checkReadNote) — this is
-// what lets a challenge participant's `useNoteById` resolve the sharer's note instead of coming
-// back empty.
-const getNoteById = compose(checkReadNote, async (_ctx, row: NoteRow) => ({ notes: [toNote(row)] }));
-
-// `GET /notes ?ids=a,b` — several at once, full content, same public-note exception as `?id=`
-// above — the standalone notebook's own listing (one note per note-type field, by their ids),
-// which renders each one inline.
+// `GET /notes ?ids=a,b` — several at once, full content, same public-note exception `GET /:id`
+// has — the standalone notebook's own listing (one note per note-type field, by their ids),
+// which renders each one inline. Stays a query param (a batch of ids, not one resource's own
+// path), same as every other "several specific ids at once" read in this app.
 const getNotesByIds = compose(checkReadNotes, async (_ctx, rows: NoteRow[]) => ({ notes: rows.map(toNote) }));
 
 /** The unscoped/search reads have nothing to authorize beyond "this caller's own rows" — no
@@ -37,7 +32,7 @@ const getNotesByIds = compose(checkReadNotes, async (_ctx, rows: NoteRow[]) => (
  * `?q=text&limit=` → title/search_text match, most recently updated first, summaries only.
  * `?limit=` (nothing else given) → every note this user owns, most recently updated first,
  * summaries only — note-manager-page-ui's own Notes page, which fetches a selected note's own
- * full content separately via `?id=` once someone actually opens it. */
+ * full content separately via `GET /notes/:id` once someone actually opens it. */
 async function listMine({ db, userId, url }: Ctx) {
   const q = url.searchParams.get('q');
   let query = db.from('notes').select(SUMMARY_COLUMNS).eq('user_id', userId);
@@ -63,7 +58,5 @@ async function listMine({ db, userId, url }: Ctx) {
 }
 
 export async function listNotesHandler(ctx: Ctx) {
-  if (ctx.url.searchParams.get('id')) return getNoteById(ctx);
-  if (ctx.url.searchParams.get('ids')) return getNotesByIds(ctx);
-  return listMine(ctx);
+  return ctx.url.searchParams.get('ids') ? getNotesByIds(ctx) : listMine(ctx);
 }

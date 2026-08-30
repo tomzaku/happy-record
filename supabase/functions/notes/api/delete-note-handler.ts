@@ -1,6 +1,6 @@
-// `DELETE /notes ?id=` — `compose(checkDeleteNote, removeNoteCore)`: checkDeleteNote (see
-// notes-permissions.ts) loads the row and confirms ownership (or that it's already gone); this
-// is just the deletion itself once that's settled.
+// `DELETE /notes/:id` — `compose(checkDeleteNote, removeNoteCore)`: checkDeleteNote (see
+// services/notes-access-service.ts) loads the row and confirms ownership (or that it's already
+// gone); this is just the deletion itself once that's settled.
 
 import { compose } from '../../../shared/authorize.ts';
 import { checkDeleteNote, type NoteRow } from '../services/notes-access-service.ts';
@@ -13,10 +13,9 @@ import type { Ctx } from './notes-context.ts';
  * delete entirely. Deleting the pointer row directly (harmless no-op for a standalone/field-group
  * note, which never has one) sidesteps that path the same way checklist-records/index.ts's own
  * remove() already does. */
-async function removeNoteCore({ db, userId, url }: Ctx, existing: NoteRow | null) {
+async function removeNoteCore({ db, userId, id }: Ctx, existing: NoteRow | null) {
   if (!existing) return { ok: true };
-  const id = url.searchParams.get('id')!;
-  const { error: recordError } = await db.from('checklist_records').delete().eq('user_id', userId).eq('id', id);
+  const { error: recordError } = await db.from('checklist_records').delete().eq('user_id', userId).eq('id', id!);
   if (recordError) throw new Error(recordError.message);
   const { error } = await db.from('notes').delete().eq('user_id', userId).eq('id', id);
   if (error) throw new Error(error.message);

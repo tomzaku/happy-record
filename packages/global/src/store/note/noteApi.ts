@@ -38,16 +38,23 @@ function fromWireNote(note: WireNote): Note {
   return note.value === undefined ? (note as Note) : { ...note, value: parseValue(note.value) };
 }
 
-/** `id` → one note, `ids` → several at once (batched, not one request per id — see
- * useNote.tsx's getNotesByIds), `q` → a title/search_text substring match (see useNote.tsx's
- * searchNotes), none of the three → every note this user owns (see useNote.tsx's getAllNotes) —
- * standalone, a field-group's own Home note, and every checklist journal entry alike, since
- * they're all just rows in this one table regardless of which surface created them. The `id`/
- * `ids` shapes return full content (`value` included); `q` and the unscoped "all" shape return
- * summaries only — see toNoteSummary's own comment. */
+/** One note by its own id, full content (`value` included) — a real `GET /notes/:id`, not the
+ * collection route with a query filter (see CLAUDE.md's "Write them as normal REST APIs"). */
+export function fetchNoteById(id: string): Promise<{ notes: Note[] } | null> {
+  return request
+    .get<{ notes: WireNote[] }>(`/notes/${encodeURIComponent(id)}`, { quiet: true })
+    .then(result => (result ? { notes: result.notes.map(fromWireNote) } : null));
+}
+
+/** `ids` → several at once (batched, not one request per id — see useNote.tsx's getNotesByIds),
+ * `q` → a title/search_text substring match (see useNote.tsx's searchNotes), neither → every
+ * note this user owns (see useNote.tsx's getAllNotes) — standalone, a field-group's own Home
+ * note, and every checklist journal entry alike, since they're all just rows in this one table
+ * regardless of which surface created them. The `ids` shape returns full content (`value`
+ * included); `q` and the unscoped "all" shape return summaries only — see toNoteSummary's own
+ * comment. A single note by its own id is `fetchNoteById` above, not this. */
 export function fetchNotes(
   opts: {
-    id?: string;
     ids?: string[];
     q?: string;
     limit?: number;
@@ -57,7 +64,6 @@ export function fetchNotes(
     .get<{ notes: WireNote[] }>('/notes', {
       quiet: true,
       params: {
-        id: opts.id,
         ids: opts.ids?.length ? opts.ids.join(',') : undefined,
         q: opts.q,
         limit: opts.limit,
@@ -71,5 +77,5 @@ export function saveNote(note: Note): Promise<{ ok: true } | null> {
 }
 
 export function removeNote(id: string): Promise<{ ok: true } | null> {
-  return request.delete('/notes', { quiet: true, params: { id } });
+  return request.delete(`/notes/${encodeURIComponent(id)}`, { quiet: true });
 }

@@ -26,12 +26,18 @@
 // doesn't point back out at anything except `checklist_id`/`checklist_template_id` on a journal
 // entry, which is what the unscoped GET groups by.
 //
-//   GET    /notes ?id=          → { notes }  one note, full content
+//   GET    /notes/:id           → { notes }  one note, full content
 //   GET    /notes ?ids=a,b      → { notes }  several at once, full content
 //   GET    /notes ?q=text&limit= → { notes }  title/search_text match, summaries only
 //   GET    /notes ?limit=       → { notes }  every note this user owns, summaries only
 //   POST   /notes { note }      → { ok }
-//   DELETE /notes ?id=          → { ok }
+//   DELETE /notes/:id           → { ok }
+//
+// `/:id` is matched by `shared/router.ts`'s `matchRoute` — a single note is its own path segment
+// now, not `?id=` in the query string, so "get the collection" and "get one resource" are
+// actually different routes (see CLAUDE.md's "Write them as normal REST APIs"). `?ids=`/`?q=`/
+// `?limit=` stay query params on `GET /notes` itself — none of them addresses one resource by its
+// own id, they're all still shapes of "the collection."
 //
 // See `api/notes-routes.ts` and each handler file for the full detail on each of these.
 //
@@ -40,14 +46,15 @@
 import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
 import { requireUser } from '../../shared/auth.ts';
 import { admin } from '../../shared/authorize.ts';
+import { matchRoute } from '../../shared/router.ts';
 import { ROUTES, subPath } from './api/notes-routes.ts';
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const url = new URL(req.url);
-  const route = ROUTES[`${req.method} ${subPath(url)}`];
-  if (!route) return json(404, { error: 'Not found' });
+  const match = matchRoute(req.method, subPath(url), ROUTES);
+  if (!match) return json(404, { error: 'Not found' });
 
   // Only used to confirm identity (`auth.getUser()`) — table access goes through `admin()`
   // (service-role, bypasses RLS) instead of this client, since authorization is now each route's
@@ -56,7 +63,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await route({ url, req, db: admin(), userId: auth.user.id }));
+    return json(200, await match.handler({ url, req, db: admin(), userId: auth.user.id, id: match.id }));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[notes]', err);
