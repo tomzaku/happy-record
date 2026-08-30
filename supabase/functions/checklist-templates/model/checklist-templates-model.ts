@@ -12,15 +12,15 @@
 // 20260829010000_notes_note_id_ownership.sql), fetched separately and merged onto the client
 // object by useChecklistTemplates.tsx, not embedded in this row. `repeat` moved the same way, one
 // migration later — see 20260830000000_repeats_table.sql — except it's still embedded in this
-// row on the wire: `toChecklistTemplate`'s caller (checklist-templates/index.ts) fetches the
+// row on the wire: `toChecklistTemplate`'s caller (checklist-templates/services and api) fetches the
 // matching `repeats` row itself and passes it in, so the client-facing shape never changed.
-// `isPersonalOverride` is the one addition: true when the caller (checklist-templates/index.ts)
+// `isPersonalOverride` is the one addition: true when the caller (checklist-templates/services and api)
 // determined the resolved `repeatRow` is a challenge participant's own row, not the owner's —
 // annotated onto `repeat.isPersonal` (see ChecklistTemplate['repeat'] in
 // useChecklistTemplates.tsx) so the client can tell "this is my personal reminder" from "this is
 // just the group's default" without knowing anything about how it was resolved.
 
-import { toRepeat } from './repeats.ts';
+import { toRepeat } from '../../../shared/repeats.ts';
 
 export function toChecklistTemplate(
   r: Record<string, unknown>,
@@ -60,7 +60,7 @@ export function patchChecklistTemplate(e: Record<string, unknown>): Record<strin
   if ('avatar' in e) {
     patch.avatar = e.avatar && typeof e.avatar === 'object' ? e.avatar : {};
   }
-  // `repeat` isn't a column on this row anymore — the PATCH route (checklist-templates/index.ts)
+  // `repeat` isn't a column on this row anymore — the PATCH route (checklist-templates/services and api)
   // writes it to `repeats` itself via saveRepeat() when `'repeat' in params`, same as it does for
   // the full-row save() path.
   if ('tags' in e) {
@@ -92,7 +92,7 @@ export function fromChecklistTemplate(e: Record<string, unknown>) {
     id: e.id,
     title: e.title,
     avatar: e.avatar && typeof e.avatar === 'object' ? e.avatar : {},
-    // `repeat` isn't a column here anymore — the caller (checklist-templates/index.ts) writes it
+    // `repeat` isn't a column here anymore — the caller (checklist-templates/services and api) writes it
     // to `repeats` itself via saveRepeat(), after this row exists (the FK needs a parent to point
     // at) — see 20260830000000_repeats_table.sql.
     tags: Array.isArray(e.tags) ? e.tags.filter((t): t is string => typeof t === 'string') : [],
