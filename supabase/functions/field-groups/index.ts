@@ -24,7 +24,7 @@ import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
 import { requireUser } from '../../shared/auth.ts';
 import { admin, compose } from '../../shared/authorize.ts';
 import { fromFieldGroup, toFieldGroup } from '../../shared/fieldGroups.ts';
-import { fetchRepeats, pickRepeat, saveRepeat } from '../../shared/repeats.ts';
+import { fetchRepeats, pickRepeat, saveRepeat, type RepeatOwner } from '../../shared/repeats.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
@@ -38,9 +38,22 @@ async function body(req: Request): Promise<Record<string, unknown>> {
 }
 
 /** Attaches each row's own schedule the same way regardless of which branch of `list` produced
- * the rows — shared so that logic lives in exactly one place. */
-async function withRepeats(db: SupabaseClient, userId: string, rows: Record<string, unknown>[]) {
-  const repeats = await fetchRepeats(db, 'fieldGroupId', rows.map(r => r.id as string));
+ * the rows — shared so that logic lives in exactly one place. `isPublicTemplate` only matters for
+ * a row that isn't the caller's own (see `fetchRepeats`'s own comment); `listMine`'s rows are
+ * always the caller's own regardless of what it passes here, since `ownerUserId === userId ===
+ * callerUserId` already grants those through fetchRepeats' "caller's own row" branch. */
+async function withRepeats(
+  db: SupabaseClient,
+  userId: string,
+  rows: Record<string, unknown>[],
+  isPublicTemplate: boolean,
+) {
+  const owners: RepeatOwner[] = rows.map(r => ({
+    id: r.id as string,
+    ownerUserId: r.user_id as string,
+    isPublic: isPublicTemplate,
+  }));
+  const repeats = await fetchRepeats(db, 'fieldGroupId', owners, userId);
   // No participant-override concept for a group's own schedule today — only its owner ever
   // writes one (see save() below) — but resolving through pickRepeat rather than assuming "the
   // only row" keeps this consistent with checklist-templates' own resolution, and correct without
@@ -48,13 +61,15 @@ async function withRepeats(db: SupabaseClient, userId: string, rows: Record<stri
   return rows.map(r => toFieldGroup(r, pickRepeat(repeats[r.id as string], userId, r.user_id as string)));
 }
 
-type TemplateGroupsAuthorization = { checklistTemplateId: string; visible: boolean };
+type TemplateGroupsAuthorization = { checklistTemplateId: string; visible: boolean; isPublic: boolean };
 
 /** Whether the caller may see *this* template's field groups at all — own template, or a
  * `visibility: 'public'` one. A `false` result isn't a 403: the old RLS policy just silently
  * filtered every row out for a template that doesn't exist or isn't visible, the same "empty,
  * never an error" contract `checklist-templates`' own `?id=` branch documents — so the core below
- * returns `{ fieldGroups: [] }` rather than the composed handler throwing. */
+ * returns `{ fieldGroups: [] }` rather than the composed handler throwing. `isPublic` is kept
+ * separate from `visible` (which is also true for a private template that's simply mine) — it's
+ * what `withRepeats` needs to decide whether a row other than the caller's own may be surfaced. */
 async function checkCanReadFieldGroupsByTemplate({ db, userId, url }: Ctx): Promise<TemplateGroupsAuthorization> {
   const checklistTemplateId = url.searchParams.get('checklistTemplateId')!;
   const { data: template, error } = await db
@@ -63,13 +78,14 @@ async function checkCanReadFieldGroupsByTemplate({ db, userId, url }: Ctx): Prom
     .eq('id', checklistTemplateId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  const visible = !!template && (template.user_id === userId || template.visibility === 'public');
-  return { checklistTemplateId, visible };
+  const isPublic = template?.visibility === 'public';
+  const visible = !!template && (template.user_id === userId || isPublic);
+  return { checklistTemplateId, visible, isPublic };
 }
 
 const getGroupsByTemplate = compose(
   checkCanReadFieldGroupsByTemplate,
-  async ({ db, userId }: Ctx, { checklistTemplateId, visible }: TemplateGroupsAuthorization) => {
+  async ({ db, userId }: Ctx, { checklistTemplateId, visible, isPublic }: TemplateGroupsAuthorization) => {
     if (!visible) return { fieldGroups: [] };
     const { data, error } = await db
       .from('field_groups')
@@ -77,7 +93,7 @@ const getGroupsByTemplate = compose(
       .eq('checklist_template_id', checklistTemplateId)
       .order('position');
     if (error) throw new Error(error.message);
-    return { fieldGroups: await withRepeats(db, userId, (data ?? []) as Record<string, unknown>[]) };
+    return { fieldGroups: await withRepeats(db, userId, (data ?? []) as Record<string, unknown>[], isPublic) };
   },
 );
 
@@ -86,7 +102,7 @@ const getGroupsByTemplate = compose(
 async function listMine({ db, userId }: Ctx) {
   const { data, error } = await db.from('field_groups').select('*').eq('user_id', userId).order('position');
   if (error) throw new Error(error.message);
-  return { fieldGroups: await withRepeats(db, userId, (data ?? []) as Record<string, unknown>[]) };
+  return { fieldGroups: await withRepeats(db, userId, (data ?? []) as Record<string, unknown>[], false) };
 }
 
 async function list(ctx: Ctx) {

@@ -5,10 +5,9 @@
 //     template they've joined a challenge for (see list()'s own comment) — that one always
 //     has someone else's `user_id` on it, not the caller's
 //   GET    /checklist-templates ?id=        → { templates }        one template,
-//     caller's own or anyone's if it's `visibility: 'public'` — this is what
-//     backs the `/checklist-template/shared/:id` route (see CLAUDE.md): the
-//     public-read RLS policy below is what makes a non-owner's lookup return
-//     anything at all.
+//     caller's own or anyone's if it's `visibility: 'public'` — this is what backs the
+//     `/checklist-template/shared/:id` route (see CLAUDE.md); checkCanReadTemplateById below is
+//     what makes a non-owner's lookup return anything at all.
 //   POST   /checklist-templates { template } → { ok }
 //   PATCH  /checklist-templates { id, ...changes } → { ok }
 //   DELETE /checklist-templates  ?id=        → { ok }
@@ -22,16 +21,20 @@
 // owner's — see update()'s own comment. Everything else here (title, avatar, tags, visibility,
 // flagId) stays owner-only, enforced by the `.eq('user_id', userId)` on the actual row update.
 //
+// Moved off RLS onto the app-layer `compose(checkPermission, core)` pattern — see
+// `shared/authorize.ts` and `notes/index.ts` for the full rationale.
+//
 // Deploy: `supabase functions deploy checklist-templates`
 
 import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
 import { requireUser } from '../../shared/auth.ts';
+import { admin, compose } from '../../shared/authorize.ts';
 import {
   fromChecklistTemplate,
   patchChecklistTemplate,
   toChecklistTemplate,
 } from '../../shared/checklistTemplates.ts';
-import { fetchRepeats, pickRepeat, saveRepeat } from '../../shared/repeats.ts';
+import { fetchRepeats, pickRepeat, saveRepeat, type RepeatOwner } from '../../shared/repeats.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
@@ -46,6 +49,14 @@ async function body(req: Request): Promise<Record<string, unknown>> {
   }
 }
 
+/** The `RepeatOwner` `fetchRepeats` needs to know it's safe to surface a *non-caller* row for
+ * this template — its own default schedule, and only when this exact row is `visibility:
+ * 'public'` (see `fetchRepeats`'s own comment on why that's narrower than "the caller may read
+ * this template at all"). */
+function repeatOwnerOf(r: Record<string, unknown>): RepeatOwner {
+  return { id: r.id as string, ownerUserId: r.user_id as string, isPublic: r.visibility === 'public' };
+}
+
 /** Resolves one row's effective schedule for `userId` and maps it to the wire shape — shared by
  * both branches of list() below so "which row wins, and is it a personal override" is decided in
  * exactly one place. */
@@ -56,24 +67,31 @@ function resolveTemplate(r: Record<string, unknown>, repeatsByTemplate: Record<s
   return toChecklistTemplate(r, repeatRow, isPersonalOverride);
 }
 
-async function list({ url, db, userId }: Ctx) {
-  const id = url.searchParams.get('id');
+/** For `GET ?id=` — loads the row (there's nothing to authorize without it) and decides whether
+ * this caller may see it: their own, or a `visibility: 'public'` one. `null` for "no," not a
+ * thrown error — this used to be RLS silently filtering the row out, and every caller of this
+ * route already expects "someone else's private template by id" and "no such id at all" to look
+ * identical: an empty `templates` array. */
+async function checkCanReadTemplateById({ db, userId, url }: Ctx): Promise<Record<string, unknown> | null> {
+  const id = url.searchParams.get('id')!;
+  const { data, error } = await db.from('checklist_templates').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  const row = data as Record<string, unknown>;
+  return row.user_id === userId || row.visibility === 'public' ? row : null;
+}
 
-  // A shared-template lookup: no `user_id` filter, so this relies entirely
-  // on RLS ("owner OR visibility = 'public'") to decide what comes back —
-  // someone else's private template by id returns empty, not an error.
-  if (id) {
-    const { data, error } = await db
-      .from('checklist_templates')
-      .select('*')
-      .eq('id', id)
-      .limit(1);
-    if (error) throw new Error(error.message);
-    const rows = (data ?? []) as Record<string, unknown>[];
-    const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(r => r.id as string));
-    return { templates: rows.map(r => resolveTemplate(r, repeats, userId)) };
-  }
+const getTemplateById = compose(checkCanReadTemplateById, async ({ db, userId }: Ctx, row: Record<string, unknown> | null) => {
+  if (!row) return { templates: [] };
+  const repeats = await fetchRepeats(db, 'checklistTemplateId', [repeatOwnerOf(row)], userId);
+  return { templates: [resolveTemplate(row, repeats, userId)] };
+});
 
+/** The unscoped "all mine, plus anything I've joined a challenge for" read — no single
+ * `checkPermission` to compose here (unlike `getTemplateById` above): the owned half is a plain
+ * explicit filter, and the joined half's own visibility check is a batch filter over rows already
+ * scoped to ids this caller is known to have joined, not a single allow/deny decision. */
+async function listMine({ db, userId }: Ctx) {
   const [{ data: ownedData, error: ownedError }, { data: participantRows, error: participantError }] =
     await Promise.all([
       db.from('checklist_templates').select('*').eq('user_id', userId).order('created_at'),
@@ -94,21 +112,28 @@ async function list({ url, db, userId }: Ctx) {
     ...new Set(((participantRows ?? []) as Record<string, unknown>[]).map(r => r.checklist_template_id as string)),
   ].filter(id => !ownedIds.has(id));
 
-  // Readable with no extra RLS grant: sharing a template always flips it to `visibility:
-  // 'public'` (CardShare's generateShareUrl) before a challenge can even exist for it, so the
-  // existing "owner OR public" policy already covers a joined template here — same as the `?id=`
-  // branch above relies on for the shared page itself.
   const { data: joinedData, error: joinedError } = joinedIds.length
     ? await db.from('checklist_templates').select('*').in('id', joinedIds)
     : { data: [] as Record<string, unknown>[], error: null };
   if (joinedError) throw new Error(joinedError.message);
 
-  const rows = [...ownedRows, ...((joinedData ?? []) as Record<string, unknown>[])];
-  const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(r => r.id as string));
+  // Explicit now, replacing what used to be RLS's own "owner OR public" filter on this query:
+  // sharing a template always flips it to `visibility: 'public'` (CardShare's generateShareUrl)
+  // before a challenge can even exist for it, so this is normally a no-op — but a template that
+  // got unshared *after* this caller joined it must stop appearing here too, the same graceful
+  // degrade RLS gave for free before.
+  const visibleJoinedRows = ((joinedData ?? []) as Record<string, unknown>[]).filter(r => r.visibility === 'public');
+
+  const rows = [...ownedRows, ...visibleJoinedRows];
+  const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(repeatOwnerOf), userId);
   // resolveTemplate's viewer/owner resolution actually matters here now: a joined row's
   // `user_id` is the sharer, not the caller, so a personal reminder override
   // (`repeats.user_id === userId`) has to win over the owner's own schedule.
   return { templates: rows.map(r => resolveTemplate(r, repeats, userId)) };
+}
+
+async function list(ctx: Ctx) {
+  return ctx.url.searchParams.get('id') ? getTemplateById(ctx) : listMine(ctx);
 }
 
 async function save({ req, db, userId }: Ctx) {
@@ -197,7 +222,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await route({ url, req, db: auth.supabase, userId: auth.user.id }));
+    return json(200, await route({ url, req, db: admin(), userId: auth.user.id }));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[checklist-templates]', err);

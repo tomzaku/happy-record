@@ -72,24 +72,44 @@ function fromRepeat(repeat: unknown, owner: Owner): Row {
   };
 }
 
-/** Every `repeats` row for a batch of owners at once, keyed by owner id, each value the full list
+/** One owner (a checklist_template or field_group row the caller already has) as `fetchRepeats`
+ * needs to know it: its own id, who owns *it*, and whether it's `visibility: 'public'` — the two
+ * facts that decide whether a row other than the caller's own is visible. */
+export type RepeatOwner = { id: string; ownerUserId: string; isPublic: boolean };
+
+/**
+ * Every `repeats` row for a batch of owners at once, keyed by owner id, each value the full list
  * of rows for that owner (the owner's own default plus however many participant overrides exist)
- * — so a list() route reads one extra query total, not one per row on the page. RLS already
- * narrows what comes back to "rows I own, plus the owner's own row for anything public," so this
- * never has to filter by user_id itself. */
+ * — so a list() route reads one extra query total, not one per row on the page.
+ *
+ * Used to rely on RLS to narrow this to "rows I own, plus the owner's own row for anything
+ * public" — see 20260830000000_repeats_table.sql's own "Owner's schedule for a public checklist
+ * template is readable by anyone" policy, scoped specifically to the *owner's* row, never a
+ * participant's personal override on that same owner. Replicated here explicitly now that this
+ * runs on the service-role client: fetches broadly (scoped only to `owners`' ids, same as
+ * before), then keeps a row only if it's the caller's own, or it's the owner's own row on an
+ * owner that's actually public — anything else (another participant's override on a public
+ * template, or any row at all on a private one) gets filtered out before a caller ever sees it.
+ */
 export async function fetchRepeats(
   db: SupabaseClient,
   ownerKind: 'checklistTemplateId' | 'fieldGroupId',
-  ownerIds: string[],
+  owners: RepeatOwner[],
+  callerUserId: string,
 ): Promise<Record<string, Row[]>> {
   const byOwner: Record<string, Row[]> = {};
-  if (!ownerIds.length) return byOwner;
+  if (!owners.length) return byOwner;
 
   const column = OwnerColumn[ownerKind];
-  const { data, error } = await db.from('repeats').select('*').in(column, ownerIds);
+  const ownerById = new Map(owners.map(o => [o.id, o]));
+  const { data, error } = await db.from('repeats').select('*').in(column, owners.map(o => o.id));
   if (error) throw new Error(error.message);
   for (const row of (data ?? []) as Row[]) {
     const key = row[column] as string;
+    const owner = ownerById.get(key);
+    if (!owner) continue; // defensive — every row's owner column is one of the ids just queried
+    const visible = row.user_id === callerUserId || (owner.isPublic && row.user_id === owner.ownerUserId);
+    if (!visible) continue;
     (byOwner[key] ??= []).push(row);
   }
   return byOwner;
