@@ -4,6 +4,7 @@
 
 import { pickRepeat, type RepeatOwner } from '../../../shared/repeats.ts';
 import { toChecklistTemplate } from '../../../dto/checklist-templates/checklist-templates-dto.ts';
+import { fetchTemplateRow } from './checklist-templates-repository.ts';
 import type { Ctx } from '../api/checklist-templates-context.ts';
 
 /** The `RepeatOwner` `fetchRepeats` needs to know it's safe to surface a *non-caller* row for
@@ -34,9 +35,7 @@ export function resolveTemplate(
  * route already expects "someone else's private template by id" and "no such id at all" to look
  * identical: an empty `templates` array. */
 export async function checkCanReadTemplateById({ db, userId, id }: Ctx): Promise<Record<string, unknown> | null> {
-  const { data, error } = await db.from('checklist_templates').select('*').eq('id', id!).maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) return null;
-  const row = data as Record<string, unknown>;
+  const row = await fetchTemplateRow(db, id!);
+  if (!row) return null;
   return row.user_id === userId || row.visibility === 'public' ? row : null;
 }
