@@ -3,15 +3,11 @@
 // `compose(checkCanReadTemplateById, core)`.
 
 import { compose } from '../../../shared/authorize.ts';
-import { fetchRepeats } from '../../../shared/repeats.ts';
-import { checkCanReadTemplateById, repeatOwnerOf, resolveTemplate } from '../services/checklist-templates-access-service.ts';
+import { checkCanReadTemplateById } from '../services/checklist-templates-access-service.ts';
+import { getTemplateWithRepeat } from '../services/checklist-templates-service.ts';
 import type { Ctx } from './checklist-templates-context.ts';
 
-export const getChecklistTemplateHandler = compose(
-  checkCanReadTemplateById,
-  async ({ db, userId }: Ctx, row: Record<string, unknown> | null) => {
-    if (!row) return { templates: [] };
-    const repeats = await fetchRepeats(db, 'checklistTemplateId', [repeatOwnerOf(row)], userId);
-    return { templates: [resolveTemplate(row, repeats, userId)] };
-  },
-);
+export const getChecklistTemplateHandler = compose(checkCanReadTemplateById, async (ctx: Ctx, row: Record<string, unknown> | null) => {
+  if (!row) return { templates: [] };
+  return { templates: [await getTemplateWithRepeat(ctx, row)] };
+});
