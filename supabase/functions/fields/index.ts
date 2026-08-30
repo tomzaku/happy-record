@@ -17,15 +17,22 @@
 // `?templateId=` below — authorized by the template being public, not by flipping the field
 // itself public for literally everyone on the platform to see in their own field pickers.
 //
-// Writes stay owner-only; RLS's own-row policy already blocks anyone but the owner from touching
-// a field, this just keeps the same shape true in the query too.
+// Writes stay owner-only — `save`/`remove` hardcode `user_id`, nothing to compose a
+// `checkPermission` around.
+//
+// Moved off RLS onto the app-layer `compose(checkPermission, core)` pattern — see
+// `shared/authorize.ts` and `notes/index.ts` for the full rationale. `?templateId=` already
+// reached for a service-role client before any of that existed (see checkCanReadFieldsByTemplate
+// below) — it's folded into the same `admin()` everything else now uses instead of its own
+// one-off `createClient` call.
 //
 // Deploy: `supabase functions deploy fields`
 
 import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
 import { requireUser } from '../../shared/auth.ts';
+import { admin, compose } from '../../shared/authorize.ts';
 import { fromRecordField, toRecordField } from '../../shared/fields.ts';
-import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 type Ctx = { url: URL; req: Request; db: SupabaseClient; userId: string };
 
@@ -49,24 +56,13 @@ function fieldIdOf(entry: unknown): string | undefined {
   return undefined;
 }
 
-/**
- * Every field one checklist template's own field_groups reference — the shared-template page's
- * own read, replacing the old "sharing flips every referenced field to `visibility: 'public'`"
- * design (see useCreateChecklistTemplateApi.tsx's own comment for why that changed: a field
- * becoming public makes it usable in *anyone's* checklist, not just visible to whoever the share
- * link went to).
- *
- * The template being public is the entire authorization here, checked with the caller's own
- * RLS-scoped client (the same "public checklist templates are readable by anyone" policy the
- * template page's own read already relies on) — a private template resolves nothing, same as a
- * template that doesn't exist. Once confirmed, this reads the template's own field_groups (now
- * allowed too — see 20260829060000_public_template_field_groups.sql) to get the referenced field
- * ids, then reaches for a service-role client scoped to exactly that pre-validated, narrow set of
- * ids — the fields themselves stay `visibility: 'private'` in the table; this is a deliberate,
- * narrowly-scoped bypass of that, not a blanket "read any field" grant, and the only place in
- * this app that reaches for the service role today.
- */
-async function listByTemplate({ db }: Ctx, templateId: string) {
+/** Every field id one checklist template's own field_groups reference, or `null` if this caller
+ * may not see that template at all (nonexistent, or private and not public — the same "empty,
+ * never an error" contract `checklist-templates`' own `?id=` branch and `field-groups`' own
+ * scoped read both use). Own-templates-only was never the rule here — reachable at all only if
+ * the template is genuinely `visibility: 'public'`, same as before this moved off RLS. */
+async function checkCanReadFieldsByTemplate({ db, url }: Ctx): Promise<string[] | null> {
+  const templateId = url.searchParams.get('templateId')!;
   const { data: template, error: templateError } = await db
     .from('checklist_templates')
     .select('id')
@@ -74,7 +70,7 @@ async function listByTemplate({ db }: Ctx, templateId: string) {
     .eq('visibility', 'public')
     .maybeSingle();
   if (templateError) throw new Error(templateError.message);
-  if (!template) return { fields: [] };
+  if (!template) return null;
 
   const { data: groups, error: groupsError } = await db
     .from('field_groups')
@@ -82,30 +78,36 @@ async function listByTemplate({ db }: Ctx, templateId: string) {
     .eq('checklist_template_id', templateId);
   if (groupsError) throw new Error(groupsError.message);
 
-  const fieldIds = [
+  return [
     ...new Set(
       ((groups ?? []) as { fields: unknown }[]).flatMap(g =>
         (Array.isArray(g.fields) ? g.fields : []).map(fieldIdOf).filter((id): id is string => !!id),
       ),
     ),
   ];
-  if (!fieldIds.length) return { fields: [] };
-
-  const admin = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    { auth: { persistSession: false } },
-  );
-  const { data, error } = await admin.from('fields').select('*').in('id', fieldIds);
-  if (error) throw new Error(error.message);
-  return { fields: ((data ?? []) as Record<string, unknown>[]).map(toRecordField) };
 }
 
-async function list(ctx: Ctx) {
-  const { url, db, userId } = ctx;
-  const templateId = url.searchParams.get('templateId');
-  if (templateId) return listByTemplate(ctx, templateId);
+/**
+ * Every field one checklist template's own field_groups reference — the shared-template page's
+ * own read, replacing the old "sharing flips every referenced field to `visibility: 'public'`"
+ * design (see useCreateChecklistTemplateApi.tsx's own comment for why that changed: a field
+ * becoming public makes it usable in *anyone's* checklist, not just visible to whoever the share
+ * link went to). The fields themselves stay `visibility: 'private'` in the table — reading them
+ * by this pre-validated, narrow id set (rather than the caller's own owner-or-public visibility
+ * rule below) is a deliberate, narrowly-scoped bypass of that, not a blanket "read any field"
+ * grant; this was the only place in this app that reached for the service role before every
+ * resource started moving onto it (see `shared/authorize.ts`).
+ */
+const listByTemplate = compose(checkCanReadFieldsByTemplate, async ({ db }: Ctx, fieldIds: string[] | null) => {
+  if (!fieldIds || !fieldIds.length) return { fields: [] };
+  const { data, error } = await db.from('fields').select('*').in('id', fieldIds);
+  if (error) throw new Error(error.message);
+  return { fields: ((data ?? []) as Record<string, unknown>[]).map(toRecordField) };
+});
 
+/** Own fields plus anyone's public ones — already an explicit rule, not an implicit RLS filter,
+ * so it needs no `checkPermission` of its own. */
+async function listMine({ url, db, userId }: Ctx) {
   const ids = (url.searchParams.get('ids') ?? '').split(',').filter(Boolean);
 
   let query = db
@@ -117,6 +119,10 @@ async function list(ctx: Ctx) {
   const { data, error } = await query.order('created_at');
   if (error) throw new Error(error.message);
   return { fields: ((data ?? []) as Record<string, unknown>[]).map(toRecordField) };
+}
+
+async function list(ctx: Ctx) {
+  return ctx.url.searchParams.get('templateId') ? listByTemplate(ctx) : listMine(ctx);
 }
 
 async function save({ req, db, userId }: Ctx) {
@@ -166,7 +172,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await route({ url, req, db: auth.supabase, userId: auth.user.id }));
+    return json(200, await route({ url, req, db: admin(), userId: auth.user.id }));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[fields]', err);
