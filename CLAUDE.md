@@ -453,6 +453,22 @@ against real foreign keys. If you're tempted to route another "this doesn't quit
 existing table" case through an unrelated resource with placeholder ids, don't — that's exactly
 what broke here; give it its own table once it needs to leave the device.
 
+A field-group's own note (its "how to do it" instructions, `ownerType: 'field_group'`) is the one
+place a challenge participant's edit forks rather than writing in place — `notes.copied_from_id`
+(`20260831000000_notes_copied_from_id.sql`, mirroring the `fields`/`checklist_templates` columns
+of the same name) points back at the note a participant's own copy started from. The owner always
+writes the group's one canonical note directly; a participant's first edit copies its
+then-current content into a brand-new note they own instead (`GET /notes?fieldGroupId=` is how the
+client tells "I already have my own copy" from "still reading the canonical one, read-only" —
+`supabase/functions/notes/api/list-notes-handler.ts`'s own `getMyFieldGroupNote`), and every edit
+after that goes to their own copy — see `packages/global/src/hook/useFieldGroupNote.ts`. This
+doesn't contradict "joining a challenge never forks" above: that's about the *template* and its
+*fields* (every participant records against the exact same field id, no copy made at join time at
+all) — a field-group's note is a separate mechanism, forked only on an explicit edit, and only for
+that one note, not the whole template. No switcher between "the owner's version" and "mine" once a
+participant has their own copy yet — deliberately deferred, not an oversight; the `copied_from_id`
+back-reference already makes that possible to add later without another schema change.
+
 Every field written by one Submit click shares a `submissions` row (`checklist_records.submission_id`,
 a real foreign key) — that's the actual "these were committed together" relationship, not
 `created_at` matching. `submissions` has no resource/edge function of its own: `checklist-records`
