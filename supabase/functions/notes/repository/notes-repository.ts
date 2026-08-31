@@ -82,6 +82,31 @@ export async function removeNote(db: SupabaseClient, userId: string, id: string)
   if (error) throw new Error(error.message);
 }
 
+export async function fetchFieldGroupTemplateId(db: SupabaseClient, fieldGroupId: string): Promise<string | null> {
+  const { data, error } = await db
+    .from('field_groups')
+    .select('checklist_template_id')
+    .eq('id', fieldGroupId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data?.checklist_template_id as string | undefined) ?? null;
+}
+
+export async function fetchChallengeParticipantRow(
+  db: SupabaseClient,
+  checklistTemplateId: string,
+  userId: string,
+): Promise<{ id: string } | null> {
+  const { data, error } = await db
+    .from('challenge_participants')
+    .select('id')
+    .eq('checklist_template_id', checklistTemplateId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 /** Which of `ownerIds` (field_group ids) belong to a `visibility: 'public'` template — the one
  * cross-table fact every read-side permission check needs. Two plain queries plus a set
  * intersection in code, not a PostgREST embed: `field_groups.checklist_template_id` isn't a real

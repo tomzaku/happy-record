@@ -9,7 +9,7 @@ import { checkWriteNote, type WriteAuthorization } from '../services/notes-acces
 import { saveNote } from '../services/notes-service.ts';
 import type { Ctx } from './notes-context.ts';
 
-async function saveNoteCore(ctx: Ctx, { entry }: WriteAuthorization) {
+async function saveNoteCore(ctx: Ctx, { entry, ownerUserId }: WriteAuthorization) {
   let row: ReturnType<typeof fromNote>;
   try {
     row = fromNote(entry);
@@ -17,7 +17,7 @@ async function saveNoteCore(ctx: Ctx, { entry }: WriteAuthorization) {
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid note.');
   }
 
-  await saveNote(ctx, row);
+  await saveNote(ctx, row, ownerUserId);
   return { ok: true };
 }
 

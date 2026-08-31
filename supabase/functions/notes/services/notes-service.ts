@@ -18,8 +18,12 @@ export function listMyNotes({ db, userId }: Ctx, opts: NoteSummaryQuery): Promis
   return fetchNoteSummaries(db, userId, opts);
 }
 
-export async function saveNote({ db, userId }: Ctx, row: Record<string, unknown>): Promise<void> {
-  await upsertNote(db, userId, row);
+/** `ownerUserId` is whoever the row's `user_id` should stay as — the existing row's own owner on
+ * an edit (a challenge participant editing a field-group's shared note must not seize ownership of
+ * it — see notes-access-service.ts's own `checkWriteNote`), or the caller for a genuinely new
+ * note. Not always `userId` (the caller performing this write). */
+export async function saveNote({ db, userId }: Ctx, row: Record<string, unknown>, ownerUserId: string): Promise<void> {
+  await upsertNote(db, ownerUserId, row);
 
   // A journal entry (checklist_id set) has a paired `checklist_records` row — same id — whose own
   // `updated_at` needs bumping too, or that row's own last-write-wins merge on the checklist side
