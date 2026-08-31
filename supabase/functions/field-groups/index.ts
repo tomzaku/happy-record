@@ -13,7 +13,11 @@
 //     own only, unlike the scoped form above.
 //   POST   /field-groups { fieldGroup }           → { ok }   full-row upsert — create, edit,
 //     set/clear noteId, or set archivedAt (soft delete; there's no hard-delete route, matching
-//     the convention this replaced).
+//     the convention this replaced). Owner-only — see save-field-group-handler.ts.
+//   PATCH  /field-groups/:id { repeat }            → { ok }   a challenge participant's own
+//     override of this one group's schedule — never gated by ownership, always writes to the
+//     caller's own `repeats` row, same shape checklist-templates' own PATCH `{ repeat }` carve-out
+//     uses for the template-level schedule. See update-field-group-repeat-handler.ts.
 //
 // Supabase requires this exact file as the deploy target (`supabase functions deploy
 // field-groups`), so it stays a thin entrypoint: CORS, identity, dispatch, error shape. Route
@@ -26,20 +30,21 @@
 import { ApiError, corsHeaders, json } from '../../shared/cors.ts';
 import { requireUser } from '../../shared/auth.ts';
 import { admin } from '../../shared/authorize.ts';
+import { matchRoute } from '../../shared/router.ts';
 import { ROUTES, subPath } from './api/field-groups-routes.ts';
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const url = new URL(req.url);
-  const route = ROUTES[`${req.method} ${subPath(url)}`];
-  if (!route) return json(404, { error: 'Not found' });
+  const match = matchRoute(req.method, subPath(url), ROUTES);
+  if (!match) return json(404, { error: 'Not found' });
 
   const auth = await requireUser(req);
   if (!auth) return json(401, { error: 'Not signed in.' });
 
   try {
-    return json(200, await route({ url, req, db: admin(), userId: auth.user.id }));
+    return json(200, await match.handler({ url, req, db: admin(), userId: auth.user.id, id: match.id }));
   } catch (err) {
     if (err instanceof ApiError) return json(err.status, { error: err.message });
     console.error('[field-groups]', err);

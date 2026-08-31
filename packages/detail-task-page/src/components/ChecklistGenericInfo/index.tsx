@@ -24,7 +24,7 @@ import IconPicker from '@pregnant/create-checklist-page-ui/src/IconPicker';
 import TagInput from '@pregnant/create-checklist-page-ui/src/TagInput';
 import { getDaysFromRepeat } from '@pregnant/create-checklist-page-ui/src/getDayFromRepeat';
 import { calculateRepeat } from '@pregnant/create-checklist-page-ui/src/calculateRepeat';
-import { ScheduleModalContent, WeekDaysPills } from '@pregnant/create-checklist-page-ui';
+import { GroupScheduleList, ScheduleModalContent, WeekDaysPills } from '@pregnant/create-checklist-page-ui';
 
 import styles from './index.module.scss';
 
@@ -83,7 +83,7 @@ const ChecklistGenericInfo = ({
   // `fieldGroups` isn't part of the template's own row anymore — a schedule edit
   // (GroupScheduleList, below) or a group restore is its own write now, one row at a time (see
   // useFieldGroups.tsx), not folded into `onUpdate`'s template patch.
-  const { updateFieldGroup } = useFieldGroups();
+  const { updateFieldGroup, updateMyFieldGroupRepeat } = useFieldGroups();
   const [isCollapsed, setIsCollapsed] = React.useState(isDefaultCollapsed);
   const [activeModal, setActiveModal] = React.useState<EditModal>(
     EditModal.None,
@@ -211,14 +211,30 @@ const ChecklistGenericInfo = ({
     setActiveModal(EditModal.None);
   };
 
-  // Same tempWeeklyHobbies/tempTime/tempStartDay staging as handleSaveSchedule above — the modal
-  // starts from whatever's currently effective (the owner's default, or this participant's own
-  // override — see resetModalStates), just written through onUpdateMyReminder instead of onUpdate
-  // so it lands on the caller's own row, never the owner's (see checklist-templates/index.ts's
-  // update()). No field-group handling here: a participant can't override a group's own schedule,
-  // only the template's top-level one — ScheduleModalContent isn't given `fieldGroups` in this
-  // dialog for exactly that reason (see its own render below).
+  // Same tempWeeklyHobbies/tempTime/tempStartDay (or tempFieldGroups, for a template with real
+  // field groups) staging as handleSaveSchedule above — the modal starts from whatever's
+  // currently effective (the owner's default, or this participant's own override — see
+  // resetModalStates), just written through onUpdateMyReminder/updateMyFieldGroupRepeat instead
+  // of onUpdate/updateFieldGroup so it lands on the caller's own row, never the owner's.
+  //
+  // A template with real field groups derives its own top-level schedule from the union of the
+  // groups' own (see hasFieldGroups' own comment) — a participant can't override that derived
+  // value directly, only each group's own, via the same per-row editor the owner's Schedule modal
+  // uses (GroupScheduleList, reusing tempFieldGroups — see its own render below), just persisted
+  // one PATCH per changed group through updateMyFieldGroupRepeat instead of the owner's full-row
+  // updateFieldGroup.
   const handleSaveMyReminder = () => {
+    if (hasFieldGroups) {
+      tempFieldGroups.forEach(group => {
+        const original = checklistTemplate.fieldGroups.find(g => g.id === group.id);
+        if (original && JSON.stringify(group.repeat ?? null) !== JSON.stringify(original.repeat ?? null)) {
+          updateMyFieldGroupRepeat(group.id, group.repeat ?? null);
+        }
+      });
+      setActiveModal(EditModal.None);
+      return;
+    }
+
     const repeat = calculateRepeat({
       weeklyHobbies: tempWeeklyHobbies,
       selectedTime: tempTime,
@@ -230,9 +246,17 @@ const ChecklistGenericInfo = ({
     setActiveModal(EditModal.None);
   };
 
-  // Clears this participant's override — the row reappears showing the owner's default on the
-  // next fetch (see updateMyReminder's own comment on why this always re-fetches).
+  // Clears this participant's override(s) — the row(s) reappear showing the owner's default on
+  // the next fetch (see updateMyReminder's own comment on why that always re-fetches; a group's
+  // own updateMyFieldGroupRepeat(id, null) is the same idea, one group at a time).
   const handleResetMyReminder = () => {
+    if (hasFieldGroups) {
+      getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).forEach(group => {
+        updateMyFieldGroupRepeat(group.id, null);
+      });
+      setActiveModal(EditModal.None);
+      return;
+    }
     onUpdateMyReminder?.(null);
     setActiveModal(EditModal.None);
   };
@@ -567,12 +591,12 @@ const ChecklistGenericInfo = ({
       </Dialog>
 
       {/* My Reminder Modal — a challenge participant's own override, distinct from the Schedule
-          modal above (owner-only, edits the shared row). No `fieldGroups` passed to
-          ScheduleModalContent: a participant can't override a group's own schedule, only the
-          template's top-level day/time, so this always shows the plain day+time picker even for
-          a template that itself has field groups (see getEffectiveDayOfWeek's own comment on
-          when a template-level dayOfWeek is actually load-bearing vs. purely display/notification
-          metadata). */}
+          modal above (owner-only, edits the shared row). For a template with real field groups,
+          this shows GroupScheduleList (one row per group, reusing tempFieldGroups — see
+          hasFieldGroups' own comment on why the template-level day/time isn't editable directly
+          here) instead of the plain day+time picker: a participant can't override the *derived*
+          template-level schedule, only each group's own, which is the one that actually matters
+          for a template shaped like this. */}
       <Dialog
         visible={activeModal === EditModal.MyReminder}
         onDismiss={handleModalClose}
@@ -589,15 +613,19 @@ const ChecklistGenericInfo = ({
         }
         bodyClassName={styles.noBodyPadding}
       >
-        <ScheduleModalContent
-          tempWeeklyHobbies={tempWeeklyHobbies}
-          setTempWeeklyHobbies={setTempWeeklyHobbies}
-          tempDate={tempStartDay}
-          setTempDate={setTempStartDay}
-          tempTime={tempTime}
-          setTempTime={setTempTime}
-        />
-        {checklistTemplate.repeat?.isPersonal && (
+        {hasFieldGroups ? (
+          <GroupScheduleList fieldGroups={tempFieldGroups} onChange={setTempFieldGroups} />
+        ) : (
+          <ScheduleModalContent
+            tempWeeklyHobbies={tempWeeklyHobbies}
+            setTempWeeklyHobbies={setTempWeeklyHobbies}
+            tempDate={tempStartDay}
+            setTempDate={setTempStartDay}
+            tempTime={tempTime}
+            setTempTime={setTempTime}
+          />
+        )}
+        {(hasFieldGroups || checklistTemplate.repeat?.isPersonal) && (
           <div className={styles.resetReminderRow}>
             <Button type="ghost" size="sm" onClick={handleResetMyReminder}>
               {intl.formatMessage({

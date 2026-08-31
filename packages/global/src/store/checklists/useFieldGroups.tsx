@@ -7,7 +7,7 @@ import { normalizeFieldGroupFields, type FieldGroup, type FieldGroupField } from
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
 // fallback, unchanged.
-import { fetchFieldGroups, saveFieldGroup } from './fieldGroupsApi';
+import { fetchFieldGroups, patchFieldGroupRepeat, saveFieldGroup } from './fieldGroupsApi';
 
 const FIELD_GROUP_KEY = 'field_group';
 
@@ -50,8 +50,14 @@ export const useFieldGroups = () => {
         for (const group of normalized) {
           const existing = merged[group.id];
           // Last-write-wins by `updatedAt` — cheap safety even though a direct scoped fetch
-          // makes a real conflict rare.
-          if (!existing || new Date(group.updatedAt) > new Date(existing.updatedAt)) {
+          // makes a real conflict rare. `>=`, not `>`: a group's own `repeat` comes from a
+          // separate `repeats` row (see field-groups-dto.ts's own toFieldGroup) whose write
+          // doesn't touch this row's `updated_at` at all — a challenge participant's schedule
+          // seeded at join time (challenge-participants-service.ts's own seedReminderFromOwner)
+          // or set via the group's own menu are exactly this: the *only* thing that changed is
+          // `repeat`, so an incoming fetch can tie the cached `updatedAt` exactly while still
+          // carrying materially different data. A strict `>` would keep discarding that forever.
+          if (!existing || new Date(group.updatedAt) >= new Date(existing.updatedAt)) {
             merged[group.id] = group;
             changed = true;
           }
@@ -123,10 +129,28 @@ export const useFieldGroups = () => {
   const archiveFieldGroup = (group: FieldGroup): FieldGroup =>
     updateFieldGroup({ ...group, archivedAt: new Date().toISOString() });
 
+  /** A challenge participant's own override of one group's schedule — PATCH `/field-groups/:id
+   * { repeat }`, never the owner's full-row `updateFieldGroup` above (which they can't write
+   * anyway — see the edge function's own doc comment). `repeat: null` clears it back to
+   * following the owner's. Optimistic, same as every other write here: updates the local copy
+   * immediately, fires the request, doesn't await it. */
+  const updateMyFieldGroupRepeat = (fieldGroupId: string, repeat: FieldGroup['repeat'] | null) => {
+    setFieldGroupList(prev => {
+      const existing = prev[fieldGroupId];
+      if (!existing) return prev;
+      return {
+        ...prev,
+        [fieldGroupId]: { ...existing, repeat: repeat ?? undefined, updatedAt: new Date().toISOString() },
+      };
+    });
+    patchFieldGroupRepeat(fieldGroupId, repeat);
+  };
+
   return {
     fieldGroupList,
     getFieldGroups,
     ensureAllFieldGroupsFetched,
+    updateMyFieldGroupRepeat,
     addFieldGroup,
     updateFieldGroup,
     archiveFieldGroup,

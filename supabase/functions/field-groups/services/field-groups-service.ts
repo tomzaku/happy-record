@@ -27,3 +27,13 @@ export async function saveFieldGroup({ db, userId }: Ctx, row: Record<string, un
   // there first.
   await saveRepeat(db, repeat, { userId, fieldGroupId: row.id as string });
 }
+
+/** A challenge participant's own override of one group's schedule — `PATCH /field-groups/:id
+ * { repeat }`. Never gated by ownership: `saveRepeat`'s own deterministic row id
+ * (`fg:{fieldGroupId}:{userId}`) already guarantees this can only ever touch the caller's own
+ * row, the same "repeat is a separate write from the rest of the resource" carve-out
+ * checklist-templates' own PATCH uses for its top-level schedule — see that resource's
+ * `updateTemplate` and CLAUDE.md's own note on why. */
+export function updateMyFieldGroupRepeat({ db, userId }: Ctx, fieldGroupId: string, repeat: unknown): Promise<void> {
+  return saveRepeat(db, repeat, { userId, fieldGroupId });
+}

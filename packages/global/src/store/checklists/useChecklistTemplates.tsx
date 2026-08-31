@@ -272,9 +272,16 @@ export const useChecklistTemplates = () => {
         let changed = false;
         for (const template of fetched) {
           const existing = merged[template.id];
-          // Last-write-wins by `updatedAt` — cheap safety even though a
-          // direct scoped fetch makes a real conflict rare.
-          if (!existing || new Date(template.updatedAt) > new Date(existing.updatedAt)) {
+          // Last-write-wins by `updatedAt` — cheap safety even though a direct scoped fetch
+          // makes a real conflict rare. `>=`, not `>`: the template's own `repeat` comes from a
+          // separate `repeats` row (see checklist-templates-dto.ts's own toChecklistTemplate)
+          // whose write doesn't always touch this row's `updated_at` — a challenge participant's
+          // schedule seeded at join time (challenge-participants-service.ts's own
+          // seedReminderFromOwner) writes straight to `repeats`, so an incoming fetch can tie the
+          // cached `updatedAt` exactly while still carrying a materially different `repeat`. A
+          // strict `>` would keep discarding that forever (the ordinary PATCH .../:id { repeat }
+          // path always bumps this row's own `updated_at` too, so it never actually hit this).
+          if (!existing || new Date(template.updatedAt) >= new Date(existing.updatedAt)) {
             merged[template.id] = template;
             changed = true;
             if (!existing) newIds.push(template.id);
