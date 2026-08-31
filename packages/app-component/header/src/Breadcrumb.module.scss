@@ -12,7 +12,7 @@
   text-decoration: none;
   white-space: nowrap;
 
-  a&:hover {
+  &:hover {
     color: var(--text-color);
   }
 }
