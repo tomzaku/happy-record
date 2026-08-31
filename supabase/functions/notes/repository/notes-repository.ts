@@ -82,6 +82,13 @@ export async function removeNote(db: SupabaseClient, userId: string, id: string)
   if (error) throw new Error(error.message);
 }
 
+/** `limit(1)` + take the newest, not `.maybeSingle()` — this must tolerate more than one row
+ * already existing for `(owner_type: 'field_group', owner_id, user_id)` from before a real bug in
+ * the client's own save path (a stale `NoteEditor` callback re-deciding "create" on every edit
+ * instead of ever seeing its own earlier create — see useFieldGroupNote.ts's own `startEditing`
+ * comment) could leave more than one behind; `.maybeSingle()` throws on exactly that, which is
+ * what turned this into a 500 rather than silently picking one. The fix stops new duplicates from
+ * ever being created — this is just tolerance for ones a device already made before it shipped. */
 export async function fetchOwnNoteForFieldGroup(
   db: SupabaseClient,
   fieldGroupId: string,
@@ -93,9 +100,10 @@ export async function fetchOwnNoteForFieldGroup(
     .eq('owner_type', 'field_group')
     .eq('owner_id', fieldGroupId)
     .eq('user_id', userId)
-    .maybeSingle();
+    .order('created_at', { ascending: false })
+    .limit(1);
   if (error) throw new Error(error.message);
-  return (data as NoteRow) ?? null;
+  return ((data ?? [])[0] as NoteRow | undefined) ?? null;
 }
 
 /** Which of `ownerIds` (field_group ids) belong to a `visibility: 'public'` template — the one
