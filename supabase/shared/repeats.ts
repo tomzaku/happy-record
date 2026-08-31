@@ -126,6 +126,17 @@ export function pickRepeat(rows: Row[] | undefined, viewerUserId: string, ownerU
   return rows.find(r => r.user_id === viewerUserId) ?? rows.find(r => r.user_id === ownerUserId);
 }
 
+/** One specific owner+user's own row, raw — no visibility filtering (unlike `fetchRepeats`,
+ * built for a batch read gated by who's allowed to see what). Used for copying a schedule
+ * between two specific, already-known users (see `challenge-participants`'s own join handler,
+ * which seeds a new participant's own repeat from the template owner's current one) rather than
+ * resolving what a viewer may see. */
+export async function fetchRepeatRow(db: SupabaseClient, owner: Owner): Promise<Row | null> {
+  const { data, error } = await db.from('repeats').select('*').eq('id', rowId(owner)).maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as Row) ?? null;
+}
+
 /**
  * Upserts or clears the caller's own `repeats` row for an owner — called right after
  * saving/patching the owner's own row (when the caller is the owner) or from a participant's own

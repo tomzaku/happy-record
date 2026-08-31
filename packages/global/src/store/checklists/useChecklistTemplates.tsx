@@ -140,12 +140,17 @@ export type ChecklistTemplate = {
     startedAt: string;
     completedAt?: string;
     /**
-     * Set only when this schedule is a challenge participant's own override, distinct from the
+     * Set only when this schedule is a challenge participant's own row, distinct from the
      * template owner's default (see 20260830000000_repeats_table.sql / _shared/repeats.ts's
      * `pickRepeat`) — never present for the owner's own view of their own template, since "my
-     * schedule" and "the default" are the same thing there. Absent (or `false`) means what's here
-     * is the owner's schedule, whether the viewer is the owner or a participant who hasn't set
-     * their own. Read-only, server-computed — never send this back on a write.
+     * schedule" and "the default" are the same thing there. A participant gets one of these
+     * seeded from the owner's current schedule the moment they join (see
+     * `challenge-participants/services/challenge-participants-service.ts`'s own
+     * `seedReminderFromOwner`), not only once they've actually customized it — a fresh join looks
+     * "personal" immediately, values matching the owner's or not. Absent (or `false`) means what's
+     * here is the owner's own schedule (the viewer is the owner), or, for a participant who joined
+     * before this seeding existed and never set their own, the owner's live schedule via
+     * `pickRepeat`'s own fallback. Read-only, server-computed — never send this back on a write.
      */
     isPersonal?: boolean;
   };

@@ -34,6 +34,16 @@ export async function fetchOwnedChallenge(
   return data;
 }
 
+export async function fetchTemplateOwnerId(db: SupabaseClient, checklistTemplateId: string): Promise<string | null> {
+  const { data, error } = await db
+    .from('checklist_templates')
+    .select('user_id')
+    .eq('id', checklistTemplateId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data?.user_id as string | undefined) ?? null;
+}
+
 export async function fetchRoster(
   db: SupabaseClient,
   challengeId: string,

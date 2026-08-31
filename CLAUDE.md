@@ -549,6 +549,22 @@ gated by `20260828010000_challenge_owner_name_public.sql`'s policy on `challenge
 visitor who hasn't joined yet can still see it — everyone else's row stays roster-only, same as
 before).
 
+**A first-time joiner gets their own copy of the owner's reminder schedule, not a live mirror of
+it.** `repeats` already resolves "the owner's default unless this viewer has their own row"
+(`pickRepeat`) for a participant who's never touched their reminder time at all — but that's a
+*live* fallback, so it'd keep following the owner's schedule if they changed it later, for anyone
+who'd never actually set anything of their own. `challenge-participants/services/
+challenge-participants-service.ts`'s own `seedReminderFromOwner`, called from `joinChallenge`,
+seeds a real `repeats` row instead: a one-time copy of the owner's schedule at the moment of
+joining, editable from then on exactly like any other personal override
+(`updateMyReminder`/PATCH `/checklist-templates/:id { repeat }`) and independent of whatever the
+owner does with theirs afterward. Never overwrites a row that's already there (a participant
+re-joining after leaving keeps what they had), and no-ops for the owner themselves or a template
+with no schedule set yet. `ChecklistTemplate['repeat'].isPersonal` (useChecklistTemplates.tsx)
+turns `true` immediately on join now, not only once a participant has actually customized
+something — that's the intended read: it's genuinely their own independent row from that point,
+values matching the owner's or not.
+
 `baby`, `body-metric` (and the routes/packages built on them — `pregnant-intro` at `/intro`,
 `pregnant-weight-record` at `/weight-record`, `baby-card`/`body-metric-card` on the home page)
 were removed rather than migrated: nothing in the live app ever navigated to `/intro` or
