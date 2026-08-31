@@ -54,6 +54,25 @@
   }
 }
 
+// The loading-state stand-in for the real `Breadcrumb` (from `@dreamer/header`) rendered once
+// `checklistTemplate` resolves — same row shape (icon + title after a plain "Challenge" label),
+// built from local Skeleton blocks instead since the real template title/icon isn't known yet.
+.breadcrumbSkeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+// Matches @dreamer/header's own Breadcrumb.module.scss `.crumbLabel` — kept as a plain literal
+// copy rather than importing that CSS module here, since it's three properties and this is the
+// only other place that needs them.
+.breadcrumbSkeletonLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+}
+
 .card {
   display: flex;
   flex-direction: column;

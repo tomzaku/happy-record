@@ -376,6 +376,11 @@ const ChallengeDashboardPageUi = () => {
     return (
       <AppShell>
         <div className={styles.page}>
+          <div className={`${styles.breadcrumbRow} ${styles.breadcrumbSkeletonRow}`}>
+            <Typography.Text className={styles.breadcrumbSkeletonLabel}>Challenge</Typography.Text>
+            <Skeleton circle width={24} height={24} />
+            <Skeleton width={140} height={22} />
+          </div>
           <div className={styles.mainColumn}>
             <Card className={`${styles.card} ${styles.cardNoPadding}`}>
               <div className={styles.cardHeaderWash} style={{ background: 'rgba(42, 120, 214, 0.08)' }}>
