@@ -496,7 +496,7 @@ const ChallengeDashboardPageUi = () => {
           <div className={styles.breadcrumbRow}>
             <Breadcrumb
               items={[
-                { label: 'Challenge' },
+                { label: 'Challenge', to: '/challenges' },
                 {
                   label: checklistTemplate.title,
                   icon: { name: checklistTemplate.avatar?.name || 'solar:cup-star-line-duotone', color: checklistTemplate.avatar?.color },

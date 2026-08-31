@@ -16,12 +16,12 @@ export type BreadcrumbItem = {
  * "Section › [icon] Current page" — one level, the section label matching `DesktopDrawer`'s own
  * nav wording ("Task", "Challenge") so the trail always names where a page lives, and the last
  * item doubling as that page's own heading (its icon + title) rather than sitting as a second,
- * separate title underneath. The section label is deliberately plain text, not a link — the
- * drawer's own nav item already goes there, so this isn't a second way to do the same click, just
- * a "you are here" label. The last item's `label` can be any node (not just text) so a caller can
- * drop in something interactive, like detail-task-page's own inline-editable title. Shared by
- * `detail-task-page` and `challenge-dashboard-page-ui` rather than each page rolling its own —
- * `notes` pages don't use this (see CLAUDE.md).
+ * separate title underneath. The section label is a real link back to that section's list (mobile
+ * has no persistent drawer nav to fall back on, and even on desktop a click here is a shorter path
+ * than reaching over to the sidebar). The last item's `label` can be any node (not just text) so a
+ * caller can drop in something interactive, like detail-task-page's own inline-editable title.
+ * Shared by `detail-task-page` and `challenge-dashboard-page-ui` rather than each page rolling its
+ * own — `notes` pages don't use this (see CLAUDE.md).
  */
 const Breadcrumb = ({ items }: { items: BreadcrumbItem[] }) => (
   <nav className={styles.breadcrumb} aria-label="Breadcrumb">

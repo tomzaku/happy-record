@@ -196,7 +196,7 @@ const DetailTaskPageDesktop = () => {
           <div className={styles.header}>
             <Breadcrumb
               items={[
-                { label: 'Task' },
+                { label: 'Task', to: '/' },
                 {
                   icon: { name: checklistTemplate.avatar?.name || 'solar:settings-linear', color: checklistTemplate.avatar?.color },
                   label: isEditingTitle ? (
