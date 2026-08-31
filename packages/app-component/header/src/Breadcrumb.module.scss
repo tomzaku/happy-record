@@ -1,17 +1,18 @@
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-.crumbLink {
+.crumbLabel {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-color-secondary, var(--text-color));
   text-decoration: none;
+  white-space: nowrap;
 
-  &:hover {
+  a&:hover {
     color: var(--text-color);
   }
 }
@@ -22,6 +23,12 @@
   flex-shrink: 0;
 }
 
+.titleIcon {
+  flex-shrink: 0;
+}
+
 .crumbCurrent {
-  color: var(--text-color);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-title-primary-color, var(--text-color));
 }

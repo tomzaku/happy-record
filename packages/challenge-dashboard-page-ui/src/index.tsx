@@ -489,7 +489,15 @@ const ChallengeDashboardPageUi = () => {
       <div className={styles.page}>
         {checklistTemplate && (
           <div className={styles.breadcrumbRow}>
-            <Breadcrumb items={[{ label: 'Challenges', to: '/challenges' }, { label: checklistTemplate.title }]} />
+            <Breadcrumb
+              items={[
+                { label: 'Challenge' },
+                {
+                  label: checklistTemplate.title,
+                  icon: { name: checklistTemplate.avatar?.name || 'solar:cup-star-line-duotone', color: checklistTemplate.avatar?.color },
+                },
+              ]}
+            />
           </div>
         )}
         <div className={styles.mainColumn}>

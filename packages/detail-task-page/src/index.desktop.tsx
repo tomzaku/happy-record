@@ -12,7 +12,7 @@ import {
   useSyncedSelector,
 } from '@dreamer/global';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
-import { DesktopDrawer } from '@dreamer/header';
+import { Breadcrumb, DesktopDrawer } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
@@ -194,44 +194,41 @@ const DetailTaskPageDesktop = () => {
         <div className={styles.content}>
           {/* Header Section */}
           <div className={styles.header}>
-            <div className={styles.titleSection}>
-              <Icon
-                width={32}
-                icon={checklistTemplate.avatar?.name || 'solar:settings-linear'}
-                color={checklistTemplate.avatar?.color || '#607d8b'}
-              />
-              <div className={styles.titleInfo}>
-                {isEditingTitle ? (
-                  <div className={styles.titleEditContainer}>
-                    <input
-                      type="text"
-                      value={editedTitle}
-                      onChange={(e) => setEditedTitle(e.target.value)}
-                      onKeyDown={handleKeyPress}
-                      className={styles.titleInput}
-                      autoFocus
-                    />
-                  </div>
-                ) : (
-                  <div className={styles.titleDisplayContainer}>
-                    <Typography.Title level={2} className={styles.pageTitle}>
+            <Breadcrumb
+              items={[
+                { label: 'Task' },
+                {
+                  icon: { name: checklistTemplate.avatar?.name || 'solar:settings-linear', color: checklistTemplate.avatar?.color },
+                  label: isEditingTitle ? (
+                    <div className={styles.titleEditContainer}>
+                      <input
+                        type="text"
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        className={styles.titleInput}
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <div className={styles.titleDisplayContainer}>
                       {checklistTemplate.title}
-                    </Typography.Title>
-                    {isOwner && (
-                      <Button
-                        type="ghost"
-                        size="sm"
-                        onClick={handleEditTitle}
-                        className={styles.editTitleButton}
-                        title={intl.formatMessage({ id: 'DetailTaskPage.edit-title', defaultMessage: 'Edit Title' })}
-                      >
-                        <Icon icon="solar:pen-new-square-linear" width={16} />
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+                      {isOwner && (
+                        <Button
+                          type="ghost"
+                          size="sm"
+                          onClick={handleEditTitle}
+                          className={styles.editTitleButton}
+                          title={intl.formatMessage({ id: 'DetailTaskPage.edit-title', defaultMessage: 'Edit Title' })}
+                        >
+                          <Icon icon="solar:pen-new-square-linear" width={16} />
+                        </Button>
+                      )}
+                    </div>
+                  ),
+                },
+              ]}
+            />
             {isOwner && (
               <div className={styles.headerActions}>
                 <Button
