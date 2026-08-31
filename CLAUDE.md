@@ -556,15 +556,27 @@ of them.** `repeats` already resolves "the owner's default unless this viewer ha
 who'd never actually set anything of their own. `challenge-participants/services/
 challenge-participants-service.ts`'s own `seedReminderFromOwner`, called from `joinChallenge`,
 seeds real `repeats` rows instead: a one-time copy of the owner's schedule at the moment of
-joining, editable from then on exactly like any other personal override
-(`updateMyReminder`/PATCH `/checklist-templates/:id { repeat }`) and independent of whatever the
-owner does with theirs afterward. Copies *both* the template's own top-level schedule and every
-one of its field groups' own, not just the former — a template with real field groups derives its
-effective schedule from the union of each group's own `repeat`, so the top-level row is typically
-never set at all for that shape of template; copying only it would silently seed nothing for the
-one schedule a participant on a field-group template actually sees. Never overwrites a row that's
-already there (a participant re-joining after leaving keeps what they had), and no-ops for the
-owner themselves or wherever the owner has no schedule set at either level yet.
+joining, editable from then on exactly like any other personal override — the template's own
+top-level one via `updateMyReminder`/PATCH `/checklist-templates/:id { repeat }`, or a field
+group's own via `updateMyFieldGroupRepeat`/PATCH `/field-groups/:id { repeat }` (field-groups'
+first `/:id` route — its `index.ts` moved onto `matchRoute` for this, like every other resource)
+— independent of whatever the owner does with theirs afterward. Copies *both* the template's own
+top-level schedule and every one of its field groups' own, not just the former — a template with
+real field groups derives its effective schedule from the union of each group's own `repeat`, so
+the top-level row is typically never set at all for that shape of template; copying only it would
+silently seed nothing for the one schedule a participant on a field-group template actually sees.
+Never overwrites a row that's already there (a participant re-joining after leaving keeps what
+they had), and no-ops for the owner themselves or wherever the owner has no schedule set at either
+level yet. `ChecklistGenericInfo`'s "My Reminder" modal is where a participant actually reaches
+either: it shows `GroupScheduleList` (the same per-group day/time editor the owner's Schedule
+modal uses) for a template with field groups, or the plain day+time picker otherwise — before this
+there was no participant-facing UI for a group's own schedule at all, only the template-level one,
+so a field-group template's seeded/editable schedule was invisible regardless of what the server
+did. Watch for the matching staleness trap if you touch either merge function again: a field
+group's/checklist template's own `updated_at` doesn't change when only its `repeats` row does (a
+separate table), so `mergeFieldGroups`/`mergeTemplates` compare `updatedAt` with `>=`, not `>` —
+otherwise an incoming fetch whose `repeat` genuinely changed but happens to tie the cached
+`updatedAt` gets silently discarded for the rest of that session.
 `ChecklistTemplate['repeat'].isPersonal` (useChecklistTemplates.tsx) turns `true` immediately on
 join now, not only once a participant has actually customized something — that's the intended
 read: it's genuinely their own independent row from that point,
