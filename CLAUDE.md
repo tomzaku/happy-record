@@ -457,19 +457,26 @@ A field-group's own note (its "how to do it" instructions, `ownerType: 'field_gr
 place a challenge participant's edit forks rather than writing in place — `notes.copied_from_id`
 (`20260831000000_notes_copied_from_id.sql`, mirroring the `fields`/`checklist_templates` columns
 of the same name) points back at the note a participant's own copy started from. The owner always
-writes the group's one canonical note directly; a participant's first edit copies its
-then-current content into a brand-new note they own instead (`GET /notes?fieldGroupId=` is how the
-client tells "I already have my own copy" from "still reading the canonical one, read-only" —
-`supabase/functions/notes/api/list-notes-handler.ts`'s own `getMyFieldGroupNote`), and every edit
-after that goes to their own copy — see `packages/global/src/hook/useFieldGroupNote.ts`. This
-doesn't contradict "joining a challenge never forks" above: that's about the *template* and its
-*fields* (every participant records against the exact same field id, no copy made at join time at
-all) — a field-group's note is a separate mechanism, forked only on an explicit edit, and only for
-that one note, not the whole template. A participant also gets an Original/Mine switcher
-(`ChecklistFieldGroupView`'s own tab pills, non-owner only) — `useFieldGroupNote.ts`'s `view` param
-— so they can read the canonical note read-only even once they have their own copy, not just
-before; `'personal'` falls back to the canonical content read-only until they've actually made one
-of their own, and typing into it from there is what forks it.
+writes the group's one canonical note directly. A participant sees only the canonical note by
+default (most never edit it at all) — clicking Edit there is what forks it: `useFieldGroupNote.ts`'s
+`startEditing` copies its then-current content into a brand-new note they own *before* the editor
+switches into edit mode (not lazily on the first keystroke — `NoteEditor`/EditorJs.tsx captures
+whatever `setValue` callback it's given exactly once, at mount, and never picks up a newer one, so
+a `save` that decided "update or create" itself from data closed over at that moment kept
+re-deciding "create" forever, spawning a fresh duplicate note on every single edit instead of ever
+updating the one it just made — `GET /notes?fieldGroupId=`'s own `.maybeSingle()`-turned-`.limit(1)`
+fetch is how the client tells "I already have my own copy" from "still reading the canonical one,
+read-only," and it had to start tolerating more than one match, newest wins, once this shipped as
+exactly that bug once). Every edit after the first goes to their own copy via a plain `save` that
+only ever updates, reading which note from a ref rather than a frozen closure — see
+`packages/global/src/hook/useFieldGroupNote.ts`. This doesn't contradict "joining a challenge never
+forks" above: that's about the *template* and its *fields* (every participant records against the
+exact same field id, no copy made at join time at all) — a field-group's note is a separate
+mechanism, forked only on an explicit edit, and only for that one note, not the whole template.
+Once a participant has their own copy, `ChecklistFieldGroupView`'s Original/Mine tab pills appear
+(hidden before — nothing to switch to yet) so they can still read the canonical note read-only,
+not just edit their own; `NoteEditor` needs a real remount (`key={note?.id}`) to show whichever one
+that is, since it only ever reads its `value` prop at construction.
 
 Every field written by one Submit click shares a `submissions` row (`checklist_records.submission_id`,
 a real foreign key) — that's the actual "these were committed together" relationship, not
