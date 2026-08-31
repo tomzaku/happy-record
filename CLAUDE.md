@@ -465,9 +465,11 @@ after that goes to their own copy — see `packages/global/src/hook/useFieldGrou
 doesn't contradict "joining a challenge never forks" above: that's about the *template* and its
 *fields* (every participant records against the exact same field id, no copy made at join time at
 all) — a field-group's note is a separate mechanism, forked only on an explicit edit, and only for
-that one note, not the whole template. No switcher between "the owner's version" and "mine" once a
-participant has their own copy yet — deliberately deferred, not an oversight; the `copied_from_id`
-back-reference already makes that possible to add later without another schema change.
+that one note, not the whole template. A participant also gets an Original/Mine switcher
+(`ChecklistFieldGroupView`'s own tab pills, non-owner only) — `useFieldGroupNote.ts`'s `view` param
+— so they can read the canonical note read-only even once they have their own copy, not just
+before; `'personal'` falls back to the canonical content read-only until they've actually made one
+of their own, and typing into it from there is what forks it.
 
 Every field written by one Submit click shares a `submissions` row (`checklist_records.submission_id`,
 a real foreign key) — that's the actual "these were committed together" relationship, not
