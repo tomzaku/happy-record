@@ -5,6 +5,7 @@ import styles from './index.module.scss';
 import NoteEditor from '@moon-ui/note-editor';
 import Icon from '@moon-ui/icon/Icon';
 import Button from '@moon-ui/button/src/DefaultButton';
+import Skeleton from '@moon-ui/skeleton';
 
 type Props = {
   fieldGroup: FieldGroup;
@@ -85,11 +86,9 @@ const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
           </button>
         </div>
       )}
-      <div className={styles.toolbar}>
-        {loading ? (
-          <Icon width={16} icon="svg-spinners:180-ring" />
-        ) : (
-          !editLocked && (
+      {!loading && (
+        <div className={styles.toolbar}>
+          {!editLocked && (
             <Button
               type="dash"
               size="sm"
@@ -102,16 +101,25 @@ const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
               />
               {isEditing ? 'Done' : 'Edit'}
             </Button>
-          )
-        )}
-      </div>
+          )}
+        </div>
+      )}
       {/* `note.value` is real Editor.js OutputData ({ time, blocks, version }) — see
           useNote.tsx/noteApi.ts — not a Yoopta document; @moon-ui/note-editor's real export
           renders EditorJs.tsx (@editorjs/editorjs); YooptaEditor.tsx in that package is a dead,
           unwired alternate. */}
       {/* No title input here — a note's title is derived server-side from its own content when
           none is given (see _shared/notes.ts's deriveTitle), not typed in. */}
-      {!loading && (
+      {loading ? (
+        // A few shimmering lines stand in for the paragraphs about to land — same idea
+        // note-manager-page-ui's own NoteEditorPane uses for this exact fetch. Reads as "content
+        // is coming" instead of a bare spinner off in the toolbar corner with nothing below it.
+        <div className={styles.editorSkeleton}>
+          <Skeleton width="92%" height={14} />
+          <Skeleton width="100%" height={14} />
+          <Skeleton width="78%" height={14} />
+        </div>
+      ) : (
         <>
           {/* Keyed on the actual note being shown — EditorJs.tsx only ever reads `value` at
               construction time (see its own comment), so switching to a genuinely different note

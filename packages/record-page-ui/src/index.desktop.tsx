@@ -10,7 +10,6 @@ import Card from '@moon-ui/card';
 import cx from 'classnames';
 import Select from '@moon-ui/select';
 import Typography from '@moon-ui/typography';
-import Icon from '@moon-ui/icon/Icon';
 import { useTags } from '@dreamer/global/src/store/tags/useTags';
 import { useSyncedSelector } from '@dreamer/global/src/hook/useSyncedSelector';
 
@@ -80,14 +79,7 @@ const TaskListPage = () => {
                     close();
                   }}
                   renderInput={() => (
-                    <>
-                      <Typography.Text>{selectedTag === 'all' ? 'All Tags' : selectedTag}</Typography.Text>
-                      <Icon
-                        className={styles.selectIcon}
-                        icon="grommet-icons:down"
-                        width={10}
-                      />
-                    </>
+                    <Typography.Text>{selectedTag === 'all' ? 'All Tags' : selectedTag}</Typography.Text>
                   )}
                   renderOption={option => (
                     <Typography.Text>{option.label}</Typography.Text>

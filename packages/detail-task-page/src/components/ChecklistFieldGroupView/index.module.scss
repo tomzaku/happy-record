@@ -47,6 +47,13 @@
   margin-bottom: $spacing-xs;
 }
 
+.editorSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding-top: $spacing-xs;
+}
+
 .editButton {
   display: flex;
   align-items: center;
