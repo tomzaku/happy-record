@@ -31,7 +31,7 @@ const DetailTaskPageDesktop = () => {
   const { getChecklistTemplate, updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
-  const { getAllRecordFields } = useRecordField();
+  const { getAllRecordFields, getRecordFieldsByTemplateId } = useRecordField();
   const { getChallengeForTemplate } = useChallenge();
   const { leaveTheChallenge } = useLeaveChallenge();
   const { userId } = useSession();
@@ -45,6 +45,11 @@ const DetailTaskPageDesktop = () => {
   // effect — a template/field synced in from another device now actually
   // shows up here instead of only refreshing when `id` itself changes.
   const checklistTemplate = useSyncedSelector(getChecklistTemplate, id ?? '');
+  // A joined challenge's fields are the owner's own, private rows — `getAllRecordFields` (own +
+  // public only) can never resolve them for a participant. This triggers the same `?templateId=`
+  // fetch the shared-template page uses (a no-op for the caller's own, still-private template) —
+  // see useRecordField.tsx's own comment — merging into the same store `getAllRecordFields` reads.
+  useSyncedSelector(getRecordFieldsByTemplateId, id ?? '');
   const fields = useSyncedSelector(getAllRecordFields);
   // Joining a challenge never forks the template (see CLAUDE.md) — a
   // participant's local copy is the owner's exact row, so this page needs

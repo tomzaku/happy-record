@@ -9,6 +9,7 @@ import { v4 } from 'uuid';
 import {
   fetchRecordFields,
   fetchRecordFieldsByIds,
+  fetchRecordFieldsByTemplateId,
   removeRecordField as removeRecordFieldApi,
   saveRecordField,
 } from './recordFieldApi';
@@ -202,6 +203,39 @@ export const useRecordField = () => {
   );
 
   /**
+   * A joined challenge never forks its template's fields — every participant records against the
+   * owner's exact field ids (see CLAUDE.md), and those fields stay `visibility: 'private'`, so a
+   * non-owner's `getAllRecordFields` (own + public only) can never resolve them on its own.
+   * `acceptChallenge` already merges them in once at join time, but that's a write into this same
+   * in-memory `useSessionStore`-backed state — gone the moment this device's session resets (a
+   * reload, a fresh sign-in), same as every other scope here, which is exactly why a participant
+   * stopped seeing a joined challenge's field names on a later visit. This is the same `GET
+   * /fields?templateId=` bypass the shared-template page's own `useGetChecklistTemplateApi.tsx`
+   * uses (authorized by the template being public, not by the field itself) — detail-task-page
+   * calls this unconditionally for whatever template it's showing, since the route is a no-op for
+   * the caller's own, still-private template (it only ever returns rows once that template is
+   * genuinely `visibility: 'public'`) and the merged rows show up in `getAllRecordFields`' own
+   * return value once they land, both scopes sharing the one `recordFieldList` store.
+   */
+  const getRecordFieldsByTemplateId = React.useCallback(
+    (templateId: string) => {
+      const scopeKey = JSON.stringify({ userId, scope: 'templateId', templateId });
+      if (ready && templateId && !fetchedScopes.has(scopeKey)) {
+        fetchedScopes.add(scopeKey);
+        fetchRecordFieldsByTemplateId(templateId).then(result => {
+          if (!result) {
+            fetchedScopes.delete(scopeKey);
+            return;
+          }
+          mergeRecordFields(result.fields);
+        });
+      }
+      return Object.values(recordFieldList);
+    },
+    [recordFieldList, userId, ready, mergeRecordFields],
+  );
+
+  /**
    * Scoped fetch for exactly the ids asked for — the share-flow consumers
    * (CardShare, tasks-shared-page-ui, checklist-template-shared-page-ui)
    * only need one template's referenced field ids, not the full list.
@@ -286,6 +320,7 @@ export const useRecordField = () => {
     getAllRecordFields,
     getRecordFields,
     getRecordFieldsByIds,
+    getRecordFieldsByTemplateId,
     addRecordField,
     removeRecordField,
     updateRecordField,
