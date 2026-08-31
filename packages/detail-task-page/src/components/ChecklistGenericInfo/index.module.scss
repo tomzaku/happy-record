@@ -32,6 +32,17 @@
 // "Done"): unlike Dialog's other consumers, these dialogs stage edits into `temp*`
 // state and only persist on this click, discarding them on dismiss (see handleModalClose) —
 // worth its own label, not just "close."
+// Cancel + Save side by side in the header's own headerAction slot — these dialogs have no other
+// way out (closeOnOverlayClick is false on all of them, same reasoning headerSaveButton's own
+// comment gives: a stray dismiss shouldn't discard a staged edit by accident) — the header X
+// itself is what headerAction replaces, so without this row there was no way to back out without
+// saving at all.
+.headerActionsRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
 .headerSaveButton {
   display: flex;
   align-items: center;

@@ -543,9 +543,14 @@ const ChecklistGenericInfo = ({
           defaultMessage: 'Edit Icon & Color',
         })}
         headerAction={
-          <Button onClick={handleSaveIcon} className={styles.headerSaveButton}>
-            {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
-          </Button>
+          <div className={styles.headerActionsRow}>
+            <Button type="ghost" size="sm" onClick={handleModalClose}>
+              {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
+            </Button>
+            <Button onClick={handleSaveIcon} className={styles.headerSaveButton}>
+              {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+            </Button>
+          </div>
         }
       >
         <IconPicker
@@ -570,9 +575,14 @@ const ChecklistGenericInfo = ({
           defaultMessage: 'Edit Schedule',
         })}
         headerAction={
-          <Button onClick={handleSaveSchedule} className={styles.headerSaveButton}>
-            {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
-          </Button>
+          <div className={styles.headerActionsRow}>
+            <Button type="ghost" size="sm" onClick={handleModalClose}>
+              {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
+            </Button>
+            <Button onClick={handleSaveSchedule} className={styles.headerSaveButton}>
+              {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+            </Button>
+          </div>
         }
         // ScheduleModalContent already brings its own outer padding (it's shared with
         // SchedulingGroup's own modal, which has no padding of its own to double up on) — this
@@ -608,9 +618,14 @@ const ChecklistGenericInfo = ({
           defaultMessage: 'My Reminder',
         })}
         headerAction={
-          <Button onClick={handleSaveMyReminder} className={styles.headerSaveButton}>
-            {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
-          </Button>
+          <div className={styles.headerActionsRow}>
+            <Button type="ghost" size="sm" onClick={handleModalClose}>
+              {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
+            </Button>
+            <Button onClick={handleSaveMyReminder} className={styles.headerSaveButton}>
+              {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+            </Button>
+          </div>
         }
         // GroupScheduleList (unlike ScheduleModalContent) brings none of its own padding — see
         // the Schedule modal's own comment on why *that* one needs this suppressed. Only
@@ -657,9 +672,14 @@ const ChecklistGenericInfo = ({
           defaultMessage: 'Edit Tags',
         })}
         headerAction={
-          <Button onClick={handleSaveTags} className={styles.headerSaveButton}>
-            {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
-          </Button>
+          <div className={styles.headerActionsRow}>
+            <Button type="ghost" size="sm" onClick={handleModalClose}>
+              {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
+            </Button>
+            <Button onClick={handleSaveTags} className={styles.headerSaveButton}>
+              {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+            </Button>
+          </div>
         }
       >
         <TagInput tags={tempTags} setTags={setTempTags} />
