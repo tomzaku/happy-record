@@ -9,4 +9,4 @@ export { useSession } from './useSession';
 export { useSyncedSelector } from './useSyncedSelector';
 export { useApplyAiChecklistTemplate } from './useApplyAiChecklistTemplate';
 export { useAiNoteGenerate } from './useAiNoteGenerate';
-export { useNoteById } from './useNoteById';
+export { useFieldGroupNote } from './useFieldGroupNote';

@@ -77,6 +77,7 @@ export function toNote(r: Record<string, unknown>) {
     ...(r.checklist_id ? { checklistId: r.checklist_id as string } : {}),
     ...(r.checklist_template_id ? { checklistTemplateId: r.checklist_template_id as string } : {}),
     ...(r.submission_id ? { submissionId: r.submission_id as string } : {}),
+    ...(r.copied_from_id ? { copiedFromId: r.copied_from_id as string } : {}),
   };
 }
 
@@ -146,6 +147,11 @@ export function fromNote(e: Record<string, unknown>) {
     // committed together" relationship a note entry shares with its other-typed siblings from the
     // same Submit click. Absent for every other note surface.
     submission_id: typeof e.submissionId === 'string' ? e.submissionId : null,
+    // Set once, at fork time — a challenge participant's own copy of a field-group's note (see
+    // notes-access-service.ts's own checkWriteNote comment). The client resends whatever it
+    // already had here on every later edit of that same note (same as `owner_type`/`owner_id`),
+    // so this stays put after creation without needing its own immutability check.
+    copied_from_id: typeof e.copiedFromId === 'string' ? e.copiedFromId : null,
     folder_id: typeof e.folderId === 'string' ? e.folderId : null,
     created_at: typeof e.createdAt === 'string' ? e.createdAt : new Date().toISOString(),
     // Postgres only fills the default on insert, not update — an upsert

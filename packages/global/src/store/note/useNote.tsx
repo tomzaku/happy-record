@@ -6,11 +6,12 @@ import { v4 } from 'uuid';
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
 // fallback, unchanged.
-import { fetchNoteById, fetchNotes, removeNote as removeNoteApi, saveNote } from './noteApi';
+import { fetchNoteById, fetchNotes, fetchOwnNoteForFieldGroup, removeNote as removeNoteApi, saveNote } from './noteApi';
 
 const NOTE_KEY = 'note';
 const NOTE_LOADING_KEY = 'note_loading';
 const NOTE_ALL_LOADING_KEY = 'note_all_loading';
+const OWN_FIELD_GROUP_NOTE_KEY = 'note_own_field_group';
 
 /**
  * Addressed by its own `id` — see 20260829010000_notes_note_id_ownership.sql: a field-group's
@@ -48,18 +49,24 @@ export type Note = {
   folderId?: string;
   checklistId?: string;
   checklistTemplateId?: string;
+  /** Set only on a challenge participant's own copy of a field-group's note (see
+   * getOwnFieldGroupNote's own comment) — the note it was forked from, at fork time. Never set on
+   * the canonical note itself. */
+  copiedFromId?: string;
   createdAt: string;
   updatedAt: string;
 };
 
 /** What a note-owning component has to supply the moment it actually creates a note — see
  * createNote below. A field's own single current note (standalone notebook) omits
- * `checklistId`/`checklistTemplateId`; a field-group's own note sets `checklistTemplateId`.
+ * `checklistId`/`checklistTemplateId`; a field-group's own note sets `checklistTemplateId`, plus
+ * `copiedFromId` when this is a participant forking their own copy of the group's existing note
+ * rather than the owner writing its very first one (see getOwnFieldGroupNote's own comment).
  * Omitted entirely (`createNote`'s `origin` param is optional) for a plain note with no field
  * behind it at all — note-manager-page-ui's own "+" (see this file's own `Note` doc comment). */
 export type NoteOrigin =
   | { ownerType: 'field'; ownerId: string; checklistId?: string; checklistTemplateId?: string }
-  | { ownerType: 'field_group'; ownerId: string; checklistTemplateId: string };
+  | { ownerType: 'field_group'; ownerId: string; checklistTemplateId: string; copiedFromId?: string };
 
 // Ids already fetched (or created locally, which counts as "fetched" — see createNote) this page
 // load, so the same id isn't re-requested every call. Separate from the reactive `loadingIds`
@@ -71,6 +78,9 @@ const fetchedIds = new Set<string>();
 // ensureAllFieldGroupsFetched) — keyed by identity so a scope already fetched for one user
 // re-fetches once the signed-in identity actually changes.
 const fetchedAllScopes = new Set<string>();
+
+// Same idea, keyed by (identity, fieldGroupId) — see getOwnFieldGroupNote below.
+const fetchedFieldGroupScopes = new Set<string>();
 
 /**
  * The notebook's own store — not `checklist_records`, and not jsonb on `checklist_templates`
@@ -90,6 +100,13 @@ export const useNote = () => {
   // fetching" apart from "genuinely zero notes" and render a skeleton for the former instead of
   // flashing "No Notes" while the real list is still in flight.
   const [allLoading, setAllLoading] = useSessionStore<boolean>(NOTE_ALL_LOADING_KEY, true);
+  // fieldGroupId -> this caller's own note id for it, or `null` once confirmed there isn't one
+  // yet (the owner hasn't written a first note, or a participant hasn't forked their own copy) —
+  // see getOwnFieldGroupNote below. Absent entirely means "not checked yet."
+  const [ownFieldGroupNoteIds, setOwnFieldGroupNoteIds] = useSessionStore<Record<string, string | null>>(
+    OWN_FIELD_GROUP_NOTE_KEY,
+    {},
+  );
   const { ready, userId } = useSession();
 
   const setLoading = (ids: string[], value: boolean) => {
@@ -170,6 +187,45 @@ export const useNote = () => {
       return { note: notes[noteId], loading: !!loadingIds[noteId] };
     },
     [notes, loadingIds, ready, setNotes, setLoadingIds],
+  );
+
+  /**
+   * This caller's own note for one field group — `ChecklistFieldGroupView`'s actual data source
+   * now, in place of reading `fieldGroup.noteId` directly. Resolves to the owner's canonical note
+   * when this caller *is* the owner (always their own row), a participant's own fork of it once
+   * they've made one, or `note: undefined` for neither yet — `checked` tells those two "not
+   * resolved yet" and "confirmed, there just isn't one" apart, since both otherwise look like a
+   * plain `undefined` note.
+   *
+   * A challenge participant never edits the group's own note in place (see notes-access-service.ts's
+   * own `checkWriteNote`) — the caller (`ChecklistFieldGroupView`) falls back to `getNote(fieldGroup.noteId)`,
+   * read-only, when `checked` is true and this comes back with nothing, and forks their own copy
+   * via `createNote({ ..., copiedFromId })` the first time they actually edit it.
+   */
+  const getOwnFieldGroupNote = React.useCallback(
+    (fieldGroupId: string | undefined): { note: Note | undefined; loading: boolean; checked: boolean } => {
+      if (!fieldGroupId) return { note: undefined, loading: false, checked: true };
+      const scopeKey = JSON.stringify({ userId, fieldGroupId });
+      if (ready && !fetchedFieldGroupScopes.has(scopeKey)) {
+        fetchedFieldGroupScopes.add(scopeKey);
+        fetchOwnNoteForFieldGroup(fieldGroupId).then(result => {
+          if (!result) {
+            fetchedFieldGroupScopes.delete(scopeKey);
+            return;
+          }
+          const found = result.notes[0];
+          if (found) {
+            fetchedIds.add(found.id);
+            mergeFetched(result, []);
+          }
+          setOwnFieldGroupNoteIds(prev => ({ ...prev, [fieldGroupId]: found ? found.id : null }));
+        });
+      }
+      const noteId = ownFieldGroupNoteIds[fieldGroupId];
+      const checked = noteId !== undefined;
+      return { note: noteId ? notes[noteId] : undefined, loading: ready && !checked, checked };
+    },
+    [notes, ownFieldGroupNoteIds, userId, ready, setNotes, setOwnFieldGroupNoteIds],
   );
 
   /** Several notes at once, by id — the standalone notebook's own listing (useNoteRecord.tsx):
@@ -268,7 +324,10 @@ export const useNote = () => {
           ownerType: origin.ownerType,
           ownerId: origin.ownerId,
           ...(origin.ownerType === 'field_group'
-            ? { checklistTemplateId: origin.checklistTemplateId }
+            ? {
+              checklistTemplateId: origin.checklistTemplateId,
+              ...(origin.copiedFromId ? { copiedFromId: origin.copiedFromId } : {}),
+            }
             : {
               ...(origin.checklistId ? { checklistId: origin.checklistId } : {}),
               ...(origin.checklistTemplateId ? { checklistTemplateId: origin.checklistTemplateId } : {}),
@@ -281,6 +340,12 @@ export const useNote = () => {
     };
     fetchedIds.add(id);
     setNotes(prev => ({ ...prev, [id]: note }));
+    // Whether this becomes the group's own canonical note (the owner's very first one) or a
+    // participant's own fork of it, it's this caller's own field-group note either way — see
+    // getOwnFieldGroupNote's own comment.
+    if (origin?.ownerType === 'field_group') {
+      setOwnFieldGroupNoteIds(prev => ({ ...prev, [origin.ownerId]: id }));
+    }
     await saveNote(note);
     return note;
   };
@@ -316,6 +381,7 @@ export const useNote = () => {
     notes,
     getNote,
     getNotesByIds,
+    getOwnFieldGroupNote,
     getAllNotes,
     allNotesLoading,
     searchNotes,

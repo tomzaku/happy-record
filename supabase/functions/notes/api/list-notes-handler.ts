@@ -4,7 +4,7 @@
 import { compose } from '../../../shared/authorize.ts';
 import { toNote, toNoteSummary } from '../../../dto/notes/notes-dto.ts';
 import { checkReadNotes, type NoteRow } from '../services/notes-access-service.ts';
-import { listMyNotes } from '../services/notes-service.ts';
+import { getOwnNoteForFieldGroup, listMyNotes } from '../services/notes-service.ts';
 import { limitFrom, type Ctx } from './notes-context.ts';
 
 const DEFAULT_SEARCH_LIMIT = 20;
@@ -17,6 +17,17 @@ const MAX_ALL_LIMIT = 1000;
 // which renders each one inline. Stays a query param (a batch of ids, not one resource's own
 // path), same as every other "several specific ids at once" read in this app.
 const getNotesByIds = compose(checkReadNotes, async (_ctx, rows: NoteRow[]) => ({ notes: rows.map(toNote) }));
+
+// `GET /notes ?fieldGroupId=` — this caller's own note for one field group: the owner's canonical
+// one (their own row always), or a participant's own fork of it, or none yet — the client uses
+// this to tell which of "mine, editable" vs. "the group's, read-only" to show (see
+// notes-access-service.ts's own checkWriteNote comment on why a participant gets their own copy
+// instead of editing the owner's). Own-row only, nothing to compose a `checkPermission` around.
+async function getMyFieldGroupNote(ctx: Ctx) {
+  const fieldGroupId = ctx.url.searchParams.get('fieldGroupId')!;
+  const row = await getOwnNoteForFieldGroup(ctx, fieldGroupId);
+  return { notes: row ? [toNote(row)] : [] };
+}
 
 /** The unscoped/search reads have nothing to authorize beyond "this caller's own rows" — no
  * cross-user visibility rule applies, so there's no `checkPermission` worth composing in, just an
@@ -37,5 +48,7 @@ async function listMine(ctx: Ctx) {
 }
 
 export async function listNotesHandler(ctx: Ctx) {
-  return ctx.url.searchParams.get('ids') ? getNotesByIds(ctx) : listMine(ctx);
+  if (ctx.url.searchParams.get('ids')) return getNotesByIds(ctx);
+  if (ctx.url.searchParams.get('fieldGroupId')) return getMyFieldGroupNote(ctx);
+  return listMine(ctx);
 }

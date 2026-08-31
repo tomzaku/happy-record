@@ -1,5 +1,5 @@
 import React from 'react';
-import { useFieldGroups, useNoteById, type FieldGroup } from '@dreamer/global';
+import { useFieldGroupNote, useFieldGroups, type FieldGroup } from '@dreamer/global';
 
 import styles from './index.module.scss';
 import NoteEditor from '@moon-ui/note-editor';
@@ -8,12 +8,16 @@ import Button from '@moon-ui/button/src/DefaultButton';
 
 type Props = {
   fieldGroup: FieldGroup;
+  /** Whether this caller owns the checklist template this group belongs to — a participant edits
+   * their own copy of this group's note instead of the owner's, see useFieldGroupNote's own
+   * comment. */
+  isOwner: boolean;
 };
 
 /** The group's own note only — a `type: 'note'` field's own value is a checklist journal entry
  * now (see ChecklistFieldGeneral's own comment), rendered on the Submit/History tabs alongside
  * the other fields, not here. */
-const ChecklistFieldGroupView = ({ fieldGroup }: Props) => {
+const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
   const { updateFieldGroup } = useFieldGroups();
   // View mode by default — editable only once the user asks for it via the Edit button. Reset
   // to view whenever a different group's note is shown (e.g. switching field groups) rather
@@ -23,9 +27,9 @@ const ChecklistFieldGroupView = ({ fieldGroup }: Props) => {
     setIsEditing(false);
   }, [fieldGroup.id]);
 
-  const { note, loading, save, isPro, generate } = useNoteById(
-    fieldGroup.noteId,
-    { ownerType: 'field_group', ownerId: fieldGroup.id, checklistTemplateId: fieldGroup.checklistTemplateId },
+  const { note, loading, save, isPro, generate } = useFieldGroupNote(
+    fieldGroup,
+    isOwner,
     newNoteId => updateFieldGroup({ ...fieldGroup, noteId: newNoteId }),
   );
 

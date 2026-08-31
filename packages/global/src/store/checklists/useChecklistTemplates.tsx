@@ -53,8 +53,10 @@ export type FieldGroup = {
   checklistTemplateId: string;
   title: string;
   fields: FieldGroupField[];
-  /** This group's own persistent note — see useNoteById.ts and ChecklistFieldGroupView. Set the
-   * first time someone actually writes into it; absent means no note yet. */
+  /** This group's own canonical (owner's) persistent note — see useFieldGroupNote.ts and
+   * ChecklistFieldGroupView. Set the first time the owner actually writes into it; absent means
+   * no note yet. A participant's own copy of it is a separate note entirely, not referenced here
+   * — see useFieldGroupNote.ts's own comment. */
   noteId?: string;
   /** Explicit ordering among a template's own groups — the old jsonb array's position used to be
    * this. */

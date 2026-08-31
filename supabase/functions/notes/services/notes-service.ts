@@ -6,6 +6,7 @@
 import {
   bumpChecklistRecordUpdatedAt,
   fetchNoteSummaries,
+  fetchOwnNoteForFieldGroup,
   removeChecklistRecord,
   removeNote,
   upsertNote,
@@ -18,12 +19,15 @@ export function listMyNotes({ db, userId }: Ctx, opts: NoteSummaryQuery): Promis
   return fetchNoteSummaries(db, userId, opts);
 }
 
-/** `ownerUserId` is whoever the row's `user_id` should stay as — the existing row's own owner on
- * an edit (a challenge participant editing a field-group's shared note must not seize ownership of
- * it — see notes-access-service.ts's own `checkWriteNote`), or the caller for a genuinely new
- * note. Not always `userId` (the caller performing this write). */
-export async function saveNote({ db, userId }: Ctx, row: Record<string, unknown>, ownerUserId: string): Promise<void> {
-  await upsertNote(db, ownerUserId, row);
+/** The caller's own note for one field group — the owner's canonical one (always their own row),
+ * or a participant's own fork of it if they've made one, or `null` if neither exists yet. Own-row
+ * only, nothing to compose a `checkPermission` around. */
+export function getOwnNoteForFieldGroup({ db, userId }: Ctx, fieldGroupId: string): Promise<NoteRow | null> {
+  return fetchOwnNoteForFieldGroup(db, fieldGroupId, userId);
+}
+
+export async function saveNote({ db, userId }: Ctx, row: Record<string, unknown>): Promise<void> {
+  await upsertNote(db, userId, row);
 
   // A journal entry (checklist_id set) has a paired `checklist_records` row — same id — whose own
   // `updated_at` needs bumping too, or that row's own last-write-wins merge on the checklist side

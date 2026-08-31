@@ -72,6 +72,15 @@ export function fetchNotes(
     .then(result => (result ? { notes: result.notes.map(fromWireNote) } : null));
 }
 
+/** This caller's own note for one field group — the owner's canonical one (always their own row),
+ * a participant's own fork of it if they've already made one, or `{ notes: [] }` for neither yet.
+ * See useNote.tsx's own getOwnFieldGroupNote. */
+export function fetchOwnNoteForFieldGroup(fieldGroupId: string): Promise<{ notes: Note[] } | null> {
+  return request
+    .get<{ notes: WireNote[] }>('/notes', { quiet: true, params: { fieldGroupId } })
+    .then(result => (result ? { notes: result.notes.map(fromWireNote) } : null));
+}
+
 export function saveNote(note: Note): Promise<{ ok: true } | null> {
   return request.post('/notes', { note: toWireNote(note) }, { quiet: true });
 }

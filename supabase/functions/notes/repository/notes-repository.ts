@@ -82,29 +82,20 @@ export async function removeNote(db: SupabaseClient, userId: string, id: string)
   if (error) throw new Error(error.message);
 }
 
-export async function fetchFieldGroupTemplateId(db: SupabaseClient, fieldGroupId: string): Promise<string | null> {
-  const { data, error } = await db
-    .from('field_groups')
-    .select('checklist_template_id')
-    .eq('id', fieldGroupId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return (data?.checklist_template_id as string | undefined) ?? null;
-}
-
-export async function fetchChallengeParticipantRow(
+export async function fetchOwnNoteForFieldGroup(
   db: SupabaseClient,
-  checklistTemplateId: string,
+  fieldGroupId: string,
   userId: string,
-): Promise<{ id: string } | null> {
+): Promise<NoteRow | null> {
   const { data, error } = await db
-    .from('challenge_participants')
-    .select('id')
-    .eq('checklist_template_id', checklistTemplateId)
+    .from('notes')
+    .select('*')
+    .eq('owner_type', 'field_group')
+    .eq('owner_id', fieldGroupId)
     .eq('user_id', userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return data;
+  return (data as NoteRow) ?? null;
 }
 
 /** Which of `ownerIds` (field_group ids) belong to a `visibility: 'public'` template — the one

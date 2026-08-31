@@ -173,6 +173,7 @@ const ChecklistFieldGroup = ({
         tabContent = (
           <ChecklistFieldGroupView
             fieldGroup={fieldGroup}
+            isOwner={!readOnly}
           />
         );
         break;
@@ -221,6 +222,7 @@ const ChecklistFieldGroup = ({
         tabContent = (
           <ChecklistFieldGroupView
             fieldGroup={fieldGroup}
+            isOwner={!readOnly}
           />
         );
         break;
