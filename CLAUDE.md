@@ -622,6 +622,20 @@ file imports it" bar as `tasks-page-ui`/`pomodoro-mobile`/`pregnant-page-ui` bef
   uses npm; don't carry that over).
 - Don't run `tsc` / build after every edit unless asked — the harness reports type errors from
   the tools themselves.
+- **Edge function unit tests** (`supabase/**/*.test.ts`, run with `deno test <file>`, no
+  `deno.json` needed) are for pure logic and repository/service functions that take a
+  `SupabaseClient` — `supabase/shared/testSupport/fakeSupabase.ts` is a minimal fake query builder
+  (`.select`/`.eq`/`.in`/`.or`/`.order`/`.limit`, resolved via `.maybeSingle()`/`.single()` or by
+  awaiting the chain directly) for exactly that, keyed by table name with canned `{ data, error }`
+  responses consumed in call order — not a real PostgREST simulator, so it can't stand in for a
+  genuine data-shape or constraint bug, but it's what actually caught `field-groups`' own missing
+  `toRepeat()` call (`supabase/shared/repeats.test.ts`,
+  `supabase/functions/field-groups/repository/field-groups-repository.test.ts`) — a real
+  server-side bug a live report alone hadn't pinned down. Reach for this before guessing further
+  from a live "it doesn't work" report with no server log attached: a test replicating the exact
+  reported scenario either reproduces the bug (and usually points straight at the fix, the way the
+  raw-row-vs-mapped-shape diff did here) or rules the code out, which is real information either
+  way.
 
 ## Local dev
 
