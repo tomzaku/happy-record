@@ -1,0 +1,27 @@
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.crumbLink {
+  color: var(--text-color-secondary, var(--text-color));
+  text-decoration: none;
+
+  &:hover {
+    color: var(--text-color);
+  }
+}
+
+.separator {
+  color: var(--text-color-secondary, var(--text-color));
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.crumbCurrent {
+  color: var(--text-color);
+}

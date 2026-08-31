@@ -12,7 +12,7 @@ import {
   useSyncedSelector,
 } from '@dreamer/global';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
-import { DesktopDrawer } from '@dreamer/header';
+import { Breadcrumb, DesktopDrawer } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
@@ -192,6 +192,7 @@ const DetailTaskPageDesktop = () => {
       <DesktopDrawer />
       <div className={styles.desktopBody}>
         <div className={styles.content}>
+          <Breadcrumb items={[{ label: 'Tasks', to: '/' }, { label: checklistTemplate.title }]} />
           {/* Header Section */}
           <div className={styles.header}>
             <div className={styles.titleSection}>

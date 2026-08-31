@@ -1,7 +1,7 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
 import { formatDistanceToNow } from 'date-fns';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 import {
   Challenge,
@@ -16,7 +16,7 @@ import {
   useSyncedSelector,
 } from '@dreamer/global';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
-import { AppShell } from '@dreamer/header';
+import { AppShell, Breadcrumb } from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import Input from '@moon-ui/input';
@@ -488,17 +488,9 @@ const ChallengeDashboardPageUi = () => {
           detail-task-page's own `.content`. */}
       <div className={styles.page}>
         {checklistTemplate && (
-          // Back to the task this challenge is for — `currentDay` is
-          // required by `/task/:id` itself (it bails out empty without
-          // one, see DetailTaskPage), same as every other link into it
-          // built here (useJoinChallenge.tsx, useResumePendingChallengeJoin.tsx).
-          <Link
-            to={`/task/${checklistTemplate.id}?currentDay=${new Date().toISOString()}`}
-            className={styles.breadcrumb}
-          >
-            <Icon icon="solar:arrow-left-outline" width={16} />
-            {checklistTemplate.title}
-          </Link>
+          <div className={styles.breadcrumbRow}>
+            <Breadcrumb items={[{ label: 'Challenges', to: '/challenges' }, { label: checklistTemplate.title }]} />
+          </div>
         )}
         <div className={styles.mainColumn}>
           {!!dashboard.targets.length && (
