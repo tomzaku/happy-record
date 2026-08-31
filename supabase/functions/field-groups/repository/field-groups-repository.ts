@@ -2,7 +2,7 @@
 // `field-groups-access-service.ts` builds on. See `notes/repository/notes-repository.ts` for the
 // reference shape.
 
-import { fetchRepeats, pickRepeat, type RepeatOwner } from '../../../shared/repeats.ts';
+import { fetchRepeats, pickRepeat, toRepeat, type RepeatOwner } from '../../../shared/repeats.ts';
 import { toFieldGroup } from '../../../dto/field-groups/field-groups-dto.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
@@ -57,9 +57,12 @@ export async function withRepeats(
     isPublic: isPublicTemplate,
   }));
   const repeats = await fetchRepeats(db, 'fieldGroupId', owners, userId);
-  // No participant-override concept for a group's own schedule today — only its owner ever
-  // writes one (see save handler) — but resolving through pickRepeat rather than assuming "the
-  // only row" keeps this consistent with checklist-templates' own resolution, and correct without
-  // changes if that ever stops being true.
-  return rows.map(r => toFieldGroup(r, pickRepeat(repeats[r.id as string], userId, r.user_id as string)));
+  // `pickRepeat` returns the raw `repeats` row (snake_case columns) — `toFieldGroup` expects the
+  // client-shape object `toRepeat` produces (`dayOfWeek`/`startedAt`/...), same as
+  // checklist-templates' own `resolveTemplate` → `toChecklistTemplate` does for the template-level
+  // schedule. Missing this call is exactly the bug that shipped here: `hour`/`minute` happen to be
+  // spelled the same in both shapes, so those looked fine, but `dayOfWeek` was always `undefined`
+  // on the raw row (really `day_of_week`) — GroupScheduleList's own `group.repeat?.dayOfWeek`
+  // check then always fell through to "every day," regardless of what was actually saved.
+  return rows.map(r => toFieldGroup(r, toRepeat(pickRepeat(repeats[r.id as string], userId, r.user_id as string))));
 }
