@@ -4,6 +4,43 @@
   position: relative;
 }
 
+// The Original/Mine switcher — a non-owner only (see ChecklistFieldGroupView's own `isOwner`
+// gate). Same tab-pill shape challenge-dashboard-page-ui's own metric tabs use, kept as a local
+// copy here rather than a shared component for three CSS properties' worth of visual match.
+.tabRow {
+  display: flex;
+  gap: 6px;
+  margin-bottom: $spacing-xs;
+}
+
+.tabPill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--input-border);
+  background: var(--input-background);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &[data-active='true'] {
+    background: #2a78d6;
+    border-color: #2a78d6;
+    color: #fff;
+  }
+}
+
+.tabPillHint {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
 .toolbar {
   display: flex;
   justify-content: flex-end;

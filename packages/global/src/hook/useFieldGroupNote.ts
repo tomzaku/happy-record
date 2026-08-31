@@ -4,15 +4,16 @@
 // caller — persist a brand-new note's id back onto the group's own owner column, but only when
 // this caller *is* the owner.
 //
-// The owner always edits the group's one canonical note directly (`field_groups.note_id`). A
-// challenge participant never edits that note in place (see notes-access-service.ts's own
-// `checkWriteNote`) — it's shared/collaborative content the owner controls, not something a
-// participant can silently overwrite. A participant who wants to add their own take instead gets
-// their own copy: the first time they actually edit it, this forks the canonical note's current
-// content into a brand-new note they own (`copiedFromId` pointing back at the original), and every
-// edit after that goes to their own copy. There's no toggle back to viewing the canonical note
-// once a participant has their own copy yet — that's a deliberate later step (see CLAUDE.md), not
-// missing by accident; the data already supports it (`copiedFromId` finds the original any time).
+// The owner always edits the group's one canonical note directly (`field_groups.note_id`) — there
+// is no "public vs. personal" distinction for them, `view` is ignored. A challenge participant
+// never edits that note in place (see notes-access-service.ts's own `checkWriteNote`) — it's
+// shared/collaborative content the owner controls, not something a participant can silently
+// overwrite. A participant who wants to add their own take instead gets their own copy: the first
+// time they actually edit it, this forks the canonical note's current content into a brand-new
+// note they own (`copiedFromId` pointing back at the original), and every edit after that goes to
+// their own copy. `view` is how the caller (ChecklistFieldGroupView) lets a participant switch
+// between reading the canonical note (`'public'`, always read-only for them) and their own copy
+// (`'personal'`, falls back to the canonical content read-only until they've actually made one).
 //
 // Call site: ChecklistFieldGroupView.tsx, for the group's own note. A `type: 'note'` field's own
 // value isn't this shape anymore — it's a checklist journal entry (see ChecklistFieldGeneral's
@@ -29,6 +30,7 @@ type FieldGroupNoteOrigin = { id: string; noteId?: string; checklistTemplateId: 
 export const useFieldGroupNote = (
   fieldGroup: FieldGroupNoteOrigin,
   isOwner: boolean,
+  view: 'public' | 'personal',
   onCreated: (newNoteId: string) => void,
 ) => {
   const { getNote, getOwnFieldGroupNote, createNote, updateNote } = useNote();
@@ -37,14 +39,23 @@ export const useFieldGroupNote = (
   // My own note for this group — the owner's canonical one (always their own row), or a
   // participant's own fork of it once they've made one.
   const { note: myNote, loading: myLoading, checked } = getOwnFieldGroupNote(fieldGroup.id);
-  // Fallback only: a participant with no fork of their own yet reads the canonical note itself,
-  // read-only — never fetched at all for the owner (myNote already covers them) or once a
-  // participant already has their own copy.
-  const wantsCanonical = checked && !myNote && !isOwner;
+  // Fetched for any non-owner, not just as a fallback for one with no fork yet — a participant who
+  // *does* have their own copy can still switch back to `view: 'public'` to read the original.
+  // Never fetched for the owner (myNote already *is* the canonical note for them).
+  const wantsCanonical = checked && !isOwner;
   const { note: canonicalNote, loading: canonicalLoading } = getNote(wantsCanonical ? fieldGroup.noteId : undefined);
 
-  const note: Note | undefined = myNote ?? canonicalNote;
+  const hasPersonalCopy = !isOwner && !!myNote;
+  // Owner: always their own (only) note, `view` is meaningless. Non-owner viewing `'personal'`:
+  // their own copy if they have one, else the canonical content as a starting point (editing from
+  // here is exactly what forks it — see `save` below). Non-owner viewing `'public'`: always the
+  // canonical note, whether or not they also have their own copy.
+  const note: Note | undefined = isOwner ? myNote : view === 'personal' ? myNote ?? canonicalNote : canonicalNote;
   const loading = !checked || myLoading || (wantsCanonical && canonicalLoading);
+  // The canonical note is never directly editable by a non-owner, regardless of `isEditing` — see
+  // `save`'s own comment on why looking at it while `view: 'personal'` still edits (forks) rather
+  // than writing it in place.
+  const readOnlyLocked = !isOwner && view === 'public';
 
   /** No note of my own yet → create one (the owner's first-ever, or a participant's own fork of
    * the canonical one) and hand its id to the caller to persist onto the group's own owner
@@ -54,7 +65,8 @@ export const useFieldGroupNote = (
    * the note has to actually exist server-side before something else is written pointing at it
    * (see createNote's own comment). `save` itself stays fire-and-forget from the caller's side
    * (NoteEditor's `setValue` doesn't await it) — only the two writes *inside* here need to happen
-   * in order. */
+   * in order. Never called while `view: 'public'` — the caller keeps that view locked read-only
+   * (see `readOnlyLocked`), so `myNote` here is always what `view: 'personal'` would show. */
   const save = async (value: unknown) => {
     if (myNote) {
       updateNote(myNote.id, { value });
@@ -84,5 +96,5 @@ export const useFieldGroupNote = (
     return buildEditorJsBlocks(blocks);
   };
 
-  return { note, loading, save, isPro, generate };
+  return { note, loading, hasPersonalCopy, readOnlyLocked, save, isPro, generate };
 };
