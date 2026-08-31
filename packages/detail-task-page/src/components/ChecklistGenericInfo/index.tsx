@@ -8,6 +8,7 @@ import {
   formatDaysOfWeek,
   getActiveFieldGroups,
   getArchivedFieldGroups,
+  mergeEditedFieldGroups,
 } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
@@ -611,10 +612,17 @@ const ChecklistGenericInfo = ({
             {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
           </Button>
         }
-        bodyClassName={styles.noBodyPadding}
+        // GroupScheduleList (unlike ScheduleModalContent) brings none of its own padding — see
+        // the Schedule modal's own comment on why *that* one needs this suppressed. Only
+        // suppressed here for the ScheduleModalContent branch, or the field-group one would have
+        // none at all.
+        bodyClassName={hasFieldGroups ? undefined : styles.noBodyPadding}
       >
         {hasFieldGroups ? (
-          <GroupScheduleList fieldGroups={tempFieldGroups} onChange={setTempFieldGroups} />
+          <GroupScheduleList
+            fieldGroups={getActiveFieldGroups(tempFieldGroups)}
+            onChange={edited => setTempFieldGroups(mergeEditedFieldGroups(tempFieldGroups, edited))}
+          />
         ) : (
           <ScheduleModalContent
             tempWeeklyHobbies={tempWeeklyHobbies}
