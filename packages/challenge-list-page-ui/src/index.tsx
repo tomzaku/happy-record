@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 import { MyChallengeRow, useChallenge } from '@dreamer/global';
-import AppHeader from '@dreamer/header';
+import { AppShell } from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import { Icon } from '@moon-ui/icon/Icon';
@@ -149,8 +149,7 @@ const ChallengeListPageUi = () => {
   }
 
   return (
-    <div>
-      <AppHeader />
+    <AppShell>
       <div className={styles.page}>
         <div className={styles.pageHeader}>
           <div>
@@ -167,7 +166,7 @@ const ChallengeListPageUi = () => {
         </div>
         {body}
       </div>
-    </div>
+    </AppShell>
   );
 };
 

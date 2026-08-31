@@ -16,7 +16,7 @@ import {
   useSyncedSelector,
 } from '@dreamer/global';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
-import AppHeader from '@dreamer/header';
+import { AppShell } from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import Input from '@moon-ui/input';
@@ -345,8 +345,7 @@ const ChallengeDashboardPageUi = () => {
 
   if (error) {
     return (
-      <div>
-        <AppHeader />
+      <AppShell>
         <div className={styles.page}>
           <Card className={styles.card}>
             <Typography.Text>
@@ -357,7 +356,7 @@ const ChallengeDashboardPageUi = () => {
             </Typography.Text>
           </Card>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
@@ -375,8 +374,7 @@ const ChallengeDashboardPageUi = () => {
     // nothing. Laid out in the same mainColumn/sideColumn split as the real
     // page so there's no jump once it lands, just a swap.
     return (
-      <div>
-        <AppHeader />
+      <AppShell>
         <div className={styles.page}>
           <div className={styles.mainColumn}>
             <Card className={`${styles.card} ${styles.cardNoPadding}`}>
@@ -476,7 +474,7 @@ const ChallengeDashboardPageUi = () => {
             </Card>
           </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
   if (!dashboard.challenge) return null;
@@ -484,8 +482,7 @@ const ChallengeDashboardPageUi = () => {
   const hasRoster = !!dashboard.participants.length;
 
   return (
-    <div>
-      <AppHeader />
+    <AppShell>
       {/* App.module.scss only caps page width on mobile (`<=tablet`) — every
           desktop page is responsible for its own max-width, same as
           detail-task-page's own `.content`. */}
@@ -976,7 +973,7 @@ const ChallengeDashboardPageUi = () => {
         })}
         secondaryButtonClick={() => setLeaveModalVisible(false)}
       />
-    </div>
+    </AppShell>
   );
 };
 

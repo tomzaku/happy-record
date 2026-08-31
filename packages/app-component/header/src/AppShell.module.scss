@@ -1,0 +1,9 @@
+.desktopContainer {
+  display: flex;
+  min-height: 100vh;
+}
+
+.desktopBody {
+  flex: 1;
+  min-width: 0;
+}
