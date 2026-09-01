@@ -10,7 +10,10 @@ import styles from './index.mobile.module.scss';
 
 const ChecklistTemplateSharedPageMobile = () => {
   const {
-    data,
+    checklistTemplate,
+    fields,
+    fieldsLoading,
+    ready,
     userName,
     targetName,
     dialogRejectOpen,
@@ -28,7 +31,10 @@ const ChecklistTemplateSharedPageMobile = () => {
   // arg sets — that's desktop's .hero-background mechanism only, see theme.ts.
   useApplyChallengeTheme(themeId);
 
-  if (!data) {
+  // Only the template itself gates the page rendering at all — fields/fieldGroups load in behind
+  // it (see useChecklistTemplateSharedPage.ts), TaskSharedCard shows its own small spinner for
+  // those meanwhile.
+  if (!checklistTemplate) {
     return (
       <div className={styles.page}>
         <BackHeader renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>} />
@@ -62,7 +68,7 @@ const ChecklistTemplateSharedPageMobile = () => {
           Complete this checklist together and see who keeps the streak alive.
         </Typography.Text>
 
-        <TaskSharedCard checklistTemplate={data.checklistTemplate} fields={data.fields} />
+        <TaskSharedCard checklistTemplate={checklistTemplate} fields={fields} fieldsLoading={fieldsLoading} />
         {/* Owner's optional CardShare photo — see theme.ts's useApplyChallengeTheme
             for why desktop instead paints this as a .hero background. */}
         {backgroundImageUrl && <img src={backgroundImageUrl} alt="" className={styles.heroImage} />}
@@ -73,8 +79,8 @@ const ChecklistTemplateSharedPageMobile = () => {
           card's own content happened to end, off-screen behind however many
           fields the template has. */}
       <div className={styles.stickyBar}>
-        <button className={styles.primaryButton} onClick={handleSubmit} disabled={submitting}>
-          {submitting && <Icon icon="svg-spinners:180-ring-with-bg" width={16} />}
+        <button className={styles.primaryButton} onClick={handleSubmit} disabled={!ready || submitting}>
+          {(submitting || !ready) && <Icon icon="svg-spinners:180-ring-with-bg" width={16} />}
           Take the Challenge
         </button>
         <button className={styles.textLink} onClick={onClickLeaveIt} disabled={submitting}>

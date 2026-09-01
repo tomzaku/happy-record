@@ -10,6 +10,10 @@ import { RecordField } from '@dreamer/global/src/store/record-field';
 type Props = {
   checklistTemplate: ChecklistTemplate;
   fields: RecordField[];
+  /** Whether `fields` is still loading (a separate, slower fetch than the template itself — see
+   * useChecklistTemplateSharedPage.ts) — told apart from "loaded, genuinely no fields" so this
+   * doesn't render as a bare empty section while the real list is still in flight. */
+  fieldsLoading?: boolean;
 };
 const allDays = [
   { label: 'M', value: Day.Mon },
@@ -26,7 +30,7 @@ const allDays = [
 // comes from the `--ct-*` custom properties theme.ts sets at the document
 // root (see useApplyChallengeTheme), so this one markup renders correctly
 // under all 3 CHALLENGE_THEMES without a per-theme fork.
-const TaskSharedCard = ({ checklistTemplate, fields = [] }: Props) => {
+const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading }: Props) => {
   const days = getDaysFromRepeat(checklistTemplate?.repeat);
   if (!checklistTemplate) return null;
   return (
@@ -54,15 +58,21 @@ const TaskSharedCard = ({ checklistTemplate, fields = [] }: Props) => {
       <div className={styles.divider} />
 
       <div className={styles.fields}>
-        {fields.map(f => (
-          <div key={f.id} className={styles.fieldRow}>
-            <Icon width={20} icon={f.icon} color="var(--ct-accent)" className={styles.fieldIcon} />
-            <div>
-              <div className={styles.fieldTitle}>{f.title}</div>
-              {f.description && <div className={styles.fieldDescription}>{f.description}</div>}
-            </div>
+        {fieldsLoading ? (
+          <div className={styles.fieldsLoading}>
+            <Icon width={18} icon="svg-spinners:180-ring" />
           </div>
-        ))}
+        ) : (
+          fields.map(f => (
+            <div key={f.id} className={styles.fieldRow}>
+              <Icon width={20} icon={f.icon} color="var(--ct-accent)" className={styles.fieldIcon} />
+              <div>
+                <div className={styles.fieldTitle}>{f.title}</div>
+                {f.description && <div className={styles.fieldDescription}>{f.description}</div>}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

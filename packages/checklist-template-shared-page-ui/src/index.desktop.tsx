@@ -10,7 +10,10 @@ import styles from './index.desktop.module.scss';
 
 const ChecklistTemplateSharedPageDesktop = () => {
   const {
-    data,
+    checklistTemplate,
+    fields,
+    fieldsLoading,
+    ready,
     userName,
     targetName,
     dialogRejectOpen,
@@ -25,7 +28,10 @@ const ChecklistTemplateSharedPageDesktop = () => {
 
   useApplyChallengeTheme(themeId, backgroundImageUrl);
 
-  if (!data) {
+  // Only the template itself gates the page rendering at all — fields/fieldGroups load in behind
+  // it (see useChecklistTemplateSharedPage.ts), TaskSharedCard shows its own small spinner for
+  // those meanwhile.
+  if (!checklistTemplate) {
     return (
       <div className={styles.page}>
         <div className={styles.loadingState}>
@@ -58,8 +64,8 @@ const ChecklistTemplateSharedPageDesktop = () => {
             </Typography.Text>
 
             <div className={styles.ctaColumn}>
-              <button className={styles.primaryButton} onClick={handleSubmit} disabled={submitting}>
-                {submitting && <Icon icon="svg-spinners:180-ring-with-bg" width={18} />}
+              <button className={styles.primaryButton} onClick={handleSubmit} disabled={!ready || submitting}>
+                {(submitting || !ready) && <Icon icon="svg-spinners:180-ring-with-bg" width={18} />}
                 Take the Challenge
               </button>
               <button className={styles.textLink} onClick={onClickLeaveIt} disabled={submitting}>
@@ -69,7 +75,7 @@ const ChecklistTemplateSharedPageDesktop = () => {
           </div>
 
           <div className={styles.cardColumn}>
-            <TaskSharedCard checklistTemplate={data.checklistTemplate} fields={data.fields} />
+            <TaskSharedCard checklistTemplate={checklistTemplate} fields={fields} fieldsLoading={fieldsLoading} />
           </div>
         </div>
       </div>

@@ -45,11 +45,20 @@ export function useChecklistTemplateSharedPage() {
   // challenge row at all is joinable.
   const isChallenge = !!challenge;
   const navigate = useNavigate();
-  const { getChecklistTemplateApi } = useGetChecklistTemplateApi();
+  const { getChecklistTemplateOnly, getFieldsAndGroups } = useGetChecklistTemplateApi();
 
-  const [data, setData] = React.useState<{ checklistTemplate: ChecklistTemplate; fields: RecordField[] } | null>(
-    null,
-  );
+  // Split so the page can render the template's own headline/card the moment it's in, instead of
+  // waiting on fields/fieldGroups too — those two are a separate, slower round trip (see
+  // useGetChecklistTemplateApi.tsx's own comment) and TaskSharedCard renders perfectly well with
+  // `fields` still empty, showing its own small spinner in their place meanwhile.
+  // `fields: undefined` means "still loading," told apart from "loaded, genuinely none."
+  const [checklistTemplate, setChecklistTemplate] = React.useState<ChecklistTemplate | null>(null);
+  const [fields, setFields] = React.useState<RecordField[] | undefined>(undefined);
+  const fieldsLoading = fields === undefined;
+  // True once there's enough to safely submit — takeItPlain reads `fields` directly to decide
+  // what to merge, so a click before that's loaded would silently fork a copy missing whichever
+  // fields hadn't arrived yet. The headline/card above don't wait on this; only the CTA does.
+  const ready = !!checklistTemplate && !fieldsLoading;
   // Covers every real network wait this page has (taking it plain, joining
   // a challenge) so the primary/Join buttons can show a spinner instead of
   // just sitting there — a slow request otherwise looks identical to a
@@ -64,13 +73,13 @@ export function useChecklistTemplateSharedPage() {
   // can't see or manage). Unchanged from before challenges existed, and
   // still what happens for a share with neither challenge option on.
   const takeItPlain = async () => {
-    if (!data) return;
+    if (!checklistTemplate || fields === undefined) return;
     setSubmitting(true);
     try {
-      const existingFields = await getRecordFieldsByIds(data.fields.map(f => f.id));
-      const newFields = data.fields.filter(f => !existingFields.find(existing => existing.id === f.id));
+      const existingFields = await getRecordFieldsByIds(fields.map(f => f.id));
+      const newFields = fields.filter(f => !existingFields.find(existing => existing.id === f.id));
       if (newFields.length) mergeRecordFields(newFields);
-      addChecklistTemplate({ ...data.checklistTemplate, visibility: 'private', flagId: undefined });
+      addChecklistTemplate({ ...checklistTemplate, visibility: 'private', flagId: undefined });
       navigate('/');
     } finally {
       setSubmitting(false);
@@ -113,8 +122,8 @@ export function useChecklistTemplateSharedPage() {
   const confirmTakeIt = () => (isChallenge ? joinTheChallenge() : takeItPlain());
 
   const handleSubmit = () => {
-    if (!data || submitting) return;
-    if (getChecklistTemplate(data.checklistTemplate.id)) {
+    if (!checklistTemplate || fieldsLoading || submitting) return;
+    if (getChecklistTemplate(checklistTemplate.id)) {
       alert("You've have this task!!!");
       return;
     }
@@ -131,12 +140,30 @@ export function useChecklistTemplateSharedPage() {
 
   React.useEffect(() => {
     if (!id) return;
-    getChecklistTemplateApi(id).then(setData);
+    let cancelled = false;
+    getChecklistTemplateOnly(id).then(template => {
+      if (cancelled) return;
+      setChecklistTemplate(template);
+      if (!template) return;
+      // Fired only once the template itself is in — fieldGroups/fields aren't gated on anything
+      // else, but there's no id to fetch them by until this resolves.
+      getFieldsAndGroups(template.id).then(({ fields: fetchedFields, fieldGroups }) => {
+        if (cancelled) return;
+        setChecklistTemplate(prev => (prev ? { ...prev, fieldGroups } : prev));
+        setFields(fetchedFields);
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   return {
-    data,
+    checklistTemplate,
+    fields: fields ?? [],
+    fieldsLoading,
+    ready,
     userName,
     targetName,
     dialogRejectOpen,

@@ -26,10 +26,10 @@ const mockSavePendingChallengeJoin = jest.fn();
 const mockSignInWithGoogle = jest.fn().mockResolvedValue(undefined);
 const mockGetRecordFieldsByIds = jest.fn().mockResolvedValue([]);
 const mockMergeRecordFields = jest.fn();
-const mockGetChecklistTemplateApi = jest.fn().mockResolvedValue({
-  checklistTemplate: { id: 'template-1', title: 'Gym', fieldGroups: [], records: [], tags: [] },
-  fields: [],
-});
+const mockGetChecklistTemplateOnly = jest
+  .fn()
+  .mockResolvedValue({ id: 'template-1', title: 'Gym', fieldGroups: [], records: [], tags: [] });
+const mockGetFieldsAndGroups = jest.fn().mockResolvedValue({ fields: [], fieldGroups: [] });
 
 jest.mock('react-router-dom', () => ({
   useParams: () => ({ id: 'template-1' }),
@@ -61,7 +61,10 @@ jest.mock('@dreamer/global/src/store/record-field', () => ({
 }));
 
 jest.mock('@dreamer/global/src/hook/checklist-template/useGetChecklistTemplateApi', () => ({
-  useGetChecklistTemplateApi: () => ({ getChecklistTemplateApi: mockGetChecklistTemplateApi }),
+  useGetChecklistTemplateApi: () => ({
+    getChecklistTemplateOnly: mockGetChecklistTemplateOnly,
+    getFieldsAndGroups: mockGetFieldsAndGroups,
+  }),
 }));
 
 import { useChecklistTemplateSharedPage } from './useChecklistTemplateSharedPage';
@@ -76,7 +79,8 @@ beforeEach(() => {
   mockSavePendingChallengeJoin.mockClear();
   mockSignInWithGoogle.mockClear();
   mockGetRecordFieldsByIds.mockClear();
-  mockGetChecklistTemplateApi.mockClear();
+  mockGetChecklistTemplateOnly.mockClear();
+  mockGetFieldsAndGroups.mockClear();
 });
 
 describe('confirmTakeIt — challenge join vs. plain fork', () => {
@@ -116,7 +120,7 @@ describe('confirmTakeIt — challenge join vs. plain fork', () => {
 
     const { result } = renderHook(() => useChecklistTemplateSharedPage());
     expect(result.current.isChallenge).toBe(false);
-    await waitFor(() => expect(result.current.data).not.toBeNull());
+    await waitFor(() => expect(result.current.ready).toBe(true));
 
     await act(async () => {
       await result.current.confirmTakeIt();
