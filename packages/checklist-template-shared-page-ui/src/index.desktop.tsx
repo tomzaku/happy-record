@@ -44,7 +44,9 @@ const ChecklistTemplateSharedPageDesktop = () => {
   return (
     <div className={styles.page}>
       <div className={styles.sheet}>
-        <BackHeader renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>} />
+        <div className={styles.headerClip}>
+          <BackHeader renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>} />
+        </div>
 
         <div className={styles.hero}>
           <div className={styles.intro}>

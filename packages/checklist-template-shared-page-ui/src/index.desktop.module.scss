@@ -15,6 +15,16 @@
   border: var(--ct-card-border);
   border-radius: var(--ct-card-radius);
   box-shadow: var(--ct-card-shadow);
+  // No `overflow: hidden` here on purpose — `.intro` below is `position: sticky`, and any
+  // ancestor with non-`visible` overflow (even one that never actually scrolls, like this one)
+  // confines sticky positioning to within it, which breaks it against the page's own scroll.
+  // `.headerClip` below carries the corner-clipping this used to do instead, scoped to just the
+  // one child (BackHeader's full-width background) that actually needs it — `.hero`'s own
+  // content sits well inside its padding, nowhere near the rounded edges.
+}
+
+.headerClip {
+  border-radius: var(--ct-card-radius) var(--ct-card-radius) 0 0;
   overflow: hidden;
 }
 
@@ -54,7 +64,20 @@
 .intro {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  // Was `center` — fine while both columns were roughly the same height, but the right column
+  // (TaskSharedCard) can now run much longer than the headline/CTA once fields and field-group
+  // notes are both showing, stretching this grid row tall enough to push a vertically-centered
+  // CTA button well below the fold. Pinning to the top keeps the button where someone lands.
+  justify-content: flex-start;
+  // `align-self: start` keeps this column's own box only as tall as its content (headline +
+  // CTA), rather than stretching to match `.cardColumn`'s full height (the grid's default) — a
+  // sticky element needs a shorter box than its row to have anywhere to "stick" as the page
+  // scrolls. The row itself still spans `.cardColumn`'s full height, so there's plenty of room
+  // for this to stay pinned at `top` while a long fields/notes list scrolls past on the right,
+  // only releasing once the row's own bottom edge catches up to it.
+  position: sticky;
+  top: $spacing-lg;
+  align-self: start;
 }
 
 .chip {

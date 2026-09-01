@@ -71,10 +71,41 @@
   color: var(--ct-body-text);
 }
 
+.notePreview {
+  margin-top: $spacing-lg;
+  padding-top: $spacing-lg;
+  border-top: var(--ct-divider);
+}
+
+.noteGroupTitle {
+  display: block;
+  font-weight: 600;
+  color: var(--ct-heading-color);
+  margin-bottom: $spacing-sm;
+}
+
+.noteLoading {
+  display: flex;
+  align-items: center;
+  padding: $spacing-sm 0;
+  color: var(--ct-body-text);
+}
+
 .fieldRow {
   display: flex;
   align-items: flex-start;
   gap: $spacing-md;
+}
+
+.showMoreButton {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: toRem(13px);
+  font-weight: 600;
+  color: var(--ct-accent);
+  cursor: pointer;
 }
 
 .fieldIcon {

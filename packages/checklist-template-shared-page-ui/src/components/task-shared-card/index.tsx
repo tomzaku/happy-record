@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import Icon from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
-import { ChecklistTemplate } from '@dreamer/global';
+import { ChecklistTemplate, getActiveFieldGroups } from '@dreamer/global';
 import { getDaysFromRepeat } from '@pregnant/create-checklist-page-ui/src/getDayFromRepeat';
 import { Day } from '@dreamer/tasks-page-common';
 import cx from 'classnames';
 import styles from './index.module.scss';
 import { RecordField } from '@dreamer/global/src/store/record-field';
+import FieldGroupNotePreview from './FieldGroupNotePreview';
 
 type Props = {
   checklistTemplate: ChecklistTemplate;
@@ -30,9 +32,17 @@ const allDays = [
 // comes from the `--ct-*` custom properties theme.ts sets at the document
 // root (see useApplyChallengeTheme), so this one markup renders correctly
 // under all 3 CHALLENGE_THEMES without a per-theme fork.
+// How many fields show before "Show more" — enough to give a sense of the template without the
+// list itself being what drags this column past the CTA on the left (see index.desktop.tsx's own
+// `.intro` comment).
+const COLLAPSED_FIELD_COUNT = 2;
+
 const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading }: Props) => {
   const days = getDaysFromRepeat(checklistTemplate?.repeat);
+  const [showAllFields, setShowAllFields] = useState(false);
   if (!checklistTemplate) return null;
+  const visibleFields = showAllFields ? fields : fields.slice(0, COLLAPSED_FIELD_COUNT);
+  const hiddenFieldCount = fields.length - visibleFields.length;
   return (
     <div className={styles.container}>
       <div className={styles.headerRow}>
@@ -63,17 +73,39 @@ const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading }: Props
             <Icon width={18} icon="svg-spinners:180-ring" />
           </div>
         ) : (
-          fields.map(f => (
-            <div key={f.id} className={styles.fieldRow}>
-              <Icon width={20} icon={f.icon} color="var(--ct-accent)" className={styles.fieldIcon} />
-              <div>
-                <div className={styles.fieldTitle}>{f.title}</div>
-                {f.description && <div className={styles.fieldDescription}>{f.description}</div>}
+          <>
+            {visibleFields.map(f => (
+              <div key={f.id} className={styles.fieldRow}>
+                <Icon width={20} icon={f.icon} color="var(--ct-accent)" className={styles.fieldIcon} />
+                <div>
+                  <div className={styles.fieldTitle}>{f.title}</div>
+                  {f.description && <div className={styles.fieldDescription}>{f.description}</div>}
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+            {hiddenFieldCount > 0 && (
+              <button type="button" className={styles.showMoreButton} onClick={() => setShowAllFields(true)}>
+                Show {hiddenFieldCount} more
+              </button>
+            )}
+            {showAllFields && fields.length > COLLAPSED_FIELD_COUNT && (
+              <button type="button" className={styles.showMoreButton} onClick={() => setShowAllFields(false)}>
+                Show less
+              </button>
+            )}
+          </>
         )}
       </div>
+
+      {/* Same instructional note a field group's Home tab shows once joined (see
+          ChecklistFieldGroupView) — previewed here, read-only, so a prospective joiner can see
+          what they're signing up for before taking the challenge. Gated on `fieldsLoading` too:
+          `checklistTemplate.fieldGroups` comes from the same parallel fetch as `fields` (see
+          useChecklistTemplateSharedPage.ts), and is just an empty stub until that resolves. */}
+      {!fieldsLoading &&
+        getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).map(fieldGroup => (
+          <FieldGroupNotePreview key={fieldGroup.id} fieldGroup={fieldGroup} />
+        ))}
     </div>
   );
 };
