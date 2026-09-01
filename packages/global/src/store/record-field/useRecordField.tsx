@@ -32,7 +32,11 @@ export type RecordField = {
   // own value is a JSON-encoded array of the chosen options, still a plain string on the wire —
   // see checklistRecordApi.ts's own serializeMultiselect/parseMultiselect, the only place that
   // encoding is ever touched. 'number' was 'metric' until 20260829080000_field_type_metric_to_number.sql.
-  type: 'number' | 'note' | 'text' | 'date' | 'datetime' | 'select' | 'multiselect';
+  // 'photo'/'video' (20260901000000_media.sql) carry a `media` row's own id as this same plain
+  // string — an uploaded attachment, never stored on the field's own row. See
+  // packages/global/src/store/media/useMediaUrl.ts for how a component resolves that id into an
+  // actual playable URL; nothing in this file changes for these two.
+  type: 'number' | 'note' | 'text' | 'date' | 'datetime' | 'select' | 'multiselect' | 'photo' | 'video';
   unit: string;
   /**
    * The fixed list of choices a `select`/`multiselect` field offers — required for those two

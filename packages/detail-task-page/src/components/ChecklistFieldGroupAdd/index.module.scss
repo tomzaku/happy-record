@@ -230,3 +230,97 @@
   border-radius: 0 0 8px 8px;
   background: var(--card-background);
 }
+
+// A photo/video field's own Submit input — same "header row, then the real control below it"
+// shape .noteField/.selectField already use.
+.mediaField {
+  margin-bottom: $spacing-md;
+}
+
+.mediaUploadControl {
+  margin-top: $spacing-sm;
+}
+
+.mediaDropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+  border: 1px dashed var(--input-border);
+  border-radius: 8px;
+  color: var(--text-description-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--card-border-hover);
+    color: var(--text-color);
+  }
+}
+
+.mediaDropzoneActive {
+  border-color: var(--card-border-hover);
+  background: var(--card-selected-background);
+  color: var(--text-color);
+}
+
+.mediaCaptureButton {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border: 1px dashed var(--input-border);
+  border-radius: 8px;
+  background: var(--input-background);
+  color: var(--text-color);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.mediaError {
+  display: block;
+  margin-top: $spacing-xs;
+  color: var(--error-color, #e5484d);
+}
+
+.mediaPreview {
+  position: relative;
+  display: inline-block;
+  margin-top: $spacing-sm;
+}
+
+.mediaPreviewImg {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.mediaPreviewVideo {
+  max-width: 240px;
+  max-height: 240px;
+  border-radius: 8px;
+}
+
+.mediaRemoveButton {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--card-background);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  color: var(--text-color);
+  cursor: pointer;
+}

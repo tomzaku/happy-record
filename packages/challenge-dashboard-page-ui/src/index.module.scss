@@ -650,3 +650,67 @@
   font-size: toRem(12px);
   color: var(--text-color);
 }
+
+// ─── Attachments (photo/video check-ins) ─────────────────────────────────────────────────────
+// A third top-level card in `.page`, below `.mainColumn`/`.sideColumn` in DOM order — stacks at
+// the very bottom on mobile/tablet for free, needs `grid-column: 1 / -1` at desktop to span both
+// tracks instead of only auto-placing into the first one (same reasoning as `.breadcrumbRow`).
+.attachmentsRow {
+  @include media.media('>tablet') {
+    grid-column: 1 / -1;
+  }
+}
+
+.attachmentGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+.attachmentCard {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  width: 160px;
+}
+
+.attachmentThumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--input-background);
+}
+
+.attachmentThumbImg,
+.attachmentThumbVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.attachmentMeta {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  min-width: 0;
+}
+
+.attachmentAuthor {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: toRem(12px);
+  font-weight: 600;
+}
+
+.attachmentFieldTitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: toRem(11px);
+  color: var(--text-color-secondary, var(--text-color));
+}

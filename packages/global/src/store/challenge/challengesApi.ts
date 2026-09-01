@@ -60,6 +60,23 @@ export function fetchChallengeDashboard(
     target: number;
     contributions: { userId: string; total: number }[];
   }[];
+  /**
+   * Which photo/video field(s) each visible participant submitted, in this same date window —
+   * `mediaId` is a `media` row's own id, never a URL (see `useMediaUrl`
+   * packages/global/src/store/media/useMediaUrl.ts, the only place a component should resolve one
+   * into an actual playable URL). Cross-reference `userId` against `participants` above for a
+   * name/avatar to show next to it.
+   */
+  attachments: {
+    userId: string;
+    fieldId: string;
+    title: string;
+    /** The field's own Iconify icon — see useRecordField.tsx's `RecordField.icon`. */
+    icon: string;
+    kind: 'photo' | 'video';
+    mediaId: string;
+    createdAt: string;
+  }[];
 }> {
   return request.get(`/challenges/${encodeURIComponent(id)}`, { params: { from, to } });
 }

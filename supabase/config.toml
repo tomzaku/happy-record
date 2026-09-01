@@ -124,6 +124,15 @@ file_size_limit = "50MiB"
 # allowed_mime_types = ["image/png", "image/jpeg"]
 # objects_path = "./images"
 
+# A `photo`/`video`-type field's own uploaded attachment (see CLAUDE.md and
+# supabase/functions/media/) — private, resolved only through signed URLs the `media` edge
+# function issues (never a public bucket URL). Local dev only; the hosted project's bucket needs
+# the same settings applied separately (e.g. via the Dashboard).
+[storage.buckets.media]
+public = false
+file_size_limit = "100MiB"
+allowed_mime_types = ["image/*", "video/*"]
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true

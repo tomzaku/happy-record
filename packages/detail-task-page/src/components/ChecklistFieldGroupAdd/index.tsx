@@ -35,6 +35,7 @@ import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import { useIntl } from '@dreamer/translation';
 import WeeklyRow from '../WeeklyRow';
 import ChecklistFieldGroupHistory from '../ChecklistFieldGroupHistory';
+import MediaFieldInput, { MediaFieldPreview } from './MediaFieldInput';
 
 type Props = {
   fields: RecordField[];
@@ -103,6 +104,13 @@ const ChecklistFieldGroupAdd = ({
   const selectLikeFields = fields.filter(
     field => field.type === 'select' || field.type === 'multiselect',
   );
+  // A photo/video field's own value is a `media` row's own id — a plain string exactly like
+  // text/date/datetime's own value already is (see RecordField.type's own comment), so it shares
+  // that same `textFieldRecord` state and `textEntries` submission bucket below rather than
+  // needing its own — only the *input control* (MediaFieldInput, an upload/capture UI instead of
+  // a text/date input) and the read-only display (MediaFieldPreview instead of
+  // formatFieldValueForDisplay) actually differ.
+  const mediaFields = fields.filter(field => field.type === 'photo' || field.type === 'video');
   // Pre-fills a number field's own default value (set via the Edit Field
   // form — see CoreFieldRecord) instead of always starting blank; still
   // fully editable, and a field with no default set stays blank exactly as
@@ -316,6 +324,22 @@ const ChecklistFieldGroupAdd = ({
                   />
                 </React.Fragment>
               );
+            } else if (recordField.type === 'photo' || recordField.type === 'video') {
+              const latestRecord = currentChecklistRecords.find(
+                record => record.fieldId === recordField.id,
+              );
+              if (!latestRecord || typeof latestRecord.value !== 'string') {
+                return null;
+              }
+              return (
+                <React.Fragment key={latestRecord.id}>
+                  <List.ItemMeta
+                    logo={<Icon width={24} icon={recordField.icon} />}
+                    title={recordField.title}
+                  />
+                  <MediaFieldPreview kind={recordField.type} mediaId={latestRecord.value} />
+                </React.Fragment>
+              );
             } else {
               // text/date/datetime/select/multiselect — a plain formatted string, same
               // read-only display ChecklistFieldGeneral's own collapsed state uses.
@@ -488,6 +512,18 @@ const ChecklistFieldGroupAdd = ({
           </div>
         );
       })}
+      {mediaFields.map(field => (
+        <div key={`${field.id}-${newNoteKey}`} className={styles.mediaField}>
+          <List.ItemMeta logo={<Icon width={24} icon={field.icon} />} title={field.title} />
+          <MediaFieldInput
+            kind={field.type as 'photo' | 'video'}
+            value={textFieldRecord[field.id]}
+            onChange={mediaId =>
+              setTextFieldRecord({ ...textFieldRecord, [field.id]: mediaId })
+            }
+          />
+        </div>
+      ))}
       <div className={styles.footerCenter}>
         {onOpenFieldSettings ? (
           <button

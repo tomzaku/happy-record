@@ -235,6 +235,53 @@ export async function fetchChecklistRecordTotals(
   return (data ?? []) as { field_id: string; user_id: string; value_number: number | null }[];
 }
 
+export type FieldTypeRow = { id: string; type: string };
+
+/** Just the type, for `getAttachments`' own "which of this template's fields are photo/video"
+ * filter — no visibility scoping needed the way `fetchFieldsMetaForUser` has, since a bare type
+ * string isn't sensitive the way a title could be, and every id passed in already came from a
+ * template this caller can already see. */
+export async function fetchFieldTypesByIds(db: SupabaseClient, fieldIds: string[]): Promise<FieldTypeRow[]> {
+  if (!fieldIds.length) return [];
+  const { data, error } = await db.from('fields').select('id, type').in('id', fieldIds);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as FieldTypeRow[];
+}
+
+export type MediaRecordRow = { user_id: string; field_id: string; value_text: string | null; created_at: string };
+
+/** A photo/video field's own submitted value (a `media` row's own id, held in `value_text`) —
+ * the dashboard's own peer-read carve-out for attachments, narrowly scoped to fields already known
+ * to be `type: 'photo'/'video'` and to `visibleUserIds` (the same share_records-gated list every
+ * other peer read on this dashboard uses). The media blob itself still goes through its own
+ * separate authorization (`media/services/media-access-service.ts`'s `checkCanReadMedia`) when the
+ * client actually resolves one of these ids into a URL — this only ever hands back the id. */
+export async function fetchMediaChecklistRecordsForUsersInRange(
+  db: SupabaseClient,
+  fieldIds: string[],
+  visibleUserIds: string[],
+  from: string,
+  to: string,
+  limit: number,
+): Promise<MediaRecordRow[]> {
+  if (!fieldIds.length || !visibleUserIds.length) return [];
+  // No `.not('value_text', 'is', null)` filter here — `getAttachments` (the only caller) already
+  // filters out a falsy `value_text` itself, and every field id passed in is already known to be
+  // `photo`/`video`-typed, so a null here only ever means "not filled in this range," never a
+  // different field type's row leaking through.
+  const { data, error } = await db
+    .from('checklist_records')
+    .select('user_id, field_id, value_text, created_at')
+    .in('field_id', fieldIds)
+    .in('user_id', visibleUserIds)
+    .gte('created_at', from)
+    .lte('created_at', to)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as MediaRecordRow[];
+}
+
 export async function upsertChallenge(
   db: SupabaseClient,
   ownerId: string,

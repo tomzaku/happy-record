@@ -148,6 +148,7 @@
         "packageJson": {
           "dependencies": [
             "npm:@moon-ui/note-editor@1",
+            "npm:@moon-ui/skeleton@1",
             "npm:framer-motion@^12.12.1",
             "npm:qs@6.14.0",
             "npm:slate-dom@0.116",

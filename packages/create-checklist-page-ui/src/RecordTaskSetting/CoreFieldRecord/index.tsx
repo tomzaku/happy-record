@@ -5,13 +5,23 @@ import { Icon } from '@moon-ui/icon/Icon';
 import Button from '@moon-ui/button/src/DefaultButton';
 
 import { useIntl } from '@dreamer/translation';
+import { useSession } from '@dreamer/global';
 
 import styles from './index.module.scss';
 import cx from 'classnames';
 import IconPicker from '../../IconPicker';
 import Select from '@moon-ui/select';
 
-export type FieldType = 'number' | 'note' | 'text' | 'date' | 'datetime' | 'select' | 'multiselect';
+export type FieldType =
+  | 'number'
+  | 'note'
+  | 'text'
+  | 'date'
+  | 'datetime'
+  | 'select'
+  | 'multiselect'
+  | 'photo'
+  | 'video';
 
 export type FormState = {
   icon: string;
@@ -126,6 +136,7 @@ const CoreFieldRecord = ({
   submitButtonText,
 }: Props) => {
   const intl = useIntl();
+  const { hasBackend } = useSession();
 
   // A Select dropdown, not the segmented Radio buttons this used to be — 7 options don't fit as
   // inline buttons in this row on mobile the way 2 did.
@@ -137,6 +148,16 @@ const CoreFieldRecord = ({
     { label: intl.formatMessage({ defaultMessage: 'Date & Time', id: 'label-record-custom.type.datetime' }), value: 'datetime' },
     { label: intl.formatMessage({ defaultMessage: 'Multiple Choice', id: 'label-record-custom.type.select' }), value: 'select' },
     { label: intl.formatMessage({ defaultMessage: 'Multiple Select', id: 'label-record-custom.type.multiselect' }), value: 'multiselect' },
+    // Upload/capture needs a real backend (the `media` resource — see CLAUDE.md's "current
+    // resources") to issue anywhere to upload to, so these two are hidden rather than offered and
+    // failing on first use when no backend is configured at all — same "check we can use Supabase,
+    // else ignore the feature" rule every other backend-dependent feature in this app follows.
+    ...(hasBackend
+      ? [
+        { label: intl.formatMessage({ defaultMessage: 'Photo', id: 'label-record-custom.type.photo' }), value: 'photo' as const },
+        { label: intl.formatMessage({ defaultMessage: 'Video', id: 'label-record-custom.type.video' }), value: 'video' as const },
+      ]
+      : []),
   ];
 
   const [form, setForm] = React.useState<FormState>({

@@ -51,14 +51,19 @@ export function isoToDatetimeLocalInputValue(iso: string): string {
  * ISO timestamp down to what a human actually wants to see (just the day, or the day plus a
  * locale-formatted time) rather than the raw ISO string. Tolerant of a value that isn't real date
  * content (not yet a valid Date) — falls back to the raw string rather than showing "Invalid
- * Date". */
+ * Date". `photo`/`video` are a plain-text fallback only — the value is a `media` row's own id, not
+ * anything display-ready as text, so this just says whether one was attached at all; anywhere that
+ * actually needs to show the image/video itself renders through `useMediaUrl`
+ * (packages/global/src/store/media) instead of calling this. */
 export function formatFieldValueForDisplay(
-  type: 'text' | 'date' | 'datetime' | 'select' | 'multiselect',
+  type: 'text' | 'date' | 'datetime' | 'select' | 'multiselect' | 'photo' | 'video',
   value: unknown,
 ): string {
   const raw = value == null ? '' : String(value);
   if (type === 'text' || type === 'select') return raw;
   if (type === 'multiselect') return parseMultiselect(raw).join(', ');
+  if (type === 'photo') return raw ? 'Photo attached' : '';
+  if (type === 'video') return raw ? 'Video attached' : '';
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return raw;
   if (type === 'date') return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;

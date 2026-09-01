@@ -16,6 +16,7 @@ import {
   useSyncedSelector,
 } from '@dreamer/global';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
+import { useMediaUrl } from '@dreamer/global/src/store/media';
 import { AppShell, Breadcrumb } from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
@@ -65,12 +66,23 @@ type Target = {
   contributions: { userId: string; total: number }[];
 };
 
+type Attachment = {
+  userId: string;
+  fieldId: string;
+  title: string;
+  icon: string;
+  kind: 'photo' | 'video';
+  mediaId: string;
+  createdAt: string;
+};
+
 type Dashboard = {
   challenge: Challenge | null;
   participants: ChallengeParticipant[];
   completions: { userId: string; date: string }[];
   ranking: { userId: string; count: number }[];
   targets: Target[];
+  attachments: Attachment[];
 };
 
 /**
@@ -100,6 +112,24 @@ const TargetFill = ({ pct, children }: { pct: number; children: React.ReactNode 
   return (
     <div className={styles.targetFill} style={{ width: `${width}%` }}>
       {children}
+    </div>
+  );
+};
+
+/** One `dashboard.attachments` entry's thumbnail — a separate component (not a hook called
+ * inside the `.map()` below) since `useMediaUrl` needs to run once per attachment id, and hooks
+ * can't run conditionally/per-iteration like that (same reasoning `TargetFill` above has for its
+ * own per-target component). Renders nothing once the fetch fails (expired/deleted/not visible)
+ * rather than a broken-image icon — same "degrade, don't break" rule the field-level equivalent
+ * (ChecklistFieldGroupAdd's own MediaFieldPreview) already follows. */
+const AttachmentThumb = ({ kind, mediaId }: { kind: 'photo' | 'video'; mediaId: string }) => {
+  const { url, isLoading, error } = useMediaUrl(mediaId);
+  if (error) return null;
+  return (
+    <div className={styles.attachmentThumb}>
+      {isLoading && <Icon icon="svg-spinners:180-ring" width={20} />}
+      {url && kind === 'photo' && <img src={url} alt="" className={styles.attachmentThumbImg} />}
+      {url && kind === 'video' && <video src={url} controls className={styles.attachmentThumbVideo} />}
     </div>
   );
 };
@@ -950,6 +980,45 @@ const ChallengeDashboardPageUi = () => {
             </Card>
           )}
         </div>
+
+        {!!dashboard.attachments.length && (
+          <Card className={`${styles.card} ${styles.cardNoPadding} ${styles.attachmentsRow}`}>
+            <div className={styles.cardHeaderWash} style={{ background: 'rgba(42, 120, 214, 0.08)' }}>
+              <div className={styles.cardHeaderTitle}>
+                <Icon icon="solar:gallery-wide-bold-duotone" width={22} color="#2a78d6" />
+                <Typography.Title level={4} noMargin>
+                  {intl.formatMessage({ id: 'ChallengeDashboard.attachments', defaultMessage: 'Photos & Videos' })}
+                </Typography.Title>
+              </div>
+              <Typography.Text className={styles.sectionHeaderSubtitle}>
+                {intl.formatMessage({
+                  id: 'ChallengeDashboard.attachments-caption',
+                  defaultMessage: "Everyone's check-in photos and videos.",
+                })}
+              </Typography.Text>
+            </div>
+            <div className={styles.cardBody}>
+              <div className={styles.attachmentGrid}>
+                {dashboard.attachments.map(attachment => {
+                  const participant = dashboard.participants.find(p => p.userId === attachment.userId);
+                  const name = participant?.displayName || 'Anonymous';
+                  return (
+                    <div key={`${attachment.fieldId}-${attachment.mediaId}`} className={styles.attachmentCard}>
+                      <AttachmentThumb kind={attachment.kind} mediaId={attachment.mediaId} />
+                      <div className={styles.attachmentMeta}>
+                        <ParticipantAvatar name={name} avatarUrl={participant?.avatarUrl} size={22} />
+                        <Typography.Text className={styles.attachmentAuthor}>{name}</Typography.Text>
+                      </div>
+                      {attachment.title && (
+                        <Typography.Text className={styles.attachmentFieldTitle}>{attachment.title}</Typography.Text>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
 
       <WarningModal

@@ -1,10 +1,10 @@
 // A minimal fake Supabase query builder for unit tests — supports exactly the chain shapes this
-// codebase's repository functions use (`.select`/`.eq`/`.in`/`.or`/`.order`/`.limit`, resolved
-// either by awaiting the builder directly or via `.maybeSingle()`/`.single()`) against a fixed
-// table of canned `{ data, error }` responses. Not a real PostgREST simulator — it doesn't
-// interpret filters at all, it just hands back canned responses in call order. Each `.from(table)`
-// call consumes the next queued response for that table, so a test whose code path queries the
-// same table twice needs two entries in that table's list.
+// codebase's repository functions use (`.select`/`.eq`/`.in`/`.or`/`.gte`/`.lte`/`.order`/
+// `.limit`, resolved either by awaiting the builder directly or via `.maybeSingle()`/`.single()`)
+// against a fixed table of canned `{ data, error }` responses. Not a real PostgREST simulator — it
+// doesn't interpret filters at all, it just hands back canned responses in call order. Each
+// `.from(table)` call consumes the next queued response for that table, so a test whose code path
+// queries the same table twice needs two entries in that table's list.
 
 export type FakeResponse = { data: unknown; error: { message: string } | null };
 
@@ -24,6 +24,8 @@ export function fakeSupabase(responses: Record<string, FakeResponse[]>): any {
       eq: () => builder,
       in: () => builder,
       or: () => builder,
+      gte: () => builder,
+      lte: () => builder,
       order: () => builder,
       limit: () => builder,
       upsert: () => builder,

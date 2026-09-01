@@ -34,8 +34,10 @@ export type AiGenerateChecklistTemplateParams = {
 export type AiGeneratedField = {
   title: string;
   icon: string;
-  // Mirrors RecordField.type (useRecordField.tsx) in full now, not just 'number'/'note' — see
-  // ai-checklist-template/index.ts's own FieldType comment.
+  // Mirrors RecordField.type (useRecordField.tsx) except 'photo'/'video' (20260901000000_media.sql)
+  // — an AI proposal has no way to produce a meaningful upload for either, so those two are
+  // deliberately left out here, matching the server's own separate FieldType in
+  // dto/ai-checklist-template/ai-checklist-template-dto.ts, which never gained them either.
   type: 'number' | 'note' | 'text' | 'date' | 'datetime' | 'select' | 'multiselect';
   unit: string;
   description: string;

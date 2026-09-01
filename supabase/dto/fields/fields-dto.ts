@@ -26,7 +26,12 @@
 // packages/global/src/lib/multiselectValue.ts's own serializeMultiselect/parseMultiselect for
 // where that encoding actually happens (never here; this file only ever touches the field's own
 // row, not a submitted record's value).
-export const FIELD_TYPES = ['number', 'note', 'text', 'date', 'datetime', 'select', 'multiselect'] as const;
+//
+// 'photo'/'video' (20260901000000_media.sql) are the odd ones out here: a value isn't stored on
+// the field's own row at all (nothing here changes for them), it's an uploaded `media` row's own
+// id, submitted as a plain string through `checklist-records` exactly like 'text' already is — see
+// supabase/functions/media/ for the upload/read resource and CLAUDE.md's "current resources".
+export const FIELD_TYPES = ['number', 'note', 'text', 'date', 'datetime', 'select', 'multiselect', 'photo', 'video'] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 export const isFieldType = (v: unknown): v is FieldType => (FIELD_TYPES as readonly string[]).includes(v as string);
 const SELECT_TYPES = new Set<FieldType>(['select', 'multiselect']);

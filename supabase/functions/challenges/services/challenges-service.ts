@@ -6,13 +6,16 @@
 
 import { toChallenge } from '../../../dto/challenges/challenges-dto.ts';
 import { toChallengeParticipant } from '../../../dto/challenge-participants/challenge-participants-dto.ts';
+import { fetchFieldIdsReferencedByTemplate } from '../../../shared/fieldGroupFields.ts';
 import {
   fetchChallengeByTemplateId,
   fetchChallengesByIds,
   fetchChecklistRecordTotals,
   fetchChecklistsForUsersInRange,
   fetchFieldsMetaForUser,
+  fetchFieldTypesByIds,
   fetchForkedFields,
+  fetchMediaChecklistRecordsForUsersInRange,
   fetchMyParticipantRows,
   fetchOwnedChallenges,
   fetchParticipantChallengeIds,
@@ -320,15 +323,90 @@ async function getTargets(
   }));
 }
 
+type Attachment = {
+  userId: string;
+  fieldId: string;
+  title: string;
+  icon: string;
+  kind: 'photo' | 'video';
+  mediaId: string;
+  createdAt: string;
+};
+
+/**
+ * Which photo/video field(s) each visible participant actually submitted, within the dashboard's
+ * own date window — this is the "peer read of completion, not content" line's one deliberate
+ * exception (see CLAUDE.md's own note on `media`'s `checkCanReadMedia`): a media *blob* already got
+ * its own explicit peer-visibility carve-out at the storage layer, gated the same way
+ * (`share_records`) this reuses via `visibleUserIds` — this just tells the client which ids to ask
+ * `GET /media/:id` for, never a record's raw text/number value the way `getTargets` still only
+ * ever hands back a pre-aggregated sum. `mediaId` is a `media` row's own id, not a URL — the client
+ * resolves it via `useMediaUrl`, subject to that route's own authorization check independently of
+ * this one.
+ */
+async function getAttachments(
+  db: SupabaseClient,
+  ownerId: string,
+  templateIds: string[],
+  visibleUserIds: string[],
+  from: string,
+  to: string,
+): Promise<Attachment[]> {
+  const referencedFieldIdsPerTemplate = await Promise.all(
+    templateIds.map(templateId => fetchFieldIdsReferencedByTemplate(db, templateId)),
+  );
+  const fieldIds = [...new Set(referencedFieldIdsPerTemplate.flat())];
+  if (!fieldIds.length) return [];
+
+  const fieldTypeRows = await fetchFieldTypesByIds(db, fieldIds);
+  const kindByFieldId = new Map<string, 'photo' | 'video'>(
+    fieldTypeRows
+      .filter((row): row is { id: string; type: 'photo' | 'video' } => row.type === 'photo' || row.type === 'video')
+      .map(row => [row.id, row.type]),
+  );
+  if (!kindByFieldId.size) return [];
+
+  const mediaFieldIds = [...kindByFieldId.keys()];
+  // title/icon scoped to the *owner's* own-or-public visibility, not each individual submitter's —
+  // same reasoning (and same call) `getTargets` already uses: every participant records against
+  // the exact same canonical field id (joining never forks), so this resolves correctly regardless
+  // of who actually submitted a given attachment.
+  const [fieldMetaRows, recordRows] = await Promise.all([
+    fetchFieldsMetaForUser(db, mediaFieldIds, ownerId),
+    fetchMediaChecklistRecordsForUsersInRange(db, mediaFieldIds, visibleUserIds, from, to, MAX_ROWS),
+  ]);
+  const fieldMeta = new Map(fieldMetaRows.map(row => [row.id, { title: row.title, icon: row.icon ?? '' }]));
+
+  return recordRows
+    .filter((row): row is typeof row & { value_text: string } => !!row.value_text)
+    .map(row => ({
+      userId: row.user_id,
+      fieldId: row.field_id,
+      title: fieldMeta.get(row.field_id)?.title ?? '',
+      icon: fieldMeta.get(row.field_id)?.icon ?? '',
+      kind: kindByFieldId.get(row.field_id)!,
+      mediaId: row.value_text,
+      createdAt: row.created_at,
+    }));
+}
+
 export type Dashboard = {
   challenge: ReturnType<typeof toChallenge> | null;
   participants: ReturnType<typeof toChallengeParticipant>[];
   completions: { userId: string; date: string }[];
   ranking: { userId: string; count: number }[];
   targets: Target[];
+  attachments: Attachment[];
 };
 
-export const EMPTY_DASHBOARD: Dashboard = { challenge: null, participants: [], completions: [], ranking: [], targets: [] };
+export const EMPTY_DASHBOARD: Dashboard = {
+  challenge: null,
+  participants: [],
+  completions: [],
+  ranking: [],
+  targets: [],
+  attachments: [],
+};
 
 export async function buildDashboard({ url, db, userId }: Ctx, challengeRow: Record<string, unknown>): Promise<Dashboard> {
   const challenge = toChallenge(challengeRow);
@@ -396,9 +474,12 @@ export async function buildDashboard({ url, db, userId }: Ctx, challengeRow: Rec
   for (const c of completions) countByUser.set(c.userId, (countByUser.get(c.userId) ?? 0) + 1);
   const ranking = [...countByUser.entries()].map(([userId, count]) => ({ userId, count })).sort((a, b) => b.count - a.count);
 
-  const targets = await getTargets(db, challenge, participants, visibleUserIds);
+  const [targets, attachments] = await Promise.all([
+    getTargets(db, challenge, participants, visibleUserIds),
+    getAttachments(db, challenge.ownerId, templateIds, visibleUserIds, from, to),
+  ]);
 
-  return { challenge, participants, completions, ranking, targets };
+  return { challenge, participants, completions, ranking, targets, attachments };
 }
 
 /** `challenge.ownerDisplayName`/`ownerAvatarUrl` are not `challenges` columns — they become the
