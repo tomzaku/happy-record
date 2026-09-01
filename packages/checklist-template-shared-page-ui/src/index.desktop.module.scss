@@ -18,6 +18,14 @@
   overflow: hidden;
 }
 
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: var(--ct-body-text);
+}
+
 .navText {
   font-size: toRem(15px);
   font-weight: 600;

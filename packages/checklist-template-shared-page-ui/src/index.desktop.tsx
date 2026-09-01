@@ -25,7 +25,15 @@ const ChecklistTemplateSharedPageDesktop = () => {
 
   useApplyChallengeTheme(themeId, backgroundImageUrl);
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.loadingState}>
+          <Icon width={40} icon="svg-spinners:180-ring" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>

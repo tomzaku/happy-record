@@ -28,7 +28,16 @@ const ChecklistTemplateSharedPageMobile = () => {
   // arg sets — that's desktop's .hero-background mechanism only, see theme.ts.
   useApplyChallengeTheme(themeId);
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className={styles.page}>
+        <BackHeader renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>} />
+        <div className={styles.loadingState}>
+          <Icon width={36} icon="svg-spinners:180-ring" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
