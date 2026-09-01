@@ -1,0 +1,77 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xs;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-description-color);
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  z-index: 1000;
+  cursor: default;
+}
+
+// `position: fixed`, not `absolute` — a trigger can sit inside a card with `overflow: hidden`
+// (ChecklistFieldGroup's own `.cardContainer` does, for its own "⋮" menu), which would clip an
+// absolutely-positioned popup the moment it grew taller than the remaining card space. Fixed
+// positioning (computed from the trigger's own `getBoundingClientRect()`, see index.tsx) is the
+// same technique BottomModal itself already relies on to escape that same clipping.
+.menu {
+  position: fixed;
+  z-index: 1001;
+  min-width: 180px;
+  padding: $spacing-xs;
+  background: var(--card-background);
+  border: 1px solid var(--card-border, var(--division-color));
+  border-radius: 10px;
+  box-shadow: 0 4px 16px var(--card-shadow, rgba(0, 0, 0, 0.15));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  font-size: toRem(14px);
+  color: var(--text-color);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+}
+
+.menuItemDanger {
+  color: var(--error-color, #e5484d);
+}

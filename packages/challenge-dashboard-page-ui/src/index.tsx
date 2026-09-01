@@ -319,6 +319,23 @@ const ChallengeDashboardPageUi = () => {
     return list;
   }, [dashboard]);
 
+  // Newest date first, each date's own attachments in whatever order they arrived in — already
+  // newest-first from the server (fetchMediaChecklistRecordsForUsersInRange's own `.order
+  // ('created_at', { ascending: false })`), so the first attachment seen for a given date is
+  // always that date's most recent, and a `Map`'s insertion order does the rest: the first *new*
+  // date encountered while walking an already-sorted list is necessarily the latest one.
+  const attachmentsByDate = React.useMemo(() => {
+    if (!dashboard) return [];
+    const groups = new Map<string, typeof dashboard.attachments>();
+    for (const attachment of dashboard.attachments) {
+      const date = attachment.createdAt.slice(0, 10);
+      const existing = groups.get(date);
+      if (existing) existing.push(attachment);
+      else groups.set(date, [attachment]);
+    }
+    return [...groups.entries()];
+  }, [dashboard]);
+
   const me = dashboard?.participants.find(p => p.userId === userId);
   // Joining (or owning a shared challenge) already required a real login and
   // captured a display name then — see useJoinChallenge.tsx. Reuse it
@@ -998,24 +1015,31 @@ const ChallengeDashboardPageUi = () => {
               </Typography.Text>
             </div>
             <div className={styles.cardBody}>
-              <div className={styles.attachmentGrid}>
-                {dashboard.attachments.map(attachment => {
-                  const participant = dashboard.participants.find(p => p.userId === attachment.userId);
-                  const name = participant?.displayName || 'Anonymous';
-                  return (
-                    <div key={`${attachment.fieldId}-${attachment.mediaId}`} className={styles.attachmentCard}>
-                      <AttachmentThumb kind={attachment.kind} mediaId={attachment.mediaId} />
-                      <div className={styles.attachmentMeta}>
-                        <ParticipantAvatar name={name} avatarUrl={participant?.avatarUrl} size={22} />
-                        <Typography.Text className={styles.attachmentAuthor}>{name}</Typography.Text>
-                      </div>
-                      {attachment.title && (
-                        <Typography.Text className={styles.attachmentFieldTitle}>{attachment.title}</Typography.Text>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {attachmentsByDate.map(([date, attachments]) => (
+                <div key={date} className={styles.attachmentDateGroup}>
+                  <Typography.Text className={styles.attachmentDateHeader}>
+                    {formatShortDate(date)}
+                  </Typography.Text>
+                  <div className={styles.attachmentGrid}>
+                    {attachments.map(attachment => {
+                      const participant = dashboard.participants.find(p => p.userId === attachment.userId);
+                      const name = participant?.displayName || 'Anonymous';
+                      return (
+                        <div key={`${attachment.fieldId}-${attachment.mediaId}`} className={styles.attachmentCard}>
+                          <AttachmentThumb kind={attachment.kind} mediaId={attachment.mediaId} />
+                          <div className={styles.attachmentMeta}>
+                            <ParticipantAvatar name={name} avatarUrl={participant?.avatarUrl} size={22} />
+                            <Typography.Text className={styles.attachmentAuthor}>{name}</Typography.Text>
+                          </div>
+                          {attachment.title && (
+                            <Typography.Text className={styles.attachmentFieldTitle}>{attachment.title}</Typography.Text>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </Card>
         )}

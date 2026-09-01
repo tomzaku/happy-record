@@ -1,9 +1,9 @@
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/function' as *;
 
-// `.side`'s own children (SettingsCard's own `.cardContainer`, `.challengeActions`) space
-// themselves out with their own margin, not a `gap` on `.side` — matches that, not the
-// gap-based spacing challenge-dashboard-page-ui itself uses.
+// `.side`'s own children (SettingsCard's own `.cardContainer`) space themselves out with their
+// own margin, not a `gap` on `.side` — matches that, not the gap-based spacing
+// challenge-dashboard-page-ui itself uses.
 .card {
   margin: $spacing-sm;
   display: flex;
@@ -23,6 +23,17 @@
   font-size: toRem(14px);
 }
 
+// Wraps the pill and the "⋮" trigger together so whichever of them actually renders (a
+// participant sees both, an owner or a not-yet-joined viewer sees only the pill, if that) stays
+// flush at the row's far right — pushing `margin-left: auto` onto each separately would leave a
+// gap between them whenever both show.
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-left: auto;
+}
+
 .pill {
   font-size: toRem(11px);
   font-weight: 600;
@@ -30,7 +41,6 @@
   background: var(--input-background);
   padding: 2px 10px;
   border-radius: 999px;
-  margin-left: auto;
 }
 
 .rankList {

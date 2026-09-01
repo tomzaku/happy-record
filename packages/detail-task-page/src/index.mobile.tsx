@@ -162,22 +162,22 @@ const DetailTaskPageMobile = () => {
                 style={{ cursor: 'pointer' }}
               />
             )}
-            {!isOwner && challenge && (
-              <Icon
-                onClick={() => setLeaveModalVisible(true)}
-                width={24}
-                icon="solar:logout-3-outline"
-                style={{ cursor: 'pointer' }}
-              />
-            )}
           </div>
         )}
         onClickLeftButton={() => navigate('/')}
       />
       {/* Same widget/condition as index.desktop.tsx's own side column — owner
           or participant either way, replacing the header's plain dashboard
-          icon (and CardShare's old link) with an actual leaderboard preview. */}
-      {challenge && <MiniChallengeDashboard challengeId={challenge.id} userId={userId} />}
+          icon (and CardShare's old link) with an actual leaderboard preview.
+          Its own "⋮" menu is now the one "Leave Challenge" trigger for this
+          page too — replaces the header's own logout icon above. */}
+      {challenge && (
+        <MiniChallengeDashboard
+          challengeId={challenge.id}
+          userId={userId}
+          onLeaveChallenge={() => setLeaveModalVisible(true)}
+        />
+      )}
       {allRecordFieldsLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
           <Icon width={32} icon="svg-spinners:180-ring" />

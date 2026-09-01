@@ -16,16 +16,6 @@
   margin: 0 auto;
 }
 
-.challengeActions {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-sm;
-}
-
-.leaveChallengeButton {
-  align-self: center;
-}
-
 .header {
   display: flex;
   justify-content: space-between;

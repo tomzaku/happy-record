@@ -5,11 +5,20 @@ import { useIntl } from '@dreamer/translation';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 import Card from '@moon-ui/card';
+import Dropdown from '@moon-ui/dropdown';
 import styles from './index.module.scss';
 
 type Props = {
   challengeId: string;
   userId?: string;
+  /**
+   * Opens the caller's own leave-confirmation flow (a `WarningModal` + `useLeaveChallenge`
+   * — see `index.desktop.tsx`/`index.mobile.tsx`) — this widget only owns the "⋮ → Leave
+   * Challenge" menu affordance, not the leave-and-navigate-away logic itself, so there's only
+   * ever one place that actually does it. Omitted entirely hides the menu trigger — same as
+   * an owner (who has nothing to leave) never seeing it.
+   */
+  onLeaveChallenge?: () => void;
 };
 
 const RANGE_DAYS = 30;
@@ -26,7 +35,7 @@ const TOP_N = 3;
  * (`getChallengeDashboard`, same 30-day range that page uses) rather than
  * threading the full dashboard's state down through props.
  */
-const MiniChallengeDashboard = ({ challengeId, userId }: Props) => {
+const MiniChallengeDashboard = ({ challengeId, userId, onLeaveChallenge }: Props) => {
   const intl = useIntl();
   const { getChallengeDashboard } = useChallenge();
   const [dashboard, setDashboard] = React.useState<Awaited<
@@ -57,6 +66,14 @@ const MiniChallengeDashboard = ({ challengeId, userId }: Props) => {
     streaksByUser: computeStreaksByUser(completions),
   });
 
+  // Same "only a participant leaves, never the owner" rule the full dashboard's own Leave
+  // link uses (challenge-dashboard-page-ui's `!isOwner && me`) — `me` also doubles as "is this
+  // viewer even a real participant" (an owner-only challenge with no roster yet has nobody to
+  // show this to either).
+  const isOwner = challenge.ownerId === userId;
+  const me = participants.find(p => p.userId === userId);
+  const showLeaveMenu = !!onLeaveChallenge && !isOwner && !!me;
+
   return (
     <Card className={styles.card}>
       <div className={styles.header}>
@@ -64,14 +81,36 @@ const MiniChallengeDashboard = ({ challengeId, userId }: Props) => {
         <Typography.Text className={styles.title}>
           {intl.formatMessage({ id: 'DetailTaskPage.mini-challenge-title', defaultMessage: 'Challenge' })}
         </Typography.Text>
-        {hasRoster && (
-          <span className={styles.pill}>
-            {intl.formatMessage(
-              { id: 'ChallengeDashboard.member-count', defaultMessage: '{{count}} joined' },
-              { count: participants.length },
-            )}
-          </span>
-        )}
+        <div className={styles.headerRight}>
+          {hasRoster && (
+            <span className={styles.pill}>
+              {intl.formatMessage(
+                { id: 'ChallengeDashboard.member-count', defaultMessage: '{{count}} joined' },
+                { count: participants.length },
+              )}
+            </span>
+          )}
+          {showLeaveMenu && (
+            <Dropdown
+              trigger={<Icon icon="solar:menu-dots-bold" width={18} />}
+              triggerAriaLabel={intl.formatMessage({
+                id: 'DetailTaskPage.mini-challenge-menu-open',
+                defaultMessage: 'Challenge options',
+              })}
+              items={[
+                {
+                  label: intl.formatMessage({
+                    id: 'DetailTaskPage.leave-challenge',
+                    defaultMessage: 'Leave Challenge',
+                  }),
+                  icon: 'solar:logout-3-outline',
+                  danger: true,
+                  onClick: () => onLeaveChallenge?.(),
+                },
+              ]}
+            />
+          )}
+        </div>
       </div>
 
       {hasRoster ? (

@@ -8,6 +8,7 @@ import Checkbox from '@moon-ui/checkbox';
 import Typography from '@moon-ui/typography';
 import List from '@moon-ui/list';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
+import Dropdown from '@moon-ui/dropdown';
 import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
 import { FieldGroup, FieldGroupField, FieldOverrides, RecordField } from '@dreamer/global';
 import { getEffectiveFieldDisplay } from '@dreamer/global/src/store/record-field';
@@ -106,10 +107,6 @@ const ChecklistFieldGroupMenu = React.forwardRef<
   onFieldAdded,
 }: ChecklistFieldGroupMenuProps, ref) => {
   const intl = useIntl();
-  const triggerRef = React.useRef<HTMLButtonElement>(null);
-  const [menuPosition, setMenuPosition] = React.useState<{ top: number; left: number } | null>(
-    null,
-  );
   const [activeDialog, setActiveDialog] = React.useState<Dialog>(Dialog.None);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = React.useState(false);
   const [fieldsView, setFieldsView] = React.useState<FieldsView>(FieldsView.List);
@@ -219,14 +216,9 @@ const ChecklistFieldGroupMenu = React.forwardRef<
     });
   };
 
-  const openMenu = () => {
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect) setMenuPosition({ top: rect.bottom + 4, left: rect.left });
-  };
-  const closeMenu = () => setMenuPosition(null);
-
+  // Dropdown (@moon-ui/dropdown) already closes its own menu before calling this — no
+  // `closeMenu()` of this component's own needed here any more.
   const handleMenuItemClick = (dialog: Dialog | 'delete') => {
-    closeMenu();
     if (dialog === 'delete') setIsDeleteModalVisible(true);
     else setActiveDialog(dialog);
   };
@@ -413,48 +405,20 @@ const ChecklistFieldGroupMenu = React.forwardRef<
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        className={styles.trigger}
-        onClick={openMenu}
-        aria-label={intl.formatMessage({
+      <Dropdown
+        trigger={<Icon icon="solar:settings-line-duotone" width={18} />}
+        triggerAriaLabel={intl.formatMessage({
           id: 'checklist-field-group-menu.open',
           defaultMessage: 'Group settings',
         })}
-      >
-        <Icon icon="solar:settings-line-duotone" width={18} />
-      </button>
-
-      {menuPosition && (
-        <>
-          <button
-            type="button"
-            className={styles.menuOverlay}
-            onClick={closeMenu}
-            aria-label={intl.formatMessage({
-              id: 'checklist-field-group-menu.close',
-              defaultMessage: 'Close menu',
-            })}
-          />
-          <div
-            className={styles.menu}
-            style={{ top: menuPosition.top, left: menuPosition.left }}
-          >
-            {MENU_ITEMS.map(item => (
-              <button
-                key={item.label}
-                type="button"
-                className={cx(styles.menuItem, item.danger && styles.menuItemDanger)}
-                onClick={() => handleMenuItemClick(item.dialog)}
-              >
-                <Icon icon={item.icon} width={16} />
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+        items={MENU_ITEMS.map(item => ({
+          key: item.label,
+          label: item.label,
+          icon: item.icon,
+          danger: item.danger,
+          onClick: () => handleMenuItemClick(item.dialog),
+        }))}
+      />
 
       {/* Group Name */}
       <DialogModal

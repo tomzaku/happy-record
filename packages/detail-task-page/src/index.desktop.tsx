@@ -290,23 +290,17 @@ const DetailTaskPageDesktop = () => {
                   Dashboard" link this used to be (CardShare's own, or the
                   one that lived right here for a participant) with an
                   actual leaderboard preview. index.mobile.tsx renders the
-                  same widget in its own single-column flow. */}
-              {challenge && <MiniChallengeDashboard challengeId={challenge.id} userId={userId} />}
-
-              {!isOwner && challenge && (
-                <div className={styles.challengeActions}>
-                  <Button
-                    type="ghost"
-                    size="sm"
-                    onClick={() => setLeaveModalVisible(true)}
-                    className={styles.leaveChallengeButton}
-                  >
-                    {intl.formatMessage({
-                      id: 'DetailTaskPage.leave-challenge',
-                      defaultMessage: 'Leave Challenge',
-                    })}
-                  </Button>
-                </div>
+                  same widget in its own single-column flow. Its own "⋮"
+                  menu is now the one "Leave Challenge" trigger for this
+                  page — see MiniChallengeDashboard's own onLeaveChallenge
+                  doc comment for why the leave-and-navigate-away logic
+                  itself still lives here, not inside that widget. */}
+              {challenge && (
+                <MiniChallengeDashboard
+                  challengeId={challenge.id}
+                  userId={userId}
+                  onLeaveChallenge={() => setLeaveModalVisible(true)}
+                />
               )}
             </div>
           </div>

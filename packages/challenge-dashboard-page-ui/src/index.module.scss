@@ -661,6 +661,22 @@
   }
 }
 
+.attachmentDateGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+
+  & + & {
+    margin-top: $spacing-md;
+  }
+}
+
+.attachmentDateHeader {
+  font-size: toRem(12px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+}
+
 .attachmentGrid {
   display: flex;
   flex-wrap: wrap;
