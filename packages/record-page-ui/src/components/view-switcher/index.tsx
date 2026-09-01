@@ -8,6 +8,10 @@ export type ViewMode = 'day' | 'week' | 'month' | 'year';
 type Props = {
   value: ViewMode;
   onChange: (mode: ViewMode) => void;
+  /** Restricts which buttons render, same order as the default — the
+   * detail-task-page's own history calendar has no "day" of its own to
+   * switch to, unlike the home page's view. Defaults to all four. */
+  modes?: ViewMode[];
 };
 
 const VIEW_MODES: { mode: ViewMode; id: string; defaultMessage: string }[] = [
@@ -17,12 +21,13 @@ const VIEW_MODES: { mode: ViewMode; id: string; defaultMessage: string }[] = [
   { mode: 'year', id: 'view-switcher.year', defaultMessage: 'Year' },
 ];
 
-const ViewSwitcher = ({ value, onChange }: Props) => {
+const ViewSwitcher = ({ value, onChange, modes }: Props) => {
   const intl = useIntl();
+  const visibleModes = modes ? VIEW_MODES.filter(({ mode }) => modes.includes(mode)) : VIEW_MODES;
 
   return (
     <div className={styles.container}>
-      {VIEW_MODES.map(({ mode, id, defaultMessage }) => (
+      {visibleModes.map(({ mode, id, defaultMessage }) => (
         <button
           key={mode}
           type="button"

@@ -18,6 +18,7 @@ import { useIntl } from '@dreamer/translation';
 import Typography from '@moon-ui/typography';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
+import ChecklistTemplateCalendar from './components/ChecklistTemplateCalendar';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import AiChecklistGenerate from './components/AiChecklistGenerate';
 import CardShare from './components/CardShare';
@@ -28,7 +29,7 @@ const DetailTaskPageMobile = () => {
   const [search, setSearchParams] = useSearchParams();
   const { getChecklistTemplate, updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
-  const { addChecklist, getChecklistDetail } = useChecklist();
+  const { addChecklist, getChecklistDetail, getChecklistForDateWithoutFetching } = useChecklist();
   const { getAllRecordFields, allRecordFieldsLoading, getRecordFieldsByTemplateId } = useRecordField();
   const { getFieldGroupsByTemplateId } = useFieldGroups();
   const { getChallengeForTemplate } = useChallenge();
@@ -117,6 +118,23 @@ const DetailTaskPageMobile = () => {
     setChecklist(checklist);
   }, [checklistTemplate, checklistId, id, currentDay, getChecklistDetail]);
 
+  // See index.desktop.tsx's matching handler for why this mirrors
+  // ChecklistToday's own day-click navigation instead of a real navigate().
+  const handleCalendarDaySelect = (date: Date) => {
+    const { checklist: checklistsForDay } = getChecklistForDateWithoutFetching({ date });
+    const match = Object.values(checklistsForDay).find(c => c.checklistTemplateId === id);
+    const nextParams: Record<string, string> = {
+      ...Object.fromEntries(search),
+      currentDay: date.toISOString(),
+    };
+    if (match && !match.clientOnly) {
+      nextParams.checklistId = match.id;
+    } else {
+      delete nextParams.checklistId;
+    }
+    setSearchParams(nextParams);
+  };
+
   const navigate = useNavigate();
 
   const handleDeleteTask = () => {
@@ -191,6 +209,7 @@ const DetailTaskPageMobile = () => {
           readOnly={!isOwner}
         />
       )}
+      <ChecklistTemplateCalendar checklistTemplateId={id} onDaySelect={handleCalendarDaySelect} />
       {/* General Settings — mobile's actual task content (the fields above)
           is what someone opens this page to see/do; the settings card is
           metadata about the task, not the task itself, so it reads better

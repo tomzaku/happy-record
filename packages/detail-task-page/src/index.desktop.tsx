@@ -17,6 +17,7 @@ import { Breadcrumb, DesktopDrawer } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
+import ChecklistTemplateCalendar from './components/ChecklistTemplateCalendar';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import CardShare from './components/CardShare';
 import AiChecklistGenerate from './components/AiChecklistGenerate';
@@ -31,7 +32,7 @@ const DetailTaskPageDesktop = () => {
   const [search, setSearchParams] = useSearchParams();
   const { getChecklistTemplate, updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
-  const { addChecklist, getChecklistDetail } = useChecklist();
+  const { addChecklist, getChecklistDetail, getChecklistForDateWithoutFetching } = useChecklist();
   const { getAllRecordFields, allRecordFieldsLoading, getRecordFieldsByTemplateId } = useRecordField();
   const { getFieldGroupsByTemplateId } = useFieldGroups();
   const { getChallengeForTemplate } = useChallenge();
@@ -179,6 +180,25 @@ const DetailTaskPageDesktop = () => {
     navigate('/');
   };
 
+  // Jumps the page's own currentDay/checklistId (the same pair the effect
+  // above creates a checklist for) to whatever day was clicked in the
+  // calendar below — mirrors ChecklistToday.desktop.tsx's own day-click
+  // navigation, minus the actual page navigation since we're already here.
+  const handleCalendarDaySelect = (date: Date) => {
+    const { checklist: checklistsForDay } = getChecklistForDateWithoutFetching({ date });
+    const match = Object.values(checklistsForDay).find(c => c.checklistTemplateId === id);
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('currentDay', date.toISOString());
+      if (match && !match.clientOnly) {
+        newParams.set('checklistId', match.id);
+      } else {
+        newParams.delete('checklistId');
+      }
+      return newParams;
+    });
+  };
+
   const confirmLeaveChallenge = async () => {
     if (!challenge || !id || leaving) return;
     setLeaving(true);
@@ -271,6 +291,10 @@ const DetailTaskPageDesktop = () => {
                   readOnly={!isOwner}
                 />
               )}
+              <ChecklistTemplateCalendar
+                checklistTemplateId={id}
+                onDaySelect={handleCalendarDaySelect}
+              />
             </div>
             <div className={styles.side}>
               <ChecklistGenericInfo

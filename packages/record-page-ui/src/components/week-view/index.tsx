@@ -6,6 +6,7 @@ type Props = {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   selectedTag?: string;
+  checklistTemplateId?: string;
 };
 
 const WeekView = (props: Props) => {

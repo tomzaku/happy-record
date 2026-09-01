@@ -130,6 +130,17 @@
   min-width: 0;
 }
 
+.chipCompleted {
+  .chipTitle {
+    color: var(--text-description-color);
+  }
+}
+
+.completedIcon {
+  color: var(--checkbox-accent-color);
+  flex-shrink: 0;
+}
+
 .chipDot {
   width: 6px;
   height: 6px;

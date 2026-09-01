@@ -94,6 +94,7 @@
   "checklist-field-group.scheduled-today": "Được lên lịch hôm nay",
   "checklist-field-group.not-scheduled-today": "Không lên lịch hôm nay",
   "checklist-field-group.not-scheduled-today-next": "Không lên lịch hôm nay · Tiếp theo {{nextDayLabel}}",
+  "checklist-template-calendar.title": "Lịch Hoàn Thành",
   "checklist-generic-info.edit-icon-color-title": "Chỉnh Sửa Biểu Tượng & Màu Sắc",
   "checklist-generic-info.edit-schedule-title": "Chỉnh Sửa Lịch Trình",
   "checklist-generic-info.edit-tags-title": "Chỉnh Sửa Thẻ",

@@ -23,6 +23,8 @@ type Props = {
   currentDate: Date;
   onDaySelect: (date: Date) => void;
   selectedTag?: string;
+  /** See week-view's own Props comment — scopes every cell to one template. */
+  checklistTemplateId?: string;
 };
 
 // 0 = nothing scheduled, 1 = scheduled but 0% done, 2 = partially done, 3 = fully done —
@@ -34,7 +36,7 @@ const completionLevel = (total: number, completed: number): 0 | 1 | 2 | 3 => {
   return 3;
 };
 
-const YearView = ({ currentDate, onDaySelect, selectedTag }: Props) => {
+const YearView = ({ currentDate, onDaySelect, selectedTag, checklistTemplateId }: Props) => {
   const intl = useIntl();
   const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
   const [visibleYear, setVisibleYear] = React.useState(() => startOfYear(currentDate));
@@ -57,12 +59,14 @@ const YearView = ({ currentDate, onDaySelect, selectedTag }: Props) => {
         date,
         selectedTag: selectedTag === 'all' ? undefined : selectedTag,
       });
-      const tasks = Object.values(checklist);
+      const tasks = Object.values(checklist).filter(
+        task => !checklistTemplateId || task.checklistTemplateId === checklistTemplateId,
+      );
       const completed = tasks.filter(task => task.completedAt).length;
       levels.set(date.toISOString().split('T')[0], completionLevel(tasks.length, completed));
     });
     return levels;
-  }, [yearStart, yearEnd, getChecklistForDateWithoutFetching, selectedTag]);
+  }, [yearStart, yearEnd, getChecklistForDateWithoutFetching, selectedTag, checklistTemplateId]);
 
   return (
     <div className={styles.container}>

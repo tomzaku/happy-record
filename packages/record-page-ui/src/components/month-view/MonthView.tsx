@@ -23,12 +23,14 @@ type Props = {
   currentDate: Date;
   onDaySelect: (date: Date) => void;
   selectedTag?: string;
+  /** See week-view's own Props comment — scopes every cell to one template. */
+  checklistTemplateId?: string;
 };
 
 const MAX_CHIPS_PER_DAY = 3;
 const WEEKDAY_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
-const MonthView = ({ currentDate, onDaySelect, selectedTag }: Props) => {
+const MonthView = ({ currentDate, onDaySelect, selectedTag, checklistTemplateId }: Props) => {
   const intl = useIntl();
   const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
   const { checklistTemplate } = useChecklistTemplates();
@@ -54,10 +56,13 @@ const MonthView = ({ currentDate, onDaySelect, selectedTag }: Props) => {
         date,
         selectedTag: selectedTag === 'all' ? undefined : selectedTag,
       });
-      tasksMap.set(date.toISOString().split('T')[0], Object.values(checklist));
+      const tasks = Object.values(checklist).filter(
+        task => !checklistTemplateId || task.checklistTemplateId === checklistTemplateId,
+      );
+      tasksMap.set(date.toISOString().split('T')[0], tasks);
     });
     return tasksMap;
-  }, [gridDays, getChecklistForDateWithoutFetching, selectedTag]);
+  }, [gridDays, getChecklistForDateWithoutFetching, selectedTag, checklistTemplateId]);
 
   return (
     <div className={styles.container}>
@@ -115,12 +120,15 @@ const MonthView = ({ currentDate, onDaySelect, selectedTag }: Props) => {
                 {visibleTasks.map(task => {
                   const template = checklistTemplate[task.checklistTemplateId];
                   return (
-                    <div key={task.id} className={styles.chip}>
+                    <div key={task.id} className={`${styles.chip} ${task.completedAt ? styles.chipCompleted : ''}`}>
                       <span
                         className={styles.chipDot}
                         style={{ background: template?.avatar.color || '#8A8A8A' }}
                       />
                       <Typography.Text className={styles.chipTitle}>{template?.title}</Typography.Text>
+                      {task.completedAt && (
+                        <Icon icon="solar:check-circle-bold" width={12} className={styles.completedIcon} />
+                      )}
                     </div>
                   );
                 })}

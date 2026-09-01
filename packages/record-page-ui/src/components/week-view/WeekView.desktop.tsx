@@ -20,9 +20,13 @@ type Props = {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   selectedTag?: string;
+  /** Scopes every day to one template's own checklist instance instead of
+   * everything scheduled that day — detail-task-page's own history calendar
+   * uses this; the home page's view leaves it unset. */
+  checklistTemplateId?: string;
 };
 
-const WeekViewDesktop = ({ currentDate, onDateChange, selectedTag }: Props) => {
+const WeekViewDesktop = ({ currentDate, onDateChange, selectedTag, checklistTemplateId }: Props) => {
   const intl = useIntl();
   const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
   const { checklistTemplate } = useChecklistTemplates();
@@ -45,10 +49,13 @@ const WeekViewDesktop = ({ currentDate, onDateChange, selectedTag }: Props) => {
         date,
         selectedTag: selectedTag === 'all' ? undefined : selectedTag,
       });
-      tasksMap.set(date.toISOString().split('T')[0], Object.values(checklist));
+      const tasks = Object.values(checklist).filter(
+        task => !checklistTemplateId || task.checklistTemplateId === checklistTemplateId,
+      );
+      tasksMap.set(date.toISOString().split('T')[0], tasks);
     });
     return tasksMap;
-  }, [weekDays, getChecklistForDateWithoutFetching, selectedTag]);
+  }, [weekDays, getChecklistForDateWithoutFetching, selectedTag, checklistTemplateId]);
 
   const handlePrevWeek = React.useCallback(() => {
     onDateChange(subWeeks(currentDate, 1));

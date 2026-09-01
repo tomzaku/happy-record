@@ -19,9 +19,11 @@ type Props = {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   selectedTag?: string;
+  /** See WeekView.desktop.tsx's own Props comment. */
+  checklistTemplateId?: string;
 };
 
-const WeekViewMobile = ({ currentDate, onDateChange, selectedTag }: Props) => {
+const WeekViewMobile = ({ currentDate, onDateChange, selectedTag, checklistTemplateId }: Props) => {
   const intl = useIntl();
   const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
   const { checklistTemplate } = useChecklistTemplates();
@@ -44,10 +46,13 @@ const WeekViewMobile = ({ currentDate, onDateChange, selectedTag }: Props) => {
         date,
         selectedTag: selectedTag === 'all' ? undefined : selectedTag,
       });
-      tasksMap.set(date.toISOString().split('T')[0], Object.values(checklist));
+      const tasks = Object.values(checklist).filter(
+        task => !checklistTemplateId || task.checklistTemplateId === checklistTemplateId,
+      );
+      tasksMap.set(date.toISOString().split('T')[0], tasks);
     });
     return tasksMap;
-  }, [weekDays, getChecklistForDateWithoutFetching, selectedTag]);
+  }, [weekDays, getChecklistForDateWithoutFetching, selectedTag, checklistTemplateId]);
 
   const handlePrevWeek = React.useCallback(() => {
     onDateChange(subWeeks(currentDate, 1));

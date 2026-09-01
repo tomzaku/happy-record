@@ -1,0 +1,19 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  margin: $spacing-sm;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md;
+  border-bottom: 1px solid var(--division-color);
+}
+
+.body {
+  height: 520px;
+  overflow: hidden;
+}
