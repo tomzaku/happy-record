@@ -15,6 +15,7 @@ import {
 } from './recordFieldApi';
 
 const RECORD_KEY = 'record_field';
+const RECORD_ALL_LOADING_KEY = 'record_field_all_loading';
 
 export type RecordField = {
   id: string;
@@ -147,6 +148,14 @@ export const useRecordField = () => {
     RECORD_KEY,
     {},
   );
+  // One flag for getAllRecordFields' own scope — starts `true` so a consumer's very first render
+  // (before this hook has had a chance to even kick off the fetch) already reads as "loading,"
+  // not "confirmed empty." Same shape useNote.tsx's own `allLoading`/`allNotesLoading` uses, for
+  // the same reason: detail-task-page's field groups render against `fields.find(...)` results
+  // that are empty either way (still loading, or genuinely no fields), so a consumer needs this
+  // to tell those two apart and show a spinner for the former instead of flashing an "empty"
+  // state while the real fields are still in flight.
+  const [allLoading, setAllLoading] = useSessionStore<boolean>(RECORD_ALL_LOADING_KEY, true);
   const { userId, ready } = useSession();
 
   /**
@@ -184,7 +193,9 @@ export const useRecordField = () => {
     const scopeKey = JSON.stringify({ userId, scope: ALL_SCOPE });
     if (ready && !fetchedScopes.has(scopeKey)) {
       fetchedScopes.add(scopeKey);
+      setAllLoading(true);
       fetchRecordFields().then(result => {
+        setAllLoading(false);
         if (!result) {
           fetchedScopes.delete(scopeKey);
           return;
@@ -193,7 +204,13 @@ export const useRecordField = () => {
       });
     }
     return Object.values(recordFieldList);
-  }, [recordFieldList, userId, ready, mergeRecordFields]);
+  }, [recordFieldList, userId, ready, mergeRecordFields, setAllLoading]);
+
+  /** Whether getAllRecordFields' own fetch is still in flight for the current identity — starts
+   * `true` (see allLoading's own comment) and only flips once that fetch actually resolves, quiet
+   * failure included. A consumer that never calls getAllRecordFields just carries the default
+   * forever, which is fine: nothing reads this without also being one that does. */
+  const allRecordFieldsLoading = allLoading;
 
   const getRecordFields = React.useCallback(
     (ids: string[]) => {
@@ -318,6 +335,7 @@ export const useRecordField = () => {
 
   return {
     getAllRecordFields,
+    allRecordFieldsLoading,
     getRecordFields,
     getRecordFieldsByIds,
     getRecordFieldsByTemplateId,

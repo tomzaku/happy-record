@@ -94,6 +94,37 @@ export const useFieldGroups = () => {
     [fieldGroupList, userId, ready, mergeFieldGroups],
   );
 
+  /**
+   * Same as getFieldGroups, but never short-circuited by "all mine" already being fetched — a
+   * joined challenge's field groups are the *owner's* own rows, which "all mine"
+   * (`listMyFieldGroups`, own templates only — see field-groups/api/list-field-groups-handler.ts)
+   * never includes. Exactly the same "own + public only can't resolve a participant's template"
+   * gap CLAUDE.md documents for `fields`' own `getRecordFieldsByTemplateId` — detail-task-page
+   * calls this unconditionally for whatever template it's showing (a no-op re-fetch for the
+   * caller's own template, already covered by "all mine") instead of relying on `getFieldGroups`
+   * alone, which is what left a challenge participant seeing "No groups created" on the owner's
+   * real template.
+   */
+  const getFieldGroupsByTemplateId = React.useCallback(
+    (checklistTemplateId: string): FieldGroup[] => {
+      const scopeKey = JSON.stringify({ userId, checklistTemplateId });
+      if (ready && checklistTemplateId && !fetchedScopes.has(scopeKey)) {
+        fetchedScopes.add(scopeKey);
+        fetchFieldGroups({ checklistTemplateId }).then(result => {
+          if (!result) {
+            fetchedScopes.delete(scopeKey);
+            return;
+          }
+          mergeFieldGroups(result.fieldGroups);
+        });
+      }
+      return Object.values(fieldGroupList)
+        .filter(group => group.checklistTemplateId === checklistTemplateId)
+        .sort((a, b) => a.position - b.position);
+    },
+    [fieldGroupList, userId, ready, mergeFieldGroups],
+  );
+
   /** Every group across every one of the caller's templates, unscoped — see
    * getChecklistTemplateIdsByGivingDate's own need for this in useChecklistTemplates.tsx. */
   const ensureAllFieldGroupsFetched = React.useCallback(() => {
@@ -149,6 +180,7 @@ export const useFieldGroups = () => {
   return {
     fieldGroupList,
     getFieldGroups,
+    getFieldGroupsByTemplateId,
     ensureAllFieldGroupsFetched,
     updateMyFieldGroupRepeat,
     addFieldGroup,

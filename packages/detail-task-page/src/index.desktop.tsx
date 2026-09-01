@@ -6,6 +6,7 @@ import {
   useChallenge,
   useChecklist,
   useChecklistTemplates,
+  useFieldGroups,
   useIsPro,
   useLeaveChallenge,
   useSession,
@@ -31,7 +32,8 @@ const DetailTaskPageDesktop = () => {
   const { getChecklistTemplate, updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
-  const { getAllRecordFields, getRecordFieldsByTemplateId } = useRecordField();
+  const { getAllRecordFields, allRecordFieldsLoading, getRecordFieldsByTemplateId } = useRecordField();
+  const { getFieldGroupsByTemplateId } = useFieldGroups();
   const { getChallengeForTemplate } = useChallenge();
   const { leaveTheChallenge } = useLeaveChallenge();
   const { userId } = useSession();
@@ -50,6 +52,12 @@ const DetailTaskPageDesktop = () => {
   // fetch the shared-template page uses (a no-op for the caller's own, still-private template) —
   // see useRecordField.tsx's own comment — merging into the same store `getAllRecordFields` reads.
   useSyncedSelector(getRecordFieldsByTemplateId, id ?? '');
+  // Same gap, one resource over: a joined challenge's field groups are the owner's own rows,
+  // which `getFieldGroups`' own "all mine" fetch (home page's calendar scanning, see
+  // useFieldGroups.tsx) never includes once it's already run this session — this bypass is what
+  // actually loads them, merging into the same store `checklistTemplate.fieldGroups` is synced
+  // from (see useChecklistTemplates.tsx's own effect).
+  useSyncedSelector(getFieldGroupsByTemplateId, id ?? '');
   const fields = useSyncedSelector(getAllRecordFields);
   // Joining a challenge never forks the template (see CLAUDE.md) — a
   // participant's local copy is the owner's exact row, so this page needs
@@ -250,13 +258,19 @@ const DetailTaskPageDesktop = () => {
           {/* Main Content */}
           <div className={styles.mainContent}>
             <div className={styles.main}>
-              <ChecklistFieldGroup
-                checklist={checklist}
-                checklistTemplate={checklistTemplate}
-                fields={fields}
-                currentDay={currentDay}
-                readOnly={!isOwner}
-              />
+              {allRecordFieldsLoading ? (
+                <div className={styles.fieldsLoading}>
+                  <Icon width={32} icon="svg-spinners:180-ring" />
+                </div>
+              ) : (
+                <ChecklistFieldGroup
+                  checklist={checklist}
+                  checklistTemplate={checklistTemplate}
+                  fields={fields}
+                  currentDay={currentDay}
+                  readOnly={!isOwner}
+                />
+              )}
             </div>
             <div className={styles.side}>
               <ChecklistGenericInfo

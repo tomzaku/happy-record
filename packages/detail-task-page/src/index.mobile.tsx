@@ -6,6 +6,7 @@ import {
   useChallenge,
   useChecklist,
   useChecklistTemplates,
+  useFieldGroups,
   useLeaveChallenge,
   useSession,
   useSyncedSelector,
@@ -28,7 +29,8 @@ const DetailTaskPageMobile = () => {
   const { getChecklistTemplate, updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
   const { addChecklist, getChecklistDetail } = useChecklist();
-  const { getAllRecordFields, getRecordFieldsByTemplateId } = useRecordField();
+  const { getAllRecordFields, allRecordFieldsLoading, getRecordFieldsByTemplateId } = useRecordField();
+  const { getFieldGroupsByTemplateId } = useFieldGroups();
   const { getChallengeForTemplate } = useChallenge();
   const { leaveTheChallenge } = useLeaveChallenge();
   const { userId } = useSession();
@@ -46,6 +48,12 @@ const DetailTaskPageMobile = () => {
   // fetch the shared-template page uses (a no-op for the caller's own, still-private template) —
   // see useRecordField.tsx's own comment — merging into the same store `getAllRecordFields` reads.
   useSyncedSelector(getRecordFieldsByTemplateId, id ?? '');
+  // Same gap, one resource over: a joined challenge's field groups are the owner's own rows,
+  // which `getFieldGroups`' own "all mine" fetch (home page's calendar scanning, see
+  // useFieldGroups.tsx) never includes once it's already run this session — this bypass is what
+  // actually loads them, merging into the same store `checklistTemplate.fieldGroups` is synced
+  // from (see useChecklistTemplates.tsx's own effect).
+  useSyncedSelector(getFieldGroupsByTemplateId, id ?? '');
   const fields = useSyncedSelector(getAllRecordFields);
   // Joining a challenge never forks the template (see CLAUDE.md) — a
   // participant's local copy is the owner's exact row, so this page needs
@@ -170,13 +178,19 @@ const DetailTaskPageMobile = () => {
           or participant either way, replacing the header's plain dashboard
           icon (and CardShare's old link) with an actual leaderboard preview. */}
       {challenge && <MiniChallengeDashboard challengeId={challenge.id} userId={userId} />}
-      <ChecklistFieldGroup
-        checklist={checklist}
-        checklistTemplate={checklistTemplate}
-        fields={fields}
-        currentDay={currentDay}
-        readOnly={!isOwner}
-      />
+      {allRecordFieldsLoading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+          <Icon width={32} icon="svg-spinners:180-ring" />
+        </div>
+      ) : (
+        <ChecklistFieldGroup
+          checklist={checklist}
+          checklistTemplate={checklistTemplate}
+          fields={fields}
+          currentDay={currentDay}
+          readOnly={!isOwner}
+        />
+      )}
       {/* General Settings — mobile's actual task content (the fields above)
           is what someone opens this page to see/do; the settings card is
           metadata about the task, not the task itself, so it reads better
