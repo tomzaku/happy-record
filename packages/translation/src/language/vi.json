@@ -176,5 +176,16 @@
   "DetailTaskPage.leave-challenge-confirm-message": "Bạn sẽ không còn hiện trên bảng điều khiển chung và nhiệm vụ này sẽ rời khỏi danh sách của bạn. Những gì bạn đã ghi lại vẫn thuộc về bạn.",
   "DetailTaskPage.leave-challenge-confirm-ok": "Rời đi",
   "DetailTaskPage.leave-challenge-confirm-ok-loading": "Đang rời…",
-  "DetailTaskPage.leave-challenge-confirm-cancel": "Hủy"
+  "DetailTaskPage.leave-challenge-confirm-cancel": "Hủy",
+  "view-switcher.day": "Ngày",
+  "view-switcher.week": "Tuần",
+  "view-switcher.month": "Tháng",
+  "view-switcher.year": "Năm",
+  "week-view.today": "Hôm nay",
+  "week-view.no-tasks": "Không có nhiệm vụ",
+  "month-view.today": "Hôm nay",
+  "month-view.more": "+{{count}} nữa",
+  "year-view.this-year": "Năm nay",
+  "year-view.legend-less": "Ít",
+  "year-view.legend-more": "Nhiều"
 }

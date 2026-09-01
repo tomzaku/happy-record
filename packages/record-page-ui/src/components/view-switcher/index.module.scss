@@ -1,0 +1,39 @@
+.container {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-secondary);
+  border-radius: 8px;
+}
+
+.option {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--card-background);
+  }
+
+  &.active {
+    background: var(--card-background);
+    box-shadow: 0 1px 2px var(--card-shadow);
+
+    .label {
+      color: var(--button-action-color);
+      font-weight: 600;
+    }
+  }
+}
+
+.label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-description-color);
+  white-space: nowrap;
+}

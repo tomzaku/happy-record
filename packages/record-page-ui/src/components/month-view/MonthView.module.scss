@@ -1,0 +1,164 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--division-color);
+  flex-shrink: 0;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navIcon {
+  cursor: pointer;
+  color: var(--icon-color);
+}
+
+.monthLabel {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-color);
+  min-width: 140px;
+  text-align: center;
+}
+
+.todayButton {
+  background: transparent;
+  color: var(--button-action-color);
+  border: 1px solid var(--button-action-color);
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--button-action-color);
+    color: white;
+  }
+}
+
+.weekdayRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 6px 4px 0;
+  flex-shrink: 0;
+}
+
+.weekdayLabel {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-description-color);
+}
+
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  overflow-y: auto;
+  padding: 4px;
+  gap: 4px;
+}
+
+.cell {
+  border: 1px solid var(--division-color);
+  border-radius: 6px;
+  padding: 4px 6px;
+  min-height: 84px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+
+  &.outsideMonth {
+    opacity: 0.4;
+  }
+
+  &.today .dayNumber {
+    color: white;
+    background: var(--icon-primary);
+    border-radius: 50%;
+  }
+
+  &.selected {
+    border-color: var(--button-action-color);
+    background: var(--button-action-background);
+  }
+}
+
+.dayNumber {
+  align-self: flex-start;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-color);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chips {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chipDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chipTitle {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.moreLabel {
+  margin: 0;
+  font-size: 10px;
+  color: var(--text-description-color);
+}
+
+@media (max-width: 768px) {
+  .cell {
+    min-height: 64px;
+    padding: 2px 4px;
+  }
+
+  .chipTitle {
+    font-size: 10px;
+  }
+}

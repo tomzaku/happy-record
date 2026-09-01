@@ -80,6 +80,7 @@
   "DetailTaskPage.leave-challenge-confirm-title": "Leave this challenge?",
   "DetailTaskPage.leave-challenge-short": "Leave",
   "DetailTaskPage.mini-challenge-comments-only": "Comments are open on this challenge.",
+  "DetailTaskPage.mini-challenge-menu-open": "Challenge options",
   "DetailTaskPage.mini-challenge-title": "Challenge",
   "EditChecklistTemplate..delete-confirm-cancel": "Cancel",
   "EditChecklistTemplate..delete-confirm-ok": "Delete",
@@ -117,7 +118,6 @@
   "checklist-create.label-create-checklist": "Create Task",
   "checklist-field-group-add.field-settings": "Field Settings",
   "checklist-field-group-menu.add-field": "Add Field",
-  "checklist-field-group-menu.close": "Close menu",
   "checklist-field-group-menu.collapse-default": "Collapse Default",
   "checklist-field-group-menu.collapse-default-description": "Start collapsed by default",
   "checklist-field-group-menu.customize-default-value": "Default Value",
@@ -226,5 +226,16 @@
   "setting-page.label-dark": "Dark",
   "setting-page.label-light": "Light",
   "setting-page.label-theme": "Theme",
-  "setting-page.title": "Setting"
+  "setting-page.title": "Setting",
+  "view-switcher.day": "Day",
+  "view-switcher.week": "Week",
+  "view-switcher.month": "Month",
+  "view-switcher.year": "Year",
+  "week-view.today": "Today",
+  "week-view.no-tasks": "No tasks",
+  "month-view.today": "Today",
+  "month-view.more": "+{{count}} more",
+  "year-view.this-year": "This year",
+  "year-view.legend-less": "Less",
+  "year-view.legend-more": "More"
 }

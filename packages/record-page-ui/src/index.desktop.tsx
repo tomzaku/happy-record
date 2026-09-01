@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 
 import ChecklistTodayDesktop from './components/checklist-today/ChecklistToday.desktop';
 import WeeklyCalendarVertical from './components/weekly-calendar/WeeklyCalendarVertical';
+import ViewSwitcher, { ViewMode } from './components/view-switcher';
+import WeekView from './components/week-view';
+import MonthView from './components/month-view';
+import YearView from './components/year-view';
 // import MusicAudioPlayer from '@pregnant/music-audio-player';
 import { DesktopDrawer } from '@dreamer/header';
 import styles from './index.desktop.module.scss';
@@ -18,7 +22,13 @@ const TaskListPage = () => {
   const [key, setKey] = React.useState(0);
   const [flipping, setFlipping] = React.useState(false);
   const [selectedTag, setSelectedTag] = React.useState('all');
+  const [viewMode, setViewMode] = React.useState<ViewMode>('day');
   const { getAllTags } = useTags();
+
+  const goToDay = (date: Date) => {
+    setStartDate(date);
+    setViewMode('day');
+  };
 
   // Update key and trigger flip when date changes
   React.useEffect(() => {
@@ -50,21 +60,23 @@ const TaskListPage = () => {
             single-day fetch runs; effects fire in JSX order for sibling
             components, and this fetch is the one that should win the race
             for "today" — see useChecklists.tsx's `ensureChecklistsFetched`. */}
-        <div className={styles.rightCalendar}>
-          <Card className={styles.calendarCard}>
-            <WeeklyCalendarVertical
-              currentDate={startDate}
-              onDateChange={setStartDate}
-              selectedTag={selectedTag}
-            />
-          </Card>
-        </div>
+        {viewMode === 'day' && (
+          <div className={styles.rightCalendar}>
+            <Card className={styles.calendarCard}>
+              <WeeklyCalendarVertical
+                currentDate={startDate}
+                onDateChange={setStartDate}
+                selectedTag={selectedTag}
+              />
+            </Card>
+          </div>
+        )}
 
         {/* Center Content - Always Shows Tasks */}
-        <div className={styles.centerContent}>
+        <div className={cx(styles.centerContent, viewMode !== 'day' && styles.centerContentFull)}>
           <div className={styles.taskListContainer}>
             <div className={styles.taskHeader}>
-              <div />
+              <ViewSwitcher value={viewMode} onChange={setViewMode} />
               <div className={styles.tagFilter}>
                 <Typography.Text className={styles.filterLabel}>Filter by Tag:</Typography.Text>
                 <Select
@@ -87,23 +99,34 @@ const TaskListPage = () => {
                 />
               </div>
             </div>
-            <div
-              style={{
-                transform: flipping ? 'perspective(1000px) rotateX(-180deg)' : 'perspective(1000px) rotateX(0deg)',
-                opacity: flipping ? 0.3 : 1,
-                transformOrigin: 'top',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <div className={cx(styles.flipper)}>
-                <div className={styles.front} key={key}>
-                  <ChecklistTodayDesktop
-                    date={startDate}
-                    selectedTag={selectedTag === 'all' ? undefined : selectedTag}
-                  />
+            {viewMode === 'day' && (
+              <div
+                style={{
+                  transform: flipping ? 'perspective(1000px) rotateX(-180deg)' : 'perspective(1000px) rotateX(0deg)',
+                  opacity: flipping ? 0.3 : 1,
+                  transformOrigin: 'top',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <div className={cx(styles.flipper)}>
+                  <div className={styles.front} key={key}>
+                    <ChecklistTodayDesktop
+                      date={startDate}
+                      selectedTag={selectedTag === 'all' ? undefined : selectedTag}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+            {viewMode === 'week' && (
+              <WeekView currentDate={startDate} onDateChange={setStartDate} selectedTag={selectedTag} />
+            )}
+            {viewMode === 'month' && (
+              <MonthView currentDate={startDate} onDaySelect={goToDay} selectedTag={selectedTag} />
+            )}
+            {viewMode === 'year' && (
+              <YearView currentDate={startDate} onDaySelect={goToDay} selectedTag={selectedTag} />
+            )}
           </div>
         </div>
       </div>

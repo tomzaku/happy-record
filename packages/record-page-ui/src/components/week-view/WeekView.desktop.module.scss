@@ -1,0 +1,139 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--division-color);
+  flex-shrink: 0;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navIcon {
+  cursor: pointer;
+  color: var(--icon-color);
+}
+
+.weekRange {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-color);
+  min-width: 160px;
+  text-align: center;
+}
+
+.todayButton {
+  background: transparent;
+  color: var(--button-action-color);
+  border: 1px solid var(--button-action-color);
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--button-action-color);
+    color: white;
+  }
+}
+
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  overflow-y: auto;
+}
+
+.dayColumn {
+  border-right: 1px solid var(--division-color);
+  padding: 10px 8px;
+  cursor: pointer;
+  min-height: 100%;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+
+  &.today .dayNumber {
+    color: var(--icon-primary);
+  }
+
+  &.selected {
+    background: var(--button-action-background);
+  }
+}
+
+.dayHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.dayName {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-description-color);
+}
+
+.dayNumber {
+  color: var(--text-title-primary-color);
+}
+
+.tasksContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.emptyText {
+  margin: 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-description-color);
+  text-align: center;
+}
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px;
+  background: var(--surface-secondary);
+  border-radius: 4px;
+  border: 1px solid var(--division-color);
+}
+
+.taskTitle {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.completedIcon {
+  color: var(--checkbox-accent-color);
+  flex-shrink: 0;
+}

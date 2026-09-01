@@ -120,6 +120,12 @@
   // Division
   --division-color: rgba(136, 146, 176, 0.3);
 
+  // Heatmap (year view contribution grid)
+  --heatmap-level-0: rgba(136, 146, 176, 0.08);
+  --heatmap-level-1: rgba(136, 146, 176, 0.2);
+  --heatmap-level-2: rgba(33, 150, 83, 0.35);
+  --heatmap-level-3: #219653;
+
   // 2. Create Task
   --create-task-dashed-border: rgba(136, 146, 176, 0.2);
   --create-task-dashed-border-focus: #46b299;

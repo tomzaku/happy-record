@@ -124,6 +124,12 @@
   // Division
   --division-color: #{$black24};
 
+  // Heatmap (year view contribution grid)
+  --heatmap-level-0: #{$black6};
+  --heatmap-level-1: #{$black12};
+  --heatmap-level-2: #{$success-extra-light};
+  --heatmap-level-3: #{$success};
+
   // 2. Create Task
   --create-task-dashed-border: #{$black6};
   --create-task-dashed-border-focus: #{$primary-light};

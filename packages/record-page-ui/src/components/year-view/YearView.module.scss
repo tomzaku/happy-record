@@ -1,0 +1,133 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px 16px 16px;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--division-color);
+  flex-shrink: 0;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navIcon {
+  cursor: pointer;
+  color: var(--icon-color);
+}
+
+.yearLabel {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-color);
+  min-width: 60px;
+  text-align: center;
+}
+
+.todayButton {
+  background: transparent;
+  color: var(--button-action-color);
+  border: 1px solid var(--button-action-color);
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--button-action-color);
+    color: white;
+  }
+}
+
+.monthsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding-top: 16px;
+}
+
+.miniMonth {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.miniMonthLabel {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-description-color);
+}
+
+.miniGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dayCell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  cursor: pointer;
+
+  &.outsideMonth {
+    background: transparent;
+    cursor: default;
+  }
+
+  &.today {
+    outline: 1.5px solid var(--icon-primary);
+    outline-offset: -1.5px;
+  }
+}
+
+.level0 {
+  background: var(--heatmap-level-0);
+}
+
+.level1 {
+  background: var(--heatmap-level-1);
+}
+
+.level2 {
+  background: var(--heatmap-level-2);
+}
+
+.level3 {
+  background: var(--heatmap-level-3);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 16px;
+}
+
+.legendLabel {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-description-color);
+}
+
+.legendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+@media (max-width: 900px) {
+  .monthsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
