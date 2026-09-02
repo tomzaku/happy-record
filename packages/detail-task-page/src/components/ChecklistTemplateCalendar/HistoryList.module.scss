@@ -1,0 +1,95 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+// Sized on its own, not stretched to fill a parent height — the parent
+// (ChecklistTemplateCalendar's own `.bodyList`) is the one that caps and
+// scrolls a long history; this just needs enough room to read as a state,
+// not the calendar's full 520px.
+.stateContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.emptyText {
+  color: var(--text-description-color);
+}
+
+.list {
+  padding: $spacing-md;
+}
+
+.group {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.groupLabel {
+  display: block;
+  margin: 0 0 $spacing-sm;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-description-color);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+}
+
+.rowMain {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.rowTitle {
+  margin: 0;
+  flex: 1;
+  color: var(--text-color);
+}
+
+// Text, not the checkmark icon this used to be — reads more like a log
+// entry ("Marked as done") than a checkbox once there's real detail
+// underneath it.
+.rowDoneLabel {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--checkbox-accent-color);
+  flex-shrink: 0;
+}
+
+.rowTime {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-description-color);
+  flex-shrink: 0;
+}
+
+// What was actually submitted that day, if this template has field
+// groups with recordable fields — a plain check/uncheck task (no field
+// groups) has nothing here, so this block just doesn't render.
+.rowDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs $spacing-md;
+  padding-left: calc($spacing-sm + 2px);
+}
+
+.rowDetailItem {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-description-color);
+}

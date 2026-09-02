@@ -289,10 +289,12 @@ const DetailTaskPageDesktop = () => {
                   fields={fields}
                   currentDay={currentDay}
                   readOnly={!isOwner}
+                  onDaySelect={handleCalendarDaySelect}
                 />
               )}
               <ChecklistTemplateCalendar
                 checklistTemplateId={id}
+                fields={fields}
                 onDaySelect={handleCalendarDaySelect}
               />
             </div>

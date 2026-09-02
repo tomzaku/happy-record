@@ -1,31 +1,32 @@
 import React from 'react';
-import Card from '@moon-ui/card';
-import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
-import ViewSwitcher, { ViewMode } from '@dreamer/record-page-ui/src/components/view-switcher';
 import WeekView from '@dreamer/record-page-ui/src/components/week-view';
 import MonthView from '@dreamer/record-page-ui/src/components/month-view';
 import YearView from '@dreamer/record-page-ui/src/components/year-view';
-import styles from './index.module.scss';
+import { RecordField } from '@dreamer/global/src/store/record-field';
+import HistoryList from './HistoryList';
+import HistorySection from '../HistorySection';
 
 type Props = {
   checklistTemplateId: string;
+  fields: RecordField[];
   /** Called with a clicked day so the page itself can jump this task's
    * fields/history to that day — see index.desktop.tsx/index.mobile.tsx's
    * own `handleCalendarDaySelect`. */
   onDaySelect: (date: Date) => void;
 };
 
-const CALENDAR_MODES: ViewMode[] = ['week', 'month', 'year'];
-
 // Reuses the home page's own week/month/year views (see record-page-ui's
 // CLAUDE.md-documented `checklistTemplateId` filter) scoped to this one
 // template instead of "everything scheduled today" — same completion
 // indicators (WeekView's checkmark, MonthView's checkmark chip, YearView's
 // heatmap), now reading as this task's own history rather than a mixed feed.
-const ChecklistTemplateCalendar = ({ checklistTemplateId, onDaySelect }: Props) => {
+// The collapsible-card/List-Calendar-toggle chrome itself lives in
+// HistorySection, shared with each field group's own History tab
+// (ChecklistFieldGroupHistory) — this component only supplies what List and
+// Calendar actually render for the whole task.
+const ChecklistTemplateCalendar = ({ checklistTemplateId, fields, onDaySelect }: Props) => {
   const intl = useIntl();
-  const [mode, setMode] = React.useState<ViewMode>('week');
   const [currentDate, setCurrentDate] = React.useState(() => new Date());
 
   const handleDaySelect = (date: Date) => {
@@ -34,40 +35,39 @@ const ChecklistTemplateCalendar = ({ checklistTemplateId, onDaySelect }: Props) 
   };
 
   return (
-    <Card className={styles.container}>
-      <div className={styles.header}>
-        <Typography.Title level={5} noMargin>
-          {intl.formatMessage({
-            id: 'checklist-template-calendar.title',
-            defaultMessage: 'Completion Calendar',
-          })}
-        </Typography.Title>
-        <ViewSwitcher value={mode} onChange={setMode} modes={CALENDAR_MODES} />
-      </div>
-      <div className={styles.body}>
-        {mode === 'week' && (
+    <HistorySection
+      title={intl.formatMessage({ id: 'checklist-template-calendar.title', defaultMessage: 'History' })}
+      renderList={() => (
+        <HistoryList checklistTemplateId={checklistTemplateId} fields={fields} onDaySelect={handleDaySelect} />
+      )}
+      renderCalendar={mode => {
+        if (mode === 'month') {
+          return (
+            <MonthView
+              currentDate={currentDate}
+              onDaySelect={handleDaySelect}
+              checklistTemplateId={checklistTemplateId}
+            />
+          );
+        }
+        if (mode === 'year') {
+          return (
+            <YearView
+              currentDate={currentDate}
+              onDaySelect={handleDaySelect}
+              checklistTemplateId={checklistTemplateId}
+            />
+          );
+        }
+        return (
           <WeekView
             currentDate={currentDate}
             onDateChange={handleDaySelect}
             checklistTemplateId={checklistTemplateId}
           />
-        )}
-        {mode === 'month' && (
-          <MonthView
-            currentDate={currentDate}
-            onDaySelect={handleDaySelect}
-            checklistTemplateId={checklistTemplateId}
-          />
-        )}
-        {mode === 'year' && (
-          <YearView
-            currentDate={currentDate}
-            onDaySelect={handleDaySelect}
-            checklistTemplateId={checklistTemplateId}
-          />
-        )}
-      </div>
-    </Card>
+        );
+      }}
+    />
   );
 };
 

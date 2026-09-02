@@ -1,0 +1,91 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  margin: $spacing-sm;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  // Card itself already carries 12px padding (moon-ui/card's own default) —
+  // matches ChecklistFieldGroupHeader's own `.container { padding: 0; }`
+  // rather than doubling up on it.
+  padding: 0;
+}
+
+// Same chevron-row shape as ChecklistFieldGroupHeader's own `.titleContainer`
+// — title click toggles collapse, same rotate-on-collapse icon.
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  cursor: pointer;
+}
+
+.collapseIcon {
+  cursor: pointer;
+  transition: color 0.2s ease;
+  color: var(--text-description-color);
+
+  &:hover {
+    color: var(--text-color);
+  }
+}
+
+.iconGroup {
+  display: flex;
+}
+
+.headerControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+// Same divider every field-group card uses (ChecklistFieldGroup's own `.hr`/
+// `.hrContainer` override of the shared Hr component) instead of a plain
+// CSS border — one visual language for every card on this page.
+.hrContainer {
+  margin-bottom: $spacing-sm !important;
+  margin-top: 0px !important;
+}
+
+.hr {
+  height: 2px !important;
+}
+
+.collapsible {
+  overflow: hidden;
+}
+
+// Bare mode (no `title`) — already inside another collapsible card (a field
+// group's own History tab), so this just needs the toolbar row + Hr, no
+// Card/padding/collapse of its own.
+.bare {
+  padding-top: $spacing-sm;
+}
+
+.bareToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+// The grid/heatmap views need a fixed height to lay out against (see
+// WeekView/MonthView/YearView's own `height: 100%` container) — the list
+// has no such requirement, so it gets a cap instead of a fixed height:
+// short history stays short, and only a long one scrolls.
+.bodyCalendar {
+  height: 520px;
+  overflow: hidden;
+}
+
+.bodyList {
+  max-height: 420px;
+  overflow-y: auto;
+}

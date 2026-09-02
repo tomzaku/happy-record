@@ -348,11 +348,11 @@ export const useChecklistTemplates = () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
-    setChecklistTemplate({
-      ...checklistTemplate,
+    setChecklistTemplate(prev => ({
+      ...prev,
       [id]: template,
-    });
-    updateSelectedChecklistTemplate([...selectedChecklistTemplates, id]);
+    }));
+    updateSelectedChecklistTemplate(prev => [...prev, id]);
     // Optimistic — the caller gets `id` back immediately, before this
     // resolves, same as every other write in this app (see CLAUDE.md's
     // "online-first"). `saved` is exposed alongside it for the rare caller
@@ -379,10 +379,10 @@ export const useChecklistTemplates = () => {
       createdAt: existing?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
-    setChecklistTemplate({
-      ...checklistTemplate,
+    setChecklistTemplate(prev => ({
+      ...prev,
       [currentChecklistTemplate.id]: template,
-    });
+    }));
 
     if (!existing) {
       // Nothing on the server yet for this id — this is really a create,
@@ -416,29 +416,37 @@ export const useChecklistTemplates = () => {
   };
 
   const deleteChecklistTemplate = (id: string) => {
-    const newChecklistTemplate = { ...checklistTemplate };
-    delete newChecklistTemplate[id];
-    setChecklistTemplate(newChecklistTemplate);
+    setChecklistTemplate(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     removeChecklistTemplateApi(id);
-    // Also remove from selected templates if it was selected
-    if (selectedChecklistTemplates.includes(id)) {
-      updateSelectedChecklistTemplate(
-        selectedChecklistTemplates.filter(templateId => templateId !== id),
-      );
-    }
+    updateSelectedChecklistTemplate(prev => prev.filter(templateId => templateId !== id));
   };
 
-  const updateSelectedChecklistTemplate = (checklistIds: string[] = []) => {
+  const updateSelectedChecklistTemplate = (
+    update: string[] | ((prev: string[]) => string[]),
+  ) => {
     // Dedupe here, once, rather than trusting every caller — this is the
     // single choke point every write to the list goes through (the
-    // checkbox in checklist-template-page-ui, addChecklistTemplate below).
+    // checkbox in checklist-template-page-ui, addChecklistTemplate above).
     // getChecklistTemplateIdsByGivingDate filters this list directly with
     // no dedup of its own, so a duplicate id here renders that template's
     // checklist more than once for the same day, everywhere it's read. This
     // also self-heals a list that already picked up a duplicate from an
     // older client build, rather than requiring the id to be manually
     // cleared out of localStorage.
-    setSelectedChecklist(Array.from(new Set(checklistIds)));
+    //
+    // Takes an updater function (not just a plain array) so a caller never
+    // has to build the next array from its own possibly-stale closure of
+    // `selectedChecklistTemplates` — two near-simultaneous writes (a
+    // double-submitted "add task") now always compose against the real
+    // current value instead of racing and dropping one of the two ids.
+    setSelectedChecklist(prev => {
+      const next = typeof update === 'function' ? update(prev) : update;
+      return Array.from(new Set(next));
+    });
   };
 
   // `field-groups` is fetched/stored separately (see useFieldGroups.tsx) — every read function

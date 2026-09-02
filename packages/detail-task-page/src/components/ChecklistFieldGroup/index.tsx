@@ -39,6 +39,11 @@ type Props = {
    * that would just fail server-side anyway. Defaults to editable, same as before this existed. */
   readOnly?: boolean;
   onFieldAdded?: (newField: RecordField) => void;
+  /** Bubbled down into each group's own History tab (see
+   * ChecklistFieldGroupHistory's Calendar mode) — same page-level
+   * currentDay/checklistId nav ChecklistTemplateCalendar's Calendar mode
+   * already uses. */
+  onDaySelect?: (date: Date) => void;
 };
 
 const ChecklistFieldGroup = ({
@@ -48,6 +53,7 @@ const ChecklistFieldGroup = ({
   currentDay,
   readOnly = false,
   onFieldAdded,
+  onDaySelect,
 }: Props) => {
   const { updateChecklist } = useChecklist();
   const { addFieldGroup, updateFieldGroup } = useFieldGroups();
@@ -183,6 +189,8 @@ const ChecklistFieldGroup = ({
           <ChecklistFieldGroupHistory
             fields={fieldDetails}
             checklistTemplate={checklistTemplate}
+            fieldGroup={fieldGroup}
+            onDaySelect={onDaySelect}
           />
         );
         break;

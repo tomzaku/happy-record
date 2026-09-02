@@ -207,9 +207,10 @@ const DetailTaskPageMobile = () => {
           fields={fields}
           currentDay={currentDay}
           readOnly={!isOwner}
+          onDaySelect={handleCalendarDaySelect}
         />
       )}
-      <ChecklistTemplateCalendar checklistTemplateId={id} onDaySelect={handleCalendarDaySelect} />
+      <ChecklistTemplateCalendar checklistTemplateId={id} fields={fields} onDaySelect={handleCalendarDaySelect} />
       {/* General Settings — mobile's actual task content (the fields above)
           is what someone opens this page to see/do; the settings card is
           metadata about the task, not the task itself, so it reads better

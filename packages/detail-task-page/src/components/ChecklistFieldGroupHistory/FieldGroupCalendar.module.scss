@@ -1,0 +1,200 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.todayButton {
+  background: transparent;
+  color: var(--button-action-color);
+  border: 1px solid var(--button-action-color);
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--button-action-color);
+    color: white;
+  }
+}
+
+.navRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-xs 0;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.navIcon {
+  cursor: pointer;
+  color: var(--icon-color);
+}
+
+.rangeLabel {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-color);
+  min-width: 140px;
+  text-align: center;
+}
+
+// Week
+.weekGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: $spacing-xs;
+}
+
+.weekCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xxs;
+  border: 1px solid var(--division-color);
+  border-radius: 8px;
+  padding: $spacing-sm 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+
+  &.notScheduled {
+    opacity: 0.4;
+  }
+
+  &.today {
+    border-color: var(--button-action-color);
+  }
+}
+
+.weekDayName {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-description-color);
+}
+
+.weekDayNumber {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.recordedIcon {
+  color: var(--checkbox-accent-color);
+}
+
+.emptyDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--division-color);
+}
+
+// Month
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.monthCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--division-color);
+  border-radius: 6px;
+  padding: 6px 2px;
+  min-height: 44px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+
+  &.outsideMonth {
+    opacity: 0.3;
+  }
+
+  &.notScheduled {
+    opacity: 0.5;
+  }
+
+  &.today {
+    border-color: var(--button-action-color);
+  }
+}
+
+.monthDayNumber {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+// Year — same heatmap swatches as record-page-ui's YearView.
+.monthsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: $spacing-md;
+}
+
+.miniMonth {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.miniMonthLabel {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-description-color);
+}
+
+.miniGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dayCell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  cursor: pointer;
+
+  &.today {
+    box-shadow: 0 0 0 1px var(--button-action-color);
+  }
+}
+
+.outsideMonth {
+  background: transparent;
+}
+
+// Same tokens record-page-ui's YearView.module.scss uses — level2 (partial)
+// never applies here (a field group's own day is binary: recorded or not),
+// so only 0/1/3 are ever set, but the tokens stay shared either way.
+.level0 {
+  background: var(--heatmap-level-0);
+}
+
+.level1 {
+  background: var(--heatmap-level-1);
+}
+
+.level3 {
+  background: var(--heatmap-level-3);
+}

@@ -10,6 +10,11 @@ export type DefaultButtonProps = Omit<
   'type'
 > & {
   type?: 'primary' | 'ghost' | 'dash';
+  /** The real HTML `type` attribute — separate from the style `type` above.
+   * Defaults to `'button'` so a `Button` dropped inside a `<form>` never
+   * implicitly submits it; pass `'submit'` explicitly for a button that
+   * should. */
+  htmlType?: 'button' | 'submit' | 'reset';
   onClick?: () => void;
   size?: 'sm' | 'md' | 'lg';
   block?: boolean;
@@ -21,6 +26,7 @@ export default function Button({
   disabled,
   children,
   type,
+  htmlType = 'button',
   className,
   block,
   size,
@@ -28,6 +34,7 @@ export default function Button({
 }: DefaultButtonProps) {
   return (
     <button
+      type={htmlType}
       onClick={onClick}
       className={cx(
         styles.default,

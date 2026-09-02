@@ -226,8 +226,16 @@ export const useChecklist = () => {
         return startedAtDate >= startOfDay(date) && startedAtDate <= endOfDay(date);
         },
       );
-      // Combine scheduled, non-scheduled, and forever checklists
-      const allChecklists = [...scheduledChecklists, ...nonScheduledChecklists];
+      // Combine scheduled, non-scheduled, and forever checklists. Deduped by
+      // id as a safety net — an id shouldn't ever land in both arrays, or
+      // twice within one of them, but a stale duplicate that slipped into
+      // `selectedChecklistTemplates` (see updateSelectedChecklistTemplate)
+      // would otherwise render the same task's card twice for the day.
+      const allChecklists = [
+        ...new Map(
+          [...scheduledChecklists, ...nonScheduledChecklists].map(c => [c.id, c]),
+        ).values(),
+      ];
 
       // Filter by selected tag if provided
       let filteredChecklists = allChecklists;
@@ -298,10 +306,10 @@ export const useChecklist = () => {
         // can never be forgotten at a call site.
         updatedAt: new Date().toISOString(),
       };
-      setChecklist({
-        ...checklist,
+      setChecklist(prev => ({
+        ...prev,
         [checklistToUpdate.id]: merged,
-      });
+      }));
       // `merged` may be a client-only instance's first real edit (see
       // getRepeatChecklistByGivingDate — the home page's checkbox updates
       // one of these directly) with no row on the server yet. `saveChecklist`
@@ -326,10 +334,10 @@ export const useChecklist = () => {
         id,
         updatedAt: new Date().toISOString(),
       };
-      setChecklist({
-        ...checklist,
+      setChecklist(prev => ({
+        ...prev,
         [id]: newChecklist,
-      });
+      }));
       saveChecklist(newChecklist);
       return newChecklist;
     },

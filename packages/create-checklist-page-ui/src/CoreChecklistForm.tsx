@@ -46,6 +46,10 @@ const CoreChecklistForm = ({
   };
 }) => {
   const [form, setForm] = React.useState<FormState>(initialValues);
+  // Checked/set synchronously (not state) so a hurried double-click — this
+  // button has no native form to dedupe the submit event for it — can't
+  // fire `onSubmit` twice before the first click's own render lands.
+  const isSubmittingRef = React.useRef(false);
   const {
     checklistText,
     weeklyHobbies,
@@ -155,6 +159,8 @@ const CoreChecklistForm = ({
             type="primary"
             className={cx(styles.submitButton, classes?.submitButton)}
             onClick={() => {
+              if (isSubmittingRef.current) return;
+              isSubmittingRef.current = true;
               const validGroups = fieldGroups.filter(
                 group => group.fields.length > 0,
               );
