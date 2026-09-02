@@ -1,0 +1,74 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+// Rendered as the sole child of `index.desktop.tsx`'s `.calendarCard` — a
+// column flexbox (see its own comment) whose child needs an explicit
+// `flex: 1` to actually claim the remaining height and scroll within it;
+// `height: 100%` alone doesn't stretch a column flex item along its own
+// main axis.
+.container {
+  flex: 1;
+  min-height: 0;
+  padding: $spacing-md;
+  overflow-y: auto;
+}
+
+.stateContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.emptyText {
+  color: var(--text-description-color);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding: $spacing-sm;
+  border-radius: 8px;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+}
+
+.rowMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+}
+
+.rowTitle {
+  margin: 0;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.rowTime {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-description-color);
+  flex-shrink: 0;
+}
+
+.rowDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs $spacing-md;
+}
+
+.rowDetailItem {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-description-color);
+}

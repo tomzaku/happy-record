@@ -121,12 +121,19 @@ export const useChecklistRecord = () => {
       fieldIds,
       sortBy,
       sortDirection = 'asc',
+      limit,
     }: {
       rangeDate?: { from: string; to: string };
       type?: 'date' | 'time';
       fieldIds?: string[];
       sortBy?: 'createdAt';
       sortDirection?: 'asc' | 'desc';
+      /** Caps how many records feed the returned groups, applied after
+       * sorting — e.g. "last 20 across every template" for a home-page
+       * widget. Also threaded into the background fetch below so the
+       * server-side query itself is bounded, not just the client-side
+       * read. */
+      limit?: number;
     },
   ) => {
     // Background sync for this exact range — merges into the store when it
@@ -136,7 +143,7 @@ export const useChecklistRecord = () => {
     // this device already has", which is exactly what happens if this never
     // resolves. Waits for `ready` so this doesn't fire against whatever
     // transient session exists before the real one settles.
-    const rangeKey = JSON.stringify({ userId, checklistTemplateId, rangeDate, fieldIds });
+    const rangeKey = JSON.stringify({ userId, checklistTemplateId, rangeDate, fieldIds, limit });
     if (ready && !syncedRanges.has(rangeKey)) {
       syncedRanges.add(rangeKey);
       fetchChecklistRecords({
@@ -144,6 +151,7 @@ export const useChecklistRecord = () => {
         from: rangeDate?.from,
         to: rangeDate?.to,
         fieldIds,
+        limit,
       }).then(result => {
         if (!result) {
           syncedRanges.delete(rangeKey);
@@ -212,6 +220,10 @@ export const useChecklistRecord = () => {
     }
     if (sortDirection === 'desc') {
       filteredRecords = filteredRecords.reverse();
+    }
+
+    if (limit) {
+      filteredRecords = filteredRecords.slice(0, limit);
     }
 
     let groupsByDay: Record<string, ChecklistRecord[]>;

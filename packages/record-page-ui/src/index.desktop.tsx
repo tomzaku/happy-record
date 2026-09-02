@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 
 import ChecklistTodayDesktop from './components/checklist-today/ChecklistToday.desktop';
 import WeeklyCalendarVertical from './components/weekly-calendar/WeeklyCalendarVertical';
+import RecentHistory from './components/RecentHistory';
 import ViewSwitcher, { ViewMode } from './components/view-switcher';
+import switcherStyles from './components/view-switcher/index.module.scss';
 import WeekView from './components/week-view';
 import MonthView from './components/month-view';
 import YearView from './components/year-view';
@@ -14,15 +16,22 @@ import Card from '@moon-ui/card';
 import cx from 'classnames';
 import Select from '@moon-ui/select';
 import Typography from '@moon-ui/typography';
+import { useIntl } from '@dreamer/translation';
 import { useTags } from '@dreamer/global/src/store/tags/useTags';
 import { useSyncedSelector } from '@dreamer/global/src/hook/useSyncedSelector';
 
+type RightPanelMode = 'calendar' | 'history';
+
 const TaskListPage = () => {
+  const intl = useIntl();
   const [startDate, setStartDate] = React.useState(new Date());
   const [key, setKey] = React.useState(0);
   const [flipping, setFlipping] = React.useState(false);
   const [selectedTag, setSelectedTag] = React.useState('all');
   const [viewMode, setViewMode] = React.useState<ViewMode>('day');
+  // The right column's own Calendar/History toggle — defaults to Calendar,
+  // matching what this column always showed before History existed.
+  const [rightPanelMode, setRightPanelMode] = React.useState<RightPanelMode>('calendar');
   const { getAllTags } = useTags();
 
   const goToDay = (date: Date) => {
@@ -62,12 +71,36 @@ const TaskListPage = () => {
             for "today" — see useChecklists.tsx's `ensureChecklistsFetched`. */}
         {viewMode === 'day' && (
           <div className={styles.rightCalendar}>
+            <div className={cx(switcherStyles.container, styles.rightPanelSwitcher)}>
+              <button
+                type="button"
+                className={cx(switcherStyles.option, rightPanelMode === 'calendar' && switcherStyles.active)}
+                onClick={() => setRightPanelMode('calendar')}
+              >
+                <Typography.Text className={switcherStyles.label}>
+                  {intl.formatMessage({ id: 'right-panel-switcher.calendar', defaultMessage: 'Calendar' })}
+                </Typography.Text>
+              </button>
+              <button
+                type="button"
+                className={cx(switcherStyles.option, rightPanelMode === 'history' && switcherStyles.active)}
+                onClick={() => setRightPanelMode('history')}
+              >
+                <Typography.Text className={switcherStyles.label}>
+                  {intl.formatMessage({ id: 'right-panel-switcher.history', defaultMessage: 'History' })}
+                </Typography.Text>
+              </button>
+            </div>
             <Card className={styles.calendarCard}>
-              <WeeklyCalendarVertical
-                currentDate={startDate}
-                onDateChange={setStartDate}
-                selectedTag={selectedTag}
-              />
+              {rightPanelMode === 'calendar' ? (
+                <WeeklyCalendarVertical
+                  currentDate={startDate}
+                  onDateChange={setStartDate}
+                  selectedTag={selectedTag}
+                />
+              ) : (
+                <RecentHistory />
+              )}
             </Card>
           </div>
         )}
