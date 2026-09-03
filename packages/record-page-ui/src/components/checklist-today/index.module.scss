@@ -28,6 +28,38 @@
   border-bottom: 0;
 }
 
+.completedItem {
+  opacity: 0.6;
+
+  .title {
+    text-decoration: line-through;
+  }
+}
+
+.groupLabel {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.groupLabelText {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-description-color);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.groupLabelLine {
+  flex: 1;
+  height: 1px;
+  background: var(--card-border);
+}
+
 .checkbox {
   height: 24px;
   width: 24px;

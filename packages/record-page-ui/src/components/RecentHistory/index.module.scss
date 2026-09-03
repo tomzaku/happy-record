@@ -72,3 +72,10 @@
   font-size: 12px;
   color: var(--text-description-color);
 }
+
+.rowCompleted {
+  margin: 0;
+  font-size: 12px;
+  color: var(--checkbox-accent-color);
+  font-weight: 500;
+}

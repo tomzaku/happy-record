@@ -169,6 +169,14 @@
   width: 100%;
 }
 
+// Same Calendar/History pill as index.desktop.tsx's right column
+// (`.rightPanelSwitcher` there) — mobile has no separate column, so this
+// sits directly above the one Card the calendar strip already used.
+.rightPanelSwitcher {
+  align-self: flex-end;
+  margin: 0 12px 8px;
+}
+
 .tagSelectorContainer {
   display: flex;
   align-items: center;

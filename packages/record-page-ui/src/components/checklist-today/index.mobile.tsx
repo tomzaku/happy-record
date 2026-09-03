@@ -78,67 +78,88 @@ const ChecklistToday = ({
     );
   }
 
+  // Same completion-based grouping as ChecklistToday.desktop.tsx — see that
+  // file's comment on why schedule *time* isn't a usable grouping key.
+  const pendingIds = checklistByGivingDateIds.filter(id => !checklist[id]?.completedAt);
+  const completedIds = checklistByGivingDateIds.filter(id => checklist[id]?.completedAt);
+
+  const renderRow = (id: string, isLast: boolean) => {
+    const currentChecklist = checklist[id];
+    const currentChecklistTemplate =
+      checklistTemplate[currentChecklist.checklistTemplateId];
+    return (
+      <div
+        key={id}
+        className={cx(
+          styles.checklistItem,
+          isLast && styles.lastChecklistItem,
+          currentChecklist?.completedAt && styles.completedItem,
+        )}
+      >
+        <Icon
+          color={currentChecklistTemplate?.avatar.color || '#8A8A8A'}
+          width={32}
+          height={32}
+          icon={currentChecklistTemplate?.avatar.name}
+        />
+        <div
+          onClick={() => {
+            const baseUrl = `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}`;
+            const checklistIdParam = currentChecklist.clientOnly
+              ? ''
+              : `&checklistId=${currentChecklist.id}`;
+            navigate(baseUrl + checklistIdParam);
+          }}
+          className={styles.titleRow}
+        >
+          <Typography.Text className={styles.title}>
+            {currentChecklistTemplate?.title}
+          </Typography.Text>
+          {/* Same badge as ChecklistToday.desktop.tsx's own — mobile just
+              never got it, not a deliberate omission. */}
+          {currentChecklistTemplate?.visibility === 'public' && (
+            <span className={styles.publicBadge}>
+              {intl.formatMessage({
+                id: 'ChecklistToday.public-badge',
+                defaultMessage: 'Public',
+              })}
+            </span>
+          )}
+        </div>
+        <Checkbox
+          defaultChecked={Boolean(currentChecklist?.completedAt)}
+          className={styles.checkbox}
+          onChange={event => {
+            event.stopPropagation();
+            updateChecklist({
+              ...currentChecklist,
+              completedAt: event.target.checked
+                ? new Date().toISOString()
+                : undefined,
+            });
+          }}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className={styles.container}>
-      {checklistByGivingDateIds.map((id, index) => {
-        const currentChecklist = checklist[id];
-        const currentChecklistTemplate =
-          checklistTemplate[currentChecklist.checklistTemplateId];
-        return (
-          <div
-            key={id}
-            className={cx(
-              styles.checklistItem,
-              index === checklistByGivingDateIds.length - 1 &&
-                styles.lastChecklistItem,
-            )}
-          >
-            <Icon
-              color={currentChecklistTemplate?.avatar.color || '#8A8A8A'}
-              width={32}
-              height={32}
-              icon={currentChecklistTemplate?.avatar.name}
-            />
-            <div
-              onClick={() => {
-                const baseUrl = `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}`;
-                const checklistIdParam = currentChecklist.clientOnly
-                  ? ''
-                  : `&checklistId=${currentChecklist.id}`;
-                navigate(baseUrl + checklistIdParam);
-              }}
-              className={styles.titleRow}
-            >
-              <Typography.Text className={styles.title}>
-                {currentChecklistTemplate?.title}
-              </Typography.Text>
-              {/* Same badge as ChecklistToday.desktop.tsx's own — mobile just
-                  never got it, not a deliberate omission. */}
-              {currentChecklistTemplate?.visibility === 'public' && (
-                <span className={styles.publicBadge}>
-                  {intl.formatMessage({
-                    id: 'ChecklistToday.public-badge',
-                    defaultMessage: 'Public',
-                  })}
-                </span>
-              )}
-            </div>
-            <Checkbox
-              defaultChecked={Boolean(currentChecklist?.completedAt)}
-              className={styles.checkbox}
-              onChange={event => {
-                event.stopPropagation();
-                updateChecklist({
-                  ...currentChecklist,
-                  completedAt: event.target.checked
-                    ? new Date().toISOString()
-                    : undefined,
-                });
-              }}
-            />
-          </div>
-        );
-      })}
+      {pendingIds.map((id, index) => renderRow(id, completedIds.length === 0 && index === pendingIds.length - 1))}
+
+      {completedIds.length > 0 && (
+        <div className={styles.groupLabel}>
+          <Typography.Text className={styles.groupLabelText}>
+            {intl.formatMessage({
+              id: 'ChecklistToday.completed',
+              defaultMessage: 'Completed',
+            })}
+          </Typography.Text>
+          <span className={styles.groupLabelLine} />
+        </div>
+      )}
+      {completedIds.map((id, index) => renderRow(id, index === completedIds.length - 1))}
+
       <AddInlineTask className={styles.addTaskButtonBottom} />
     </div>
   );

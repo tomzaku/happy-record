@@ -3,7 +3,9 @@ import { Motion, spring } from 'react-motion';
 
 import ChecklistToday from './components/checklist-today';
 import WeeklyCalendar from './components/weekly-calendar';
+import RecentHistory from './components/RecentHistory';
 import ViewSwitcher, { ViewMode } from './components/view-switcher';
+import switcherStyles from './components/view-switcher/index.module.scss';
 import WeekView from './components/week-view';
 import MonthView from './components/month-view';
 import YearView from './components/year-view';
@@ -12,18 +14,25 @@ import styles from './index.mobile.module.scss';
 import AppHeader from '@dreamer/header';
 import Card from '@moon-ui/card';
 import cx from 'classnames';
-import Select from '@moon-ui/select';
 import Typography from '@moon-ui/typography';
-import { useTags } from '@dreamer/global/src/store/tags/useTags';
-import { useSyncedSelector } from '@dreamer/global/src/hook/useSyncedSelector';
+import { useIntl } from '@dreamer/translation';
+
+type RightPanelMode = 'calendar' | 'history';
 
 const TaskListPage = () => {
+  const intl = useIntl();
   const [startDate, setStartDate] = React.useState(new Date());
   const [key, setKey] = React.useState(0);
   const [flipping, setFlipping] = React.useState(false);
-  const [selectedTag, setSelectedTag] = React.useState('all');
+  // Filter-by-tag was hidden on the home page (most people never use it) —
+  // this stays fixed at 'all' rather than threading a picker through, same
+  // "no filter" behavior every view already had by default.
+  const selectedTag = 'all';
   const [viewMode, setViewMode] = React.useState<ViewMode>('day');
-  const { getAllTags } = useTags();
+  // Same Calendar/History toggle as index.desktop.tsx's right column — mobile
+  // has no separate right column, so it sits directly above the same Card
+  // the calendar strip already used, swapping only that card's content.
+  const [rightPanelMode, setRightPanelMode] = React.useState<RightPanelMode>('calendar');
 
   const goToDay = (date: Date) => {
     setStartDate(date);
@@ -40,16 +49,6 @@ const TaskListPage = () => {
     return () => clearTimeout(timeout);
   }, [startDate]);
 
-  // getAllTags() calling it directly in render (recomputing, and re-firing
-  // its fetch guard, on every unrelated re-render) is the bug class CLAUDE.md
-  // warns about — useSyncedSelector only recomputes when getAllTags's own
-  // identity actually changes.
-  const allTags = useSyncedSelector(getAllTags);
-  const tagOptions = [
-    { label: 'All', value: 'all' },
-    ...allTags.map(tag => ({ label: tag.name, value: tag.name }))
-  ];
-
   return (
     <div className={styles.container}>
       <AppHeader />
@@ -58,34 +57,38 @@ const TaskListPage = () => {
         <div className={styles.viewSwitcherContainer}>
           <ViewSwitcher value={viewMode} onChange={setViewMode} />
         </div>
-        <div className={styles.tagSelectorContainer}>
-          <Select
-            classes={{
-              container: styles.selectContainer,
-              input: styles.selectInput,
-              selectElement: styles.selectElement,
-            }}
-            options={tagOptions}
-            onChange={({ value }, { close }) => {
-              setSelectedTag(value);
-              close();
-            }}
-            renderInput={() => (
-              <Typography.Text>{selectedTag === 'all' ? 'All Tags' : selectedTag}</Typography.Text>
-            )}
-            renderOption={option => (
-              <Typography.Text>{option.label}</Typography.Text>
-            )}
-          />
-        </div>
         {viewMode === 'day' && (
           <>
+            <div className={cx(switcherStyles.container, styles.rightPanelSwitcher)}>
+              <button
+                type="button"
+                className={cx(switcherStyles.option, rightPanelMode === 'calendar' && switcherStyles.active)}
+                onClick={() => setRightPanelMode('calendar')}
+              >
+                <Typography.Text className={switcherStyles.label}>
+                  {intl.formatMessage({ id: 'right-panel-switcher.calendar', defaultMessage: 'Calendar' })}
+                </Typography.Text>
+              </button>
+              <button
+                type="button"
+                className={cx(switcherStyles.option, rightPanelMode === 'history' && switcherStyles.active)}
+                onClick={() => setRightPanelMode('history')}
+              >
+                <Typography.Text className={switcherStyles.label}>
+                  {intl.formatMessage({ id: 'right-panel-switcher.history', defaultMessage: 'History' })}
+                </Typography.Text>
+              </button>
+            </div>
             <Card className={styles.card}>
-              <WeeklyCalendar
-                currentDate={startDate}
-                onDateChange={setStartDate}
-                selectedTag={selectedTag}
-              />
+              {rightPanelMode === 'calendar' ? (
+                <WeeklyCalendar
+                  currentDate={startDate}
+                  onDateChange={setStartDate}
+                  selectedTag={selectedTag}
+                />
+              ) : (
+                <RecentHistory />
+              )}
             </Card>
 
             <div className={styles.taskListContainer}>

@@ -37,6 +37,34 @@
   margin-bottom: 24px;
 }
 
+.completedGroup {
+  margin-bottom: 24px;
+}
+
+.groupLabel {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+
+.groupLabelText {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-description-color);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.groupLabelLine {
+  flex: 1;
+  height: 1px;
+  background: var(--division-color);
+}
+
 .taskCard {
   border: 1px solid var(--card-border);
   border-radius: 12px;
@@ -51,9 +79,15 @@
   }
   
   &.completedTask {
+    opacity: 0.6;
+
     .taskTitle {
       text-decoration: line-through;
       color: var(--text-description-color);
+    }
+
+    &:hover {
+      opacity: 1;
     }
   }
 }

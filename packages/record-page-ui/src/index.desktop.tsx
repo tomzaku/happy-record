@@ -14,11 +14,8 @@ import { DesktopDrawer } from '@dreamer/header';
 import styles from './index.desktop.module.scss';
 import Card from '@moon-ui/card';
 import cx from 'classnames';
-import Select from '@moon-ui/select';
 import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
-import { useTags } from '@dreamer/global/src/store/tags/useTags';
-import { useSyncedSelector } from '@dreamer/global/src/hook/useSyncedSelector';
 
 type RightPanelMode = 'calendar' | 'history';
 
@@ -27,12 +24,14 @@ const TaskListPage = () => {
   const [startDate, setStartDate] = React.useState(new Date());
   const [key, setKey] = React.useState(0);
   const [flipping, setFlipping] = React.useState(false);
-  const [selectedTag, setSelectedTag] = React.useState('all');
+  // Filter-by-tag was hidden on the home page (most people never use it) —
+  // this stays fixed at 'all' rather than threading a picker through, same
+  // "no filter" behavior every view already had by default.
+  const selectedTag = 'all';
   const [viewMode, setViewMode] = React.useState<ViewMode>('day');
   // The right column's own Calendar/History toggle — defaults to Calendar,
   // matching what this column always showed before History existed.
   const [rightPanelMode, setRightPanelMode] = React.useState<RightPanelMode>('calendar');
-  const { getAllTags } = useTags();
 
   const goToDay = (date: Date) => {
     setStartDate(date);
@@ -48,16 +47,6 @@ const TaskListPage = () => {
     }, 200);
     return () => clearTimeout(timeout);
   }, [startDate]);
-
-  // getAllTags() calling it directly in render (recomputing, and re-firing
-  // its fetch guard, on every unrelated re-render) is the bug class CLAUDE.md
-  // warns about — useSyncedSelector only recomputes when getAllTags's own
-  // identity actually changes.
-  const allTags = useSyncedSelector(getAllTags);
-  const tagOptions = [
-    { label: 'All', value: 'all' },
-    ...allTags.map(tag => ({ label: tag.name, value: tag.name }))
-  ];
 
   return (
     <div className={styles.desktopContainer}>
@@ -110,27 +99,6 @@ const TaskListPage = () => {
           <div className={styles.taskListContainer}>
             <div className={styles.taskHeader}>
               <ViewSwitcher value={viewMode} onChange={setViewMode} />
-              <div className={styles.tagFilter}>
-                <Typography.Text className={styles.filterLabel}>Filter by Tag:</Typography.Text>
-                <Select
-                  classes={{
-                    container: styles.selectContainer,
-                    input: styles.selectInput,
-                    selectElement: styles.selectElement,
-                  }}
-                  options={tagOptions}
-                  onChange={({ value }, { close }) => {
-                    setSelectedTag(value);
-                    close();
-                  }}
-                  renderInput={() => (
-                    <Typography.Text>{selectedTag === 'all' ? 'All Tags' : selectedTag}</Typography.Text>
-                  )}
-                  renderOption={option => (
-                    <Typography.Text>{option.label}</Typography.Text>
-                  )}
-                />
-              </div>
             </div>
             {viewMode === 'day' && (
               <div
