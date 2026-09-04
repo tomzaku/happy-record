@@ -2,6 +2,7 @@ import React from 'react';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 import { useChecklist } from '@dreamer/global';
+import { useIntl } from '@dreamer/translation';
 import {
   addMonths,
   eachDayOfInterval,
@@ -32,6 +33,7 @@ const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 // picker reused elsewhere) since this one also needs to show which days
 // have anything recorded (the small dot), which that dialog never needed.
 const MiniMonthCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
+  const intl = useIntl();
   const { ensureChecklistsFetched, getChecklistForDateWithoutFetching } = useChecklist();
   const [visibleMonth, setVisibleMonth] = React.useState(() => startOfMonth(currentDate));
 
@@ -81,21 +83,30 @@ const MiniMonthCalendar = ({ currentDate, onDateChange, selectedTag }: Props) =>
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <Icon
-          onClick={() => setVisibleMonth(prev => subMonths(prev, 1))}
-          width={16}
-          icon="basil:skip-prev-outline"
-          className={styles.navIcon}
-        />
+          <Icon
+            onClick={() => setVisibleMonth(prev => subMonths(prev, 1))}
+            width={16}
+            icon="basil:skip-prev-outline"
+            className={styles.navIcon}
+          />
         <Typography.Text className={styles.monthLabel}>
           {format(visibleMonth, 'MMMM yyyy')}
         </Typography.Text>
+        <div className={styles.headerLeft}>
+          <button
+            type="button"
+            className={styles.todayButton}
+            onClick={() => onDateChange(todayStart)}
+          >
+            {intl.formatMessage({ id: 'mini-month-calendar.today', defaultMessage: 'Today' })}
+          </button>
         <Icon
           onClick={() => setVisibleMonth(prev => addMonths(prev, 1))}
           width={16}
           icon="basil:skip-next-outline"
-          className={styles.navIcon}
+          className={styles.navIconRight}
         />
+        </div>
       </div>
 
       <div className={styles.weekdays}>

@@ -86,6 +86,14 @@ enum EditModal {
 // back to on its own, and this template already isn't gated by it if it has field groups).
 const DEFAULT_REPEAT_BASE = { hour: '8', minute: '0', dayOfMonth: '*', month: '*', dayOfWeek: '*' };
 
+// Fallback shape for `repeat` when calculateRepeat itself returns `undefined` — empty-string
+// "not scheduled" sentinels, matching createTaskUtil.ts's own non-recurring branch (and
+// getEffectiveDayOfWeek/getChecklistTemplateIdsByGivingDate's own reading of `dayOfWeek: ''`),
+// not DEFAULT_REPEAT_BASE above — that reads as "every day at 8am," which would turn a template
+// with genuinely no template-level schedule into one the moment its Start Date/timezone gets
+// touched.
+const NO_SCHEDULE_REPEAT_BASE = { hour: '', minute: '', dayOfMonth: '', month: '', dayOfWeek: '' };
+
 const ChecklistGenericInfo = ({
   checklistTemplate,
   onUpdate,
@@ -244,8 +252,13 @@ const ChecklistGenericInfo = ({
 
     onUpdate({
       ...checklistTemplate,
+      // `repeat` is `undefined` when `tempWeeklyHobbies` is empty (a template whose schedule
+      // lives entirely on its field groups, with no template-level days of its own — see
+      // formatTemplateSchedule's comment elsewhere on this shape) — fall back to the same empty-
+      // string "not scheduled" sentinel createTaskUtil.ts's own non-recurring branch uses, not
+      // DEFAULT_REPEAT_BASE, which would silently turn this into a real daily-8am schedule.
       repeat: {
-        ...repeat,
+        ...(repeat ?? NO_SCHEDULE_REPEAT_BASE),
         startedAt: tempStartDay,
         timezone: getClientTimezone(),
       },
@@ -292,7 +305,7 @@ const ChecklistGenericInfo = ({
       selectedTime: tempTime,
     });
     onUpdateMyReminder?.({
-      ...repeat,
+      ...(repeat ?? NO_SCHEDULE_REPEAT_BASE),
       startedAt: tempStartDay,
       timezone: getClientTimezone(),
     });

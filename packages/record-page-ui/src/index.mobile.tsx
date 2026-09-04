@@ -17,12 +17,13 @@ import Card from '@moon-ui/card';
 import cx from 'classnames';
 import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
+import { useSelectedDate } from './hooks/useSelectedDate';
 
 type RightPanelMode = 'calendar' | 'history';
 
 const TaskListPage = () => {
   const intl = useIntl();
-  const [startDate, setStartDate] = React.useState(new Date());
+  const [startDate, setStartDate] = useSelectedDate();
   const [key, setKey] = React.useState(0);
   const [flipping, setFlipping] = React.useState(false);
   // Filter-by-tag was hidden on the home page (most people never use it) —

@@ -6,15 +6,37 @@
   gap: $spacing-sm;
 }
 
+// `1fr auto 1fr` — the middle (month) column is always exactly centered between the two outer
+// columns regardless of what they hold, so `.headerLeft` can carry the Today button without
+// pushing the month label off-center the way sharing a flex group with it would.
 .header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.headerLeft {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: $spacing-xs;
+  justify-self: end;
 }
 
 .navIcon {
   cursor: pointer;
   color: var(--almanac-muted);
+
+  &:hover {
+    color: var(--almanac-ink);
+  }
+}
+
+// Same as .navIcon, just pinned to the header's own right edge (its column has nothing else in
+// it, unlike the prev icon's — see .headerLeft) rather than centered/left within its 1fr track.
+.navIconRight {
+  cursor: pointer;
+  color: var(--almanac-muted);
+  justify-self: end;
 
   &:hover {
     color: var(--almanac-ink);
@@ -27,6 +49,24 @@
   font-weight: 600;
   font-size: 15px;
   color: var(--almanac-ink);
+  justify-self: center;
+}
+
+.todayButton {
+  background: transparent;
+  color: var(--almanac-accent);
+  border: 1px solid var(--almanac-accent);
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--almanac-accent);
+    color: var(--almanac-pill-active-ink);
+  }
 }
 
 .weekdays {

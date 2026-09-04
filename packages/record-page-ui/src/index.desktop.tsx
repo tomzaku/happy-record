@@ -18,6 +18,7 @@ import cx from 'classnames';
 import Typography from '@moon-ui/typography';
 import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
+import { useSelectedDate } from './hooks/useSelectedDate';
 
 type RightPanelMode = 'calendar' | 'history';
 
@@ -70,7 +71,7 @@ const ThisDayChips = ({ date, selectedTag }: { date: Date; selectedTag?: string 
 
 const TaskListPage = () => {
   const intl = useIntl();
-  const [startDate, setStartDate] = React.useState(new Date());
+  const [startDate, setStartDate] = useSelectedDate();
   const [key, setKey] = React.useState(0);
   const [flipping, setFlipping] = React.useState(false);
   // Filter-by-tag was hidden on the home page (most people never use it) —
