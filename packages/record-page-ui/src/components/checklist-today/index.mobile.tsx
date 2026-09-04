@@ -8,6 +8,7 @@ import Typography from '@moon-ui/typography';
 import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 import AddInlineTask, { PendingInlineTask } from '../AddInlineTask';
+import EmptyChecklistIllustration from './EmptyChecklistIllustration';
 
 const ChecklistToday = ({
   date,
@@ -75,12 +76,7 @@ const ChecklistToday = ({
     return (
       <div>
         <div className={styles.emptyContainer}>
-          <Icon
-            width={80}
-            // color="#00000024"
-            icon="clarity:sad-face-line"
-            className={styles.iconEmpty}
-          />
+          <EmptyChecklistIllustration />
           <Typography.Title level={3} noMargin>
             {intl.formatMessage({
               id: 'ChecklistToday.no-record',
@@ -89,6 +85,7 @@ const ChecklistToday = ({
           </Typography.Title>
         </div>
         <AddInlineTask
+          date={date}
           className={styles.addTaskButton}
           onTaskCreateStart={handleTaskCreateStart}
           onTaskCreateEnd={handleTaskCreateEnd}
@@ -200,6 +197,7 @@ const ChecklistToday = ({
       {completedIds.map((id, index) => renderRow(id, index === completedIds.length - 1))}
 
       <AddInlineTask
+        date={date}
         className={styles.addTaskButtonBottom}
         onTaskCreateStart={handleTaskCreateStart}
         onTaskCreateEnd={handleTaskCreateEnd}

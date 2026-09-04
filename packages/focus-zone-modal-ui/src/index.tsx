@@ -14,6 +14,10 @@ import FocusZoneThemePicker from './FocusZoneThemePicker';
 import { getFocusZoneTheme } from './focusZoneThemes';
 import { useFocusZoneTheme } from './useFocusZoneTheme';
 import { stopAllSounds } from '@dreamer/music-controller-common';
+import CountdownVisual from './CountdownVisual';
+import CountdownAnimationPicker from './CountdownAnimationPicker';
+import { useCountdownAnimation } from './useCountdownAnimation';
+import { getCountdownAnimation } from './countdownAnimations';
 
 // Hooks and utilities
 import { usePomodoroGlobalConfig, usePomodoroTitle } from '@dreamer/pomodoro-common';
@@ -102,6 +106,13 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
   // against a photo backdrop. Only `default` (no photo) actually has a light mode to offer.
   const isPhotoTheme = !!activeFocusZoneTheme.backgroundImage;
   const effectiveIsDarkMode = isPhotoTheme || isDarkMode;
+
+  // The pomodoro ring's own visual style — see countdownAnimations.ts.
+  const { countdownAnimation, setCountdownAnimation } = useCountdownAnimation();
+  // 'bricks' fills its own middle (a 10x10 grid), so its clock reads below the visual instead of
+  // centered on top of it, unlike every other animation — see countdownAnimations.ts's own
+  // `clockPosition` comment.
+  const clockPosition = getCountdownAnimation(countdownAnimation).clockPosition ?? 'center';
 
   // Notification permission modal state
   const [showNotificationPermissionModal, setShowNotificationPermissionModal] =
@@ -440,120 +451,16 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
                       and positioned independently (see this class's own comment). */}
                   <div className={styles.pomodoroBackgroundGlow} />
                   <div className={styles.circularProgressContainer}>
-                    <motion.div
-                      className={styles.progressWrapper}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.98 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <svg
-                        className={styles.circularProgress}
-                        viewBox="0 0 120 120"
-                        width="350"
-                        height="350"
-                      >
-                        <circle
-                          cx="60"
-                          cy="60"
-                          r="54"
-                          // stroke="rgba(255, 255, 255, 0.1)"
-                          strokeWidth="8"
-                          fill="none"
-                          className={styles.strokeCircle}
-                        />
-                        <motion.circle
-                          cx="60"
-                          cy="60"
-                          r="50"
-                          fill="#7455b021"
-                          animate={
-                            isPomodoroRunning
-                              ? {
-                                scale: [1, 1.3, 1],
-                              }
-                              : {}
-                          }
-                          transition={
-                            isPomodoroRunning
-                              ? {
-                                duration: 1,
-                                repeat: Infinity,
-                                ease: 'easeInOut',
-                              }
-                              : {}
-                          }
-                        />
-                        <motion.circle
-                          cx="60"
-                          cy="60"
-                          r="54"
-                          stroke="url(#progressGradient)"
-                          strokeWidth="8"
-                          fill="none"
-                          strokeLinecap="round"
-                          strokeDasharray={`${2 * Math.PI * 54}`}
-                          strokeDashoffset={`${2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)}`}
-                          initial={{ strokeDashoffset: 2 * Math.PI * 54 }}
-                          animate={{
-                            strokeDashoffset:
-                              2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100),
-                          }}
-                          transition={{
-                            duration: 0.8,
-                            ease: 'easeInOut',
-                            type: 'spring',
-                            stiffness: 100,
-                            damping: 20,
-                          }}
-                          style={{
-                            transformOrigin: 'center',
-                            transform: 'rotate(-90deg)',
-                          }}
-                        />
-                        {/* Animated glow effect */}
-                        <motion.circle
-                          cx="60"
-                          cy="60"
-                          r="54"
-                          stroke="rgba(102, 126, 234, 0.3)"
-                          strokeWidth="12"
-                          fill="none"
-                          strokeLinecap="round"
-                          strokeDasharray={`${2 * Math.PI * 54}`}
-                          strokeDashoffset={`${2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100)}`}
-                          initial={{ strokeDashoffset: 2 * Math.PI * 54, opacity: 0 }}
-                          animate={{
-                            strokeDashoffset:
-                              2 * Math.PI * 54 * (1 - getPomodoroProgress() / 100),
-                            opacity: [0, 0.6, 0],
-                          }}
-                          transition={{
-                            duration: 2,
-                            ease: 'easeInOut',
-                            repeat: Infinity,
-                            repeatType: 'reverse',
-                          }}
-                          style={{
-                            transformOrigin: 'center',
-                            transform: 'rotate(-90deg)',
-                          }}
-                        />
-                        {/* Gradient definition */}
-                        <defs>
-                          <linearGradient
-                            id="progressGradient"
-                            x1="0%"
-                            y1="0%"
-                            x2="100%"
-                            y2="100%"
-                          >
-                            <stop offset="0%" stopColor="#667eea" />
-                            <stop offset="100%" stopColor="#764ba2" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
+                    <CountdownVisual
+                      animationId={countdownAnimation}
+                      progress={getPomodoroProgress()}
+                      isRunning={isPomodoroRunning}
+                    />
 
-                      {/* Clock display inside the circle */}
+                    {/* Centered on top of the visual — the default for every animation except
+                        'bricks', which renders its own copy below the container instead (see
+                        clockPosition above). */}
+                    {clockPosition === 'center' && (
                       <div className={styles.clockDisplay}>
                         <div className={styles.timeDisplay} key={pomodoroTime}>
                           {formatPomodoroTime(pomodoroTime)}
@@ -567,8 +474,24 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
                           {getCurrentPhase().label}
                         </motion.div>
                       </div>
-                    </motion.div>
+                    )}
                   </div>
+
+                  {clockPosition === 'bottom' && (
+                    <div className={cx(styles.clockDisplay, styles.clockDisplayBottom)}>
+                      <div className={styles.timeDisplay} key={pomodoroTime}>
+                        {formatPomodoroTime(pomodoroTime)}
+                      </div>
+                      <motion.div
+                        className={styles.phaseLabel}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.2 }}
+                      >
+                        {getCurrentPhase().label}
+                      </motion.div>
+                    </div>
+                  )}
 
                   {taskTitle && (
                     <Title level={2} noMargin className={styles.taskTitle}>
@@ -589,6 +512,12 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
                       completed
                     </Text>
                   </motion.div>
+
+                  {/* Which visual the ring above renders — see countdownAnimations.ts. */}
+                  <CountdownAnimationPicker
+                    value={countdownAnimation}
+                    onChange={setCountdownAnimation}
+                  />
                 </motion.div>
               )}
 

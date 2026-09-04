@@ -1,0 +1,78 @@
+// Shared base positioning for every alternative visual (Water/Plant) — same
+// size/centering `.circularProgress` (index.module.scss) already gives the default ring, just
+// without that class's own rotation animation and drop-shadow, which are specific to the ring.
+// Fixed 350px (not 100%) to match `.circularProgress`'s own explicit `width`/`height` SVG
+// attributes — both deliberately overflow `.progressWrapper`'s smaller 140px box the same way, so
+// switching between animations doesn't also change the apparent size of the ring.
+.visualSvg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 350px;
+  height: 350px;
+  filter: drop-shadow(0 4px 12px var(--focus-zone-progress-shadow, rgba(102, 126, 234, 0.3)));
+}
+
+.outline {
+  fill: none;
+  stroke: var(--focus-zone-progress-container-before, rgba(102, 126, 234, 0.2));
+  stroke-width: 3;
+}
+
+// --- Water ---
+
+.waterFill {
+  fill: url(#waterGradient);
+}
+
+.waterWave {
+  fill: url(#waterGradient);
+  opacity: 0.6;
+}
+
+// --- Plant ---
+
+.soil {
+  fill: rgba(0, 0, 0, 0.15);
+}
+
+.stem {
+  fill: none;
+  stroke: url(#plantGradient);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.leaf {
+  fill: url(#plantGradient);
+}
+
+.flower {
+  fill: var(--focus-zone-text-primary, #fff);
+  opacity: 0.9;
+}
+
+// --- Bricks ---
+// Plain HTML/CSS grid, not SVG (100 rect elements laid out with CSS Grid is simpler and cheaper
+// than positioning that many SVG nodes by hand) — sized/centered the same way `.visualSvg` is,
+// just as a div instead of an svg.
+
+.bricksGrid {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  gap: 3px;
+  width: 260px;
+  height: 260px;
+}
+
+.brick {
+  border-radius: 2px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}

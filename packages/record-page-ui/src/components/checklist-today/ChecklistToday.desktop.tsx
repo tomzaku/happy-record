@@ -18,6 +18,7 @@ import Card from '@moon-ui/card';
 import { format, isToday } from 'date-fns';
 import AddInlineTask, { AddInlineTaskHandle, PendingInlineTask } from '../AddInlineTask';
 import { getLunarDate, getLunarPhraseId } from '../../utils/lunarDate';
+import EmptyChecklistIllustration from './EmptyChecklistIllustration';
 
 const isEditableTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -268,13 +269,10 @@ const ChecklistTodayDesktop = ({
   // somewhere to render.
   if (checklistByGivingDateIds.length === 0 && pendingTasks.length === 0) {
     return (
+<>
       <div className={styles.emptyContainer}>
         <div className={styles.emptyBody}>
-          <Icon
-            width={80}
-            icon="clarity:sad-face-line"
-            className={styles.iconEmpty}
-          />
+          <EmptyChecklistIllustration />
           <Typography.Title level={3} noMargin>
             {intl.formatMessage({
               id: 'ChecklistToday.no-record',
@@ -287,11 +285,19 @@ const ChecklistTodayDesktop = ({
         </div>
         <AddInlineTask
           ref={addTaskRef}
+          date={date}
           className={styles.quickAddTask}
           onTaskCreateStart={handleTaskCreateStart}
           onTaskCreateEnd={handleTaskCreateEnd}
         />
       </div>
+        <div className={styles.shortcutsHint}>
+          <span className={styles.shortcutItem}>
+            <kbd className={styles.kbd}>a</kbd>
+            {intl.formatMessage({ id: 'ChecklistToday.shortcuts-add', defaultMessage: 'Add task' })}
+          </span>
+        </div>
+</>
     );
   }
 
@@ -496,6 +502,7 @@ const ChecklistTodayDesktop = ({
         )}
         <AddInlineTask
           ref={addTaskRef}
+          date={date}
           className={styles.quickAddTask}
           onTaskCreateStart={handleTaskCreateStart}
           onTaskCreateEnd={handleTaskCreateEnd}

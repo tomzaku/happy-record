@@ -1,0 +1,140 @@
+.illustration {
+  width: 96px;
+  height: 96px;
+  overflow: visible;
+}
+
+.floatGroup {
+  transform-origin: 60px 60px;
+  animation: float 3.4s ease-in-out infinite;
+}
+
+.board {
+  fill: var(--surface-secondary);
+  stroke: var(--icon-color-inactive-invert);
+  stroke-width: 3;
+}
+
+.clip {
+  fill: var(--icon-color-inactive-invert);
+  opacity: 0.6;
+}
+
+.line {
+  stroke: var(--icon-color-inactive-invert);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.35;
+}
+
+.badge {
+  transform-origin: 82px 86px;
+  animation: badgePulse 3.2s ease-in-out infinite;
+}
+
+.badgeCircle {
+  fill: var(--icon-primary);
+}
+
+.check {
+  fill: none;
+  stroke: var(--surface-secondary);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 24;
+  animation: checkDraw 3.2s ease-in-out infinite;
+}
+
+.sparkle {
+  fill: var(--icon-primary);
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+
+.sparkle1 {
+  animation-delay: 0s;
+}
+
+.sparkle2 {
+  animation-delay: 0.6s;
+}
+
+.sparkle3 {
+  animation-delay: 1.2s;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes badgePulse {
+  0%,
+  35% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.12);
+  }
+  55% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes checkDraw {
+  0%,
+  15% {
+    stroke-dashoffset: 24;
+    opacity: 0;
+  }
+  40% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  75% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  95%,
+  100% {
+    stroke-dashoffset: 24;
+    opacity: 0;
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floatGroup,
+  .badge,
+  .check,
+  .sparkle {
+    animation: none;
+  }
+
+  .check {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}

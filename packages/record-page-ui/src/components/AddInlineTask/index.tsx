@@ -13,6 +13,11 @@ export interface PendingInlineTask {
 }
 
 interface AddInlineTaskProps {
+  // The day this task should be created against — the homepage's currently
+  // viewed date, not necessarily today. Defaults to today so callers that
+  // never navigate away from "today" (e.g. index.mobile.tsx's bottom-of-list
+  // add row, which doesn't currently thread a date through) keep working.
+  date?: Date;
   onTaskCreated?: () => void;
   // Fired synchronously right before the create request goes out, and again
   // once it settles (success or failure) — lets a parent render an
@@ -30,6 +35,7 @@ export interface AddInlineTaskHandle {
 }
 
 const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(({
+  date,
   onTaskCreated,
   onTaskCreateStart,
   onTaskCreateEnd,
@@ -76,7 +82,7 @@ const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(
       selectedRecords: [],
       checklistText: title,
       weeklyHobbies: [], // No schedule = forever task
-      startedAt: new Date().toISOString().split('T')[0],
+      startedAt: (date ?? new Date()).toISOString().split('T')[0],
       selectedTime: '',
       selectedIcon: 'material-symbols:checklist',
       selectedColor: '#607d8b',

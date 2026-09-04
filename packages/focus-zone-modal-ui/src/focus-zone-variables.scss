@@ -1,13 +1,19 @@
 // Focus Zone Theme Variables
-// This file contains all the color and styling variables specific to the Focus Zone page
+// This file contains all the color and styling variables specific to the Focus Zone page.
+//
+// Only the container background pulls from the app's real Almanac palette
+// (--almanac-bg/--almanac-surface/--almanac-card) now — reported as not matching the rest of the
+// app. Every accent/glow/gradient elsewhere here (buttons, ring, tab underline, ...) is
+// deliberately left as its own indigo/purple #667eea-#764ba2 (or blue #0b7dc2-#334d6e in light
+// mode) family — that's Focus Zone's own signature look, not something that needed to match.
 
 // Dark Theme Variables
 [data-theme='dark'] {
-  // Container and Background
+  // Container and Background — the app's own dark Almanac layers, not a generic navy/blue gradient.
   --focus-zone-container-background: linear-gradient(135deg,
-  #1a1a2e 0%,
-  #16213e 50%,
-  #0f3460 100%);
+  var(--almanac-bg) 0%,
+  var(--almanac-surface) 55%,
+  var(--almanac-card) 100%);
   --focus-zone-container-before-radial-1: rgba(120, 119, 198, 0.1);
   --focus-zone-container-before-radial-2: rgba(255, 119, 198, 0.1);
 
@@ -117,11 +123,11 @@
 
 // Light Theme Variables
 [data-theme='light'] {
-  // Container and Background
+  // Container and Background — the app's own warm cream Almanac layers, not a cool gray gradient.
   --focus-zone-container-background: linear-gradient(135deg,
-  #f8f9fa 0%,
-  #e9ecef 50%,
-  #dee2e6 100%);
+  var(--almanac-bg) 0%,
+  var(--almanac-surface) 55%,
+  var(--almanac-card) 100%);
   --focus-zone-container-before-radial-1: rgba(120, 119, 198, 0.05);
   --focus-zone-container-before-radial-2: rgba(255, 119, 198, 0.05);
 

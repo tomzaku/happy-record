@@ -502,14 +502,17 @@
   box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
 }
 
+// Was hardcoded to white-on-translucent-white regardless of theme — invisible in light mode
+// (barely-there white text on the light Almanac background). `--focus-zone-control-button-reset-*`
+// already existed per-theme (black-based translucent in light mode) but nothing consumed them.
 .controlButton.reset {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--focus-zone-control-button-reset-background);
+  color: var(--focus-zone-text-primary);
+  border: 1px solid var(--focus-zone-control-button-reset-border);
 }
 
 .controlButton.reset:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--focus-zone-control-button-reset-hover);
   transform: translateY(-2px);
 }
 
@@ -643,6 +646,20 @@
   z-index: 2;
   width: 100%;
   height: 100%;
+}
+
+// Rendered as its own flex-item sibling below `.circularProgressContainer` instead — used for
+// 'bricks' (see index.tsx's own clockPosition), whose grid fills the middle a centered clock
+// would otherwise sit on top of. Overrides the absolute-centering above back to normal flow;
+// `position: relative` + `z-index: 1` (not `static`/`auto`) for the same reason `.taskTitle`/
+// `.progressPercentage` need it — a flex-item sibling of `.pomodoroBackgroundGlow` (a positioned
+// z-index:0 layer) has to claim its own stacking to paint above it rather than underneath.
+.clockDisplayBottom {
+  position: relative;
+  width: auto;
+  height: auto;
+  transform: none;
+  z-index: 1;
 }
 
 .timeDisplay {
