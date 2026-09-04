@@ -1,20 +1,16 @@
 import React from 'react';
-import { format, subDays, eachDayOfInterval } from 'date-fns';
+import { format } from 'date-fns';
 import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
-import { useChecklistTemplates, useSyncedSelector, useRecordField, useChecklist } from '@dreamer/global';
+import { useChecklistTemplates, useSyncedSelector, useRecordField } from '@dreamer/global';
 import { useChecklistRecord, ChecklistRecord } from '@dreamer/global/src/store/checklist-record';
+import { useChecklistLogs } from '@dreamer/global/src/store/checklist-logs';
 import styles from './index.module.scss';
 
 // How many of the most recent activity rows (across every task) this widget
 // shows — a home-page glance, not a full history browser (that's
 // detail-task-page's own per-task History tab).
 const RECENT_LIMIT = 30;
-
-// How far back to look for plain check/uncheck completions (see below) — a
-// checklist has no `submittedAt` of its own to sort by the way a submission
-// does, so this has to be a bounded day-range fetch, not an unbounded one.
-const COMPLETED_LOOKBACK_DAYS = 30;
 
 type Detail = { label: string; value: string; unit?: string };
 type Entry = { key: string; timestamp: string; title: string; details: Detail[] };
@@ -58,7 +54,6 @@ const RecentHistory = ({ limit = RECENT_LIMIT }: Props = {}) => {
   const { checklistTemplate } = useChecklistTemplates();
   const { getChecklistRecords } = useChecklistRecord();
   const { getAllRecordFields } = useRecordField();
-  const { ensureChecklistsFetched, getChecklistForDateWithoutFetching } = useChecklist();
 
   const fields = useSyncedSelector(getAllRecordFields);
   const fieldsById = React.useMemo(() => new Map(fields.map(field => [field.id, field])), [fields]);
@@ -87,43 +82,33 @@ const RecentHistory = ({ limit = RECENT_LIMIT }: Props = {}) => {
   // CLAUDE.md: "Checklist.completedAt is also how a plain check/uncheck-style
   // day gets recorded, with no fields involved"). Without pulling those in
   // too, this widget silently skipped every check-only task, submission-based
-  // ones only.
-  const rangeStart = React.useMemo(() => subDays(new Date(), COMPLETED_LOOKBACK_DAYS), []);
-  const rangeEnd = React.useMemo(() => new Date(), []);
-
-  React.useEffect(() => {
-    ensureChecklistsFetched({ from: rangeStart, to: rangeEnd });
-  }, [ensureChecklistsFetched, rangeStart, rangeEnd]);
-
+  // ones only. checklist_logs' own `update`/`completed` rows are what surface
+  // those now — one indexed query for "recently completed," replacing what
+  // used to be a day-by-day scan over every checklist in a fixed lookback
+  // window (see git history on this file for that shape).
   const submittedChecklistIds = React.useMemo(() => {
     const ids = new Set<string>();
     Object.values(groups).forEach(records => records.forEach(record => ids.add(record.checklistId)));
     return ids;
   }, [groups]);
 
-  // Same day-by-day loop as WeeklyCalendarVertical's own `tasksByDay` —
-  // `getChecklistForDateWithoutFetching` is a pure read over whatever
-  // `ensureChecklistsFetched` above has already merged into the store.
-  const completedEntries: Entry[] = React.useMemo(() => {
-    const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
-    const result: Entry[] = [];
-    days.forEach(date => {
-      const { checklist } = getChecklistForDateWithoutFetching({ date });
-      Object.values(checklist).forEach(item => {
-        // A checked-off task that also has field submissions already shows
-        // up via submissionEntries — skip it here to avoid a duplicate row.
-        if (!item.completedAt || submittedChecklistIds.has(item.id)) return;
-        result.push({
-          key: `checklist:${item.id}`,
-          timestamp: item.completedAt,
-          title: checklistTemplate[item.checklistTemplateId]?.title
+  const checklistLogs = useChecklistLogs({ create: false, delete: false, limit: RECENT_LIMIT });
+
+  const completedEntries: Entry[] = React.useMemo(
+    () =>
+      checklistLogs
+        // A checked-off task that also has field submissions already shows up
+        // via submissionEntries — skip it here to avoid a duplicate row.
+        .filter(log => log.detail === 'completed' && log.checklistId && !submittedChecklistIds.has(log.checklistId))
+        .map(log => ({
+          key: `checklist:${log.checklistId}`,
+          timestamp: log.createdAt,
+          title: checklistTemplate[log.checklistTemplateId]?.title
             ?? intl.formatMessage({ id: 'recent-history.unknown-task', defaultMessage: 'Task' }),
           details: [],
-        });
-      });
-    });
-    return result;
-  }, [rangeStart, rangeEnd, getChecklistForDateWithoutFetching, submittedChecklistIds, checklistTemplate, intl]);
+        })),
+    [checklistLogs, submittedChecklistIds, checklistTemplate, intl],
+  );
 
   const entries = React.useMemo(
     () =>

@@ -18,6 +18,7 @@ import {
   upsertSubmission,
   type ChecklistRecordsQuery,
 } from '../repository/checklist-records-repository.ts';
+import { recordChecklistLog } from '../../../shared/checklistLogs.ts';
 import type { Ctx } from '../api/checklist-records-context.ts';
 
 export type NoteInfo = { value: unknown; title: string };
@@ -60,6 +61,15 @@ export async function saveChecklistRecords(
   // exist before the pointer row referencing it is written.
   await upsertNotes(db, userId, input.noteRows);
   await upsertChecklistRecords(db, userId, input.recordRows);
+
+  // One log entry per Submit click, not per field — submissionId is exactly that grouping.
+  await recordChecklistLog(db, userId, {
+    checklistTemplateId: input.submission.checklistTemplateId,
+    checklistId: input.submission.checklistId,
+    action: 'update',
+    detail: 'submitted',
+    metadata: { submissionId: input.submission.id },
+  });
 }
 
 export async function updateChecklistRecordValue(

@@ -13,6 +13,7 @@ import {
   type NoteRow,
   type NoteSummaryQuery,
 } from '../repository/notes-repository.ts';
+import { recordChecklistLog } from '../../../shared/checklistLogs.ts';
 import type { Ctx } from '../api/notes-context.ts';
 
 export function listMyNotes({ db, userId }: Ctx, opts: NoteSummaryQuery): Promise<NoteRow[]> {
@@ -36,6 +37,18 @@ export async function saveNote({ db, userId }: Ctx, row: Record<string, unknown>
   // same thing in the other direction.
   if (row.checklist_id) {
     await bumpChecklistRecordUpdatedAt(db, userId, row.id as string, row.updated_at);
+  }
+
+  // A field-group's own "how to do it" note is content that belongs to the task itself, unlike a
+  // field's own note or a day's journal entry — log every save of one (see checklistLogs.ts's own
+  // header for why a logging failure can't break this write).
+  if (row.owner_type === 'field_group' && row.checklist_template_id) {
+    await recordChecklistLog(db, userId, {
+      checklistTemplateId: row.checklist_template_id as string,
+      action: 'update',
+      detail: 'note_updated',
+      metadata: { fieldGroupId: row.owner_id, noteId: row.id },
+    });
   }
 }
 
