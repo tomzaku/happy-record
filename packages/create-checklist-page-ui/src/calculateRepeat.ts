@@ -1,4 +1,5 @@
 import { Day } from '@dreamer/tasks-page-common';
+import { getClientTimezone } from '@dreamer/global';
 
 export const calculateRepeat = ({
   weeklyHobbies,
@@ -7,6 +8,9 @@ export const calculateRepeat = ({
 }: {
   weeklyHobbies: Day[];
   selectedTime?: string;
+  // Always a full ISO instant when provided — every caller converts its own raw input (a bare
+  // `yyyy-MM-dd` off a date input) via `localDateStringToISO` before it ever reaches here (see
+  // createTaskUtil.ts's `effectiveStartedAt`, EditChecklistForm.tsx's onSubmit).
   startedAt?: string;
 }) => {
   if (!weeklyHobbies || weeklyHobbies.length === 0) return undefined;
@@ -16,10 +20,8 @@ export const calculateRepeat = ({
     ? selectedTime.split(':')
     : ['8', '0'];
 
-  // Use provided startedAt or fallback to current date
-  const startedAtISO = startedAt 
-    ? new Date(startedAt).toISOString()
-    : new Date().toISOString();
+  const startedAtISO = startedAt ?? new Date().toISOString();
+  const timezone = getClientTimezone();
 
   if (weeklyHobbies.length === 7)
     return {
@@ -29,6 +31,7 @@ export const calculateRepeat = ({
       hour,
       dayOfMonth: '*',
       month: '*',
+      timezone,
     };
   return {
     startedAt: startedAtISO,
@@ -36,6 +39,7 @@ export const calculateRepeat = ({
     hour,
     dayOfMonth: '*',
     month: '*',
+    timezone,
     dayOfWeek: weeklyHobbies
       .map(day => {
         switch (day) {

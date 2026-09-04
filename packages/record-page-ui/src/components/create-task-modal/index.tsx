@@ -7,6 +7,7 @@ import { createTask } from '@pregnant/create-checklist-page-ui/src/createTaskUti
 import AiChecklistGenerate from '@dreamer/detail-task-page/src/components/AiChecklistGenerate';
 import Button from '@moon-ui/button';
 import { motion } from 'framer-motion';
+import { startOfDay } from 'date-fns';
 import styles from './index.module.scss';
 
 interface CreateTaskModalProps {
@@ -107,7 +108,7 @@ const CreateTaskModal = ({
                     selectedRecords: [],
                     checklistText: '',
                     weeklyHobbies: [], // Start with no schedule (forever by default)
-                    startedAt: new Date().toISOString().split('T')[0],
+                    startedAt: startOfDay(new Date()).toISOString(),
                     selectedTime: '',
                     selectedIcon: 'material-symbols:checklist',
                     selectedColor: '#607d8b',

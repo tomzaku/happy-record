@@ -6,7 +6,7 @@ import MultiSelectButton from '@moon-ui/button/src/MultiSelectButton';
 import { useIntl } from '@dreamer/translation';
 import { a, useSpring } from '@react-spring/web';
 import { Day } from '@dreamer/tasks-page-common';
-import { FieldGroup, getActiveFieldGroups, mergeEditedFieldGroups } from '@dreamer/global';
+import { FieldGroup, getActiveFieldGroups, mergeEditedFieldGroups, localDateStringToISO } from '@dreamer/global';
 import GroupScheduleList from './GroupScheduleList';
 import styles from './index.module.scss';
 
@@ -180,7 +180,10 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
             rightComponent={
               <DatePicker
                 value={tempDate}
-                onChange={e => setTempDate(e.target.value)}
+                // The native input's own onChange always hands back a bare `yyyy-MM-dd` —
+                // convert to a real ISO instant right here so `tempDate` (and everything it
+                // flows into) only ever holds one shape. See localDateStringToISO's own comment.
+                onChange={e => setTempDate(localDateStringToISO(e.target.value))}
                 className={styles.dateInput}
               />
             }

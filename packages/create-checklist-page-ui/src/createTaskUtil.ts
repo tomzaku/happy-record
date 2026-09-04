@@ -1,4 +1,4 @@
-import { useChecklist, useChecklistTemplates } from '@dreamer/global';
+import { useChecklist, useChecklistTemplates, getClientTimezone } from '@dreamer/global';
 import { calculateRepeat } from './calculateRepeat';
 import { FormState } from './CoreChecklistForm';
 
@@ -29,6 +29,12 @@ export const createTask = async (
   // startedAt on the *repeat* branch below, never on the one-off `addChecklist` branch further
   // down. Defaulting here, once, guarantees every write below always sends an explicit date
   // rather than leaning on a nested default that doesn't cover both branches.
+  //
+  // `startedAt` itself always arrives as a full ISO instant already — every producer of
+  // `FormState.startedAt` (CreateChecklistForm/create-task-modal's "today" default,
+  // AddInlineTask's own selected-date default, SchedulingGroup's DatePicker onChange) converts a
+  // bare `yyyy-MM-dd` to ISO the moment it's picked (see @dreamer/global's
+  // `localDateStringToISO`), so there's nothing left to convert here.
   const effectiveStartedAt = startedAt || new Date().toISOString();
 
   // "No weekly hobbies selected" is still what makes this a forever task (a one-off Checklist row
@@ -44,7 +50,15 @@ export const createTask = async (
   // `undefined` used to — so this still never counts as a recurring schedule.
   const repeat = isRecurring
     ? calculateRepeat({ weeklyHobbies, selectedTime, startedAt: effectiveStartedAt })
-    : { startedAt: effectiveStartedAt, hour: '', minute: '', dayOfMonth: '', month: '', dayOfWeek: '' };
+    : {
+        startedAt: effectiveStartedAt,
+        hour: '',
+        minute: '',
+        dayOfMonth: '',
+        month: '',
+        dayOfWeek: '',
+        timezone: getClientTimezone(),
+      };
 
   const { id, saved } = addChecklistTemplate({
     title: checklistText,

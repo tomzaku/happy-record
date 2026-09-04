@@ -9,6 +9,8 @@ import {
   getActiveFieldGroups,
   getArchivedFieldGroups,
   mergeEditedFieldGroups,
+  localDateStringToISO,
+  getClientTimezone,
 } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
@@ -21,6 +23,7 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import { motion } from 'motion/react';
 import { useIntl } from '@dreamer/translation';
 import { Day } from '@dreamer/tasks-page-common';
+import { startOfDay } from 'date-fns';
 
 // Import existing components for editing
 import IconPicker from '@pregnant/create-checklist-page-ui/src/IconPicker';
@@ -111,20 +114,14 @@ const ChecklistGenericInfo = ({
     checklistTemplate.avatar?.color || '#607d8b',
   );
   const [tempStartDay, setTempStartDay] = React.useState(
-    checklistTemplate.repeat?.startedAt
-      ? new Date(checklistTemplate.repeat.startedAt).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0],
+    checklistTemplate.repeat?.startedAt || startOfDay(new Date()).toISOString(),
   );
   const [tempTime, setTempTime] = React.useState(
     checklistTemplate.repeat?.hour && checklistTemplate.repeat?.minute
       ? `${checklistTemplate.repeat.hour.padStart(2, '0')}:${checklistTemplate.repeat.minute.padStart(2, '0')}`
       : '',
   );
-  const [tempEndDay, setTempEndDay] = React.useState(
-    checklistTemplate.repeat?.endedAt
-      ? new Date(checklistTemplate.repeat.endedAt).toISOString().split('T')[0]
-      : '',
-  );
+  const [tempEndDay, setTempEndDay] = React.useState(checklistTemplate.repeat?.endedAt || '');
   const [tempWeeklyHobbies, setTempWeeklyHobbies] = React.useState<Day[]>(
     getDaysFromRepeat(checklistTemplate.repeat),
   );
@@ -220,7 +217,8 @@ const ChecklistGenericInfo = ({
       ...checklistTemplate,
       repeat: {
         ...(checklistTemplate.repeat ?? DEFAULT_REPEAT_BASE),
-        startedAt: new Date(tempStartDay).toISOString(),
+        startedAt: tempStartDay,
+        timezone: getClientTimezone(),
       },
     });
     setActiveModal(EditModal.None);
@@ -231,7 +229,8 @@ const ChecklistGenericInfo = ({
       ...checklistTemplate,
       repeat: {
         ...(checklistTemplate.repeat ?? { ...DEFAULT_REPEAT_BASE, startedAt: new Date().toISOString() }),
-        endedAt: tempEndDay ? new Date(tempEndDay).toISOString() : undefined,
+        endedAt: tempEndDay || undefined,
+        timezone: getClientTimezone(),
       },
     });
     setActiveModal(EditModal.None);
@@ -247,7 +246,8 @@ const ChecklistGenericInfo = ({
       ...checklistTemplate,
       repeat: {
         ...repeat,
-        startedAt: new Date(tempStartDay).toISOString(),
+        startedAt: tempStartDay,
+        timezone: getClientTimezone(),
       },
     });
     // GroupScheduleList edits each group's own `repeat` instead of the day picker above — its
@@ -293,7 +293,8 @@ const ChecklistGenericInfo = ({
     });
     onUpdateMyReminder?.({
       ...repeat,
-      startedAt: new Date(tempStartDay).toISOString(),
+      startedAt: tempStartDay,
+      timezone: getClientTimezone(),
     });
     setActiveModal(EditModal.None);
   };
@@ -333,23 +334,13 @@ const ChecklistGenericInfo = ({
   const resetModalStates = () => {
     setTempIcon(checklistTemplate.avatar?.name || '');
     setTempColor(checklistTemplate.avatar?.color || '#607d8b');
-    setTempStartDay(
-      checklistTemplate.repeat?.startedAt
-        ? new Date(checklistTemplate.repeat.startedAt)
-            .toISOString()
-            .split('T')[0]
-        : new Date().toISOString().split('T')[0],
-    );
+    setTempStartDay(checklistTemplate.repeat?.startedAt || startOfDay(new Date()).toISOString());
     setTempTime(
       checklistTemplate.repeat?.hour && checklistTemplate.repeat?.minute
         ? `${checklistTemplate.repeat.hour.padStart(2, '0')}:${checklistTemplate.repeat.minute.padStart(2, '0')}`
         : '',
     );
-    setTempEndDay(
-      checklistTemplate.repeat?.endedAt
-        ? new Date(checklistTemplate.repeat.endedAt).toISOString().split('T')[0]
-        : '',
-    );
+    setTempEndDay(checklistTemplate.repeat?.endedAt || '');
     setTempWeeklyHobbies(getDaysFromRepeat(checklistTemplate.repeat));
     setTempTags(checklistTemplate.tags || []);
     setTempFieldGroups(checklistTemplate.fieldGroups);
@@ -698,7 +689,11 @@ const ChecklistGenericInfo = ({
             defaultMessage: 'The first day this task is active',
           })}
           rightComponent={
-            <DatePicker value={tempStartDay} onChange={e => setTempStartDay(e.target.value)} className={styles.dateInput} />
+            <DatePicker
+              value={tempStartDay}
+              onChange={e => setTempStartDay(localDateStringToISO(e.target.value))}
+              className={styles.dateInput}
+            />
           }
         />
       </Dialog>
@@ -736,7 +731,11 @@ const ChecklistGenericInfo = ({
             defaultMessage: 'Stops generating after this day',
           })}
           rightComponent={
-            <DatePicker value={tempEndDay} onChange={e => setTempEndDay(e.target.value)} className={styles.dateInput} />
+            <DatePicker
+              value={tempEndDay}
+              onChange={e => setTempEndDay(e.target.value ? localDateStringToISO(e.target.value) : '')}
+              className={styles.dateInput}
+            />
           }
         />
         {tempEndDay && (

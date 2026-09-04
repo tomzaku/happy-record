@@ -75,6 +75,15 @@ Deno.test('fromRepeat: keeps the client\'s own started_at on a checklist_templat
   assertEquals(row.started_at, '2026-01-01T00:00:00.000Z');
 });
 
+Deno.test('fromRepeat/toRepeat: timezone round-trips through the row', () => {
+  const row = fromRepeat(
+    { hour: '08', minute: '00', dayOfWeek: '*', startedAt: '2026-01-01T00:00:00.000Z', timezone: 'Asia/Ho_Chi_Minh' },
+    { userId: 'owner', checklistTemplateId: 'ct1' },
+  );
+  assertEquals(row.timezone, 'Asia/Ho_Chi_Minh');
+  assertEquals(toRepeat(row)?.timezone, 'Asia/Ho_Chi_Minh');
+});
+
 Deno.test('fromRepeat: never defaults started_at on a field_group row — not a concept there', () => {
   const row = fromRepeat(
     { hour: '08', minute: '00', dayOfWeek: '*' },

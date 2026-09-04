@@ -7,6 +7,7 @@ import { calculateRepeat } from './calculateRepeat';
 import { getDaysFromRepeat } from './getDayFromRepeat';
 import { BackHeader } from '@dreamer/header';
 import { useIntl } from '@dreamer/translation';
+import { startOfDay } from 'date-fns';
 import styles from './index.module.scss';
 
 const EditChecklistForm = () => {
@@ -33,6 +34,9 @@ const EditChecklistForm = () => {
     fieldGroups,
     tags,
   }: FormState) => {
+    // `startedAt` is already a full ISO instant — CoreChecklistForm's own DatePicker onChange
+    // converts a picked bare `yyyy-MM-dd` the moment it's picked (see
+    // @dreamer/global's `localDateStringToISO`), so there's nothing to convert here.
     const repeat = calculateRepeat({ weeklyHobbies, selectedTime, startedAt });
     updateChecklistTemplate({
       id: template.id,
@@ -122,9 +126,7 @@ const EditChecklistForm = () => {
           selectedRecords: template.records,
           checklistText: template.title,
           weeklyHobbies: getDaysFromRepeat(template.repeat),
-          startedAt: template?.repeat?.startedAt
-            ? new Date(template.repeat.startedAt).toISOString().split('T')[0]
-            : new Date().toISOString().split('T')[0],
+          startedAt: template?.repeat?.startedAt || startOfDay(new Date()).toISOString(),
           selectedTime:
             template?.repeat?.hour && template?.repeat?.minute
               ? `${template.repeat.hour.padStart(2, '0')}:${template.repeat.minute.padStart(2, '0')}`

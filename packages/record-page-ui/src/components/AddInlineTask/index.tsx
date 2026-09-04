@@ -4,6 +4,7 @@ import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
 import { createTask } from '@pregnant/create-checklist-page-ui/src/createTaskUtil';
 import { FormState } from '@pregnant/create-checklist-page-ui/src/CoreChecklistForm';
+import { startOfDay } from 'date-fns';
 import cx from 'classnames';
 import styles from './index.module.scss';
 
@@ -82,7 +83,10 @@ const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(
       selectedRecords: [],
       checklistText: title,
       weeklyHobbies: [], // No schedule = forever task
-      startedAt: (date ?? new Date()).toISOString().split('T')[0],
+      // `startOfDay` truncates in *local* time, not `.toISOString().split('T')[0]`'s UTC — that
+      // silently rolls back to the previous day for anyone east of UTC (a local midnight like
+      // 2026-08-20T00:00 in UTC+7 is 2026-08-19T17:00Z, so the UTC date is still the 19th).
+      startedAt: startOfDay(date ?? new Date()).toISOString(),
       selectedTime: '',
       selectedIcon: 'material-symbols:checklist',
       selectedColor: '#607d8b',

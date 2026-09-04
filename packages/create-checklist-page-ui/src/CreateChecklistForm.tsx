@@ -7,6 +7,7 @@ import React from 'react';
 import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
 import { motion } from 'framer-motion';
+import { startOfDay } from 'date-fns';
 import styles from './index.module.scss';
 
 const CreateCheclistForm = () => {
@@ -82,7 +83,7 @@ const CreateCheclistForm = () => {
                   selectedRecords: [],
                   checklistText: '',
                   weeklyHobbies: [], // Start with no schedule (forever by default)
-                  startedAt: new Date().toISOString().split('T')[0],
+                  startedAt: startOfDay(new Date()).toISOString(),
                   selectedTime: '',
                   selectedIcon: 'material-symbols:checklist',
                   selectedColor: '#607d8b',

@@ -50,6 +50,7 @@ export function toRepeat(row: Row | undefined): Record<string, unknown> | undefi
     startedAt: row!.started_at as string,
     ...(row!.completed_at ? { completedAt: row!.completed_at as string } : {}),
     ...(row!.ended_at ? { endedAt: row!.ended_at as string } : {}),
+    ...(row!.timezone ? { timezone: row!.timezone as string } : {}),
   };
 }
 
@@ -84,6 +85,7 @@ export function fromRepeat(repeat: unknown, owner: Owner): Row {
     started_at: startedAt,
     completed_at: str(e.completedAt),
     ended_at: str(e.endedAt),
+    timezone: str(e.timezone),
     updated_at: new Date().toISOString(),
   };
 }

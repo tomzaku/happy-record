@@ -138,6 +138,15 @@ export type ChecklistTemplate = {
     month: string;
     dayOfWeek: string;
     startedAt: string;
+    /**
+     * The IANA zone (`Intl.DateTimeFormat().resolvedOptions().timeZone`, e.g.
+     * `"Asia/Ho_Chi_Minh"`) of whichever device most recently wrote this schedule — stamped on
+     * every write (see @dreamer/global's `getClientTimezone`, calculateRepeat.ts,
+     * createTaskUtil.ts, ChecklistGenericInfo's handleSave* family) so `startedAt`/`endedAt`
+     * stay interpretable as the calendar days the writer actually picked. Optional only because
+     * a schedule written before this field existed has none.
+     */
+    timezone?: string;
     completedAt?: string;
     /**
      * The last day this schedule generates a `Checklist` instance on — symmetric with
