@@ -19,6 +19,15 @@ interface ScheduleModalContentProps {
   setTempTime: (time: string) => void;
   isDesktop?: boolean;
   /**
+   * Suppresses the "Start Date Section" below — ChecklistGenericInfo's own Schedule/My Reminder
+   * dialogs pass this, since that page now edits start date as its own top-level General
+   * Settings row instead of bundling it into the Schedule form (see that component's own
+   * handleSaveStartDate). The "create a new task" flow (create-checklist-page-ui's own usage)
+   * still wants it here — picking days/time and a start date together makes sense while first
+   * setting a template up.
+   */
+  hideStartDate?: boolean;
+  /**
    * When the template has active (non-archived — see FieldGroup's own `archivedAt`) field
    * groups, the day picker (and the template-level Time section) are replaced by
    * GroupScheduleList — one editable row per group, each with its own days and time, rather than
@@ -48,6 +57,7 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
   isDesktop = false,
   fieldGroups,
   onFieldGroupsChange,
+  hideStartDate = false,
 }) => {
   const intl = useIntl();
   const activeFieldGroups = fieldGroups ? getActiveFieldGroups(fieldGroups) : undefined;
@@ -154,27 +164,29 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
       </div>
 
       {/* Start Date Section */}
-      <div className={styles.sectionContainer}>
-        <List.ItemMeta
-          logo={<Icon width={24} icon="solar:calendar-date-line-duotone" />}
-          noPaddingHorizontal
-          title={intl.formatMessage({
-            defaultMessage: 'Start Day',
-            id: 'label-start-day.label',
-          })}
-          description={intl.formatMessage({
-            defaultMessage: 'Select the first day',
-            id: 'label-start-day.description',
-          })}
-          rightComponent={
-            <DatePicker
-              value={tempDate}
-              onChange={e => setTempDate(e.target.value)}
-              className={styles.dateInput}
-            />
-          }
-        />
-      </div>
+      {!hideStartDate && (
+        <div className={styles.sectionContainer}>
+          <List.ItemMeta
+            logo={<Icon width={24} icon="solar:calendar-date-line-duotone" />}
+            noPaddingHorizontal
+            title={intl.formatMessage({
+              defaultMessage: 'Start Day',
+              id: 'label-start-day.label',
+            })}
+            description={intl.formatMessage({
+              defaultMessage: 'Select the first day',
+              id: 'label-start-day.description',
+            })}
+            rightComponent={
+              <DatePicker
+                value={tempDate}
+                onChange={e => setTempDate(e.target.value)}
+                className={styles.dateInput}
+              />
+            }
+          />
+        </div>
+      )}
 
       {/* Time Selector Section */}
       {!hasFieldGroups && (

@@ -1,0 +1,11 @@
+{
+  "name": "@happy-record/dashboard-page-ui",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.tsx",
+  "dependencies": {
+    "@dreamer/header": "^1.0.0",
+    "@dreamer/global": "^1.0.0",
+    "@dreamer/translation": "^1.0.0"
+  }
+}

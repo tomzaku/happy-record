@@ -3,8 +3,8 @@
 // to pin down whether a participant's own field-group schedule override actually surfaces on a
 // fresh read, since that's exactly what was reported broken.
 
-import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { fetchRepeats, pickRepeat, toRepeat } from './repeats.ts';
+import { assertEquals, assertNotEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import { fetchRepeats, fromRepeat, pickRepeat, toRepeat } from './repeats.ts';
 import { fakeSupabase } from './testSupport/fakeSupabase.ts';
 
 Deno.test('pickRepeat: the viewer\'s own row wins over the owner\'s', () => {
@@ -56,6 +56,31 @@ Deno.test('toRepeat: populated once any field is set, even with the rest null', 
     dayOfWeek: '1,0',
     startedAt: null,
   });
+});
+
+Deno.test('fromRepeat: defaults started_at to now on a checklist_template row when the client omits it', () => {
+  const row = fromRepeat(
+    { hour: '08', minute: '00', dayOfWeek: '*' },
+    { userId: 'owner', checklistTemplateId: 'ct1' },
+  );
+  assertEquals(typeof row.started_at, 'string');
+  assertNotEquals(row.started_at, null);
+});
+
+Deno.test('fromRepeat: keeps the client\'s own started_at on a checklist_template row when it sends one', () => {
+  const row = fromRepeat(
+    { hour: '08', minute: '00', dayOfWeek: '*', startedAt: '2026-01-01T00:00:00.000Z' },
+    { userId: 'owner', checklistTemplateId: 'ct1' },
+  );
+  assertEquals(row.started_at, '2026-01-01T00:00:00.000Z');
+});
+
+Deno.test('fromRepeat: never defaults started_at on a field_group row — not a concept there', () => {
+  const row = fromRepeat(
+    { hour: '08', minute: '00', dayOfWeek: '*' },
+    { userId: 'owner', fieldGroupId: 'fg1' },
+  );
+  assertEquals(row.started_at, null);
 });
 
 Deno.test('fetchRepeats: the caller\'s own row is always visible, even on a non-public owner', async () => {

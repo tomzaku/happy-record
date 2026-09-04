@@ -4,6 +4,7 @@ import { Motion, spring } from 'react-motion';
 import ChecklistToday from './components/checklist-today';
 import WeeklyCalendar from './components/weekly-calendar';
 import RecentHistory from './components/RecentHistory';
+import WeeklyProgressCard from './components/WeeklyProgressCard';
 import ViewSwitcher, { ViewMode } from './components/view-switcher';
 import switcherStyles from './components/view-switcher/index.module.scss';
 import WeekView from './components/week-view';
@@ -54,6 +55,7 @@ const TaskListPage = () => {
       <AppHeader />
 
       <div className={styles.body}>
+        <WeeklyProgressCard />
         <div className={styles.viewSwitcherContainer}>
           <ViewSwitcher value={viewMode} onChange={setViewMode} />
         </div>

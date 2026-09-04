@@ -23,10 +23,28 @@ export const createTask = async (
     tags,
   } = formData;
 
-  // If no weekly hobbies are selected, it's a forever task (no repeat schedule)
-  const repeat = weeklyHobbies && weeklyHobbies.length > 0
-    ? calculateRepeat({ weeklyHobbies, selectedTime, startedAt })
-    : undefined;
+  // CreateChecklistForm's own initialValues already defaults this to today, but a cleared date
+  // input (DatePicker's own onChange can hand back '') would otherwise reach here as an empty
+  // string — Checklist.startedAt isn't optional, and calculateRepeat only defaults its own
+  // startedAt on the *repeat* branch below, never on the one-off `addChecklist` branch further
+  // down. Defaulting here, once, guarantees every write below always sends an explicit date
+  // rather than leaning on a nested default that doesn't cover both branches.
+  const effectiveStartedAt = startedAt || new Date().toISOString();
+
+  // "No weekly hobbies selected" is still what makes this a forever task (a one-off Checklist row
+  // below, not a recurring template) — that decision stays on `weeklyHobbies.length`, not on
+  // whether `repeat` itself is set.
+  const isRecurring = !!weeklyHobbies && weeklyHobbies.length > 0;
+
+  // Every new template gets a `repeats` row from the moment it's created now, even a forever one
+  // — otherwise `checklist-templates` never saw a `startedAt` at all for that shape, only the
+  // one-off `checklists` row below did (see ChecklistGenericInfo's own Start Date row, which
+  // reads this same field). `dayOfWeek: ''` here reads as "not scheduled" everywhere that already
+  // checks it (getEffectiveDayOfWeek/getChecklistTemplateIdsByGivingDate), same as `repeat` being
+  // `undefined` used to — so this still never counts as a recurring schedule.
+  const repeat = isRecurring
+    ? calculateRepeat({ weeklyHobbies, selectedTime, startedAt: effectiveStartedAt })
+    : { startedAt: effectiveStartedAt, hour: '', minute: '', dayOfMonth: '', month: '', dayOfWeek: '' };
 
   const { id, saved } = addChecklistTemplate({
     title: checklistText,
@@ -41,17 +59,17 @@ export const createTask = async (
     tags,
   });
 
-  // If not repeat we need to create a checklist onetime. `checklists.checklist_template_id` is a
+  // Forever task → also create a one-off Checklist row. `checklists.checklist_template_id` is a
   // real FK into `checklist_templates` — firing this immediately (id in hand, but the template's
   // own POST above still in flight) races that insert and can 500 with a foreign-key violation
   // if this one lands first. `saved` is exactly the guard useJoinChallenge.tsx's own comment
   // describes for this same race.
-  if (!repeat) {
+  if (!isRecurring) {
     await saved;
     addChecklist({
       title: checklistText,
       checklistTemplateId: id,
-      startedAt,
+      startedAt: effectiveStartedAt,
       endedAt: new Date('2099-12-31T23:59:59.999Z').toISOString(), // Far future date for forever tasks
     });
   }

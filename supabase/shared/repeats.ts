@@ -49,12 +49,27 @@ export function toRepeat(row: Row | undefined): Record<string, unknown> | undefi
     dayOfWeek: row!.day_of_week as string,
     startedAt: row!.started_at as string,
     ...(row!.completed_at ? { completedAt: row!.completed_at as string } : {}),
+    ...(row!.ended_at ? { endedAt: row!.ended_at as string } : {}),
   };
 }
 
-function fromRepeat(repeat: unknown, owner: Owner): Row {
+// Exported for direct unit testing (see repeats.test.ts) — pure and I/O-free, same reasoning
+// toRepeat is already exported for.
+export function fromRepeat(repeat: unknown, owner: Owner): Row {
   const e = (repeat && typeof repeat === 'object' ? repeat : {}) as Record<string, unknown>;
   const str = (v: unknown) => (typeof v === 'string' ? v : null);
+
+  // A checklist_template's own row always gets a `started_at` — the client is expected to send
+  // one (see createTaskUtil.ts, ChecklistGenericInfo's own handleSaveStartDate), but every write
+  // here is a full overwrite of the row (see this function's own doc comment above `saveRepeat`),
+  // so a caller that ever omits it would otherwise null out an existing date, not just leave a
+  // fresh one unset. Defaulting to "now" server-side is the actual guarantee that can't be
+  // bypassed by a client bug. Never applies to a field_group's own row — `started_at` isn't a
+  // concept there at all (see the migration's own "Template-only fields... left null for a
+  // group's row"), so defaulting it would write a value nothing ever reads.
+  const startedAt = owner.checklistTemplateId
+    ? (str(e.startedAt) ?? new Date().toISOString())
+    : str(e.startedAt);
 
   return {
     id: rowId(owner),
@@ -66,8 +81,9 @@ function fromRepeat(repeat: unknown, owner: Owner): Row {
     day_of_month: str(e.dayOfMonth),
     month: str(e.month),
     day_of_week: str(e.dayOfWeek),
-    started_at: str(e.startedAt),
+    started_at: startedAt,
     completed_at: str(e.completedAt),
+    ended_at: str(e.endedAt),
     updated_at: new Date().toISOString(),
   };
 }

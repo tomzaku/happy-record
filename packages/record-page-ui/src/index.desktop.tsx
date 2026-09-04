@@ -4,6 +4,7 @@ import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 import ChecklistTodayDesktop from './components/checklist-today/ChecklistToday.desktop';
 import MiniMonthCalendar from './components/mini-month-calendar';
 import RecentHistory from './components/RecentHistory';
+import WeeklyProgressCard from './components/WeeklyProgressCard';
 import ViewSwitcher, { ViewMode } from './components/view-switcher';
 import switcherStyles from './components/view-switcher/index.module.scss';
 import WeekView from './components/week-view';
@@ -108,6 +109,7 @@ const TaskListPage = () => {
             for "today" — see useChecklists.tsx's `ensureChecklistsFetched`. */}
         {viewMode === 'day' && (
           <div className={styles.rightCalendar}>
+            <WeeklyProgressCard />
             <div className={styles.rightPanelHeader}>
               <Typography.Text className={styles.rightPanelLabel}>
                 {intl.formatMessage({ id: 'right-panel-switcher.title', defaultMessage: 'History' })}

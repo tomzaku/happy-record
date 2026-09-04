@@ -352,6 +352,13 @@ const DetailTaskPageDesktop = () => {
               )}
             </div>
           </div>
+
+          <div className={styles.shortcutsHint}>
+            <span className={styles.shortcutItem}>
+              <kbd className={styles.kbd}>h</kbd>
+              {intl.formatMessage({ id: 'DetailTaskPage.shortcuts-back', defaultMessage: 'Back' })}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -396,13 +403,6 @@ const DetailTaskPageDesktop = () => {
       {/*   onDismiss={() => setIsFocusZoneOpen(false)} */}
       {/*   onOpenModal={() => setIsFocusZoneOpen(true)} */}
       {/* /> */}
-
-      <div className={styles.shortcutsHint}>
-        <span className={styles.shortcutItem}>
-          <kbd className={styles.kbd}>h</kbd>
-          {intl.formatMessage({ id: 'DetailTaskPage.shortcuts-back', defaultMessage: 'Back' })}
-        </span>
-      </div>
     </div>
   );
 };

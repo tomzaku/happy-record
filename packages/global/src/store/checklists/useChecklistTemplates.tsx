@@ -1,6 +1,6 @@
 import { v4 } from 'uuid';
 import React from 'react';
-import { startOfDay } from 'date-fns';
+import { endOfDay, startOfDay } from 'date-fns';
 import { useLocalStorage } from '../../hook/useLocalStorage';
 import { useSessionStore } from '../../hook/useSessionStore';
 import { useSession } from '../../hook/useSession';
@@ -139,6 +139,12 @@ export type ChecklistTemplate = {
     dayOfWeek: string;
     startedAt: string;
     completedAt?: string;
+    /**
+     * The last day this schedule generates a `Checklist` instance on — symmetric with
+     * `startedAt` (see getChecklistTemplateIdsByGivingDate's own gate below). Absent means "no
+     * end date," the default for every template, matching how this behaved before this existed.
+     */
+    endedAt?: string;
     /**
      * Set only when this schedule is a challenge participant's own row, distinct from the
      * template owner's default (see 20260830000000_repeats_table.sql / _shared/repeats.ts's
@@ -482,6 +488,13 @@ export const useChecklistTemplates = () => {
         // ever actually scheduled to appear on.
         const startedAt = currentChecklistTemplate?.repeat?.startedAt;
         if (startedAt && date < startOfDay(new Date(startedAt))) {
+          return false;
+        }
+
+        // Symmetric with startedAt above — a schedule with an end date stops generating
+        // instances after it, same "gate the day, not the recurrence rule itself" shape.
+        const endedAt = currentChecklistTemplate?.repeat?.endedAt;
+        if (endedAt && date > endOfDay(new Date(endedAt))) {
           return false;
         }
 

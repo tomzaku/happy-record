@@ -22,6 +22,13 @@
   transition: color 0.2s ease;
 }
 
+// Start/End Date dialogs' own DatePicker — same sizing SchedulingGroup's own `.dateInput` uses
+// for the equivalent control, just declared here too since this is a separate scss module.
+.dateInput {
+  padding: $spacing-xs $spacing-md;
+  font-size: 16px;
+}
+
 // Every dialog below shares Dialog's own shell (badge, gradient header, Modal-vs-
 // BottomModal split — see packages/moon-ui/modal/src/Dialog). What's
 // still here is only what this file's own JSX passes *into* that shell.

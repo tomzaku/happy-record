@@ -144,9 +144,19 @@
           ]
         }
       },
+      "packages/dashboard-page-ui": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@dreamer/global@1",
+            "npm:@dreamer/header@1",
+            "npm:@dreamer/translation@1"
+          ]
+        }
+      },
       "packages/detail-task-page": {
         "packageJson": {
           "dependencies": [
+            "npm:@moon-ui/dropdown@1",
             "npm:@moon-ui/note-editor@1",
             "npm:@moon-ui/skeleton@1",
             "npm:framer-motion@^12.12.1",
@@ -445,6 +455,7 @@
             "npm:@happy-record/challenge-dashboard-page-ui@1",
             "npm:@happy-record/challenge-list-page-ui@1",
             "npm:@happy-record/checklist-template-shared-page-ui@1",
+            "npm:@happy-record/dashboard-page-ui@1",
             "npm:@happy-record/note-manager-page-ui@1",
             "npm:@happy-record/tasks-shared-page-ui@1",
             "npm:@moon-ui/note-editor@1",

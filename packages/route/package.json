@@ -26,6 +26,7 @@
     "@happy-record/checklist-template-shared-page-ui": "^1.0.0",
     "@happy-record/challenge-dashboard-page-ui": "^1.0.0",
     "@happy-record/challenge-list-page-ui": "^1.0.0",
+    "@happy-record/dashboard-page-ui": "^1.0.0",
     "@happy-record/add-note-page-ui": "^1.0.0",
     "@moon-ui/note-editor": "^1.0.0",
     "motion": "12.12.2",

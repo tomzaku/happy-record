@@ -12,6 +12,8 @@ import {
 } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
+import List from '@moon-ui/list';
+import DatePicker from '@moon-ui/date-picker';
 import { SettingsCard, SettingsRow } from '../SettingsCard';
 import Dialog from '@moon-ui/modal/src/Dialog';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
@@ -69,7 +71,17 @@ enum EditModal {
   Tags,
   Archived,
   MyReminder,
+  StartDate,
+  EndDate,
 }
+
+// Fallback shape for `repeat` when a Start/End Date edit is the very first schedule-shaped write
+// this template ever gets — a hasFieldGroups template can genuinely have no top-level `repeat` at
+// all (see formatDisplayStartDate's own comment) but `startedAt`/`endedAt` still need *some* base
+// object to sit on, since `repeat`'s other fields aren't optional. Every other field here already
+// reads as "unset" (`dayOfWeek: '*'` — every day — is exactly what getEffectiveDayOfWeek falls
+// back to on its own, and this template already isn't gated by it if it has field groups).
+const DEFAULT_REPEAT_BASE = { hour: '8', minute: '0', dayOfMonth: '*', month: '*', dayOfWeek: '*' };
 
 const ChecklistGenericInfo = ({
   checklistTemplate,
@@ -106,6 +118,11 @@ const ChecklistGenericInfo = ({
   const [tempTime, setTempTime] = React.useState(
     checklistTemplate.repeat?.hour && checklistTemplate.repeat?.minute
       ? `${checklistTemplate.repeat.hour.padStart(2, '0')}:${checklistTemplate.repeat.minute.padStart(2, '0')}`
+      : '',
+  );
+  const [tempEndDay, setTempEndDay] = React.useState(
+    checklistTemplate.repeat?.endedAt
+      ? new Date(checklistTemplate.repeat.endedAt).toISOString().split('T')[0]
       : '',
   );
   const [tempWeeklyHobbies, setTempWeeklyHobbies] = React.useState<Day[]>(
@@ -167,6 +184,13 @@ const ChecklistGenericInfo = ({
     return hasFieldGroups ? '' : 'Not set';
   };
 
+  const formatDisplayEndDate = () => {
+    if (checklistTemplate.repeat?.endedAt) {
+      return new Date(checklistTemplate.repeat.endedAt).toLocaleDateString();
+    }
+    return 'No end date';
+  };
+
   const formatDisplayTags = () => {
     if (!checklistTemplate.tags || checklistTemplate.tags.length === 0) {
       return 'No tags';
@@ -181,6 +205,33 @@ const ChecklistGenericInfo = ({
         ...checklistTemplate.avatar,
         name: tempIcon,
         color: tempColor,
+      },
+    });
+    setActiveModal(EditModal.None);
+  };
+
+  // Start/End Date are their own top-level rows now (see the enum's own comment), each staged
+  // independently and writing only the one field into `repeat` — everything else on it (hour/
+  // minute/dayOfWeek/...) carries through unchanged from whatever's already there, same as
+  // handleSaveSchedule leaves startedAt untouched now that ScheduleModalContent no longer shows
+  // it (see the `hideStartDate` prop passed to both dialogs below).
+  const handleSaveStartDate = () => {
+    onUpdate({
+      ...checklistTemplate,
+      repeat: {
+        ...(checklistTemplate.repeat ?? DEFAULT_REPEAT_BASE),
+        startedAt: new Date(tempStartDay).toISOString(),
+      },
+    });
+    setActiveModal(EditModal.None);
+  };
+
+  const handleSaveEndDate = () => {
+    onUpdate({
+      ...checklistTemplate,
+      repeat: {
+        ...(checklistTemplate.repeat ?? { ...DEFAULT_REPEAT_BASE, startedAt: new Date().toISOString() }),
+        endedAt: tempEndDay ? new Date(tempEndDay).toISOString() : undefined,
       },
     });
     setActiveModal(EditModal.None);
@@ -294,6 +345,11 @@ const ChecklistGenericInfo = ({
         ? `${checklistTemplate.repeat.hour.padStart(2, '0')}:${checklistTemplate.repeat.minute.padStart(2, '0')}`
         : '',
     );
+    setTempEndDay(
+      checklistTemplate.repeat?.endedAt
+        ? new Date(checklistTemplate.repeat.endedAt).toISOString().split('T')[0]
+        : '',
+    );
     setTempWeeklyHobbies(getDaysFromRepeat(checklistTemplate.repeat));
     setTempTags(checklistTemplate.tags || []);
     setTempFieldGroups(checklistTemplate.fieldGroups);
@@ -351,29 +407,33 @@ const ChecklistGenericInfo = ({
           style={{ overflow: 'hidden' }}
         >
           <div className={styles.content}>
-            {/* Icon & Color */}
+            {/* Start Date — its own row now, not bundled into Schedule below (see
+                handleSaveStartDate's own comment and the `hideStartDate` prop passed to both
+                ScheduleModalContent dialogs further down). */}
             <SettingsRow
-              logo={<Icon width={24} icon="tdesign:icon" />}
-              title="Icon & Color"
-              description="Customize appearance"
+              logo={<Icon width={24} icon="solar:calendar-mark-line-duotone" />}
+              title={intl.formatMessage({
+                id: 'checklist-generic-info.start-date-title',
+                defaultMessage: 'Start Date',
+              })}
+              description={intl.formatMessage({
+                id: 'checklist-generic-info.start-date-description',
+                defaultMessage: 'The first day this task is active',
+              })}
               rightComponent={
                 <div className={styles.displayRow}>
-                  <Icon
-                    width={24}
-                    icon={
-                      checklistTemplate.avatar?.name ||
-                      'solar:question-circle-linear'
-                    }
-                    color={checklistTemplate.avatar?.color || '#607d8b'}
-                  />
+                  {formatDisplayStartDate() && (
+                    <Typography.Text>{formatDisplayStartDate()}</Typography.Text>
+                  )}
                   {!readOnly && (
                     <Icon
                       width={16}
                       icon="solar:pen-2-line-duotone"
                       className={styles.editIcon}
-                      onClick={() => {
+                      onClick={e => {
+                        e.stopPropagation();
                         resetModalStates();
-                        setActiveModal(EditModal.Icon);
+                        setActiveModal(EditModal.StartDate);
                       }}
                     />
                   )}
@@ -384,7 +444,45 @@ const ChecklistGenericInfo = ({
                   ? undefined
                   : () => {
                       resetModalStates();
-                      setActiveModal(EditModal.Icon);
+                      setActiveModal(EditModal.StartDate);
+                    }
+              }
+            />
+
+            {/* End Date */}
+            <SettingsRow
+              logo={<Icon width={24} icon="solar:calendar-mark-line-duotone" />}
+              title={intl.formatMessage({
+                id: 'checklist-generic-info.end-date-title',
+                defaultMessage: 'End Date',
+              })}
+              description={intl.formatMessage({
+                id: 'checklist-generic-info.end-date-description',
+                defaultMessage: 'Stops generating after this day',
+              })}
+              rightComponent={
+                <div className={styles.displayRow}>
+                  <Typography.Text>{formatDisplayEndDate()}</Typography.Text>
+                  {!readOnly && (
+                    <Icon
+                      width={16}
+                      icon="solar:pen-2-line-duotone"
+                      className={styles.editIcon}
+                      onClick={e => {
+                        e.stopPropagation();
+                        resetModalStates();
+                        setActiveModal(EditModal.EndDate);
+                      }}
+                    />
+                  )}
+                </div>
+              }
+              onClick={
+                readOnly
+                  ? undefined
+                  : () => {
+                      resetModalStates();
+                      setActiveModal(EditModal.EndDate);
                     }
               }
             />
@@ -425,9 +523,6 @@ const ChecklistGenericInfo = ({
               }
               rightComponent={
                 <div className={styles.displayRow}>
-                  {formatDisplayStartDate() && (
-                    <Typography.Text>{formatDisplayStartDate()}</Typography.Text>
-                  )}
                   {!readOnly && (
                     <Icon
                       width={16}
@@ -469,6 +564,44 @@ const ChecklistGenericInfo = ({
                         setActiveModal(EditModal.MyReminder);
                       }
                     : undefined
+              }
+            />
+
+            {/* Icon & Color */}
+            <SettingsRow
+              logo={<Icon width={24} icon="tdesign:icon" />}
+              title="Icon & Color"
+              description="Customize appearance"
+              rightComponent={
+                <div className={styles.displayRow}>
+                  <Icon
+                    width={24}
+                    icon={
+                      checklistTemplate.avatar?.name ||
+                      'solar:question-circle-linear'
+                    }
+                    color={checklistTemplate.avatar?.color || '#607d8b'}
+                  />
+                  {!readOnly && (
+                    <Icon
+                      width={16}
+                      icon="solar:pen-2-line-duotone"
+                      className={styles.editIcon}
+                      onClick={() => {
+                        resetModalStates();
+                        setActiveModal(EditModal.Icon);
+                      }}
+                    />
+                  )}
+                </div>
+              }
+              onClick={
+                readOnly
+                  ? undefined
+                  : () => {
+                      resetModalStates();
+                      setActiveModal(EditModal.Icon);
+                    }
               }
             />
 
@@ -529,6 +662,94 @@ const ChecklistGenericInfo = ({
           </div>
         </motion.div>
       </SettingsCard>
+
+      {/* Start Date Edit Modal */}
+      <Dialog
+        visible={activeModal === EditModal.StartDate}
+        onDismiss={handleModalClose}
+        icon="solar:calendar-mark-line-duotone"
+        // Same staged-until-Save shape as every other row here — tempStartDay only commits on
+        // this Save (handleSaveStartDate).
+        closeOnOverlayClick={false}
+        title={intl.formatMessage({
+          id: 'checklist-generic-info.edit-start-date-title',
+          defaultMessage: 'Edit Start Date',
+        })}
+        headerAction={
+          <div className={styles.headerActionsRow}>
+            <Button type="ghost" size="sm" onClick={handleModalClose}>
+              {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
+            </Button>
+            <Button onClick={handleSaveStartDate} className={styles.headerSaveButton}>
+              {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+            </Button>
+          </div>
+        }
+      >
+        <List.ItemMeta
+          logo={<Icon width={24} icon="solar:calendar-mark-line-duotone" />}
+          noPaddingHorizontal
+          title={intl.formatMessage({
+            id: 'checklist-generic-info.start-date-title',
+            defaultMessage: 'Start Date',
+          })}
+          description={intl.formatMessage({
+            id: 'checklist-generic-info.start-date-description',
+            defaultMessage: 'The first day this task is active',
+          })}
+          rightComponent={
+            <DatePicker value={tempStartDay} onChange={e => setTempStartDay(e.target.value)} className={styles.dateInput} />
+          }
+        />
+      </Dialog>
+
+      {/* End Date Edit Modal */}
+      <Dialog
+        visible={activeModal === EditModal.EndDate}
+        onDismiss={handleModalClose}
+        icon="solar:calendar-mark-line-duotone"
+        closeOnOverlayClick={false}
+        title={intl.formatMessage({
+          id: 'checklist-generic-info.edit-end-date-title',
+          defaultMessage: 'Edit End Date',
+        })}
+        headerAction={
+          <div className={styles.headerActionsRow}>
+            <Button type="ghost" size="sm" onClick={handleModalClose}>
+              {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
+            </Button>
+            <Button onClick={handleSaveEndDate} className={styles.headerSaveButton}>
+              {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+            </Button>
+          </div>
+        }
+      >
+        <List.ItemMeta
+          logo={<Icon width={24} icon="solar:calendar-mark-line-duotone" />}
+          noPaddingHorizontal
+          title={intl.formatMessage({
+            id: 'checklist-generic-info.end-date-title',
+            defaultMessage: 'End Date',
+          })}
+          description={intl.formatMessage({
+            id: 'checklist-generic-info.end-date-description',
+            defaultMessage: 'Stops generating after this day',
+          })}
+          rightComponent={
+            <DatePicker value={tempEndDay} onChange={e => setTempEndDay(e.target.value)} className={styles.dateInput} />
+          }
+        />
+        {tempEndDay && (
+          <div className={styles.resetReminderRow}>
+            <Button type="ghost" size="sm" onClick={() => setTempEndDay('')}>
+              {intl.formatMessage({
+                id: 'checklist-generic-info.clear-end-date',
+                defaultMessage: 'Clear end date',
+              })}
+            </Button>
+          </div>
+        )}
+      </Dialog>
 
       {/* Icon & Color Edit Modal */}
       <Dialog
@@ -598,6 +819,7 @@ const ChecklistGenericInfo = ({
           setTempTime={setTempTime}
           fieldGroups={tempFieldGroups}
           onFieldGroupsChange={setTempFieldGroups}
+          hideStartDate
         />
       </Dialog>
 
@@ -646,6 +868,7 @@ const ChecklistGenericInfo = ({
             setTempDate={setTempStartDay}
             tempTime={tempTime}
             setTempTime={setTempTime}
+            hideStartDate
           />
         )}
         {(hasFieldGroups || checklistTemplate.repeat?.isPersonal) && (

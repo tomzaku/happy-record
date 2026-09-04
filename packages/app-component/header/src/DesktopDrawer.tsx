@@ -42,6 +42,14 @@ const DesktopDrawer = () => {
       path: '/challenges',
       action: () => navigate('/challenges')
     },
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: 'solar:chart-square-line-duotone',
+      description: 'How much you finish each week',
+      path: '/dashboard',
+      action: () => navigate('/dashboard')
+    },
     // Settings is reachable via the account row in the drawer footer (AccountStatus
     // navigates there once signed in), so no separate settings nav item here.
   ];
