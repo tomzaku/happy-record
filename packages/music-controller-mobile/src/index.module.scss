@@ -15,10 +15,36 @@
   z-index: 99999;
 }
 
+// `flex: 1` over a hardcoded height — both the mobile Drawer's own `.container` and
+// focus-zone-modal-ui's desktop right-side drawer are already flex columns with the header
+// taking its own natural height, so this just claims whatever's left rather than assuming a
+// fixed header height that only ever matched MobileHeader's own.
 .content {
   padding: 12px 0;
-  height: calc(100vh - 60px);
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+}
+
+.muteAllButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: calc(100% - 32px);
+  margin: 0 16px 16px;
+  padding: 10px;
+  border: 1px solid var(--division-color);
+  border-radius: 10px;
+  background: var(--surface-secondary);
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--card-selected-background);
+  }
 }
 
 .categorySection {

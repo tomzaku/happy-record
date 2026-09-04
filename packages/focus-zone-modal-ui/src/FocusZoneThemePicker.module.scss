@@ -1,0 +1,85 @@
+.row {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.card {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 88px;
+  max-width: 160px;
+  height: 68px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  padding: 0;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+// `Default` has no photo to preview — real moon/sun halves, each using that mode's own actual
+// background gradient (see focus-zone-variables.scss's `[data-theme]` blocks) rather than a flat
+// two-color cut, so the preview reads as "the real thing," not an arbitrary swatch.
+.defaultPreview {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  z-index: 0;
+}
+
+.defaultHalf {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.defaultHalfDark {
+  background: linear-gradient(160deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+  color: #fff;
+}
+
+.defaultHalfLight {
+  background: linear-gradient(160deg, #f8f9fa 0%, #e9ecef 60%, #dee2e6 100%);
+  color: #334d6e;
+}
+
+.defaultIcon {
+  width: 16px;
+  height: 16px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+.cardActive {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3), 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.label {
+  width: 100%;
+  padding: 5px 4px 7px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+}
+
+.checkIcon {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: #fff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+}

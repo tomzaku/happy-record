@@ -61,6 +61,20 @@
   border-radius: 0;
 }
 
+// Only rendered when a photo theme is active (index.tsx) — a real element, first child of
+// `.modalContainer`, rather than folding this into `::before` above (which already carries the
+// default theme's own two radial-gradient accents and stays untouched either way). `z-index: 0`
+// plus DOM order is enough for every other child here to paint above it: `.timerSection` already
+// sets `z-index: 1`, and `.backHeader` has no z-index of its own, so the normal "later in the DOM
+// wins a stacking tie" rule already puts it above this.
+.themeScrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 0;
+  pointer-events: none;
+}
+
 .container {
   min-height: 100vh;
   box-sizing: border-box;
@@ -435,12 +449,18 @@
   transition: color 0.3s ease;
 }
 
+// `.timerSection`'s own width is `.modalContainer`'s full 100vw (this modal is a full-screen
+// takeover, not a narrow centered card — see that class's own comment) — `width: 100%` here
+// used to mean "100% of the whole screen," stretching each `flex: 1` button to an enormous width
+// on a wide desktop monitor. Capped so the row reads as a normal button pair regardless of how
+// wide the modal itself is; `.timerSection`'s own `align-items: center` already centers it.
 .timerControls {
   display: flex;
   gap: 16px;
   margin-bottom: 0;
   margin-top: auto;
   width: 100%;
+  max-width: 420px;
 }
 
 .controlButton {
@@ -843,21 +863,37 @@
   backdrop-filter: blur(10px);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
 
-  /* Close button styling */
-  .closeButton {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    padding: 4px;
-    transition: all 0.2s ease;
+// One shared look for every header action (music, mute, dark/light, close) — they used to each
+// hand-roll their own inline styles, landing at different sizes/spacing/hover treatments (a bare
+// icon, an icon-plus-text with no background, ...). Same pill this file already had for the close
+// button alone, just generalized to the whole row so they read as one consistent toolbar.
+.headerIconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 
-    &:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.3);
-      transform: scale(1.1);
-    }
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
   }
+}
+
+// The icon-only ones (music, dark/light, close) — same pill, just square instead of a
+// text-widened capsule, so a single glyph sits centered rather than off to one side.
+.headerIconButtonSquare {
+  width: 36px;
+  padding: 0;
 }
 
 .fabContainer {

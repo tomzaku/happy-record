@@ -1,0 +1,8 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+// `@moon-ui/button`'s own `.ghost`/`.default` don't match each other's vertical padding out of
+// the box — same fix NewFolderModal's own footer already needed for the same button pairing.
+.secondaryButton,
+.primaryButton {
+  padding: $spacing-sm $spacing-lg;
+}

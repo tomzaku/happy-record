@@ -14,6 +14,29 @@
     href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap"
     rel="stylesheet" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    #app-initial-loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      z-index: 9999;
+    }
+
+    #app-initial-loader svg {
+      width: 40px;
+      height: 40px;
+      animation: app-initial-loader-spin 0.8s linear infinite;
+    }
+
+    @keyframes app-initial-loader-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
   <script>
     // Single Page Apps for GitHub Pages / Static Hosting
     // MIT License - https://github.com/rafgraph/spa-github-pages
@@ -38,7 +61,15 @@
 </head>
 
 <body>
-  <div id="app"></div>
+  <div id="app">
+    <div id="app-initial-loader">
+      <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="25" cy="25" r="20" fill="none" stroke="#e5eef5" stroke-width="5" />
+        <circle cx="25" cy="25" r="20" fill="none" stroke="#0b7dc2" stroke-width="5" stroke-linecap="round"
+          stroke-dasharray="90 125" />
+      </svg>
+    </div>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

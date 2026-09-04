@@ -85,7 +85,7 @@ export const createBasedAudio = <T extends string>(
           // Volume fade out for main sound in last 2 seconds
           if (timeLeft <= FADE_DURATION) {
             const fadeProgress = timeLeft / FADE_DURATION;
-            const targetVolume = originalVolumes[typeSound] || 1;
+            const targetVolume = originalVolumes[typeSound] ?? 1;
             sound.volume = targetVolume * fadeProgress;
             
             // Simultaneously fade in crossfade sound
@@ -97,7 +97,7 @@ export const createBasedAudio = <T extends string>(
           if (sound.currentTime >= sound.duration - GAP_SOUND_SECOND) {
             // Reset main sound to beginning
             sound.currentTime = 0;
-            sound.volume = originalVolumes[typeSound] || 1;
+            sound.volume = originalVolumes[typeSound] ?? 1;
             
             // Stop crossfade sound and reset
             crossfadeSound.pause();
@@ -231,7 +231,7 @@ export const createGoogleDriveAudio = <T extends string>(
           // Volume fade out for main sound in last 2 seconds
           if (timeLeft <= FADE_DURATION) {
             const fadeProgress = timeLeft / FADE_DURATION;
-            const targetVolume = originalVolumes[typeSound] || 1;
+            const targetVolume = originalVolumes[typeSound] ?? 1;
             sound.volume = targetVolume * fadeProgress;
             
             // Simultaneously fade in crossfade sound
@@ -243,7 +243,7 @@ export const createGoogleDriveAudio = <T extends string>(
           if (sound.currentTime >= sound.duration - GAP_SOUND_SECOND) {
             // Reset main sound to beginning
             sound.currentTime = 0;
-            sound.volume = originalVolumes[typeSound] || 1;
+            sound.volume = originalVolumes[typeSound] ?? 1;
             
             // Stop crossfade sound and reset
             crossfadeSound.pause();
@@ -378,7 +378,7 @@ export const createRemoteAudio = <T extends string>(
           // Volume fade out for main sound in last 2 seconds
           if (timeLeft <= FADE_DURATION) {
             const fadeProgress = timeLeft / FADE_DURATION;
-            const targetVolume = originalVolumes[typeSound] || 1;
+            const targetVolume = originalVolumes[typeSound] ?? 1;
             sound.volume = targetVolume * fadeProgress;
             
             // Simultaneously fade in crossfade sound
@@ -390,7 +390,7 @@ export const createRemoteAudio = <T extends string>(
           if (sound.currentTime >= sound.duration - GAP_SOUND_SECOND) {
             // Reset main sound to beginning
             sound.currentTime = 0.5;
-            sound.volume = originalVolumes[typeSound] || 1;
+            sound.volume = originalVolumes[typeSound] ?? 1;
             
             // Stop crossfade sound and reset
             crossfadeSound.pause();

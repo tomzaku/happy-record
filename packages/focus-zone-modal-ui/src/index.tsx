@@ -7,13 +7,18 @@ import { Icon } from '@moon-ui/icon/Icon';
 import Typography, { Title, Text } from '@moon-ui/typography';
 
 import MusicControllerMobile from '@dreamer/music-controller-mobile';
+import MusicDrawerDesktop from './MusicDrawerDesktop';
 import NotificationPermissionModal from './NotificationPermissionModal';
 import FocusZoneFAB from './FocusZoneFab';
+import FocusZoneThemePicker from './FocusZoneThemePicker';
+import { getFocusZoneTheme } from './focusZoneThemes';
+import { useFocusZoneTheme } from './useFocusZoneTheme';
+import { stopAllSounds } from '@dreamer/music-controller-common';
 
 // Hooks and utilities
-import { usePomodoroGlobalConfig, Theme, usePomodoroTitle } from '@dreamer/pomodoro-common';
+import { usePomodoroGlobalConfig, usePomodoroTitle } from '@dreamer/pomodoro-common';
 import { notify } from '@dreamer/notification';
-import { useChecklistTemplates } from '@dreamer/global';
+import { useChecklistTemplates, useIsMobile } from '@dreamer/global';
 
 // Styles
 import styles from './index.module.scss';
@@ -55,7 +60,7 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
   onOpenModal,
   hideFab
 }) => {
-  const { theme, setTheme, pomodoro, shortBreak, longBreak } = usePomodoroGlobalConfig();
+  const { pomodoro, shortBreak, longBreak } = usePomodoroGlobalConfig();
   const { getChecklistTemplate } = useChecklistTemplates();
 
   // Create POMODORO_PHASES dynamically using global config
@@ -81,8 +86,22 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
   const [pomodoroTime, setPomodoroTime] = useState(POMODORO_PHASES[0].duration);
   const [isPomodoroRunning, setIsPomodoroRunning] = useState(false);
 
-  // Music modal state
+  // Music modal state — a right-side drawer on desktop, the existing bottom sheet on mobile
+  // (see MusicDrawerDesktop's own comment on why that's a separate component rather than a prop
+  // on MusicControllerMobile).
   const [isMusicModalVisible, setIsMusicModalVisible] = useState(false);
+  const isMobile = useIsMobile();
+
+  // Focus Zone's own background/ambient-sound theme, and its own dark/light mode for the
+  // `default` preset — both local to this modal, never the app-wide theme (see
+  // useFocusZoneTheme's own comment on why that used to leak into the rest of the app).
+  const { focusZoneTheme, setFocusZoneTheme, isDarkMode, toggleDarkMode } = useFocusZoneTheme();
+  const activeFocusZoneTheme = getFocusZoneTheme(focusZoneTheme);
+  // A photo preset (Coffee Shop, Forest, ...) always renders dark — its own scrim + every color
+  // choice in it assumes the dark `--focus-zone-*` values, and light mode was never designed
+  // against a photo backdrop. Only `default` (no photo) actually has a light mode to offer.
+  const isPhotoTheme = !!activeFocusZoneTheme.backgroundImage;
+  const effectiveIsDarkMode = isPhotoTheme || isDarkMode;
 
   // Notification permission modal state
   const [showNotificationPermissionModal, setShowNotificationPermissionModal] =
@@ -201,10 +220,6 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
     setPomodoroTime(POMODORO_PHASES[0].duration);
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === Theme.Light ? Theme.Dark : Theme.Light);
-  };
-
   // Check and request notification permission
   const checkNotificationPermission = async () => {
     if (!('Notification' in window)) {
@@ -286,47 +301,93 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
           {/* Modal Content */}
           <div
             className={cx(styles.modalContainer, {
-              [styles.lightTheme]: theme === Theme.Light,
+              [styles.lightTheme]: !effectiveIsDarkMode,
             })}
+            // Overrides `--focus-zone-*` for this element (and everything inside it) with Focus
+            // Zone's own local dark/light choice — independent of whatever `data-theme` the app's
+            // real root carries. See useFocusZoneTheme's own comment.
+            data-theme={effectiveIsDarkMode ? 'dark' : 'light'}
+            style={
+              activeFocusZoneTheme.backgroundImage
+                ? {
+                    backgroundImage: `url(${activeFocusZoneTheme.backgroundImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }
+                : undefined
+            }
           >
+            {/* A photo theme needs a dark scrim for the existing white text/controls to stay
+                readable over it — 'default' has none, so this stays out of its way entirely. */}
+            {activeFocusZoneTheme.backgroundImage && <div className={styles.themeScrim} />}
             <div
               className={styles.backHeader}
             >
               <div className={styles.backHeaderContent}>
                 <Typography.Title level={3} noMargin>Focus Zone</Typography.Title>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                 <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                     <Icon
-                       onClick={() => {
-                         console.log('Music icon clicked, setting modal visible');
-                         setIsMusicModalVisible(true);
-                         console.log('Modal state after set:', true);
-                       }}
-                       width={24}
-                       icon="material-symbols:music-note"
-                       style={{ cursor: 'pointer' }}
-                     />
-                   </motion.div>
-                  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                    <Icon
-                      onClick={toggleTheme}
-                      width={24}
-                      icon={
-                        theme === Theme.Light
-                          ? 'material-symbols:dark-mode'
-                          : 'material-symbols:light-mode'
-                      }
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </motion.div>
-                  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                    <Icon
-                      onClick={onDismiss}
-                      width={24}
-                      icon="material-symbols:close"
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </motion.div>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <motion.button
+                    type="button"
+                    className={cx(styles.headerIconButton, styles.headerIconButtonSquare)}
+                    onClick={() => setIsMusicModalVisible(true)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Music"
+                    aria-label="Music"
+                  >
+                    <Icon width={20} icon="material-symbols:music-note" />
+                  </motion.button>
+                  {/* Quick mute — stops every currently-playing sound without opening the music
+                      picker (which also has its own "Mute all" row for the same action). Labeled,
+                      unlike its icon-only siblings here, since a bare speaker-off glyph read as
+                      ambiguous next to the music-note icon right beside it — same pill as every
+                      other header action now, just wider to fit the text. */}
+                  <motion.button
+                    type="button"
+                    className={styles.headerIconButton}
+                    onClick={stopAllSounds}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Icon width={20} icon="material-symbols:volume-off-rounded" />
+                    <Typography.Text style={{ fontSize: '13px', fontWeight: 600 }}>
+                      Mute
+                    </Typography.Text>
+                  </motion.button>
+                  {/* Only `default` actually has a light mode to offer — a photo preset always
+                      renders dark (see isPhotoTheme above), so there's nothing for this to
+                      toggle while one's active. */}
+                  {!isPhotoTheme && (
+                    <motion.button
+                      type="button"
+                      className={cx(styles.headerIconButton, styles.headerIconButtonSquare)}
+                      onClick={toggleDarkMode}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      title={!isDarkMode ? 'Switch to dark' : 'Switch to light'}
+                      aria-label={!isDarkMode ? 'Switch to dark' : 'Switch to light'}
+                    >
+                      <Icon
+                        width={20}
+                        icon={
+                          !isDarkMode
+                            ? 'material-symbols:dark-mode'
+                            : 'material-symbols:light-mode'
+                        }
+                      />
+                    </motion.button>
+                  )}
+                  <motion.button
+                    type="button"
+                    className={cx(styles.headerIconButton, styles.headerIconButtonSquare)}
+                    onClick={onDismiss}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Close"
+                    aria-label="Close"
+                  >
+                    <Icon width={20} icon="material-symbols:close" />
+                  </motion.button>
                 </div>
               </div>
             </div>
@@ -593,14 +654,25 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
                 </motion.button>
               </div>
             </motion.div>
+
+            {/* Focus Zone theme picker — background photo + ambient sounds, on top of (not
+                replacing) the dark/light toggle above. See focusZoneThemes.ts. */}
+            <FocusZoneThemePicker value={focusZoneTheme} onChange={setFocusZoneTheme} />
           </div>
         </>
       )}
 
-      <MusicControllerMobile
-        visible={isMusicModalVisible}
-        onClickBackButton={() => setIsMusicModalVisible(false)}
-      />
+      {isMobile ? (
+        <MusicControllerMobile
+          visible={isMusicModalVisible}
+          onClickBackButton={() => setIsMusicModalVisible(false)}
+        />
+      ) : (
+        <MusicDrawerDesktop
+          visible={isMusicModalVisible}
+          onDismiss={() => setIsMusicModalVisible(false)}
+        />
+      )}
 
       {/* Notification Permission Modal - Rendered outside Focus Zone Modal */}
       <NotificationPermissionModal
