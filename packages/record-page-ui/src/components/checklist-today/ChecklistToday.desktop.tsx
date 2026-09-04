@@ -91,6 +91,28 @@ const ChecklistTodayDesktop = ({
   const lunar = React.useMemo(() => getLunarDate(date), [date]);
   const lunarPhrase = getLunarPhraseId(lunar.day);
 
+  // Depends only on `date`/`lunar` — never on the templates/checklists fetch — so it renders
+  // the same on every branch below (loading, empty, and the full list) instead of waiting on
+  // the network like the rest of the page does.
+  const header = (
+    <div className={styles.header}>
+      <Typography.Title level={2} className={styles.dateTitle} noMargin>
+        {isToday(date)
+          ? intl.formatMessage({ id: 'ChecklistToday.today', defaultMessage: 'Today' })
+          : format(date, 'EEEE')}
+      </Typography.Title>
+      <Typography.Text className={styles.dateSubtitle}>
+        {intl.formatMessage(
+          {
+            id: 'ChecklistToday.date-subtitle',
+            defaultMessage: '{{solarDate}} · Lunar day {{day}}, mo {{month}}',
+          },
+          { solarDate: format(date, 'MMMM d'), day: lunar.day, month: lunar.month },
+        )}
+      </Typography.Text>
+    </div>
+  );
+
   // Grouped by completion, not schedule time — a field group's own `repeat`
   // does carry an `hour`/`minute` (see fieldGroupRepeat.ts), but nothing in
   // this app gates on it today (`isFieldGroupActiveOnDay` only ever reads
@@ -245,21 +267,24 @@ const ChecklistTodayDesktop = ({
   // the former flashes a wrong, momentary answer on every fresh page load.
   if ((templatesLoading || checklistsLoading) && checklistByGivingDateIds.length === 0) {
     return (
-      <div className={styles.emptyContainer}>
-        <div className={styles.emptyBody}>
-          <Icon
-            width={40}
-            icon="svg-spinners:180-ring"
-            className={styles.iconEmpty}
-          />
-          <Typography.Text className={styles.emptyDescription}>
-            {intl.formatMessage({
-              id: 'ChecklistToday.loading',
-              defaultMessage: 'Fetching your tasks…',
-            })}
-          </Typography.Text>
+      <>
+        {header}
+        <div className={styles.emptyContainer}>
+          <div className={styles.emptyBody}>
+            <Icon
+              width={40}
+              icon="svg-spinners:180-ring"
+              className={styles.iconEmpty}
+            />
+            <Typography.Text className={styles.emptyDescription}>
+              {intl.formatMessage({
+                id: 'ChecklistToday.loading',
+                defaultMessage: 'Fetching your tasks…',
+              })}
+            </Typography.Text>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -270,6 +295,7 @@ const ChecklistTodayDesktop = ({
   if (checklistByGivingDateIds.length === 0 && pendingTasks.length === 0) {
     return (
 <>
+      {header}
       <div className={styles.emptyContainer}>
         <div className={styles.emptyBody}>
           <EmptyChecklistIllustration />
@@ -433,22 +459,7 @@ const ChecklistTodayDesktop = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <Typography.Title level={2} className={styles.dateTitle} noMargin>
-          {isToday(date)
-            ? intl.formatMessage({ id: 'ChecklistToday.today', defaultMessage: 'Today' })
-            : format(date, 'EEEE')}
-        </Typography.Title>
-        <Typography.Text className={styles.dateSubtitle}>
-          {intl.formatMessage(
-            {
-              id: 'ChecklistToday.date-subtitle',
-              defaultMessage: '{{solarDate}} · Lunar day {{day}}, mo {{month}}',
-            },
-            { solarDate: format(date, 'MMMM d'), day: lunar.day, month: lunar.month },
-          )}
-        </Typography.Text>
-      </div>
+      {header}
 
       <div className={styles.summaryRow}>
         <Typography.Text className={styles.summaryText}>
