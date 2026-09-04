@@ -436,6 +436,9 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                 >
+                  {/* Full-screen animated glow — a separate layer from the ring below it, sized
+                      and positioned independently (see this class's own comment). */}
+                  <div className={styles.pomodoroBackgroundGlow} />
                   <div className={styles.circularProgressContainer}>
                     <motion.div
                       className={styles.progressWrapper}
