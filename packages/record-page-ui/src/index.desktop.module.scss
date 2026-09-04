@@ -1,4 +1,5 @@
 @use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/almanac-scope' as *;
 @use 'include-media/dist/include-media' as media;
 
 .container {
@@ -9,6 +10,11 @@
   height: 100vh;
   display: flex;
   position: relative;
+  // Fills the gap around `.almanacScope`'s own rounded top-left corner
+  // (and anywhere else this flex row shows through) — --almanac-bg is a
+  // real theme token (see light.scss/dark.scss), not scoped to
+  // `.almanacScope`, so it's available here too.
+  background: var(--almanac-bg);
 }
 
 .desktopBody {
@@ -19,6 +25,17 @@
   overflow: hidden;
   position: relative;
   margin-left: 20px;
+}
+
+// See @moon-ui/app-scss/almanac-scope's own comment for why this is a
+// variable-shadowing mixin rather than direct edits to ChecklistToday/
+// ViewSwitcher/WeekView/MonthView/YearView/RecentHistory/Card/Checkbox/
+// Button/Input — several of those are also reused by detail-task-page.
+.almanacScope {
+  @include almanac-scope;
+
+  padding: $spacing-lg $spacing-lg 0;
+  border-radius: 20px 0 0 0;
 }
 
 .centerContent {
@@ -51,21 +68,106 @@
   display: flex;
   flex-direction: column;
   gap: $spacing-sm;
-
-  .rightPanelSwitcher {
-    align-self: flex-end;
-  }
+  padding-top: $spacing-lg;
 
   // Fills whatever's left below the switcher — Calendar and History share
   // this one card, only the content inside switches (see index.desktop.tsx).
   .calendarCard {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow: auto;
     display: flex;
     flex-direction: column;
-    border-radius: 0;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px var(--almanac-shadow);
   }
+}
+
+.rightPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rightPanelLabel {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--almanac-muted);
+}
+
+.calendarPanel {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.thisDaySection {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding-top: $spacing-sm;
+  border-top: 1px solid var(--almanac-divider);
+}
+
+.thisDayLabel {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--almanac-muted);
+}
+
+.thisDayChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  border: 1.5px solid var(--almanac-card-border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--almanac-ink-soft);
+  background: var(--almanac-surface);
+}
+
+.chipDone {
+  color: var(--almanac-muted);
+  text-decoration: line-through;
+}
+
+.chipMore {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--almanac-muted);
+}
+
+.recentHistorySection {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding-top: $spacing-sm;
+  border-top: 1px solid var(--almanac-divider);
+}
+
+.recentHistoryLabel {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--almanac-muted);
 }
 
 .row {

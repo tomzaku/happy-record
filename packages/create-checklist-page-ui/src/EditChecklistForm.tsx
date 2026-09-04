@@ -7,6 +7,7 @@ import { calculateRepeat } from './calculateRepeat';
 import { getDaysFromRepeat } from './getDayFromRepeat';
 import { BackHeader } from '@dreamer/header';
 import { useIntl } from '@dreamer/translation';
+import styles from './index.module.scss';
 
 const EditChecklistForm = () => {
   const { checklistTemplate, deleteChecklistTemplate } =
@@ -87,7 +88,7 @@ const EditChecklistForm = () => {
   if (!template) return null;
 
   return (
-    <>
+    <div className={styles.rootContainer}>
       <BackHeader
         renderLeftComponent={() => <span>Edit Task</span>}
         onClickLeftButton={() => navigate('/')}
@@ -134,7 +135,7 @@ const EditChecklistForm = () => {
           tags: template.tags || [],
         }}
       />
-    </>
+    </div>
   );
 };
 

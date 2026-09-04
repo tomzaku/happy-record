@@ -224,7 +224,14 @@ const ChallengeDashboardPageUi = () => {
       chart: {
         type: 'bar' as const,
         toolbar: { show: false },
-        ...(isDark ? { background: '#162033' } : {}),
+        // ApexCharts paints an opaque white plot background by default when
+        // this is left unset — only ever overridden here for dark mode
+        // (and even then with the old pre-redesign navy card color), so
+        // light mode always showed a white chart regardless of the app's
+        // own theme. `transparent` lets the surrounding Card's own
+        // `var(--card-background)` show through in both themes instead,
+        // so it tracks whatever that token actually is.
+        background: 'transparent',
       },
       theme: { mode: isDark ? ('dark' as const) : ('light' as const) },
       plotOptions: { bar: { borderRadius: 4, borderRadiusApplication: 'end' as const, columnWidth: '55%' } },
@@ -281,7 +288,14 @@ const ChallengeDashboardPageUi = () => {
       chart: {
         type: 'bar' as const,
         toolbar: { show: false },
-        ...(isDark ? { background: '#162033' } : {}),
+        // ApexCharts paints an opaque white plot background by default when
+        // this is left unset — only ever overridden here for dark mode
+        // (and even then with the old pre-redesign navy card color), so
+        // light mode always showed a white chart regardless of the app's
+        // own theme. `transparent` lets the surrounding Card's own
+        // `var(--card-background)` show through in both themes instead,
+        // so it tracks whatever that token actually is.
+        background: 'transparent',
       },
       theme: { mode: isDark ? ('dark' as const) : ('light' as const) },
       plotOptions: { bar: { horizontal: true, borderRadius: 4, borderRadiusApplication: 'end' as const, barHeight: '55%' } },

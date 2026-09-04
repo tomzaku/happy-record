@@ -60,7 +60,7 @@
   flex-shrink: 0;
 
   &:hover {
-    background: var(--button-ghost-hover-background);
+    background: var(--surface-secondary);
   }
 }
 
@@ -82,24 +82,25 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--background-color);
+  // Was a fake, never-defined `--background-color` immediately overridden
+  // by a hardcoded `#fff` right below it — always white regardless of
+  // theme, dark mode included, since the `var()` never resolved anyway.
+  background: var(--card-background);
   border: 1px solid var(--button-ghost-border);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--card-shadow, rgba(0, 0, 0, 0.1));
   z-index: 9999;
   max-height: 200px;
   overflow-y: auto;
   margin-top: 4px;
   width: 100%;
-  background: #fff;
-  border: 1px solid var(--button-ghost-border);
 }
 
 .selectorItem {
   padding: 8px 12px;
   cursor: pointer;
   border-bottom: 1px solid var(--button-ghost-border);
-  background: #fff;
+  background: var(--card-background);
   transition: background-color 0.2s ease;
 
   &:hover {

@@ -47,12 +47,28 @@
   gap: $spacing-sm;
 }
 
+// Overrides switcherStyles.option's text-button padding (sized for a
+// "List"/"Calendar" label) into a plain square icon button, now that this
+// toggle is icon-only. switcherStyles.option's own `.active` still supplies
+// the pill background/shadow (it targets the button itself, not just its
+// old `.label` child). The icon's own active-state color is set via a
+// `color` prop in index.tsx instead of a class rule here — @moon-ui/icon's
+// base class sets `color` directly on the icon element, which a class on
+// this button can't override through inheritance (only an inline style,
+// i.e. the `color` prop, wins over that).
+.iconOption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
 // Same divider every field-group card uses (ChecklistFieldGroup's own `.hr`/
 // `.hrContainer` override of the shared Hr component) instead of a plain
 // CSS border — one visual language for every card on this page.
 .hrContainer {
+  margin-top: $spacing-sm !important;
   margin-bottom: $spacing-sm !important;
-  margin-top: 0px !important;
 }
 
 .hr {
@@ -64,8 +80,12 @@
 }
 
 // Bare mode (no `title`) — already inside another collapsible card (a field
-// group's own History tab), so this just needs the toolbar row + Hr, no
-// Card/padding/collapse of its own.
+// group's own History tab), so this just needs the toolbar row + body, no
+// Card/padding/collapse of its own. No divider here (unlike the titled/Card
+// variant above) — the shared Hr component's own default margin only lines
+// up against a plain Card's flat 12px padding, which this isn't (it sits
+// inside a field group's own tab content), and it isn't worth much here
+// anyway with the toolbar's own spacing already separating it from the body.
 .bare {
   padding-top: $spacing-sm;
 }
@@ -74,6 +94,11 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  margin-bottom: $spacing-sm;
+  // Keeps the switcher off the group card's own right edge — this toolbar
+  // is flex-end, so with nothing else in the row to push against, it sits
+  // flush against it otherwise.
+  margin-right: $spacing-sm;
 }
 
 // The grid/heatmap views need a fixed height to lay out against (see

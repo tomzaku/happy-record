@@ -8,190 +8,186 @@
 
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+  align-items: baseline;
+  gap: $spacing-sm;
   padding: 0 4px;
 }
 
 .dateTitle {
   margin: 0;
   color: var(--text-title-primary-color);
-  font-size: 20px;
+  font-family: var(--almanac-font-serif);
+  font-size: 34px;
   font-weight: 600;
 }
 
-.taskCount {
+.dateSubtitle {
+  color: var(--text-description-color);
+  font-size: 16px;
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-lg;
+  padding: 6px 4px 20px;
+  flex-wrap: wrap;
+}
+
+.summaryText {
   color: var(--text-description-color);
   font-size: 14px;
-  font-weight: 500;
-  background: var(--surface-secondary);
-  padding: 6px 12px;
-  border-radius: 16px;
 }
 
-.tasksList {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.completedGroup {
-  margin-bottom: 24px;
-}
-
-.groupLabel {
+.progressBlock {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
-  margin-bottom: 12px;
-  padding: 0 4px;
 }
 
-.groupLabelText {
-  margin: 0;
+.progressLabel {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-description-color);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
-.groupLabelLine {
-  flex: 1;
-  height: 1px;
-  background: var(--division-color);
+.progressTrack {
+  width: 140px;
+  height: 6px;
+  border-radius: 100px;
+  background: var(--almanac-divider);
+  overflow: hidden;
 }
 
-.taskCard {
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-  padding: 12px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  box-shadow: none;
-  &:hover {
-    border-color: var(--card-border-hover);
-    box-shadow: 0 4px 12px var(--card-shadow);
-    transform: translateY(-2px);
-  }
-  
-  &.completedTask {
-    opacity: 0.6;
+.progressFill {
+  height: 100%;
+  border-radius: 100px;
+  background: var(--almanac-accent);
+  transition: width 0.3s ease;
+}
 
-    .taskTitle {
+.sectionCard {
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  border: 1px solid var(--card-border);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 12px;
+}
+
+.sectionLabel {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-description-color);
+}
+
+.sectionCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-description-color);
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+}
+
+.taskRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: 14px 4px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--division-color);
+  transition: opacity 0.15s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &.taskRowDone {
+    .rowTitle {
       text-decoration: line-through;
       color: var(--text-description-color);
     }
 
-    &:hover {
-      opacity: 1;
+    .rowDot {
+      opacity: 0.5;
     }
   }
 }
 
-.taskHeader {
+.rowCheckbox {
   display: flex;
-  gap: 16px;
-}
-
-.taskIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: var(--surface-secondary);
   flex-shrink: 0;
 }
 
-.taskInfo {
+.checkbox {
+  height: 22px;
+  width: 22px;
+}
+
+.rowDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rowInfo {
   flex: 1;
   min-width: 0;
-}
-
-.taskTitleContainer {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.taskTitle {
-  color: var(--text-color);
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.2s ease;
-  
-  &:hover {
-    color: var(--text-link);
-  }
-}
-
-.taskMeta {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
 }
 
-.schedule {
+.rowTitleLine {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: $spacing-sm;
 }
 
-.metaIcon {
-  color: var(--icon-color-inactive-invert);
-  flex-shrink: 0;
+.rowTitle {
+  color: var(--text-color);
+  font-size: 15px;
+  font-weight: 600;
 }
 
-.metaText {
+.rowSubtitle {
   color: var(--text-description-color);
-  font-size: 14px;
-  margin: 0;
+  font-size: 13px;
 }
 
-.tagsContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.tag {
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--button-action-background);
-  color: var(--button-action-color);
-  padding: $spacing-xs;
-  border-radius: 4px;
+.rowTime {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-description-color);
 }
 
 // Covers both "I shared this" and "I joined this" — a participant's merged-in
 // copy carries the owner's real `visibility`, since joining never forks it.
 .publicBadge {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: #00aaff;
-  border: 1px solid #00aaff;
+  color: var(--almanac-badge-ink);
+  background: var(--almanac-badge-bg);
   padding: 2px $spacing-xs;
   border-radius: 4px;
-  align-self: flex-start;
-}
-
-.taskActions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.checkbox {
-  height: 24px;
-  width: 24px;
 }
 
 .emptyContainer {
@@ -210,7 +206,6 @@
   align-items: center;
   justify-content: center;
   margin-bottom: $spacing-md;
-
 }
 
 .iconEmpty {
@@ -226,51 +221,6 @@
   line-height: 1.5;
 }
 
-.addTaskButton {
-  margin-top: 0;
-  padding: 12px 24px;
-  border-radius: 8px;
-  background: var(--button-default-background);
-  color: var(--button-ghost-color-invert, white);
-  border: none;
-  font-weight: 600;
-  
-  &:hover {
-    background: var(--button-action-background);
-    color: var(--button-action-color);
-  }
-}
-
-.addTaskButtonBottom {
-  padding: 16px 24px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-description-color);
-  cursor: pointer;
-  border-radius: 12px;
-  border: 2px dashed var(--division-color);
-  background: var(--surface-secondary);
-  transition: all 0.2s ease;
-  
-  &:hover {
-    color: var(--icon-primary);
-    border-color: var(--icon-primary);
-    background: var(--button-action-background);
-  }
-  
-  &:hover .addIcon {
-    color: var(--icon-primary);
-  }
-}
-
-.addIcon {
-  margin-right: 8px;
-  color: var(--text-description-color);
-  transition: color 0.2s ease;
-}
-
 .quickAddTask {
-  margin-bottom: $spacing-md;
+  margin-top: $spacing-sm;
 }

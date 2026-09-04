@@ -1,49 +1,51 @@
 @use './common-color' as *;
 
 [data-theme='dark'] {
-  // Background with a deep dark blue tone
-  --background: #0a1929;
+  // The base theme is the Almanac palette (defined at the bottom of this
+  // file) — see light.scss's own comment on why every token below points
+  // at one of its primitives now instead of a literal color.
+  --background: var(--almanac-bg);
 
   // Surface colors
-  --surface-primary: #325daa14;
-  --surface-secondary: #162033;
+  --surface-primary: var(--almanac-surface);
+  --surface-secondary: var(--almanac-surface);
 
   // Text
-  --text-color: #ccd6f6;
-  --text-color-invert: #fff;
-  --text-placeholder-color: #8892b0;
-  --text-description-color: rgba(136, 146, 176, 0.7);
+  --text-color: var(--almanac-ink);
+  --text-color-invert: var(--almanac-bg);
+  --text-placeholder-color: var(--almanac-muted);
+  --text-description-color: var(--almanac-muted);
   --text-description-color-invert: #8892b0;
-  --text-link: #64ffda;
+  --text-link: var(--almanac-accent);
 
   // Text - Title
-  --text-title-primary-color: #64ffda;
+  --text-title-primary-color: var(--almanac-ink);
 
   // Tab
-  --tab-active-background: rgba(100, 255, 218, 0.2);
-  --tab-border: #{$primary};
+  --tab-active-background: var(--almanac-accent-soft);
+  --tab-border: var(--almanac-accent);
 
   // Card
-  --card-background: #162033;
-  --card-shadow: rgba(0, 0, 0, 0.3);
-  --card-border: rgba(136, 146, 176, 0.3);
-  --card-selected-background: rgba(100, 255, 218, 0.2);
-  --card-border-hover: #46b299;
-  --card-border-open: #46b299;
+  --card-background: var(--almanac-card);
+  --card-shadow: var(--almanac-shadow);
+  --card-border: var(--almanac-card-border);
+  --card-selected-background: var(--almanac-badge-bg);
+  --card-border-hover: var(--almanac-accent);
+  --card-border-open: var(--almanac-accent);
 
-  // Card Group
-  --card-group-background: #0a1929;
+  // Card Group — see light.scss's own comment on what this backs.
+  --card-group-background: var(--almanac-pill-bg);
 
   // Button
-  --button-default-background: #46b299;
-  --button-ghost-border: #8892b0;
-  --button-ghost-color: #8892b0;
-  --button-dash: rgba(136, 146, 176, 0.3);
+  --button-default-background: var(--almanac-ink);
+  --button-ghost-border: var(--almanac-card-border);
+  --button-ghost-color: var(--almanac-ink-soft);
+  --button-dash: var(--almanac-card-border);
   --button-disabled: rgba(0, 0, 0, 0.2);
 
   // Button - Action
-  --button-action-background: rgba(100, 255, 218, 0.15);
-  --button-action-color: #64ffda;
+  --button-action-background: var(--almanac-accent-soft);
+  --button-action-color: var(--almanac-accent);
   --button-action-success: rgba(33, 150, 83, 0.3);
   --button-action-pending: rgba(100, 255, 218, 0.15);
   --button-action-processing: rgba(242, 153, 74, 0.2);
@@ -69,19 +71,19 @@
   --card-task-selected-task-background: rgba(100, 255, 218, 0.2);
 
   // Icon
-  --icon-primary: #64ffda;
-  --icon-color: #ccd6f6;
+  --icon-primary: var(--almanac-accent);
+  --icon-color: var(--almanac-ink);
   --icon-color-revert: #fff;
-  --icon-color-inactive-invert: #8892b0;
+  --icon-color-inactive-invert: var(--almanac-muted);
 
   // Pomodoro Player
   --pomodoro-player-background: #008a69;
 
   // Checkbox
-  --checkbox-accent-color: #219653;
+  --checkbox-accent-color: var(--almanac-accent);
 
   // Modal
-  --modal-overlay-background: rgba(10, 25, 41, 0.85);
+  --modal-overlay-background: rgba(20, 18, 30, 0.8);
   --modal-logo-warning: #feb000;
   --modal-button-primary: #feb000;
   --modal-button-secondary: #feb000;
@@ -90,7 +92,7 @@
   --modal-from-bottom-border: rgba(136, 146, 176, 0.3);
 
   // Header
-  --header-logo-text: #64ffda;
+  --header-logo-text: var(--almanac-accent);
 
   // Toggle
   --toggle-background: #8892b0;
@@ -98,9 +100,9 @@
   --toggle-handle: #fff;
 
   // Input
-  --input-border: rgba(136, 146, 176, 0.3);
-  --input-background: rgba(17, 34, 64, 0.5);
-  --input-border-focus: #46b299;
+  --input-border: var(--almanac-card-border);
+  --input-background: var(--almanac-card);
+  --input-border-focus: var(--almanac-accent);
 
   // Radio
   --radio-color: #64ffda;
@@ -111,20 +113,20 @@
   --slider-right-handle: rgba(0, 0, 0, 0.3);
 
   // Tab
-  --tab-active-background: #{$primary};
+  --tab-active-background: var(--almanac-accent);
 
   // Drawer
-  --drawer-background: #112240;
+  --drawer-background: var(--almanac-surface);
   --drawer-blur-background: #112240de;
 
   // Division
-  --division-color: rgba(136, 146, 176, 0.3);
+  --division-color: var(--almanac-divider);
 
   // Heatmap (year view contribution grid)
-  --heatmap-level-0: rgba(136, 146, 176, 0.08);
-  --heatmap-level-1: rgba(136, 146, 176, 0.2);
-  --heatmap-level-2: rgba(33, 150, 83, 0.35);
-  --heatmap-level-3: #219653;
+  --heatmap-level-0: var(--almanac-heatmap-0);
+  --heatmap-level-1: var(--almanac-heatmap-1);
+  --heatmap-level-2: var(--almanac-heatmap-2);
+  --heatmap-level-3: var(--almanac-heatmap-3);
 
   // 2. Create Task
   --create-task-dashed-border: rgba(136, 146, 176, 0.2);
@@ -149,7 +151,7 @@
   --common-task-action-container-hover: #64ffda;
 
   // hr
-  --hr-color: #0a1929;
+  --hr-color: var(--almanac-divider);
   // library
 
   --dashed-color-without-transparent: #0b1929;
@@ -157,4 +159,36 @@
 
   // Tooltip
   --tooltip-background: red;
+
+  // Almanac palette — dark counterpart of light.scss's own, and (see there)
+  // the app's actual base dark theme now, not a standalone opt-in set. A
+  // deep navy/violet night sky rather than an earlier warm-paper-gone-dark
+  // guess — near-black indigo surfaces, near-white ink, a teal accent, and
+  // gradient pills for the two "primary action" chips.
+  --almanac-bg: #14121e;
+  --almanac-surface: #1b1829;
+  --almanac-card: #1f1c2f;
+  --almanac-card-border: rgba(255, 255, 255, 0.08);
+  --almanac-ink: #f1eef8;
+  --almanac-ink-soft: #cdc8dc;
+  --almanac-muted: #948fac;
+  --almanac-divider: rgba(255, 255, 255, 0.08);
+  --almanac-accent: #45d6b8;
+  --almanac-accent-soft: rgba(69, 214, 184, 0.16);
+  --almanac-pill-bg: rgba(255, 255, 255, 0.06);
+  --almanac-pill-active-bg: linear-gradient(135deg, #8b7cf6, #45d6b8);
+  --almanac-pill-active-ink: #f8f7ff;
+  --almanac-badge-bg: rgba(255, 255, 255, 0.08);
+  --almanac-badge-ink: #cfcbe0;
+  --almanac-shadow: rgba(0, 0, 0, 0.45);
+  --almanac-heatmap-0: #221f34;
+  --almanac-heatmap-1: #2a3f45;
+  --almanac-heatmap-2: #2f7d6e;
+  --almanac-heatmap-3: #45d6b8;
+  // See light.scss's own comment — same traffic-light triad, brightened
+  // slightly for the dark background.
+  --almanac-status-done: #4caf6d;
+  --almanac-status-progress: #e0983f;
+  --almanac-status-empty: #e05c53;
+  --almanac-font-serif: 'Playfair Display', Georgia, serif;
 }

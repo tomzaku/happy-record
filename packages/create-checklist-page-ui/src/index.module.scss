@@ -1,6 +1,7 @@
 @use '@moon-ui/app-scss/function' as *;
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/almanac-scope' as *;
 @use 'include-media/dist/include-media' as media;
 
 .menu {
@@ -112,6 +113,7 @@
   display: block;
   margin-bottom: $spacing-sm;
   color: var(--text-color);
+  font-family: var(--almanac-font-serif, inherit);
   font-size: 16px;
   font-weight: 500;
 }
@@ -129,7 +131,7 @@
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--button-action-color);
   }
 
   &::placeholder {
@@ -213,13 +215,20 @@
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--button-action-color);
   }
 }
 
+// See @moon-ui/app-scss/almanac-scope's own comment — CoreChecklistForm's
+// own fields/icon-picker/color-picker/schedule editor all read the same
+// generic color tokens already, so shadowing them here is what carries the
+// redesign in without editing each one.
 .rootContainer {
+  @include almanac-scope;
+
   height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--almanac-bg);
 }
 

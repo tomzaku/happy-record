@@ -72,7 +72,7 @@ const ChecklistTemplatePageUi = () => {
   };
 
   return (
-    <>
+    <div className={styles.pageContainer}>
       <BackHeader
         renderLeftComponent={() =>
           intl.formatMessage({
@@ -177,7 +177,7 @@ const ChecklistTemplatePageUi = () => {
           </Typography.Text>
         }
       />
-    </>
+    </div>
   );
 };
 

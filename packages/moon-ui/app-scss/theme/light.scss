@@ -1,52 +1,61 @@
 @use './common-color' as *;
 
 [data-theme='light'] {
-  --background: #fffef56e;
+  // The base theme is the Almanac palette (defined at the bottom of this
+  // file) — every token below points at one of its primitives rather than
+  // a literal color, so a page needs no opt-in scoping to get it (a portal
+  // like @moon-ui/modal's, appended straight to `document.body`, can't be
+  // reached by the old page-scoped `.almanacScope` shadowing trick at all —
+  // see almanac-scope.scss's own comment on why that approach only ever
+  // covered a page's own DOM subtree).
+  --background: var(--almanac-bg);
 
   // Surface colors
-  --surface-primary: #ffffff;
-  --surface-secondary: #f8f9fa;
+  --surface-primary: var(--almanac-surface);
+  --surface-secondary: var(--almanac-surface);
 
   // Text
-  --text-color: #{$black};
-  --text-color-invert: #{$white};
-  --text-placeholder-color: #{$black50};
-  --text-description-color: #{$black24};
+  --text-color: var(--almanac-ink);
+  --text-color-invert: var(--almanac-surface);
+  --text-placeholder-color: var(--almanac-muted);
+  --text-description-color: var(--almanac-muted);
   --text-description-color-invert: #{$white50};
-  --text-link: #{$primary};
+  --text-link: var(--almanac-accent);
 
   // Text - Title
-  --text-title-primary-color: #{$primary};
+  --text-title-primary-color: var(--almanac-ink);
 
   // Tab
   --tab-active-background: #{$white24};
 
   // HR
 
-  --hr-color: #{$black3};
+  --hr-color: var(--almanac-divider);
   --hr-color-invert: #{$white24};
 
   // Card
-  --card-background: #{$white};
-  --card-shadow: #{$black6};
-  --card-border: #{$black6};
-  --card-selected-background: #f5f5f5;
-  --card-border-hover: #{$primary};
-  --card-border-open: #{$primary};
+  --card-background: var(--almanac-card);
+  --card-shadow: var(--almanac-shadow);
+  --card-border: var(--almanac-card-border);
+  --card-selected-background: var(--almanac-badge-bg);
+  --card-border-hover: var(--almanac-accent);
+  --card-border-open: var(--almanac-accent);
 
-  // Card group
-  --card-group-background: #f2f4ff;
+  // Card group — the icon-badge backdrop behind a field/task row's icon
+  // (ChecklistFieldGroupMenu's `.fieldIconBadge`, CoreFieldRecord's
+  // `.rowIconBadge`, CardShare's `.targetIconBadge`, …).
+  --card-group-background: var(--almanac-pill-bg);
 
   // Button
-  --button-default-background: #{$primary};
-  --button-ghost-border: #{$black50};
-  --button-ghost-color: #{$black50};
-  --button-dash: #{$black24};
+  --button-default-background: var(--almanac-ink);
+  --button-ghost-border: var(--almanac-card-border);
+  --button-ghost-color: var(--almanac-ink-soft);
+  --button-dash: var(--almanac-card-border);
   --button-disabled: #{$black6};
 
   // Button - Action
-  --button-action-background: #{$primary-extra-light};
-  --button-action-color: #{$primary-dark};
+  --button-action-background: var(--almanac-accent-soft);
+  --button-action-color: var(--almanac-accent);
   --button-action-success: #{$success-extra-light};
   --button-action-pending: #{$primary-extra-light};
   --button-action-processing: #{$secondary-extra-light};
@@ -72,16 +81,16 @@
   --card-task-selected-task-background: #{$white24};
 
   // Icon
-  --icon-primary: #{$primary};
-  --icon-color: #{$black};
+  --icon-primary: var(--almanac-accent);
+  --icon-color: var(--almanac-ink);
   --icon-color-revert: #{$white}; // TODO: Rename revert to invert
-  --icon-color-inactive-invert: #{$black50};
+  --icon-color-inactive-invert: var(--almanac-muted);
 
   // Pomodoro Player
   --pomodoro-player-background: #{$primary};
 
   // Checkbox
-  --checkbox-accent-color: #{$success};
+  --checkbox-accent-color: var(--almanac-accent);
 
   // Modal
   --modal-overlay-background: #{$black50};
@@ -93,7 +102,7 @@
   --modal-from-bottom-border: #{$black24};
 
   // Header
-  --header-logo-text: #{$primary};
+  --header-logo-text: var(--almanac-accent);
 
   // Toggle
   --toggle-background: #{$black24};
@@ -101,9 +110,9 @@
   --toggle-handle: #{$white};
 
   // Input
-  --input-border: #{$black24};
-  --input-background: #{$white};
-  --input-border-focus: #{$primary-light};
+  --input-border: var(--almanac-card-border);
+  --input-background: var(--almanac-card);
+  --input-border-focus: var(--almanac-accent);
 
   // Radio
   --radio-color: #{$primary};
@@ -114,21 +123,21 @@
   --slider-right-handle: #{$black12};
 
   // Tab
-  --tab-active-background: #{$primary};
-  --tab-border: #{$primary};
+  --tab-active-background: var(--almanac-accent);
+  --tab-border: var(--almanac-accent);
 
   // Drawer
-  --drawer-background: #{$white};
+  --drawer-background: var(--almanac-surface);
   --drawer-blur-background: #ffffffd1;
 
   // Division
-  --division-color: #{$black24};
+  --division-color: var(--almanac-divider);
 
   // Heatmap (year view contribution grid)
-  --heatmap-level-0: #{$black6};
-  --heatmap-level-1: #{$black12};
-  --heatmap-level-2: #{$success-extra-light};
-  --heatmap-level-3: #{$success};
+  --heatmap-level-0: var(--almanac-heatmap-0);
+  --heatmap-level-1: var(--almanac-heatmap-1);
+  --heatmap-level-2: var(--almanac-heatmap-2);
+  --heatmap-level-3: var(--almanac-heatmap-3);
 
   // 2. Create Task
   --create-task-dashed-border: #{$black6};
@@ -156,4 +165,45 @@
 
   // Tooltip
   --tooltip-background: rgba(255,154,44,0.2);
+
+  // Almanac palette — a warm, editorial theme (cream surfaces, serif
+  // headings, per-category accents). This IS the app's base theme now (see
+  // every generic token above, each pointing at one of these) — kept as
+  // its own named set of primitives, rather than inlined directly into the
+  // generic tokens, so a future palette swap has one place to change.
+  // `almanac-scope.scss`'s per-page mixin (still `@include`d by the pages
+  // migrated first) now just shadows each generic token to the value it
+  // already has — harmless, and safe to drop next time one of those files
+  // is touched.
+  --almanac-bg: #efe6d3;
+  --almanac-surface: #f8f2e4;
+  --almanac-card: #fbf7ec;
+  --almanac-card-border: #e6dabb;
+  --almanac-ink: #2b241c;
+  --almanac-ink-soft: #5b503f;
+  --almanac-muted: #948a72;
+  --almanac-divider: #e6dabb;
+  --almanac-accent: #8a3b3b;
+  --almanac-accent-soft: rgba(138, 59, 59, 0.12);
+  --almanac-pill-bg: #e9decb;
+  --almanac-pill-active-bg: #2b241c;
+  --almanac-pill-active-ink: #f8f2e4;
+  --almanac-badge-bg: #e9def0;
+  --almanac-badge-ink: #6a4f8a;
+  --almanac-shadow: rgba(43, 36, 28, 0.1);
+  --almanac-heatmap-0: #e6dabb;
+  --almanac-heatmap-1: #d8c393;
+  --almanac-heatmap-2: #b98a5c;
+  --almanac-heatmap-3: #8a3b3b;
+  // A plain traffic-light triad for a per-day completion *status* (the mini
+  // month calendar's own day-number badge) — deliberately not reusing
+  // `--almanac-accent` (same family as `--almanac-heatmap-3` already, and
+  // also the app's general "this is active/selected" color, which would
+  // make a completed day look like a selected one) or the heatmap ramp
+  // (a single-hue intensity scale, not a status color, and reused as-is by
+  // YearView's own contribution-style grid).
+  --almanac-status-done: #3f7d52;
+  --almanac-status-progress: #c9822f;
+  --almanac-status-empty: #c0392b;
+  --almanac-font-serif: 'Playfair Display', Georgia, serif;
 }

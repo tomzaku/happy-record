@@ -47,7 +47,13 @@ const detailsFor = (
 // column already provides that chrome (see index.desktop.tsx's own
 // Calendar/History switcher over the one shared card), this just renders the
 // list content.
-const RecentHistory = () => {
+type Props = {
+  /** Caps how many rows render — the home page's calendar-panel preview
+   * wants a short teaser, the full "Recent" tab wants the usual 30. */
+  limit?: number;
+};
+
+const RecentHistory = ({ limit = RECENT_LIMIT }: Props = {}) => {
   const intl = useIntl();
   const { checklistTemplate } = useChecklistTemplates();
   const { getChecklistRecords } = useChecklistRecord();
@@ -123,8 +129,8 @@ const RecentHistory = () => {
     () =>
       [...submissionEntries, ...completedEntries]
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, RECENT_LIMIT),
-    [submissionEntries, completedEntries],
+        .slice(0, limit),
+    [submissionEntries, completedEntries, limit],
   );
 
   return (

@@ -209,6 +209,7 @@ const ChecklistFieldGroup = ({
           <ChecklistFieldGroupAdd
             fields={fieldDetails}
             checklistTemplate={checklistTemplate}
+            fieldGroup={fieldGroup}
             checklist={checklist}
             currentDay={currentDay}
             onOpenFieldSettings={() => menuRefs.current[fieldGroup.id]?.openFieldsDialog()}

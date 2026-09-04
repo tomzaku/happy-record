@@ -116,7 +116,9 @@ const YearView = ({ currentDate, onDaySelect, selectedTag, checklistTemplateId }
                       }`}
                       title={inMonth ? format(date, 'MMM d, yyyy') : undefined}
                       onClick={() => inMonth && onDaySelect(date)}
-                    />
+                    >
+                      {inMonth && <span className={styles.dayNumber}>{format(date, 'd')}</span>}
+                    </div>
                   );
                 })}
               </div>

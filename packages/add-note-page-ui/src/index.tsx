@@ -47,7 +47,7 @@ export const AddNotePage = () => {
     }
   }, [allNoteFields, selectedField]);
   return (
-    <>
+    <div className={styles.pageContainer}>
       <BackHeader renderLeftComponent={() => <>Add Note</>} />
       <div className={styles.drawerBody}>
         {(!allNoteFields.length ||
@@ -104,6 +104,6 @@ export const AddNotePage = () => {
         </Button>
 
       </div>
-    </>
+    </div>
   )
 }

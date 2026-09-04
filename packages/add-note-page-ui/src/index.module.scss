@@ -1,4 +1,15 @@
 @use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/almanac-scope' as *;
+
+// See @moon-ui/app-scss/almanac-scope's own comment — NoteEditor/Select/
+// Input all read the same generic color tokens already, so shadowing them
+// here is what carries the redesign in without editing each one.
+.pageContainer {
+  @include almanac-scope;
+
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
 
 .container {
   display: flex;
@@ -47,6 +58,7 @@
 .titleInput {
   width: 100%;
   margin-bottom: $spacing-sm;
+  font-family: var(--almanac-font-serif, inherit);
   font-weight: 600;
 }
 
@@ -67,11 +79,11 @@
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--button-action-color);
   }
 
   &::placeholder {
-    color: var(--text-secondary);
+    color: var(--text-description-color);
   }
 }
 
@@ -85,5 +97,6 @@
   width: 100%;
   padding: $spacing-sm;
   box-sizing: border-box;
+  background: var(--card-background);
   box-shadow: 0 -4px 44px rgba(114, 114, 114, 0.14);
 }

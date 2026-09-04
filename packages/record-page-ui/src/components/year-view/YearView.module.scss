@@ -28,6 +28,7 @@
 
 .yearLabel {
   margin: 0;
+  font-family: var(--almanac-font-serif, inherit);
   font-weight: 600;
   color: var(--text-color);
   min-width: 60px;
@@ -77,8 +78,11 @@
 
 .dayCell {
   aspect-ratio: 1;
-  border-radius: 2px;
+  border-radius: 3px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &.outsideMonth {
     background: transparent;
@@ -89,6 +93,20 @@
     outline: 1.5px solid var(--icon-primary);
     outline-offset: -1.5px;
   }
+
+  &.level2 .dayNumber,
+  &.level3 .dayNumber {
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.dayNumber {
+  font-size: 9px;
+  line-height: 1;
+  color: var(--text-color);
+  opacity: 0.75;
+  pointer-events: none;
+  user-select: none;
 }
 
 .level0 {

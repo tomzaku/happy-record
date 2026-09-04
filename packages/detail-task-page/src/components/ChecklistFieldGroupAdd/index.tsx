@@ -19,7 +19,7 @@ import {
 import { parseMultiselect, serializeMultiselect } from '@dreamer/global/src/lib/multiselectValue';
 import Checkbox from '@moon-ui/checkbox';
 import Button from '@moon-ui/button/src/DefaultButton';
-import { Checklist, ChecklistTemplate, useAiNoteGenerate } from '@dreamer/global';
+import { Checklist, ChecklistTemplate, FieldGroup, useAiNoteGenerate } from '@dreamer/global';
 import {
   ChecklistRecord,
   useChecklistRecord,
@@ -40,6 +40,7 @@ import MediaFieldInput, { MediaFieldPreview } from './MediaFieldInput';
 type Props = {
   fields: RecordField[];
   checklistTemplate: ChecklistTemplate;
+  fieldGroup: FieldGroup;
   checklist: Checklist;
   currentDay: string;
   onSubmit?: () => void;
@@ -79,6 +80,7 @@ const hasNoteContent = (value: unknown): boolean => {
 const ChecklistFieldGroupAdd = ({
   fields,
   checklistTemplate,
+  fieldGroup,
   checklist,
   currentDay,
   onSubmit,
@@ -670,6 +672,7 @@ const ChecklistFieldGroupAdd = ({
           <div className={styles.historyContent}>
             <ChecklistFieldGroupHistory
               checklistTemplate={checklistTemplate}
+              fieldGroup={fieldGroup}
               fields={fields}
             />
           </div>

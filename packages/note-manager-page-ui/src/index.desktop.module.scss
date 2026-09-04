@@ -2,17 +2,24 @@
 @use '@moon-ui/app-scss/theme/dark.scss' as *;
 @use '@moon-ui/app-scss/metric' as *;
 @use '@moon-ui/app-scss/function' as *;
+@use '@moon-ui/app-scss/almanac-scope' as *;
 
 .desktopContainer {
   height: 100vh;
   display: flex;
-  background: var(--background);
+  background: var(--almanac-bg);
 }
 
 // The three-pane layout itself — folders | notes list | editor. Each pane owns its own
 // vertical scroll (see the components' own `overflow-y: auto`), so this row never scrolls as a
 // whole the way a single-column page would.
+//
+// See @moon-ui/app-scss/almanac-scope's own comment — FolderSidebar/NoteList/
+// NoteEditorPane all read the same generic color tokens already, so shadowing
+// them here is what carries the redesign in without editing each one.
 .desktopBody {
+  @include almanac-scope;
+
   display: flex;
   flex: 1;
   overflow: hidden;
@@ -38,7 +45,13 @@
   min-height: 0;
   overflow: hidden;
   border-right: 1px solid var(--division-color);
-  background: var(--card-selected-background);
+  // `--card-selected-background` is the almanac scope's badge tint (small
+  // chips, not a whole pane) — `--almanac-surface` instead (a real theme
+  // token, not scoped to `.almanacScope`/`.desktopBody`'s own include), the
+  // same tone DesktopDrawer sits on immediately to its left, so the two nav
+  // rails read as one continuous strip against `.listPane`/`.editorPane`'s
+  // lighter `--card-background` below.
+  background: var(--almanac-surface);
   transition: width 0.18s ease, border-color 0.18s ease;
 }
 

@@ -14,11 +14,10 @@ import cx from 'classnames';
 import Typography from '@moon-ui/typography';
 import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
-import Button from '@moon-ui/button/src/DefaultButton';
 import Card from '@moon-ui/card';
-import { format } from 'date-fns';
-import CreateTaskModal from '../create-task-modal';
+import { format, isToday } from 'date-fns';
 import AddInlineTask from '../AddInlineTask';
+import { getLunarDate, getLunarPhraseId } from '../../utils/lunarDate';
 
 // Mirrors ChecklistGenericInfo's own ("General Settings") schedule rendering: once a template
 // has field groups, its real schedule is the merged union of every *active* group's own days
@@ -39,6 +38,16 @@ const formatTemplateSchedule = (template?: ChecklistTemplate): string => {
   if (!template.repeat?.dayOfWeek) return 'No schedule';
   const time = `${template.repeat.hour.padStart(2, '0')}:${template.repeat.minute.padStart(2, '0')}`;
   return `${time} • ${formatDaysOfWeek(template.repeat.dayOfWeek)}`;
+};
+
+// The row's own right-aligned time — only meaningful for a template with no
+// field groups (see formatTemplateSchedule's own comment on why a merged
+// per-group schedule has no single time to show).
+const getScheduledTimeLabel = (template?: ChecklistTemplate): string | undefined => {
+  if (!template?.repeat?.hour || getActiveFieldGroups(template.fieldGroups ?? []).length > 0) {
+    return undefined;
+  }
+  return format(new Date(0, 0, 0, Number(template.repeat.hour), Number(template.repeat.minute)), 'h:mm');
 };
 
 const ChecklistTodayDesktop = ({
@@ -72,6 +81,9 @@ const ChecklistTodayDesktop = ({
     () => getChecklistByGivingDate({ date, selectedTag }),
     [getChecklistByGivingDate, date, selectedTag],
   );
+
+  const lunar = React.useMemo(() => getLunarDate(date), [date]);
+  const lunarPhrase = getLunarPhraseId(lunar.day);
 
   // `checklistByGivingDateIds` is empty both while the templates/checklists
   // fetch is still in flight and once it's genuinely resolved with nothing —
@@ -129,131 +141,151 @@ const ChecklistTodayDesktop = ({
   // completedAt is real, always-present data every task already carries.
   const pendingIds = checklistByGivingDateIds.filter(id => !checklist[id]?.completedAt);
   const completedIds = checklistByGivingDateIds.filter(id => checklist[id]?.completedAt);
+  const completedPercent = Math.round((completedIds.length / checklistByGivingDateIds.length) * 100);
 
-  const renderTaskCard = (id: string) => {
+  const renderTaskRow = (id: string) => {
     const currentChecklist = checklist[id];
     const currentChecklistTemplate =
       checklistTemplate[currentChecklist.checklistTemplateId];
+    const completed = Boolean(currentChecklist?.completedAt);
+    const color = currentChecklistTemplate?.avatar.color || '#8A8A8A';
+    const timeLabel = completed
+      ? currentChecklist.completedAt && format(new Date(currentChecklist.completedAt), 'h:mm')
+      : getScheduledTimeLabel(currentChecklistTemplate);
 
     return (
-      <Card
+      <div
         key={id}
-        className={cx(
-          styles.taskCard,
-          currentChecklist?.completedAt && styles.completedTask,
-        )}
+        className={cx(styles.taskRow, completed && styles.taskRowDone)}
         onClick={() =>
           navigate(
             `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
           )
         }
       >
-        <div className={styles.taskHeader}>
-          <div className={styles.taskIcon}>
-            <Icon
-              color={currentChecklistTemplate?.avatar.color || '#8A8A8A'}
-              width={24}
-              height={24}
-              icon={currentChecklistTemplate?.avatar.name}
-            />
-          </div>
-          <div className={styles.taskInfo}>
-            <div className={styles.taskTitleContainer}>
-              <Typography.Title
-                level={5}
-                className={styles.taskTitle}
-                noMargin
-              >
-                {currentChecklist?.title || currentChecklistTemplate?.title}
-              </Typography.Title>
-              {currentChecklistTemplate?.visibility === 'public' && (
-                <span className={styles.publicBadge}>
-                  {intl.formatMessage({
-                    id: 'ChecklistToday.public-badge',
-                    defaultMessage: 'Public',
-                  })}
-                </span>
-              )}
-              {currentChecklistTemplate?.tags &&
-                currentChecklistTemplate.tags.length > 0 && (
-                  <div className={styles.tagsContainer}>
-                    {currentChecklistTemplate.tags.map(tag => (
-                      <span key={tag} className={styles.tag}>
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-            </div>
-            <div className={styles.taskMeta}>
-              <div className={styles.schedule}>
-                <Icon
-                  icon="solar:calendar-date-line-duotone"
-                  width={16}
-                  className={styles.metaIcon}
-                />
-                <Typography.Text className={styles.metaText}>
-                  {formatTemplateSchedule(currentChecklistTemplate)}
-                </Typography.Text>
-              </div>
-            </div>
-          </div>
-          <div onClick={e => e.stopPropagation()}>
-            <Checkbox
-              defaultChecked={Boolean(currentChecklist?.completedAt)}
-              className={styles.checkbox}
-              onChange={event => {
-                event.stopPropagation();
-                updateChecklist({
-                  ...currentChecklist,
-                  completedAt: event.target.checked
-                    ? new Date().toISOString()
-                    : undefined,
-                });
-              }}
-            />
-          </div>
+        <div onClick={e => e.stopPropagation()} className={styles.rowCheckbox}>
+          <Checkbox
+            defaultChecked={completed}
+            className={styles.checkbox}
+            style={{ accentColor: color }}
+            onChange={event => {
+              event.stopPropagation();
+              updateChecklist({
+                ...currentChecklist,
+                completedAt: event.target.checked
+                  ? new Date().toISOString()
+                  : undefined,
+              });
+            }}
+          />
         </div>
-      </Card>
+        <span className={styles.rowDot} style={{ background: color }} />
+        <div className={styles.rowInfo}>
+          <div className={styles.rowTitleLine}>
+            <Typography.Text className={styles.rowTitle}>
+              {currentChecklist?.title || currentChecklistTemplate?.title}
+            </Typography.Text>
+            {currentChecklistTemplate?.visibility === 'public' && (
+              <span className={styles.publicBadge}>
+                {intl.formatMessage({
+                  id: 'ChecklistToday.public-badge',
+                  defaultMessage: 'Public',
+                })}
+              </span>
+            )}
+          </div>
+          <Typography.Text className={styles.rowSubtitle}>
+            {formatTemplateSchedule(currentChecklistTemplate)}
+          </Typography.Text>
+        </div>
+        {timeLabel && (
+          <Typography.Text className={styles.rowTime}>{timeLabel}</Typography.Text>
+        )}
+      </div>
     );
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <Typography.Title level={4} className={styles.dateTitle}>
-          {format(date, 'EEEE, MMMM d')}
+        <Typography.Title level={2} className={styles.dateTitle} noMargin>
+          {isToday(date)
+            ? intl.formatMessage({ id: 'ChecklistToday.today', defaultMessage: 'Today' })
+            : format(date, 'EEEE')}
         </Typography.Title>
-        <Typography.Text className={styles.taskCount}>
-          {completedIds.length}/{checklistByGivingDateIds.length}
+        <Typography.Text className={styles.dateSubtitle}>
+          {intl.formatMessage(
+            {
+              id: 'ChecklistToday.date-subtitle',
+              defaultMessage: '{{solarDate}} · Lunar day {{day}}, mo {{month}}',
+            },
+            { solarDate: format(date, 'MMMM d'), day: lunar.day, month: lunar.month },
+          )}
         </Typography.Text>
       </div>
 
-      {pendingIds.length > 0 && (
-        <div className={styles.tasksList}>
-          {pendingIds.map(renderTaskCard)}
+      <div className={styles.summaryRow}>
+        <Typography.Text className={styles.summaryText}>
+          {intl.formatMessage(
+            {
+              id: 'ChecklistToday.summary',
+              defaultMessage: '{{done}} of {{total}} done · {{phrase}}',
+            },
+            {
+              done: completedIds.length,
+              total: checklistByGivingDateIds.length,
+              phrase: intl.formatMessage(lunarPhrase),
+            },
+          )}
+        </Typography.Text>
+        <div className={styles.progressBlock}>
+          <Typography.Text className={styles.progressLabel}>
+            {intl.formatMessage(
+              { id: 'ChecklistToday.done-count', defaultMessage: '{{count}} done' },
+              { count: completedIds.length },
+            )}
+          </Typography.Text>
+          <div className={styles.progressTrack}>
+            <div className={styles.progressFill} style={{ width: `${completedPercent}%` }} />
+          </div>
+          <Typography.Text className={styles.progressLabel}>
+            {intl.formatMessage(
+              { id: 'ChecklistToday.to-go-count', defaultMessage: '{{count}} to go' },
+              { count: pendingIds.length },
+            )}
+          </Typography.Text>
         </div>
-      )}
+      </div>
+
+      <Card className={styles.sectionCard}>
+        {pendingIds.length > 0 && (
+          <>
+            <div className={styles.sectionHeader}>
+              <Typography.Text className={styles.sectionLabel}>
+                {intl.formatMessage({ id: 'ChecklistToday.pending', defaultMessage: 'Pending' })}
+              </Typography.Text>
+              <Typography.Text className={styles.sectionCount}>{pendingIds.length}</Typography.Text>
+            </div>
+            <div className={styles.itemList}>{pendingIds.map(renderTaskRow)}</div>
+          </>
+        )}
+        <AddInlineTask className={styles.quickAddTask} />
+      </Card>
 
       {completedIds.length > 0 && (
-        <div className={styles.completedGroup}>
-          <div className={styles.groupLabel}>
-            <Typography.Text className={styles.groupLabelText}>
+        <Card className={styles.sectionCard}>
+          <div className={styles.sectionHeader}>
+            <Typography.Text className={styles.sectionLabel}>
               {intl.formatMessage({
                 id: 'ChecklistToday.completed',
                 defaultMessage: 'Completed',
               })}
             </Typography.Text>
-            <span className={styles.groupLabelLine} />
+            <Typography.Text className={styles.sectionCount}>{completedIds.length}</Typography.Text>
           </div>
-          <div className={styles.tasksList}>
-            {completedIds.map(renderTaskCard)}
-          </div>
-        </div>
+          <div className={styles.itemList}>{completedIds.map(renderTaskRow)}</div>
+        </Card>
       )}
-
-      {/* Quick Add Task */}
-      <AddInlineTask className={styles.quickAddTask} />
     </div>
   );
 };

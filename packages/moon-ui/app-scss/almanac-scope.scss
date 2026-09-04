@@ -1,0 +1,49 @@
+// Shadows the generic theme tokens (see theme/light.scss and theme/dark.scss's
+// own --almanac-* primitives) to the warm "Almanac" palette, for whatever
+// element `@include`s this. Every component already reads these same
+// generic vars for its colors (per this repo's own styling convention), so
+// re-declaring them on a page's own root — rather than editing each
+// component file, several of which are reused across multiple pages — is
+// what lets a page pick up the redesign without changing how any of those
+// shared components look on a page that doesn't include this mixin.
+//
+// Usage, in a page's own root `.module.scss`:
+//   @use '@moon-ui/app-scss/almanac-scope' as *;
+//   .almanacScope { @include almanac-scope; }
+@mixin almanac-scope {
+  --background: var(--almanac-bg);
+  --surface-primary: var(--almanac-surface);
+  --surface-secondary: var(--almanac-surface);
+  --card-background: var(--almanac-card);
+  --card-border: var(--almanac-card-border);
+  --card-border-hover: var(--almanac-accent);
+  --card-shadow: var(--almanac-shadow);
+  --card-selected-background: var(--almanac-badge-bg);
+  --text-color: var(--almanac-ink);
+  --text-color-invert: var(--almanac-surface);
+  --text-title-primary-color: var(--almanac-ink);
+  --text-description-color: var(--almanac-muted);
+  --text-placeholder-color: var(--almanac-muted);
+  --text-link: var(--almanac-accent);
+  --division-color: var(--almanac-divider);
+  --hr-color: var(--almanac-divider);
+  --button-action-background: var(--almanac-accent-soft);
+  --button-action-color: var(--almanac-accent);
+  --button-default-background: var(--almanac-ink);
+  --button-dash: var(--almanac-card-border);
+  --button-ghost-border: var(--almanac-card-border);
+  --button-ghost-color: var(--almanac-ink-soft);
+  --icon-primary: var(--almanac-accent);
+  --icon-color: var(--almanac-ink);
+  --icon-color-inactive-invert: var(--almanac-muted);
+  --checkbox-accent-color: var(--almanac-accent);
+  --heatmap-level-0: var(--almanac-heatmap-0);
+  --heatmap-level-1: var(--almanac-heatmap-1);
+  --heatmap-level-2: var(--almanac-heatmap-2);
+  --heatmap-level-3: var(--almanac-heatmap-3);
+  --input-background: var(--almanac-card);
+  --input-border: var(--almanac-card-border);
+  --input-border-focus: var(--almanac-accent);
+
+  background: var(--almanac-bg);
+}

@@ -1,6 +1,17 @@
 @use '@moon-ui/app-scss/color' as *;
 @use 'include-media/dist/include-media' as media;
 @use '@moon-ui/app-scss/function' as *;
+@use '@moon-ui/app-scss/almanac-scope' as *;
+
+// See @moon-ui/app-scss/almanac-scope's own comment — BackHeader/Card/
+// Checkbox all read the same generic color tokens already, so shadowing
+// them here is what carries the redesign in without editing each one.
+.pageContainer {
+  @include almanac-scope;
+
+  min-height: 100vh;
+  padding-bottom: 20px;
+}
 
 .card {
   display: flex;
@@ -33,6 +44,7 @@
 }
 
 .label {
+  font-family: var(--almanac-font-serif, inherit);
   font-size: toRem(20px);
   min-height: 36px;
   color: var(--text-color);
@@ -42,7 +54,7 @@
 }
 
 .enabled {
-  color: green;
+  color: var(--almanac-accent, green);
   font-weight: 500;
 }
 

@@ -1,4 +1,4 @@
-@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/theme/common-color' as *;
 @use '@moon-ui/app-scss/function' as *;
 
 .timer {
@@ -8,8 +8,8 @@
   gap: toRem(16px);
   padding: toRem(16px);
   border-radius: toRem(8px);
-  background: var(--background-color);
-  border: 1px solid var(--border-color);
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
 }
 
 .timerDisplay {
@@ -56,28 +56,36 @@
   }
 }
 
+// Pause/Stop keep their own fixed accent colors (warning amber / the app's
+// $secondary orange) rather than the theme's own accent token — same
+// "not actually theme-reactive, deliberately" shape as
+// `--modal-button-primary: #{$warning}` elsewhere, so Start/Pause/Stop stay
+// visually distinct from each other regardless of light/dark or which page
+// theme is active.
 .timerStart {
-  background: var(--primary-color);
+  background: var(--button-default-background);
+  color: var(--text-color-invert);
 
   &:not(:disabled):hover {
-    background: var(--primary-color-hover);
+    opacity: 0.85;
   }
 }
 
 .timerPause {
-  background: var(--warning-color);
+  background: #{$warning};
+  color: var(--text-color-invert);
 
   &:not(:disabled):hover {
-    background: var(--warning-color-hover);
+    opacity: 0.85;
   }
 }
 
 .timerStop {
-  background: var(--secondary-color);
-  color: var(--text-color);
+  background: #{$secondary};
+  color: var(--text-color-invert);
 
   &:not(:disabled):hover {
-    background: var(--secondary-color-hover);
+    opacity: 0.85;
   }
 }
 

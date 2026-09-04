@@ -1,0 +1,130 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navIcon {
+  cursor: pointer;
+  color: var(--almanac-muted);
+
+  &:hover {
+    color: var(--almanac-ink);
+  }
+}
+
+.monthLabel {
+  margin: 0;
+  font-family: var(--almanac-font-serif);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--almanac-ink);
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.weekday {
+  margin: 0;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--almanac-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dayCell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    background: var(--almanac-pill-bg);
+  }
+
+  &[data-outside] {
+    opacity: 0.35;
+  }
+
+  &[data-today] {
+    box-shadow: inset 0 0 0 1px var(--almanac-accent);
+  }
+
+  &[data-selected] {
+    background: var(--almanac-pill-active-bg);
+
+    // The cell's own highlight already reads as "this is the selected
+    // day" — a completion-level circle behind the number too would just
+    // be a second, smaller circle competing with it, so this suppresses
+    // that in favor of a plain, high-contrast number.
+    .dayNumber {
+      background: transparent;
+      color: var(--almanac-pill-active-ink);
+    }
+  }
+}
+
+// A fixed-size circle rather than plain text — the panel is too small and
+// the day cell too tight for a separate dot indicator to read as anything
+// but a smudge, so completion state colors the number's own backdrop
+// instead. Mirrors YearView's own completion levels (nothing done yet /
+// partially done / fully done) so the two views share one visual language.
+.dayNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  color: var(--almanac-ink-soft);
+
+  // A plain traffic light — red nothing done, orange in progress, green
+  // fully done — reads instantly at this size in a way a subtler
+  // theme-matched palette wouldn't (see --almanac-status-* tokens' own
+  // comment for why these are dedicated colors, not the heatmap ramp).
+  // `upcoming` (a future day, nothing done *yet*) deliberately stays
+  // neutral rather than red — see getDotLevel's own comment on why a day
+  // that hasn't happened isn't a missed one.
+  &[data-level='upcoming'] {
+    background: var(--almanac-pill-bg);
+  }
+
+  &[data-level='missed'] {
+    background: var(--almanac-status-empty);
+    color: var(--almanac-pill-active-ink);
+  }
+
+  &[data-level='inProgress'] {
+    background: var(--almanac-status-progress);
+    color: var(--almanac-pill-active-ink);
+  }
+
+  &[data-level='done'] {
+    background: var(--almanac-status-done);
+    color: var(--almanac-pill-active-ink);
+  }
+}

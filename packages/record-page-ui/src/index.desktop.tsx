@@ -1,8 +1,8 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 
 import ChecklistTodayDesktop from './components/checklist-today/ChecklistToday.desktop';
-import WeeklyCalendarVertical from './components/weekly-calendar/WeeklyCalendarVertical';
+import MiniMonthCalendar from './components/mini-month-calendar';
 import RecentHistory from './components/RecentHistory';
 import ViewSwitcher, { ViewMode } from './components/view-switcher';
 import switcherStyles from './components/view-switcher/index.module.scss';
@@ -15,9 +15,57 @@ import styles from './index.desktop.module.scss';
 import Card from '@moon-ui/card';
 import cx from 'classnames';
 import Typography from '@moon-ui/typography';
+import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
 
 type RightPanelMode = 'calendar' | 'history';
+
+// The right panel's "This Day" row — a quick-glance strip of the selected
+// day's items (title + done state), capped so it never grows the panel
+// taller than the calendar above it; the rest is a "+N more" count rather
+// than a scrollable list (Day view, right below, is already that list).
+const THIS_DAY_VISIBLE_LIMIT = 4;
+
+const ThisDayChips = ({ date, selectedTag }: { date: Date; selectedTag?: string }) => {
+  const { getChecklistByGivingDate } = useChecklist();
+  const { checklistTemplate } = useChecklistTemplates();
+
+  const { checklist, checklistIds } = React.useMemo(
+    () => getChecklistByGivingDate({ date, selectedTag }),
+    [getChecklistByGivingDate, date, selectedTag],
+  );
+
+  if (checklistIds.length === 0) return null;
+
+  const visibleIds = checklistIds.slice(0, THIS_DAY_VISIBLE_LIMIT);
+  const overflowCount = checklistIds.length - visibleIds.length;
+
+  return (
+    <div className={styles.thisDaySection}>
+      <Typography.Text className={styles.thisDayLabel}>This day</Typography.Text>
+      <div className={styles.thisDayChips}>
+        {visibleIds.map(id => {
+          const item = checklist[id];
+          const template = checklistTemplate[item?.checklistTemplateId];
+          const completed = Boolean(item?.completedAt);
+          return (
+            <span
+              key={id}
+              className={cx(styles.chip, completed && styles.chipDone)}
+              style={{ borderColor: template?.avatar.color || 'var(--almanac-card-border)' }}
+            >
+              {completed && <Icon icon="solar:check-circle-bold" width={12} />}
+              {item?.title || template?.title}
+            </span>
+          );
+        })}
+        {overflowCount > 0 && (
+          <span className={styles.chipMore}>+{overflowCount} more</span>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const TaskListPage = () => {
   const intl = useIntl();
@@ -51,7 +99,7 @@ const TaskListPage = () => {
   return (
     <div className={styles.desktopContainer}>
       <DesktopDrawer />
-      <div className={styles.desktopBody}>
+      <div className={cx(styles.desktopBody, styles.almanacScope)}>
         {/* Right Calendar — rendered first (see the module's own
             `grid-column` placement) so its checklists range-fetch effect
             claims the visible days before ChecklistTodayDesktop's own
@@ -60,33 +108,47 @@ const TaskListPage = () => {
             for "today" — see useChecklists.tsx's `ensureChecklistsFetched`. */}
         {viewMode === 'day' && (
           <div className={styles.rightCalendar}>
-            <div className={cx(switcherStyles.container, styles.rightPanelSwitcher)}>
-              <button
-                type="button"
-                className={cx(switcherStyles.option, rightPanelMode === 'calendar' && switcherStyles.active)}
-                onClick={() => setRightPanelMode('calendar')}
-              >
-                <Typography.Text className={switcherStyles.label}>
-                  {intl.formatMessage({ id: 'right-panel-switcher.calendar', defaultMessage: 'Calendar' })}
-                </Typography.Text>
-              </button>
-              <button
-                type="button"
-                className={cx(switcherStyles.option, rightPanelMode === 'history' && switcherStyles.active)}
-                onClick={() => setRightPanelMode('history')}
-              >
-                <Typography.Text className={switcherStyles.label}>
-                  {intl.formatMessage({ id: 'right-panel-switcher.history', defaultMessage: 'History' })}
-                </Typography.Text>
-              </button>
+            <div className={styles.rightPanelHeader}>
+              <Typography.Text className={styles.rightPanelLabel}>
+                {intl.formatMessage({ id: 'right-panel-switcher.title', defaultMessage: 'History' })}
+              </Typography.Text>
+              <div className={switcherStyles.container}>
+                <button
+                  type="button"
+                  className={cx(switcherStyles.option, rightPanelMode === 'calendar' && switcherStyles.active)}
+                  onClick={() => setRightPanelMode('calendar')}
+                >
+                  <Typography.Text className={switcherStyles.label}>
+                    {intl.formatMessage({ id: 'right-panel-switcher.calendar', defaultMessage: 'Calendar' })}
+                  </Typography.Text>
+                </button>
+                <button
+                  type="button"
+                  className={cx(switcherStyles.option, rightPanelMode === 'history' && switcherStyles.active)}
+                  onClick={() => setRightPanelMode('history')}
+                >
+                  <Typography.Text className={switcherStyles.label}>
+                    {intl.formatMessage({ id: 'right-panel-switcher.history', defaultMessage: 'Recent' })}
+                  </Typography.Text>
+                </button>
+              </div>
             </div>
             <Card className={styles.calendarCard}>
               {rightPanelMode === 'calendar' ? (
-                <WeeklyCalendarVertical
-                  currentDate={startDate}
-                  onDateChange={setStartDate}
-                  selectedTag={selectedTag}
-                />
+                <div className={styles.calendarPanel}>
+                  <MiniMonthCalendar
+                    currentDate={startDate}
+                    onDateChange={setStartDate}
+                    selectedTag={selectedTag}
+                  />
+                  <ThisDayChips date={startDate} selectedTag={selectedTag} />
+                  <div className={styles.recentHistorySection}>
+                    <Typography.Text className={styles.recentHistoryLabel}>
+                      {intl.formatMessage({ id: 'recent-history.title', defaultMessage: 'Recent history' })}
+                    </Typography.Text>
+                    <RecentHistory limit={3} />
+                  </div>
+                </div>
               ) : (
                 <RecentHistory />
               )}
@@ -131,7 +193,7 @@ const TaskListPage = () => {
           </div>
         </div>
       </div>
-      
+
       {/* <MusicAudioPlayer className={styles.player} /> */}
     </div>
   );

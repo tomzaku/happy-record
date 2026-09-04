@@ -44,26 +44,44 @@ const HistorySection = ({ title, defaultCollapsed = false, renderList, renderCal
   const [mode, setMode] = React.useState<'list' | 'calendar'>('list');
   const [calendarMode, setCalendarMode] = React.useState<ViewMode>('week');
 
+  const listLabel = intl.formatMessage({ id: 'checklist-template-calendar.mode-list', defaultMessage: 'List' });
+  const calendarLabel = intl.formatMessage({
+    id: 'checklist-template-calendar.mode-calendar',
+    defaultMessage: 'Calendar',
+  });
+
   const switcher = (
     <div className={styles.headerControls} onClick={e => e.stopPropagation()}>
       <div className={switcherStyles.container}>
         <button
           type="button"
-          className={cx(switcherStyles.option, mode === 'list' && switcherStyles.active)}
+          className={cx(switcherStyles.option, styles.iconOption, mode === 'list' && switcherStyles.active)}
           onClick={() => setMode('list')}
+          aria-label={listLabel}
+          title={listLabel}
         >
-          <Typography.Text className={switcherStyles.label}>
-            {intl.formatMessage({ id: 'checklist-template-calendar.mode-list', defaultMessage: 'List' })}
-          </Typography.Text>
+          {/* @moon-ui/icon's own base class sets `color`/`fill` directly on
+              the icon element itself (see its styles.module.scss), which
+              overrides anything inherited from this button — only a `color`
+              prop (an inline style, always wins) actually recolors it. */}
+          <Icon
+            icon="solar:list-check-linear"
+            width={16}
+            color={mode === 'list' ? 'var(--almanac-pill-active-ink)' : undefined}
+          />
         </button>
         <button
           type="button"
-          className={cx(switcherStyles.option, mode === 'calendar' && switcherStyles.active)}
+          className={cx(switcherStyles.option, styles.iconOption, mode === 'calendar' && switcherStyles.active)}
           onClick={() => setMode('calendar')}
+          aria-label={calendarLabel}
+          title={calendarLabel}
         >
-          <Typography.Text className={switcherStyles.label}>
-            {intl.formatMessage({ id: 'checklist-template-calendar.mode-calendar', defaultMessage: 'Calendar' })}
-          </Typography.Text>
+          <Icon
+            icon="solar:calendar-outline"
+            width={16}
+            color={mode === 'calendar' ? 'var(--almanac-pill-active-ink)' : undefined}
+          />
         </button>
       </div>
       {mode === 'calendar' && <ViewSwitcher value={calendarMode} onChange={setCalendarMode} modes={CALENDAR_MODES} />}
@@ -80,7 +98,6 @@ const HistorySection = ({ title, defaultCollapsed = false, renderList, renderCal
     return (
       <div className={styles.bare}>
         <div className={styles.bareToolbar}>{switcher}</div>
-        <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
         {body}
       </div>
     );
