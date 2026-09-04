@@ -12,7 +12,7 @@ export type ChecklistLog = {
   checklistTemplateId: string;
   checklistId?: string;
   action: 'create' | 'update' | 'delete';
-  detail?: 'submitted' | 'completed' | 'note_updated';
+  detail?: 'submitted' | 'completed' | 'uncompleted' | 'note_updated';
   metadata?: Record<string, unknown>;
   createdAt: string;
 };

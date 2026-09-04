@@ -31,6 +31,7 @@
     "@dreamer/global": "^1.0.0",
     "@dreamer/music-controller-mobile": "^1.0.0",
     "@dreamer/translation": "^1.0.0",
+    "@tanstack/react-query": "^5",
     "date-fns": "^2.29.3",
     "preact": "^10.11.0",
     "preact-compat": "^3.19.0",

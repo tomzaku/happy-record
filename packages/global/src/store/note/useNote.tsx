@@ -1,7 +1,9 @@
 import React from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSessionStore } from '../../hook/useSessionStore';
 import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
+import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
@@ -91,6 +93,10 @@ const fetchedFieldGroupScopes = new Set<string>();
  */
 export const useNote = () => {
   const [notes, setNotes] = useSessionStore<Record<string, Note>>(NOTE_KEY, {});
+  const queryClient = useQueryClient();
+  const invalidateIfFieldGroupNote = (ownerType: Note['ownerType']) => {
+    if (ownerType === 'field_group') queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
+  };
   // Reactive (unlike `fetchedIds` above) — this is what lets a consumer render a loading state
   // on its editor while a note it already has the id for is still in flight.
   const [loadingIds, setLoadingIds] = useSessionStore<Record<string, boolean>>(NOTE_LOADING_KEY, {});
@@ -346,7 +352,8 @@ export const useNote = () => {
     if (origin?.ownerType === 'field_group') {
       setOwnFieldGroupNoteIds(prev => ({ ...prev, [origin.ownerId]: id }));
     }
-    await saveNote(note);
+    const saved = await saveNote(note);
+    if (saved) invalidateIfFieldGroupNote(origin?.ownerType);
     return note;
   };
 
@@ -364,7 +371,11 @@ export const useNote = () => {
       };
       return { ...prev, [id]: updated };
     });
-    if (updated) saveNote(updated);
+    if (updated) {
+      saveNote(updated).then(result => {
+        if (result) invalidateIfFieldGroupNote((updated as Note).ownerType);
+      });
+    }
     return updated;
   };
 

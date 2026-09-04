@@ -8,7 +8,9 @@ import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
 // fallback, unchanged.
+import { useQueryClient } from '@tanstack/react-query';
 import { fetchChecklistById, fetchChecklists, removeChecklist, saveChecklist } from './checklistsApi';
+import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
 
 const CHECKLIST_KEY = 'checklist';
 
@@ -58,6 +60,8 @@ export function checklistInstanceId(checklistTemplateId: string, date: Date): st
 export const useChecklist = () => {
   const [checklist, setChecklist] = useSessionStore<Record<string, Checklist>>(CHECKLIST_KEY, {});
   const { userId, ready } = useSession();
+  const queryClient = useQueryClient();
+  const invalidateChecklistLogs = () => queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
   const { getChecklistTemplateIdsByGivingDate, checklistTemplate } =
     useChecklistTemplates();
   // Starts `true`, flips to `false` once a checklists fetch (either path
@@ -314,9 +318,18 @@ export const useChecklist = () => {
       // getRepeatChecklistByGivingDate — the home page's checkbox updates
       // one of these directly) with no row on the server yet. `saveChecklist`
       // is an upsert, so that's exactly right: this call is what creates it.
-      saveChecklist(merged);
+      const saved = saveChecklist(merged);
+      // A completedAt change is the only thing this route ever logs
+      // server-side (see checklists-service.ts's own saveChecklist) — only
+      // bump for that, not every unrelated field edit that also goes through
+      // this same upsert.
+      if ('completedAt' in checklistToUpdate) {
+        saved.then(result => {
+          if (result) invalidateChecklistLogs();
+        });
+      }
     },
-    [checklist, setChecklist],
+    [checklist, setChecklist, invalidateChecklistLogs],
   );
 
   const addChecklist = React.useCallback(

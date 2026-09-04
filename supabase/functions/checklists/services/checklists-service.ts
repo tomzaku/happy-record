@@ -20,10 +20,11 @@ export function getChecklistById({ db, userId }: Ctx, id: string): Promise<Recor
 
 export async function saveChecklist({ db, userId }: Ctx, row: Record<string, unknown>): Promise<void> {
   // This route is a full-row upsert reused for creating a new day's instance, editing one, and
-  // marking it done (a completedAt patch merged client-side, then re-posted whole — see
-  // useChecklists.tsx's own updateChecklist). Only a genuine null->set transition of completed_at
-  // counts as "marked done" — reading the prior value first is what keeps a later, unrelated
-  // resave of an already-completed checklist from re-logging "done" every time.
+  // checking/unchecking it done (a completedAt patch merged client-side, then re-posted whole —
+  // see useChecklists.tsx's own updateChecklist). Only a genuine transition of completed_at
+  // (null->set, or set->null for an uncheck) counts as loggable — reading the prior value first is
+  // what keeps a later, unrelated resave of an already-completed checklist from re-logging "done"
+  // every time.
   const [previous] = await fetchChecklistById(db, userId, row.id as string);
   const previousCompletedAt = previous?.completed_at ?? null;
 
@@ -35,6 +36,13 @@ export async function saveChecklist({ db, userId }: Ctx, row: Record<string, unk
       checklistId: row.id as string,
       action: 'update',
       detail: 'completed',
+    });
+  } else if (previousCompletedAt && !row.completed_at) {
+    await recordChecklistLog(db, userId, {
+      checklistTemplateId: row.checklist_template_id as string,
+      checklistId: row.id as string,
+      action: 'update',
+      detail: 'uncompleted',
     });
   }
 }

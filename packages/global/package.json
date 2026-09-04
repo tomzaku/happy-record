@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "2.50.0",
+    "@tanstack/react-query": "^5",
     "use-long-press": "^2.0.0",
     "zustand": "^5.0.4"
   }

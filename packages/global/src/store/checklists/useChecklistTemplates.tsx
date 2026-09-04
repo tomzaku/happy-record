@@ -1,9 +1,11 @@
 import { v4 } from 'uuid';
 import React from 'react';
 import { endOfDay, startOfDay } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocalStorage } from '../../hook/useLocalStorage';
 import { useSessionStore } from '../../hook/useSessionStore';
 import { useSession } from '../../hook/useSession';
+import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
 import type { FieldOverrides } from '../record-field/useRecordField';
 import { useFieldGroups } from './useFieldGroups';
@@ -230,6 +232,8 @@ export const useChecklistTemplates = () => {
     string[]
   >(SELECTED_CHECKLISTS_TEMPLATE_KEY, []);
   const { userId, ready } = useSession();
+  const queryClient = useQueryClient();
+  const invalidateChecklistLogs = () => queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
   // Starts `true` and flips to `false` once the "all mine" fetch settles
   // (success or a quiet `null` both count — either way, there's nothing left
   // to wait on). `checklistTemplate` being empty is otherwise indistinguishable
@@ -377,7 +381,10 @@ export const useChecklistTemplates = () => {
     // checklist_template_id has a real FK to this table — awaiting `saved`
     // there is what keeps that insert from racing this row's own POST).
     // Most callers can ignore it; the local store is already up to date.
-    const saved = saveChecklistTemplate(template);
+    const saved = saveChecklistTemplate(template).then(result => {
+      if (result) invalidateChecklistLogs();
+      return result;
+    });
     return {
       id,
       saved,
@@ -402,7 +409,9 @@ export const useChecklistTemplates = () => {
     if (!existing) {
       // Nothing on the server yet for this id — this is really a create,
       // so it needs the full row, not a diff against nothing.
-      saveChecklistTemplate(template);
+      saveChecklistTemplate(template).then(result => {
+        if (result) invalidateChecklistLogs();
+      });
       return;
     }
 
@@ -436,7 +445,9 @@ export const useChecklistTemplates = () => {
       delete next[id];
       return next;
     });
-    removeChecklistTemplateApi(id);
+    removeChecklistTemplateApi(id).then(result => {
+      if (result) invalidateChecklistLogs();
+    });
     updateSelectedChecklistTemplate(prev => prev.filter(templateId => templateId !== id));
   };
 

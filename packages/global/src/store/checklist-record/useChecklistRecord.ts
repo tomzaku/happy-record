@@ -1,7 +1,9 @@
 import React from 'react';
 import { v4 } from 'uuid';
 import { format } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSessionStore, useSession } from '../../hook';
+import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
@@ -75,6 +77,7 @@ export const useChecklistRecord = () => {
   const [checklistRecordList, setChecklistRecordList] =
     useSessionStore<ChecklistRecorStore>(CHECKLIST_RECORD_KEY, {});
   const { userId, ready } = useSession();
+  const queryClient = useQueryClient();
 
   const addChecklistRecord = (data: AddChecklistRecordData) => {
     if (data.records.length) {
@@ -105,6 +108,8 @@ export const useChecklistRecord = () => {
         checklistTemplateId: data.checklistTemplateId,
         createdAt: data.createdAt,
         submissionId,
+      }).then(res => {
+        if (res) queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
       });
       return result;
     }

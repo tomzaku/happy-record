@@ -1,6 +1,7 @@
 // Components
 import AppRouter from '@dreamer/route';
 import PwaInstallation from '@dreamer/pwa';
+import { QueryClientProvider } from '@tanstack/react-query';
 
 // Hooks
 import {
@@ -8,6 +9,7 @@ import {
   withPomodoroGlobalConfig,
 } from '@dreamer/pomodoro-common';
 import { useSession } from '@dreamer/global';
+import { queryClient } from '@dreamer/global/src/lib/queryClient';
 
 // Hoc
 import { withTranslation } from '@dreamer/translation';
@@ -55,16 +57,18 @@ function App() {
   // no-op when no backend is configured (VITE_SUPABASE_URL unset).
   useSession();
   return (
-    <ErrorBoundary>
-      <div className={styles.container} data-theme={theme}>
-        <div className={styles.body}>
-          <AppRouter />
-          <PwaInstallation />
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>
+        <div className={styles.container} data-theme={theme}>
+          <div className={styles.body}>
+            <AppRouter />
+            <PwaInstallation />
+          </div>
+          <div id="drawer-global-root" />
+          <div id="modal-global-root" />
         </div>
-        <div id="drawer-global-root" />
-        <div id="modal-global-root" />
-      </div>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </QueryClientProvider>
   );
 }
 
