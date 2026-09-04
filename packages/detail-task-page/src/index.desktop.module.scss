@@ -225,3 +225,35 @@
   font-size: 14px;
   line-height: 1.5;
 }
+
+.shortcutsHint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 4px 0;
+  color: var(--text-description-color);
+  font-size: 12px;
+}
+
+.shortcutItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid var(--card-border);
+  background: var(--surface-secondary);
+  color: var(--text-description-color);
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+}

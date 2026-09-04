@@ -174,6 +174,28 @@ const DetailTaskPageDesktop = () => {
 
   const navigate = useNavigate();
 
+  // Mirrors ChecklistToday.desktop.tsx's own vim-style `h`-to-go-back — this
+  // page has no j/k/o nav of its own (there's no list to move focus through),
+  // just the one binding so leaving via keyboard works symmetrically with
+  // entering via `l`/`o`/Enter on the home page.
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key !== 'h') return;
+
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
+      event.preventDefault();
+      navigate(-1);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
   const handleDeleteTask = () => {
     if (!id) return;
     deleteChecklistTemplate(id);
@@ -374,6 +396,13 @@ const DetailTaskPageDesktop = () => {
       {/*   onDismiss={() => setIsFocusZoneOpen(false)} */}
       {/*   onOpenModal={() => setIsFocusZoneOpen(true)} */}
       {/* /> */}
+
+      <div className={styles.shortcutsHint}>
+        <span className={styles.shortcutItem}>
+          <kbd className={styles.kbd}>h</kbd>
+          {intl.formatMessage({ id: 'DetailTaskPage.shortcuts-back', defaultMessage: 'Back' })}
+        </span>
+      </div>
     </div>
   );
 };

@@ -118,6 +118,36 @@ const ChecklistTodayDesktop = ({
   const [focusedTaskId, setFocusedTaskId] = React.useState<string | null>(null);
   const addTaskRef = React.useRef<AddInlineTaskHandle>(null);
 
+  // Inline rename — the row's own edit icon (shown on hover) swaps the title
+  // for a plain input instead of routing through the full task detail page
+  // for a one-word fix. Writes to the Checklist instance's own `title`
+  // (already what the row falls back from — see renderTaskRow), not the
+  // template's, mirroring how `completedAt` is already a per-instance
+  // override rather than a template-level edit.
+  const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
+  const [editingTitleValue, setEditingTitleValue] = React.useState('');
+
+  const startEditingTitle = (taskId: string, currentTitle: string) => {
+    setEditingTaskId(taskId);
+    setEditingTitleValue(currentTitle);
+  };
+
+  const cancelEditingTitle = () => {
+    setEditingTaskId(null);
+  };
+
+  const commitEditingTitle = () => {
+    if (!editingTaskId) return;
+    const currentChecklist = checklist[editingTaskId];
+    const trimmed = editingTitleValue.trim();
+    const previousTitle =
+      currentChecklist?.title || checklistTemplate[currentChecklist?.checklistTemplateId]?.title;
+    if (currentChecklist && trimmed && trimmed !== previousTitle) {
+      updateChecklist({ ...currentChecklist, title: trimmed });
+    }
+    setEditingTaskId(null);
+  };
+
   // Optimistic placeholders for tasks that are still saving — see
   // AddInlineTask's own comment on why creating a task's real Checklist row
   // can't appear until its template's own POST resolves. Not part of
@@ -175,6 +205,7 @@ const ChecklistTodayDesktop = ({
           break;
         }
         case 'o':
+        case 'l':
         case 'Enter': {
           if (!focusedTaskId || !checklist[focusedTaskId]) return;
           event.preventDefault();
@@ -182,6 +213,11 @@ const ChecklistTodayDesktop = ({
           navigate(
             `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
           );
+          break;
+        }
+        case 'h': {
+          event.preventDefault();
+          navigate(-1);
           break;
         }
         case 'a': {
@@ -269,6 +305,7 @@ const ChecklistTodayDesktop = ({
       <div className={styles.rowCheckbox}>
         <Icon width={20} icon="svg-spinners:180-ring" />
       </div>
+      <Icon className={styles.rowIcon} width={20} height={20} color="#8A8A8A" icon="solar:settings-linear" />
       <div className={styles.rowInfo}>
         <Typography.Text className={styles.rowTitle}>{task.title}</Typography.Text>
         <Typography.Text className={styles.rowSubtitle}>
@@ -287,6 +324,8 @@ const ChecklistTodayDesktop = ({
     const timeLabel = completed
       ? currentChecklist.completedAt && format(new Date(currentChecklist.completedAt), 'h:mm')
       : getScheduledTimeLabel(currentChecklistTemplate);
+    const title = currentChecklist?.title || currentChecklistTemplate?.title || '';
+    const isEditingTitle = editingTaskId === id;
 
     return (
       <div
@@ -319,18 +358,60 @@ const ChecklistTodayDesktop = ({
             }}
           />
         </div>
+        <Icon
+          className={styles.rowIcon}
+          width={20}
+          height={20}
+          color={color}
+          icon={currentChecklistTemplate?.avatar.name || 'solar:settings-linear'}
+        />
         <div className={styles.rowInfo}>
           <div className={styles.rowTitleLine}>
-            <Typography.Text className={styles.rowTitle}>
-              {currentChecklist?.title || currentChecklistTemplate?.title}
-            </Typography.Text>
-            {currentChecklistTemplate?.visibility === 'public' && (
-              <span className={styles.publicBadge}>
-                {intl.formatMessage({
-                  id: 'ChecklistToday.public-badge',
-                  defaultMessage: 'Public',
-                })}
-              </span>
+            {isEditingTitle ? (
+              <input
+                autoFocus
+                className={styles.rowTitleInput}
+                value={editingTitleValue}
+                onClick={event => event.stopPropagation()}
+                onChange={event => setEditingTitleValue(event.target.value)}
+                onBlur={commitEditingTitle}
+                onKeyDown={event => {
+                  event.stopPropagation();
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    commitEditingTitle();
+                  } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    cancelEditingTitle();
+                  }
+                }}
+              />
+            ) : (
+              <>
+                <Typography.Text className={styles.rowTitle}>{title}</Typography.Text>
+                <button
+                  type="button"
+                  className={styles.rowEditButton}
+                  onClick={event => {
+                    event.stopPropagation();
+                    startEditingTitle(id, title);
+                  }}
+                  aria-label={intl.formatMessage({
+                    id: 'ChecklistToday.edit-title',
+                    defaultMessage: 'Edit title',
+                  })}
+                >
+                  <Icon width={14} icon="solar:pen-2-line-duotone" />
+                </button>
+                {currentChecklistTemplate?.visibility === 'public' && (
+                  <span className={styles.publicBadge}>
+                    {intl.formatMessage({
+                      id: 'ChecklistToday.public-badge',
+                      defaultMessage: 'Public',
+                    })}
+                  </span>
+                )}
+              </>
             )}
           </div>
           <Typography.Text className={styles.rowSubtitle}>
@@ -435,6 +516,31 @@ const ChecklistTodayDesktop = ({
           <div className={styles.itemList}>{completedIds.map(renderTaskRow)}</div>
         </Card>
       )}
+
+      <div className={styles.shortcutsHint}>
+        <span className={styles.shortcutItem}>
+          <kbd className={styles.kbd}>j</kbd>
+          <kbd className={styles.kbd}>k</kbd>
+          {intl.formatMessage({ id: 'ChecklistToday.shortcuts-navigate', defaultMessage: 'Navigate' })}
+        </span>
+        <span className={styles.shortcutItem}>
+          <kbd className={styles.kbd}>l</kbd>
+          <kbd className={styles.kbd}>o</kbd>
+          {intl.formatMessage({ id: 'ChecklistToday.shortcuts-open', defaultMessage: 'Open' })}
+        </span>
+        <span className={styles.shortcutItem}>
+          <kbd className={styles.kbd}>x</kbd>
+          {intl.formatMessage({ id: 'ChecklistToday.shortcuts-toggle', defaultMessage: 'Toggle done' })}
+        </span>
+        <span className={styles.shortcutItem}>
+          <kbd className={styles.kbd}>a</kbd>
+          {intl.formatMessage({ id: 'ChecklistToday.shortcuts-add', defaultMessage: 'Add task' })}
+        </span>
+        <span className={styles.shortcutItem}>
+          <kbd className={styles.kbd}>esc</kbd>
+          {intl.formatMessage({ id: 'ChecklistToday.shortcuts-clear', defaultMessage: 'Clear focus' })}
+        </span>
+      </div>
     </div>
   );
 };
