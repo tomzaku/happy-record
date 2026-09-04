@@ -187,6 +187,7 @@
   "ChallengeList.stat-checkins": "lượt check-in (30 ngày)",
   "ChallengeList.stat-streak": "ngày liên tiếp",
   "ChecklistToday.completed": "Đã hoàn thành",
+  "ChecklistToday.creating": "Đang tạo…",
   "ChecklistToday.date-subtitle": "{{solarDate}} · Âm lịch ngày {{day}}, tháng {{month}}",
   "ChecklistToday.done-count": "{{count}} đã xong",
   "ChecklistToday.pending": "Đang chờ",

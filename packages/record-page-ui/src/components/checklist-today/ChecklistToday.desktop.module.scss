@@ -123,9 +123,27 @@
       text-decoration: line-through;
       color: var(--text-description-color);
     }
+  }
 
-    .rowDot {
-      opacity: 0.5;
+  // Marks the row keyboard nav (j/k) currently points at — see
+  // ChecklistToday.desktop.tsx's handleKeyDown.
+  &.taskRowFocused {
+    background: var(--surface-secondary);
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1.5px var(--almanac-accent);
+  }
+
+  // An optimistic placeholder for a task still saving — see
+  // ChecklistToday.desktop.tsx's renderPendingTaskRow. No onClick is wired
+  // up on this row at all, but cursor/pointer-events/hover are overridden
+  // too so it doesn't visually invite a click it can't act on.
+  &.taskRowPending {
+    cursor: default;
+    pointer-events: none;
+    opacity: 0.6;
+
+    &:hover {
+      opacity: 0.6;
     }
   }
 }
@@ -138,13 +156,6 @@
 .checkbox {
   height: 22px;
   width: 22px;
-}
-
-.rowDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .rowInfo {

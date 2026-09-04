@@ -1,5 +1,5 @@
 import React from 'react';
-import { useChecklist, useChecklistTemplates } from '@dreamer/global';
+import { useChecklist, useChecklistTemplates, uniqueId } from '@dreamer/global';
 import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
 import { createTask } from '@pregnant/create-checklist-page-ui/src/createTaskUtil';
@@ -7,15 +7,34 @@ import { FormState } from '@pregnant/create-checklist-page-ui/src/CoreChecklistF
 import cx from 'classnames';
 import styles from './index.module.scss';
 
+export interface PendingInlineTask {
+  id: string;
+  title: string;
+}
+
 interface AddInlineTaskProps {
   onTaskCreated?: () => void;
+  // Fired synchronously right before the create request goes out, and again
+  // once it settles (success or failure) — lets a parent render an
+  // optimistic "Creating…" row in its own list for the gap between "user hit
+  // submit" and "the real Checklist row exists in the store" (createTaskUtil
+  // has to await the template's own POST before it can create the checklist
+  // instance, to avoid racing checklist_template_id's FK — see its comment).
+  onTaskCreateStart?: (task: PendingInlineTask) => void;
+  onTaskCreateEnd?: (id: string) => void;
   className?: string;
 }
 
-const AddInlineTask = ({ 
-  onTaskCreated, 
-  className 
-}: AddInlineTaskProps) => {
+export interface AddInlineTaskHandle {
+  focus: () => void;
+}
+
+const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(({
+  onTaskCreated,
+  onTaskCreateStart,
+  onTaskCreateEnd,
+  className
+}, ref) => {
   const { addChecklistTemplate } = useChecklistTemplates();
   const { addChecklist } = useChecklist();
   const [taskName, setTaskName] = React.useState('');
@@ -29,39 +48,50 @@ const AddInlineTask = ({
   // synchronously, so the second call actually sees the first one's guard.
   const isSubmittingRef = React.useRef(false);
 
+  React.useImperativeHandle(ref, () => ({
+    focus: () => inputRef.current?.focus(),
+  }));
+
   const submitTask = () => {
     if (!taskName.trim() || isSubmittingRef.current) return;
 
     isSubmittingRef.current = true;
     setIsSubmitting(true);
 
-    try {
-      // Create a simple forever task with default values
-      const formData: FormState = {
-        selectedRecords: [],
-        checklistText: taskName.trim(),
-        weeklyHobbies: [], // No schedule = forever task
-        startedAt: new Date().toISOString().split('T')[0],
-        selectedTime: '',
-        selectedIcon: 'material-symbols:checklist',
-        selectedColor: '#607d8b',
-        fieldGroups: [],
-        tags: [],
-      };
+    const title = taskName.trim();
+    const pendingId = uniqueId();
+    onTaskCreateStart?.({ id: pendingId, title });
 
-      createTask(formData, addChecklistTemplate, addChecklist);
+    // Reset the form right away — the pending row above stands in for this
+    // task while it saves in the background, so there's no reason to make
+    // the user wait before typing the next one.
+    setTaskName('');
+    // Force re-render of Input component to clear its internal state
+    setInputKey(prev => prev + 1);
+    isSubmittingRef.current = false;
+    setIsSubmitting(false);
 
-      // Reset form
-      setTaskName('');
-      // Force re-render of Input component to clear its internal state
-      setInputKey(prev => prev + 1);
-      onTaskCreated?.();
-    } catch (error) {
-      console.error('Failed to create task:', error);
-    } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
-    }
+    // Create a simple forever task with default values
+    const formData: FormState = {
+      selectedRecords: [],
+      checklistText: title,
+      weeklyHobbies: [], // No schedule = forever task
+      startedAt: new Date().toISOString().split('T')[0],
+      selectedTime: '',
+      selectedIcon: 'material-symbols:checklist',
+      selectedColor: '#607d8b',
+      fieldGroups: [],
+      tags: [],
+    };
+
+    createTask(formData, addChecklistTemplate, addChecklist)
+      .then(() => onTaskCreated?.())
+      .catch(error => {
+        console.error('Failed to create task:', error);
+      })
+      .finally(() => {
+        onTaskCreateEnd?.(pendingId);
+      });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -105,6 +135,8 @@ const AddInlineTask = ({
       />
     </form>
   );
-};
+});
+
+AddInlineTask.displayName = 'AddInlineTask';
 
 export default AddInlineTask;

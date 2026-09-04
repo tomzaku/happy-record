@@ -7,7 +7,7 @@ import cx from 'classnames';
 import Typography from '@moon-ui/typography';
 import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
-import AddInlineTask from '../AddInlineTask';
+import AddInlineTask, { PendingInlineTask } from '../AddInlineTask';
 
 const ChecklistToday = ({
   date,
@@ -34,6 +34,18 @@ const ChecklistToday = ({
     [getChecklistByGivingDate, date, selectedTag],
   );
 
+  // Optimistic placeholders for tasks that are still saving — see
+  // AddInlineTask's and ChecklistToday.desktop.tsx's equivalent comments on
+  // why creating a task's real Checklist row can't appear until its
+  // template's own POST resolves.
+  const [pendingTasks, setPendingTasks] = React.useState<PendingInlineTask[]>([]);
+  const handleTaskCreateStart = React.useCallback((task: PendingInlineTask) => {
+    setPendingTasks(prev => [...prev, task]);
+  }, []);
+  const handleTaskCreateEnd = React.useCallback((id: string) => {
+    setPendingTasks(prev => prev.filter(task => task.id !== id));
+  }, []);
+
   // See ChecklistToday.desktop.tsx's equivalent check: empty here means
   // either "still fetching" or "genuinely nothing" — these flags are what
   // tell the two apart, so a fresh page load doesn't flash "No tasks
@@ -56,7 +68,10 @@ const ChecklistToday = ({
     );
   }
 
-  if (checklistByGivingDateIds.length === 0) {
+  // A pending optimistic task still counts as "something to show" even
+  // before any real Checklist row exists — see ChecklistToday.desktop.tsx's
+  // equivalent check.
+  if (checklistByGivingDateIds.length === 0 && pendingTasks.length === 0) {
     return (
       <div>
         <div className={styles.emptyContainer}>
@@ -73,7 +88,11 @@ const ChecklistToday = ({
             })}
           </Typography.Title>
         </div>
-        <AddInlineTask className={styles.addTaskButton} />
+        <AddInlineTask
+          className={styles.addTaskButton}
+          onTaskCreateStart={handleTaskCreateStart}
+          onTaskCreateEnd={handleTaskCreateEnd}
+        />
       </div>
     );
   }
@@ -82,6 +101,21 @@ const ChecklistToday = ({
   // file's comment on why schedule *time* isn't a usable grouping key.
   const pendingIds = checklistByGivingDateIds.filter(id => !checklist[id]?.completedAt);
   const completedIds = checklistByGivingDateIds.filter(id => checklist[id]?.completedAt);
+
+  const renderPendingRow = (task: PendingInlineTask, isLast: boolean) => (
+    <div
+      key={task.id}
+      className={cx(styles.checklistItem, styles.pendingItem, isLast && styles.lastChecklistItem)}
+    >
+      <Icon width={32} height={32} icon="svg-spinners:180-ring" />
+      <div className={styles.titleRow}>
+        <Typography.Text className={styles.title}>{task.title}</Typography.Text>
+        <span className={styles.pendingLabel}>
+          {intl.formatMessage({ id: 'ChecklistToday.creating', defaultMessage: 'Creating…' })}
+        </span>
+      </div>
+    </div>
+  );
 
   const renderRow = (id: string, isLast: boolean) => {
     const currentChecklist = checklist[id];
@@ -145,7 +179,12 @@ const ChecklistToday = ({
 
   return (
     <div className={styles.container}>
-      {pendingIds.map((id, index) => renderRow(id, completedIds.length === 0 && index === pendingIds.length - 1))}
+      {pendingIds.map((id, index) =>
+        renderRow(id, completedIds.length === 0 && pendingTasks.length === 0 && index === pendingIds.length - 1),
+      )}
+      {pendingTasks.map((task, index) =>
+        renderPendingRow(task, completedIds.length === 0 && index === pendingTasks.length - 1),
+      )}
 
       {completedIds.length > 0 && (
         <div className={styles.groupLabel}>
@@ -160,7 +199,11 @@ const ChecklistToday = ({
       )}
       {completedIds.map((id, index) => renderRow(id, index === completedIds.length - 1))}
 
-      <AddInlineTask className={styles.addTaskButtonBottom} />
+      <AddInlineTask
+        className={styles.addTaskButtonBottom}
+        onTaskCreateStart={handleTaskCreateStart}
+        onTaskCreateEnd={handleTaskCreateEnd}
+      />
     </div>
   );
 };

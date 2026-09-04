@@ -16,8 +16,13 @@ import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 import Card from '@moon-ui/card';
 import { format, isToday } from 'date-fns';
-import AddInlineTask from '../AddInlineTask';
+import AddInlineTask, { AddInlineTaskHandle, PendingInlineTask } from '../AddInlineTask';
 import { getLunarDate, getLunarPhraseId } from '../../utils/lunarDate';
+
+const isEditableTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+};
 
 // Mirrors ChecklistGenericInfo's own ("General Settings") schedule rendering: once a template
 // has field groups, its real schedule is the merged union of every *active* group's own days
@@ -85,6 +90,118 @@ const ChecklistTodayDesktop = ({
   const lunar = React.useMemo(() => getLunarDate(date), [date]);
   const lunarPhrase = getLunarPhraseId(lunar.day);
 
+  // Grouped by completion, not schedule time — a field group's own `repeat`
+  // does carry an `hour`/`minute` (see fieldGroupRepeat.ts), but nothing in
+  // this app gates on it today (`isFieldGroupActiveOnDay` only ever reads
+  // `dayOfWeek`), so most templates would land in a real "Morning" bucket by
+  // accident of an unset default rather than a schedule anyone actually set.
+  // completedAt is real, always-present data every task already carries.
+  // Computed above the loading/empty early returns (rather than alongside
+  // the render below, where they used to live) purely so the keyboard-nav
+  // hooks right after can depend on `orderedIds` without breaking the rules
+  // of hooks.
+  const pendingIds = React.useMemo(
+    () => checklistByGivingDateIds.filter(id => !checklist[id]?.completedAt),
+    [checklistByGivingDateIds, checklist],
+  );
+  const completedIds = React.useMemo(
+    () => checklistByGivingDateIds.filter(id => checklist[id]?.completedAt),
+    [checklistByGivingDateIds, checklist],
+  );
+  const orderedIds = React.useMemo(() => [...pendingIds, ...completedIds], [pendingIds, completedIds]);
+
+  // Vim-style list navigation: j/k to move the focused row, x to toggle it
+  // done, o/Enter to open it, a to jump into "Add a new task...". Ignored
+  // whenever an input/textarea/contenteditable already has focus, so typing
+  // a task name never gets swallowed as a shortcut — Escape there just blurs
+  // back out instead.
+  const [focusedTaskId, setFocusedTaskId] = React.useState<string | null>(null);
+  const addTaskRef = React.useRef<AddInlineTaskHandle>(null);
+
+  // Optimistic placeholders for tasks that are still saving — see
+  // AddInlineTask's own comment on why creating a task's real Checklist row
+  // can't appear until its template's own POST resolves. Not part of
+  // `orderedIds`/keyboard nav below: there's nothing to open or toggle yet.
+  const [pendingTasks, setPendingTasks] = React.useState<PendingInlineTask[]>([]);
+  const handleTaskCreateStart = React.useCallback((task: PendingInlineTask) => {
+    setPendingTasks(prev => [...prev, task]);
+  }, []);
+  const handleTaskCreateEnd = React.useCallback((id: string) => {
+    setPendingTasks(prev => prev.filter(task => task.id !== id));
+  }, []);
+
+  React.useEffect(() => {
+    if (focusedTaskId && !orderedIds.includes(focusedTaskId)) {
+      setFocusedTaskId(null);
+    }
+  }, [orderedIds, focusedTaskId]);
+
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      if (isEditableTarget(event.target)) {
+        if (event.key === 'Escape') {
+          (event.target as HTMLElement).blur();
+        }
+        return;
+      }
+
+      switch (event.key) {
+        case 'j':
+        case 'ArrowDown': {
+          if (orderedIds.length === 0) return;
+          event.preventDefault();
+          const currentIndex = focusedTaskId ? orderedIds.indexOf(focusedTaskId) : -1;
+          setFocusedTaskId(orderedIds[Math.min(currentIndex + 1, orderedIds.length - 1)]);
+          break;
+        }
+        case 'k':
+        case 'ArrowUp': {
+          if (orderedIds.length === 0) return;
+          event.preventDefault();
+          const currentIndex = focusedTaskId ? orderedIds.indexOf(focusedTaskId) : 0;
+          setFocusedTaskId(orderedIds[Math.max(currentIndex - 1, 0)]);
+          break;
+        }
+        case 'x': {
+          if (!focusedTaskId || !checklist[focusedTaskId]) return;
+          event.preventDefault();
+          const currentChecklist = checklist[focusedTaskId];
+          updateChecklist({
+            ...currentChecklist,
+            completedAt: currentChecklist.completedAt ? undefined : new Date().toISOString(),
+          });
+          break;
+        }
+        case 'o':
+        case 'Enter': {
+          if (!focusedTaskId || !checklist[focusedTaskId]) return;
+          event.preventDefault();
+          const currentChecklist = checklist[focusedTaskId];
+          navigate(
+            `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
+          );
+          break;
+        }
+        case 'a': {
+          event.preventDefault();
+          addTaskRef.current?.focus();
+          break;
+        }
+        case 'Escape': {
+          setFocusedTaskId(null);
+          break;
+        }
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [orderedIds, focusedTaskId, checklist, updateChecklist, navigate, date]);
+
   // `checklistByGivingDateIds` is empty both while the templates/checklists
   // fetch is still in flight and once it's genuinely resolved with nothing —
   // indistinguishable without these flags. Showing "No tasks found!" during
@@ -109,7 +226,11 @@ const ChecklistTodayDesktop = ({
     );
   }
 
-  if (checklistByGivingDateIds.length === 0) {
+  // A pending optimistic task still counts as "something to show" even
+  // before any real Checklist row exists — falls through to the full list
+  // below instead of the empty state, so the "Creating…" placeholder has
+  // somewhere to render.
+  if (checklistByGivingDateIds.length === 0 && pendingTasks.length === 0) {
     return (
       <div className={styles.emptyContainer}>
         <div className={styles.emptyBody}>
@@ -128,20 +249,34 @@ const ChecklistTodayDesktop = ({
             Create your first task to get started with your daily routine.
           </Typography.Text>
         </div>
-        <AddInlineTask className={styles.quickAddTask} />
+        <AddInlineTask
+          ref={addTaskRef}
+          className={styles.quickAddTask}
+          onTaskCreateStart={handleTaskCreateStart}
+          onTaskCreateEnd={handleTaskCreateEnd}
+        />
       </div>
     );
   }
 
-  // Grouped by completion, not schedule time — a field group's own `repeat`
-  // does carry an `hour`/`minute` (see fieldGroupRepeat.ts), but nothing in
-  // this app gates on it today (`isFieldGroupActiveOnDay` only ever reads
-  // `dayOfWeek`), so most templates would land in a real "Morning" bucket by
-  // accident of an unset default rather than a schedule anyone actually set.
-  // completedAt is real, always-present data every task already carries.
-  const pendingIds = checklistByGivingDateIds.filter(id => !checklist[id]?.completedAt);
-  const completedIds = checklistByGivingDateIds.filter(id => checklist[id]?.completedAt);
-  const completedPercent = Math.round((completedIds.length / checklistByGivingDateIds.length) * 100);
+  const completedPercent =
+    checklistByGivingDateIds.length > 0
+      ? Math.round((completedIds.length / checklistByGivingDateIds.length) * 100)
+      : 0;
+
+  const renderPendingTaskRow = (task: PendingInlineTask) => (
+    <div key={task.id} className={cx(styles.taskRow, styles.taskRowPending)}>
+      <div className={styles.rowCheckbox}>
+        <Icon width={20} icon="svg-spinners:180-ring" />
+      </div>
+      <div className={styles.rowInfo}>
+        <Typography.Text className={styles.rowTitle}>{task.title}</Typography.Text>
+        <Typography.Text className={styles.rowSubtitle}>
+          {intl.formatMessage({ id: 'ChecklistToday.creating', defaultMessage: 'Creating…' })}
+        </Typography.Text>
+      </div>
+    </div>
+  );
 
   const renderTaskRow = (id: string) => {
     const currentChecklist = checklist[id];
@@ -156,12 +291,17 @@ const ChecklistTodayDesktop = ({
     return (
       <div
         key={id}
-        className={cx(styles.taskRow, completed && styles.taskRowDone)}
-        onClick={() =>
+        className={cx(
+          styles.taskRow,
+          completed && styles.taskRowDone,
+          id === focusedTaskId && styles.taskRowFocused,
+        )}
+        onClick={() => {
+          setFocusedTaskId(id);
           navigate(
             `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
-          )
-        }
+          );
+        }}
       >
         <div onClick={e => e.stopPropagation()} className={styles.rowCheckbox}>
           <Checkbox
@@ -179,7 +319,6 @@ const ChecklistTodayDesktop = ({
             }}
           />
         </div>
-        <span className={styles.rowDot} style={{ background: color }} />
         <div className={styles.rowInfo}>
           <div className={styles.rowTitleLine}>
             <Typography.Text className={styles.rowTitle}>
@@ -258,18 +397,28 @@ const ChecklistTodayDesktop = ({
       </div>
 
       <Card className={styles.sectionCard}>
-        {pendingIds.length > 0 && (
+        {(pendingIds.length > 0 || pendingTasks.length > 0) && (
           <>
             <div className={styles.sectionHeader}>
               <Typography.Text className={styles.sectionLabel}>
                 {intl.formatMessage({ id: 'ChecklistToday.pending', defaultMessage: 'Pending' })}
               </Typography.Text>
-              <Typography.Text className={styles.sectionCount}>{pendingIds.length}</Typography.Text>
+              <Typography.Text className={styles.sectionCount}>
+                {pendingIds.length + pendingTasks.length}
+              </Typography.Text>
             </div>
-            <div className={styles.itemList}>{pendingIds.map(renderTaskRow)}</div>
+            <div className={styles.itemList}>
+              {pendingIds.map(renderTaskRow)}
+              {pendingTasks.map(renderPendingTaskRow)}
+            </div>
           </>
         )}
-        <AddInlineTask className={styles.quickAddTask} />
+        <AddInlineTask
+          ref={addTaskRef}
+          className={styles.quickAddTask}
+          onTaskCreateStart={handleTaskCreateStart}
+          onTaskCreateEnd={handleTaskCreateEnd}
+        />
       </Card>
 
       {completedIds.length > 0 && (
