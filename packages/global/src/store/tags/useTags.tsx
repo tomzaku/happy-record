@@ -36,9 +36,8 @@ export const useTags = () => {
   // "have I already fetched this identity" Set (see git history for the old shape): the query
   // key itself is that dedup, shared across every mounted consumer. `staleTime: Infinity` keeps
   // this "fetch once per identity" like the code it replaces, rather than React Query's default
-  // refetch-on-refocus — a background refetch would otherwise race an optimistic write below and
-  // silently overwrite it with the pre-write server response before the mutation's own
-  // `onSettled` refetch (which reconciles for real) gets a chance to run.
+  // refetch-on-refocus — a background refetch would otherwise race an optimistic write below
+  // (see the mutations' own comment on why there's no reconciling refetch after a write either).
   const { data: tags = {} } = useQuery({
     queryKey,
     queryFn: async () => {
@@ -55,10 +54,9 @@ export const useTags = () => {
   // Canonical React Query optimistic-update shape (used by both `addTag` and `updateTag` below,
   // since the wire call for either is the same upsert): `onMutate` snapshots the cache before
   // writing so a failure has something to restore; `onError` rolls back to that snapshot instead
-  // of leaving a write that never actually landed server-side sitting in the UI forever;
-  // `onSettled` refetches regardless of outcome so the cache reconciles with the server's real
-  // state. `saveTag` is "quiet" (resolves `null` instead of rejecting on failure) — `mutationFn`
-  // turns that into a real rejection, since `onError` would otherwise never fire.
+  // of leaving a write that never actually landed server-side sitting in the UI forever.
+  // `saveTag` is "quiet" (resolves `null` instead of rejecting on failure) — `mutationFn` turns
+  // that into a real rejection, since `onError` would otherwise never fire.
   //
   // The snapshot is scoped to just the one tag being written, not the whole map: this resource
   // really can have more than one write in flight at once (useApplyAiChecklistTemplate.ts calls
@@ -66,6 +64,14 @@ export const useTags = () => {
   // before the first of several concurrent writes would, on that write's failure, roll back over
   // every sibling write that had already landed — wiping out tags that actually saved fine.
   // Restoring/deleting only this one key can't clobber a concurrent write to a different id.
+  //
+  // Deliberately no `onSettled` refetch: the object sent on a successful save is exactly the row
+  // that gets persisted (this client generates the id/timestamps itself, nothing server-computed
+  // comes back to reconcile), and `onError`'s targeted rollback already leaves the right local
+  // state on failure — a refetch afterward would only replace the whole cached map with
+  // whatever's on the server *right now*, which, mid-batch, can still be missing a sibling write
+  // that's still in flight (its own mutation hasn't landed yet), wiping it from the UI until that
+  // one's own mutation resolves. Skipping the refetch avoids that instead of racing it.
   const saveTagMutation = useMutation<{ ok: true }, Error, Tag, RollbackContext>({
     mutationFn: async tag => {
       const result = await saveTag(tag);
@@ -90,9 +96,6 @@ export const useTags = () => {
         return next;
       });
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
   });
 
   const removeTagMutation = useMutation<{ ok: true }, Error, string, RollbackContext>({
@@ -116,9 +119,6 @@ export const useTags = () => {
       if (!context?.previousTag) return;
       const restored = context.previousTag;
       queryClient.setQueryData<TagsMap>(queryKey, prev => ({ ...prev, [id]: restored }));
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
     },
   });
 
