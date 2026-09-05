@@ -387,3 +387,51 @@ describe('useChecklistTemplateDetail', () => {
     expect(mockFetchChecklistTemplateById).not.toHaveBeenCalled();
   });
 });
+
+describe('ensureAllTemplatesFetched', () => {
+  // Regression coverage: the home page selects many templates and calls
+  // ensureAllTemplatesFetched (via getChecklistTemplateIdsByGivingDate) on every render. Each
+  // selected template also gets its own per-id query (for the joined-challenge bypass) — if that
+  // query's `enabled` only checked "does 'all mine' have this id" instead of also waiting for
+  // "all mine" to actually settle, every selected template would fire its own individual
+  // GET /checklist-templates/:id in parallel with the one bulk GET /checklist-templates, the
+  // moment `wantsAll` flips true — an N+1 flood on every home page load.
+  it("doesn't fire an individual fetch for a selected template while the bulk fetch is still in flight", async () => {
+    const bulkFetch = createDeferred<{ templates: ChecklistTemplate[] }>();
+    mockFetchChecklistTemplates.mockReturnValueOnce(bulkFetch.promise);
+
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.updateSelectedChecklistTemplate(['template-flood-1', 'template-flood-2']);
+    });
+    act(() => {
+      result.current.getChecklistTemplateIdsByGivingDate({ date: new Date() });
+    });
+
+    // The bulk fetch is in flight — nothing should have fired an individual fetch for either
+    // selected template yet. Checked by specific id, not "never called at all": other tests'
+    // own known-ids (a deliberately never-shrinking list — see useKnownTemplateIdsStore) can
+    // leak into this same run and legitimately need their own bypass fetch, since this test's
+    // own bulk mock below doesn't happen to include them.
+    await waitFor(() => expect(mockFetchChecklistTemplates).toHaveBeenCalled());
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(mockFetchChecklistTemplateById).not.toHaveBeenCalledWith('template-flood-1');
+    expect(mockFetchChecklistTemplateById).not.toHaveBeenCalledWith('template-flood-2');
+
+    act(() => {
+      bulkFetch.resolve({
+        templates: [
+          { ...baseTemplate('template-flood-1'), createdAt: 'now', updatedAt: 'now' },
+          { ...baseTemplate('template-flood-2'), createdAt: 'now', updatedAt: 'now' },
+        ],
+      });
+    });
+
+    await waitFor(() => expect(result.current.checklistTemplate['template-flood-1']).toBeDefined());
+    // Still nothing for either — "all mine" settled and covered both, so neither ever needed its
+    // own fetch.
+    expect(mockFetchChecklistTemplateById).not.toHaveBeenCalledWith('template-flood-1');
+    expect(mockFetchChecklistTemplateById).not.toHaveBeenCalledWith('template-flood-2');
+  });
+});

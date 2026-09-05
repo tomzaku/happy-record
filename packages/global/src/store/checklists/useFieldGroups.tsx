@@ -118,7 +118,7 @@ export const useFieldGroups = () => {
   // bulk data already sits in the (genuinely shared) query cache.
   const [wantsAll, setWantsAll] = useWantsAllFieldGroupsStore();
   const allKey = fieldGroupsKeys.all(userId);
-  const { data: allGroups } = useQuery<FieldGroupsMap>({
+  const { data: allGroups, isLoading: allGroupsLoading } = useQuery<FieldGroupsMap>({
     queryKey: allKey,
     queryFn: async () => {
       const result = await fetchFieldGroups();
@@ -181,6 +181,11 @@ export const useFieldGroups = () => {
   const getFieldGroups = React.useCallback(
     (checklistTemplateId: string): FieldGroup[] => {
       if (wantsAll) {
+        // Wait for "all mine" to actually settle before falling back — firing the per-template
+        // fetch the instant `wantsAll` flips true (before the bulk fetch resolves) would issue a
+        // redundant individual request for every template in the same render loop, in parallel
+        // with the bulk fetch that was about to cover them a moment later.
+        if (allGroupsLoading) return [];
         const fromAll = Object.values(allGroups ?? {})
           .filter(group => group.checklistTemplateId === checklistTemplateId)
           .sort((a, b) => a.position - b.position);
@@ -188,7 +193,7 @@ export const useFieldGroups = () => {
       }
       return readByTemplateCache(checklistTemplateId);
     },
-    [wantsAll, allGroups, readByTemplateCache],
+    [wantsAll, allGroupsLoading, allGroups, readByTemplateCache],
   );
 
   /** Same as getFieldGroups, but always takes the per-template path — see its own comment for
