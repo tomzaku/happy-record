@@ -343,12 +343,17 @@ export const useChecklistTemplates = () => {
     (id: string) => setKnownTemplateIds(prev => (prev.includes(id) ? prev : [...prev, id])),
     [setKnownTemplateIds],
   );
-  const observedTemplateIds = React.useMemo(
-    () => Array.from(new Set([...selectedChecklistTemplates, ...knownTemplateIds])),
-    [selectedChecklistTemplates, knownTemplateIds],
-  );
+  // Deliberately NOT `selectedChecklistTemplates` — that list is persisted (localStorage) and
+  // never pruned when a template is deleted, so it can carry ids for templates that no longer
+  // exist at all. Fetching every one of those individually, forever, on every fresh page load
+  // was a real regression from this redesign — the original design never fetched per-id for the
+  // home page's own loop at all, only for an explicit single-id call (a detail-page visit, a
+  // join flow), which is exactly what populates `knownTemplateIds` via `mergeTemplates`. An
+  // orphaned id that's never been explicitly resolved this session just reads as `undefined`,
+  // same as before this redesign.
+  const observedTemplateIds = knownTemplateIds;
 
-  // One real query per observed template — `useQueries` since the id list is dynamic (can't call
+  // One real query per known template — `useQueries` since the id list is dynamic (can't call
   // useChecklistTemplateDetail in a loop). Waits for "all mine" to actually settle before
   // deciding whether an id needs its own fetch (not just `wantsAll` being true) — otherwise every
   // observed id fires its own request the instant "all mine" is requested, in parallel with the

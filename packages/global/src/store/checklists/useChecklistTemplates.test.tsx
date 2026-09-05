@@ -434,4 +434,32 @@ describe('ensureAllTemplatesFetched', () => {
     expect(mockFetchChecklistTemplateById).not.toHaveBeenCalledWith('template-flood-1');
     expect(mockFetchChecklistTemplateById).not.toHaveBeenCalledWith('template-flood-2');
   });
+
+  // Regression coverage: `selectedChecklistTemplates` is persisted (localStorage) and never
+  // pruned when a template is deleted — a real user's list can carry ids for templates that no
+  // longer exist at all. These must never get their own individual fetch: unlike a joined
+  // challenge's template (resolved once, explicitly, via getChecklistTemplate/mergeTemplates),
+  // an orphaned id was never explicitly resolved by anything, so nothing should try to fetch it
+  // speculatively just because it's selected — that would flood /checklist-templates/:id with
+  // permanent 404-shaped calls on every single page load, forever.
+  it("never fetches a selected id that was never explicitly resolved (an orphaned/deleted template)", async () => {
+    mockFetchChecklistTemplates.mockResolvedValueOnce({
+      templates: [{ ...baseTemplate('template-owned-1'), createdAt: 'now', updatedAt: 'now' }],
+    });
+
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.updateSelectedChecklistTemplate(['template-owned-1', 'template-orphaned-1']);
+    });
+    act(() => {
+      result.current.getChecklistTemplateIdsByGivingDate({ date: new Date() });
+    });
+
+    await waitFor(() => expect(result.current.checklistTemplate['template-owned-1']).toBeDefined());
+    // "all mine" settled without this id — but since nothing ever explicitly asked to resolve
+    // it, it must stay unresolved rather than triggering its own fetch.
+    expect(result.current.checklistTemplate['template-orphaned-1']).toBeUndefined();
+    expect(mockFetchChecklistTemplateById).not.toHaveBeenCalledWith('template-orphaned-1');
+  });
 });
