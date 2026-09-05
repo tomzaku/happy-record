@@ -1,7 +1,29 @@
+import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA } from 'vite-plugin-pwa';
+
+// Dev-only CSS module class naming: every package's main stylesheet is named
+// `index.module.scss` (or `index.desktop.module.scss`/`index.mobile.module.scss`),
+// so Vite's default `[name]` placeholder resolves to "index" everywhere and
+// gives no clue which package a class came from. Prefix with the owning
+// package folder name (or `web` for the app shell) instead.
+function devScopedName(localName, filename, css) {
+  const relative = path.relative(process.cwd(), filename).replace(/\\/g, '/');
+  const segments = relative.split('/');
+  const srcIndex = segments.indexOf('src');
+  const pkg = srcIndex > 0 ? segments[srcIndex - 1] : segments[0];
+  const base = path
+    .basename(filename)
+    .replace(/\.module\.(scss|css)$/, '')
+    // e.g. "index.desktop" -> "index-desktop" — a raw "." here would land in
+    // the CSS class name and split it into two selectors.
+    .replace(/[^a-zA-Z0-9_-]/g, '-');
+  const hash = createHash('md5').update(css).digest('hex').slice(0, 5);
+  return `${pkg}__${base}__${localName}___${hash}`;
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => ({
@@ -90,6 +112,13 @@ export default defineConfig(({ command }) => ({
     }
   },
   css: {
+    modules: {
+      // Dev-only: include the source filename in the generated class name
+      // (e.g. `Card__container__ngn4e`) so it's traceable in devtools.
+      // Left as Vite's default hash-only format for production builds to
+      // keep output small.
+      generateScopedName: command === 'serve' ? devScopedName : undefined,
+    },
     preprocessorOptions: {
       scss: {
         api: 'modern',
