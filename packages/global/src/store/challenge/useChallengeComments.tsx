@@ -1,12 +1,10 @@
-import React from 'react';
-import { useSessionStore } from '../../hook/useSessionStore';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import { uniqueId } from '../../util';
 import { fetchChallengeComments, postChallengeCommentApi } from './challengeCommentsApi';
+import { challengeCommentsKeys } from './challengeCommentsKeys';
 
-const CHALLENGE_COMMENTS_KEY = 'challenge_comments';
-
-/** One flat discussion thread per challenge — see CLAUDE.md. */
+/** One flat discussion thread per challenge. */
 export type ChallengeComment = {
   id: string;
   challengeId: string;
@@ -17,47 +15,69 @@ export type ChallengeComment = {
   updatedAt: string;
 };
 
-// Fetched once per (identity, challenge) — same scoped-fetch shape as every
-// other resource here. No live push: a comment posted by someone else after
-// this page's own fetch landed won't appear until a fresh load, same
-// limitation CLAUDE.md documents for the rest of the app.
+type CommentsByChallenge = Record<string, ChallengeComment[]>;
+
+// Fetched once per (identity, challenge) — same scoped-fetch shape as every other resource here.
+// No live push: a comment posted by someone else after this page's own fetch landed won't appear
+// until a fresh load.
 const fetchedFor = new Set<string>();
 
 export const useChallengeComments = () => {
-  const [byChallengeId, setByChallengeId] = useSessionStore<Record<string, ChallengeComment[]>>(
-    CHALLENGE_COMMENTS_KEY,
-    {},
-  );
   const { userId, ready } = useSession();
+  const queryClient = useQueryClient();
+  const queryKey = challengeCommentsKeys.map(userId);
 
-  const getComments = React.useCallback(
-    (challengeId: string | undefined) => {
-      if (challengeId && ready) {
-        const key = `${userId}:${challengeId}`;
-        if (!fetchedFor.has(key)) {
-          fetchedFor.add(key);
-          fetchChallengeComments(challengeId).then(result => {
-            if (!result) {
-              fetchedFor.delete(key);
-              return;
-            }
-            setByChallengeId(prev => ({ ...prev, [challengeId]: result.comments }));
-          });
-        }
-      }
-      return (challengeId && byChallengeId[challengeId]) || [];
+  // Same "one shared cache entry, backed by React Query instead of useSessionStore" shape as
+  // useTags.tsx's own list query — see its own comment for the reasoning.
+  const { data: byChallengeId = {} } = useQuery<CommentsByChallenge>({
+    queryKey,
+    queryFn: () => queryClient.getQueryData<CommentsByChallenge>(queryKey) ?? {},
+    enabled: false,
+    staleTime: Infinity,
+  });
+
+  // Not quiet — posting is a click the user should see fail, not one that silently drops (see
+  // postChallengeCommentApi's own comment). No optimistic write/rollback here for the same
+  // reason: the comment only ever gets added to the cache once the real post has actually
+  // succeeded, so there's nothing to roll back on failure — `mutateAsync` rejecting is exactly
+  // what lets `postComment`'s own caller catch and show that failure, same as before.
+  const postCommentMutation = useMutation<
+    { comment: ChallengeComment },
+    Error,
+    { id: string; challengeId: string; body: string; displayName: string }
+  >({
+    mutationFn: args => postChallengeCommentApi(args),
+    onSuccess: (result, { challengeId }) => {
+      queryClient.setQueryData<CommentsByChallenge>(queryKey, prev => ({
+        ...prev,
+        [challengeId]: [...(prev?.[challengeId] || []), result.comment],
+      }));
     },
-    [byChallengeId, userId, ready, setByChallengeId],
-  );
+  });
 
-  /** Not quiet — posting is a click the user should see fail, not one that silently drops. */
+  const getComments = (challengeId: string | undefined) => {
+    if (challengeId && ready) {
+      const key = `${userId}:${challengeId}`;
+      if (!fetchedFor.has(key)) {
+        fetchedFor.add(key);
+        fetchChallengeComments(challengeId).then(result => {
+          if (!result) {
+            fetchedFor.delete(key);
+            return;
+          }
+          queryClient.setQueryData<CommentsByChallenge>(queryKey, prev => ({
+            ...prev,
+            [challengeId]: result.comments,
+          }));
+        });
+      }
+    }
+    return (challengeId && byChallengeId[challengeId]) || [];
+  };
+
   const postComment = async (challengeId: string, body: string, displayName: string) => {
-    const comment = await postChallengeCommentApi({ id: uniqueId(), challengeId, body, displayName });
-    setByChallengeId(prev => ({
-      ...prev,
-      [challengeId]: [...(prev[challengeId] || []), comment.comment],
-    }));
-    return comment.comment;
+    const result = await postCommentMutation.mutateAsync({ id: uniqueId(), challengeId, body, displayName });
+    return result.comment;
   };
 
   return { getComments, postComment };
