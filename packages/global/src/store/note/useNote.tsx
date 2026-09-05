@@ -6,9 +6,8 @@ import { v4 } from 'uuid';
 import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
 import { notesKeys } from './notesKeys';
 
-// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
-// a failure resolves to null and this hook's own in-memory state is the
-// fallback, unchanged.
+// Every backend call here is quiet: a failure resolves to null and this
+// hook's own in-memory state is the fallback, unchanged.
 import { fetchNoteById, fetchNotes, fetchOwnNoteForFieldGroup, removeNote as removeNoteApi, saveNote } from './noteApi';
 
 const NOTE_LOADING_KEY = 'note_loading';
@@ -390,8 +389,8 @@ export const useNote = () => {
    * optimistic copy) — the server computes the real one from `value` on its own next fetch;
    * nothing here trusts this local placeholder for anything.
    *
-   * `async`, and actually awaited by every caller (not fire-and-forget like most writes here —
-   * see CLAUDE.md's own note on that) because an `origin`'s own owner id column
+   * `async`, and actually awaited by every caller (not fire-and-forget like most writes here)
+   * because an `origin`'s own owner id column
    * (`field_groups.note_id`/`fields.note_id`) is a real FK into `notes`: persisting that id
    * before this row has actually landed server-side is a real race, not a hypothetical one — it
    * shipped once as exactly this, a field-group's `noteId` reaching the server before its note

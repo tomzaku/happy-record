@@ -3,10 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
 
-// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
-// a failure resolves to null and this hook's own in-memory state is the
-// fallback. `tags` used to be a genuinely-local-only `useLocalStorage` key
-// (per device), which is exactly why the home page's Filter by Tag dropdown
+// Every backend call here is quiet: a failure resolves to null and this
+// hook's own in-memory state is the fallback. `tags` used to be a
+// genuinely-local-only `useLocalStorage` key (per device), which is exactly
+// why the home page's Filter by Tag dropdown
 // couldn't list a tag that arrived any other way — synced down from another
 // device, or off a shared/public template — even though the template itself
 // really had it (`checklist_templates.tags`, a real synced column). Backing

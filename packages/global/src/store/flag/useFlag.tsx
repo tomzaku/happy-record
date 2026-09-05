@@ -3,9 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
 
-// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
-// a failure resolves to null and this hook's own in-memory state is the
-// fallback, unchanged.
+// Every backend call here is quiet: a failure resolves to null and this
+// hook's own in-memory state is the fallback, unchanged.
 import { fetchFlags, removeFlag as removeFlagApi, saveFlag } from './flagApi';
 import { flagsKeys } from './flagsKeys';
 

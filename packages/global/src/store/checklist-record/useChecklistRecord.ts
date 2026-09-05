@@ -6,9 +6,8 @@ import { useSession } from '../../hook';
 import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
 import { checklistRecordsKeys } from './checklistRecordsKeys';
 
-// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
-// a failure resolves to null and this hook's own in-memory state is the
-// fallback, unchanged.
+// Every backend call here is quiet: a failure resolves to null and this
+// hook's own in-memory state is the fallback, unchanged.
 import {
   fetchChecklistRecords,
   removeChecklistRecord as removeChecklistRecordApi,
@@ -82,10 +81,10 @@ type UpdateChecklistRecordArgs = {
 // Records are unbounded (every day, forever), so this fetches only the one
 // range it's actually asked for, keyed so the same (identity, template,
 // range, fields) tuple isn't re-fetched every call within a page load —
-// this is the shape every other resource's read function now follows too
-// (see CLAUDE.md's "online-first data layer"). `userId` is part of the key
-// (not just a page-load guard) so a range already fetched for one identity
-// re-fetches once the signed-in identity actually changes.
+// this is the shape every other resource's read function follows too.
+// `userId` is part of the key (not just a page-load guard) so a range
+// already fetched for one identity re-fetches once the signed-in identity
+// actually changes.
 const syncedRanges = new Set<string>();
 
 export const useChecklistRecord = () => {
@@ -192,10 +191,10 @@ export const useChecklistRecord = () => {
     // Background sync for this exact range — merges into the cache when it
     // lands, so it's visible next time this range is read (e.g. the next
     // time this component mounts), not necessarily in the result returned
-    // below. See CLAUDE.md: null (offline, no backend) just means "use what
-    // this device already has", which is exactly what happens if this never
-    // resolves. Waits for `ready` so this doesn't fire against whatever
-    // transient session exists before the real one settles.
+    // below. Null (offline, no backend) just means "use what this device
+    // already has", which is exactly what happens if this never resolves.
+    // Waits for `ready` so this doesn't fire against whatever transient
+    // session exists before the real one settles.
     const rangeKey = JSON.stringify({ userId, checklistTemplateId, rangeDate, fieldIds, limit });
     if (ready && !syncedRanges.has(rangeKey)) {
       syncedRanges.add(rangeKey);

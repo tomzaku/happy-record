@@ -5,9 +5,9 @@ import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
 import { recordFieldsKeys } from './recordFieldsKeys';
 
-// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
-// a failure (offline, signed out, no backend configured) resolves to null
-// and this hook's own in-memory state is the fallback, unchanged.
+// Every backend call here is quiet: a failure (offline, signed out, no
+// backend configured) resolves to null and this hook's own in-memory state
+// is the fallback, unchanged.
 import {
   fetchRecordFields,
   fetchRecordFieldsByIds,
@@ -49,7 +49,7 @@ export type RecordField = {
   options?: string[];
   /**
    * 'public' means any user can use this field in their own checklist templates, not just see it
-   * in a list — see CLAUDE.md and supabase/functions/_shared/fields.ts. Never settable through
+   * in a list — see supabase/functions/_shared/fields.ts. Never settable through
    * this app's UI/API anymore: the server always writes 'private' for a real user's own field
    * regardless of what's sent (`fromRecordField`'s own comment), so this only ever comes back
    * 'public' for the three seeded system defaults (`duration`/`push-ups`/`note`), written by a
@@ -181,8 +181,7 @@ export const useRecordField = () => {
    * (the three system defaults, or a shared checklist template's own private fields, resolved via
    * `GET /fields?templateId=` — see fields/index.ts's own listByTemplate). Saving them again here
    * would upsert a row with this device's `user_id` against an id whose primary key already
-   * belongs to someone else, the exact "every client races to write the same global id" bug
-   * CLAUDE.md warns about for `fields.id`.
+   * belongs to someone else — every client racing to write the same global id.
    */
   const mergeRecordFields = React.useCallback(
     (fields: RecordField[]) => {
@@ -238,7 +237,7 @@ export const useRecordField = () => {
 
   /**
    * A joined challenge never forks its template's fields — every participant records against the
-   * owner's exact field ids (see CLAUDE.md), and those fields stay `visibility: 'private'`, so a
+   * owner's exact field ids, and those fields stay `visibility: 'private'`, so a
    * non-owner's `getAllRecordFields` (own + public only) can never resolve them on its own.
    * `acceptChallenge` already merges them in once at join time, but that's a write into this same
    * cache — gone the moment this device's session resets (a reload, a fresh sign-in), same as
