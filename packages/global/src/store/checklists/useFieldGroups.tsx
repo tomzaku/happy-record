@@ -118,7 +118,7 @@ export const useFieldGroups = () => {
   // bulk data already sits in the (genuinely shared) query cache.
   const [wantsAll, setWantsAll] = useWantsAllFieldGroupsStore();
   const allKey = fieldGroupsKeys.all(userId);
-  const { data: allGroups, isLoading: allGroupsLoading } = useQuery<FieldGroupsMap>({
+  const { data: allGroups, isSuccess: allGroupsSettled } = useQuery<FieldGroupsMap>({
     queryKey: allKey,
     queryFn: async () => {
       const result = await fetchFieldGroups();
@@ -158,15 +158,27 @@ export const useFieldGroups = () => {
     [queryClient, userId],
   );
 
-  const readByTemplateCache = React.useCallback(
+  // Reads whatever's already cached for this template — an optimistic write, or a previous
+  // fetch — without triggering a new network call. Used while "all mine" is still settling, so a
+  // fresh edit stays visible immediately without also firing a redundant individual fetch that
+  // the bulk request was about to cover anyway.
+  const peekByTemplateCache = React.useCallback(
     (checklistTemplateId: string): FieldGroup[] => {
-      if (!ready || !checklistTemplateId) return [];
-      const byTemplateKey = fetchOneTemplate(checklistTemplateId);
+      const byTemplateKey = fieldGroupsKeys.byTemplate(checklistTemplateId, userId);
       return Object.values(queryClient.getQueryData<FieldGroupsMap>(byTemplateKey) ?? {})
         .filter(group => group.checklistTemplateId === checklistTemplateId)
         .sort((a, b) => a.position - b.position);
     },
-    [ready, queryClient, fetchOneTemplate],
+    [queryClient, userId],
+  );
+
+  const readByTemplateCache = React.useCallback(
+    (checklistTemplateId: string): FieldGroup[] => {
+      if (!ready || !checklistTemplateId) return [];
+      fetchOneTemplate(checklistTemplateId);
+      return peekByTemplateCache(checklistTemplateId);
+    },
+    [ready, fetchOneTemplate, peekByTemplateCache],
   );
 
   /** One template's own groups. Prefers the bulk "all mine" query once that's covered this
@@ -180,12 +192,16 @@ export const useFieldGroups = () => {
    * wait for some other component to mount `useFieldGroupsForTemplate` itself first. */
   const getFieldGroups = React.useCallback(
     (checklistTemplateId: string): FieldGroup[] => {
-      if (wantsAll) {
-        // Wait for "all mine" to actually settle before falling back — firing the per-template
-        // fetch the instant `wantsAll` flips true (before the bulk fetch resolves) would issue a
-        // redundant individual request for every template in the same render loop, in parallel
-        // with the bulk fetch that was about to cover them a moment later.
-        if (allGroupsLoading) return [];
+      // Reads the store directly rather than the `wantsAll` above — `ensureAllFieldGroupsFetched`
+      // can flip this moments earlier in the very same render (called from useChecklistTemplates,
+      // after this hook's own body already ran), which that React-subscribed value won't see
+      // until the next render — this call needs it now, since it may run in the same loop.
+      if (useWantsAllFieldGroupsStore.getValue()) {
+        // Not settled yet (still disabled pending that flip, or still in flight) — peek whatever's
+        // already cached for this one template (an optimistic write in progress, say) instead of
+        // firing a redundant individual fetch for every template in the same loop; a real render
+        // follows once "all mine" actually resolves.
+        if (!allGroupsSettled) return peekByTemplateCache(checklistTemplateId);
         const fromAll = Object.values(allGroups ?? {})
           .filter(group => group.checklistTemplateId === checklistTemplateId)
           .sort((a, b) => a.position - b.position);
@@ -193,7 +209,7 @@ export const useFieldGroups = () => {
       }
       return readByTemplateCache(checklistTemplateId);
     },
-    [wantsAll, allGroupsLoading, allGroups, readByTemplateCache],
+    [allGroupsSettled, allGroups, peekByTemplateCache, readByTemplateCache],
   );
 
   /** Same as getFieldGroups, but always takes the per-template path — see its own comment for

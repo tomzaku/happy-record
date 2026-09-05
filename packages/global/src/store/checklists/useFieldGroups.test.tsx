@@ -66,6 +66,42 @@ beforeEach(() => {
   mockPatchFieldGroupRepeat.mockResolvedValue({ ok: true });
 });
 
+// Must run before any other test in this file calls ensureAllFieldGroupsFetched() — the "all
+// mine" wanted-flag is a module-level shared store (see createSharedState), so once a later test
+// flips it true, it stays true for the rest of this file and this exact race can't be observed.
+describe('ensureAllFieldGroupsFetched', () => {
+  // Reproduces a production flood: a caller (useChecklistTemplates' getChecklistTemplateIdsByGivingDate)
+  // calls ensureAllFieldGroupsFetched() and then getFieldGroups(id) for every owned template in the
+  // same tick, before the bulk fetch has settled. getFieldGroups must wait for the bulk fetch rather
+  // than falling back to an individual request for each id — otherwise every owned template fires
+  // its own /field-groups?checklistTemplateId= call in parallel with the bulk one covering them all.
+  it("doesn't fire an individual fetch for an owned template while the bulk fetch is still settling", async () => {
+    const bulk = createDeferred<{ fieldGroups: FieldGroup[] }>();
+    mockFetchFieldGroups.mockImplementation((args?: { checklistTemplateId?: string }) =>
+      args?.checklistTemplateId ? Promise.resolve({ fieldGroups: [] }) : bulk.promise,
+    );
+
+    const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.ensureAllFieldGroupsFetched();
+      result.current.getFieldGroups('template-owned-flood-1');
+    });
+
+    expect(mockFetchFieldGroups).not.toHaveBeenCalledWith({ checklistTemplateId: 'template-owned-flood-1' });
+
+    act(() => {
+      bulk.resolve({
+        fieldGroups: [baseGroup({ id: 'group-flood-1', checklistTemplateId: 'template-owned-flood-1' })],
+      });
+    });
+    await waitFor(() =>
+      expect(result.current.getFieldGroups('template-owned-flood-1')).toHaveLength(1),
+    );
+    expect(mockFetchFieldGroups).not.toHaveBeenCalledWith({ checklistTemplateId: 'template-owned-flood-1' });
+  });
+});
+
 describe('useFieldGroupsForTemplate', () => {
   it('fetches and returns one template\'s own groups, ordered by position', async () => {
     mockFetchFieldGroups.mockResolvedValueOnce({

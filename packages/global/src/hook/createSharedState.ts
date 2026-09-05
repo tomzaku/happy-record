@@ -25,9 +25,16 @@ export function createSharedState<T>(initial: T) {
       })),
   }));
 
-  return (): [T, (value: T | ((prev: T) => T)) => void] => {
+  const useSharedState = (): [T, (value: T | ((prev: T) => T)) => void] => {
     const value = useStore(state => state.value);
     const setValue = useStore(state => state.setValue);
     return [value, setValue];
   };
+
+  // Reads the latest value directly from the store, bypassing React's subscription — for a
+  // caller whose own render already captured a stale snapshot before another function flipped
+  // this moments earlier in the same tick (see useFieldGroups.tsx's getFieldGroups).
+  useSharedState.getValue = () => useStore.getState().value;
+
+  return useSharedState;
 }
