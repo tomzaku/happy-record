@@ -1,18 +1,18 @@
 import { v4 } from 'uuid';
 import React from 'react';
 import { endOfDay, startOfDay } from 'date-fns';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalStorage } from '../../hook/useLocalStorage';
-import { useSessionStore } from '../../hook/useSessionStore';
+import { createSharedState } from '../../hook/createSharedState';
 import { useSession } from '../../hook/useSession';
 import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
 import type { FieldOverrides } from '../record-field/useRecordField';
 import { useFieldGroups } from './useFieldGroups';
+import { checklistTemplatesKeys } from './checklistTemplatesKeys';
 
-// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
-// a failure resolves to null and this hook's own in-memory state is the
-// fallback, unchanged.
+// Every backend call here is quiet: a failure resolves to null and this
+// hook's own in-memory state is the fallback, unchanged.
 import {
   fetchChecklistTemplateById,
   fetchChecklistTemplates,
@@ -21,7 +21,6 @@ import {
   saveChecklistTemplate,
 } from './checklistTemplatesApi';
 
-const CHECKLIST_TEMPLATE_KEY = 'checklist_template';
 const SELECTED_CHECKLISTS_TEMPLATE_KEY = 'selected_checklist_templates';
 
 /**
@@ -85,13 +84,12 @@ export type FieldGroup = {
   /**
    * Soft delete — set (to the deletion time) instead of actually deleting the row, by "Delete
    * Group" in the group's own settings menu (ChecklistFieldGroupMenu). There's no undo anywhere
-   * else in this app (a write here is immediate and optimistic, same as everywhere — see
-   * CLAUDE.md's "online-first" section), so this is what makes a group's own title/schedule/
-   * fields recoverable at all after a delete, rather than that config being gone the instant the
-   * request fires. Every consumer that renders or counts "the template's groups" should go
-   * through `getActiveFieldGroups` (below) rather than reading a fetched list directly, so an
-   * archived group doesn't silently reappear in a tab list, a schedule union, or a group-name
-   * summary that forgot to filter it out.
+   * else in this app (a write here is immediate and optimistic, same as everywhere), so this is
+   * what makes a group's own title/schedule/fields recoverable at all after a delete, rather than
+   * that config being gone the instant the request fires. Every consumer that renders or counts
+   * "the template's groups" should go through `getActiveFieldGroups` (below) rather than reading
+   * a fetched list directly, so an archived group doesn't silently reappear in a tab list, a
+   * schedule union, or a group-name summary that forgot to filter it out.
    *
    * Restoring a group must send this as `null`, not `undefined` — `JSON.stringify` drops an
    * `undefined`-valued key entirely, so it would never even reach the `field-groups` POST body,
@@ -193,12 +191,30 @@ export type ChecklistTemplate = {
   updatedAt: string;
 };
 
+type ChecklistTemplatesMap = Record<string, ChecklistTemplate>;
+// Scoped to the one template being written, not a whole-map snapshot — see useTags.tsx's own
+// comment (same fix, same resource shape) for why a global snapshot isn't safe under concurrent
+// writes.
+type RollbackContext = { previousTemplate: ChecklistTemplate | undefined };
+type SaveTemplateArgs = {
+  template: ChecklistTemplate;
+  wire: { kind: 'create' } | { kind: 'patch'; changes: Record<string, unknown> } | { kind: 'none' };
+};
+
 // Fetched by whatever scope is actually asked for — one id, or "all mine"
 // (needed by the management screen and by schedule-matching for the home
 // view) — never unconditionally on mount. Keyed so the same (identity,
 // scope) tuple isn't re-fetched every call within a page load.
 const fetchedScopes = new Set<string>();
 const ALL_SCOPE = '__all__';
+
+// Starts `true` and flips to `false` once the "all mine" fetch settles (success or a quiet
+// `null` both count). A dedicated store (see createSharedState's own comment on why this can't
+// just be React Query's own `isLoading`): `ensureAllTemplatesFetched` below is a plain `.then()`
+// fetch, not a real `useQuery` fetch, so nothing about React Query's own loading state reflects
+// it — this is what lets a consumer like ChecklistToday tell "no tasks exist" apart from "still
+// fetching," instead of flashing a misleading empty state before the real data has arrived.
+const useTemplatesLoadingStore = createSharedState(true);
 
 /**
  * Keeps the stored `repeat.dayOfWeek` in sync with the derived union of the template's own
@@ -225,25 +241,25 @@ function withSyncedRepeat(template: ChecklistTemplate): ChecklistTemplate {
 }
 
 export const useChecklistTemplates = () => {
-  const [checklistTemplate, setChecklistTemplate] = useSessionStore<
-    Record<string, ChecklistTemplate>
-  >(CHECKLIST_TEMPLATE_KEY, {});
+  const { userId, ready } = useSession();
+  const queryClient = useQueryClient();
+  const queryKey = checklistTemplatesKeys.map(userId);
+
   const [selectedChecklistTemplates, setSelectedChecklist] = useLocalStorage<
     string[]
   >(SELECTED_CHECKLISTS_TEMPLATE_KEY, []);
-  const { userId, ready } = useSession();
-  const queryClient = useQueryClient();
   const invalidateChecklistLogs = () => queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
-  // Starts `true` and flips to `false` once the "all mine" fetch settles
-  // (success or a quiet `null` both count — either way, there's nothing left
-  // to wait on). `checklistTemplate` being empty is otherwise indistinguishable
-  // from "hasn't loaded yet" — a consumer like ChecklistToday needs this to
-  // tell "no tasks exist" apart from "still fetching," so it doesn't flash a
-  // misleading empty state before the real data has had a chance to arrive.
-  const [templatesLoading, setTemplatesLoading] = useSessionStore<boolean>(
-    'checklist_templates_loading',
-    true,
-  );
+  const [templatesLoading, setTemplatesLoading] = useTemplatesLoadingStore();
+
+  // The shared checklist-templates cache, backed by React Query instead of useSessionStore — same
+  // "one cache entry, several imperative scoped fetches merging into it" shape as useNote.tsx's
+  // own notes cache. `enabled: false` since nothing auto-fetches this query itself.
+  const { data: checklistTemplate = {} } = useQuery<ChecklistTemplatesMap>({
+    queryKey,
+    queryFn: () => queryClient.getQueryData<ChecklistTemplatesMap>(queryKey) ?? {},
+    enabled: false,
+    staleTime: Infinity,
+  });
 
   // `field-groups` is its own resource now (see useFieldGroups.tsx) — a fetched template here
   // never carries real `fieldGroups` from the server anymore. `getChecklistTemplate`/
@@ -259,7 +275,8 @@ export const useChecklistTemplates = () => {
   // whenever it changes — see the comment above `getFieldGroups` for why this can't just live
   // inside the read functions alone.
   React.useEffect(() => {
-    setChecklistTemplate(prev => {
+    queryClient.setQueryData<ChecklistTemplatesMap>(queryKey, prev => {
+      if (!prev) return prev;
       let changed = false;
       const next = { ...prev };
       for (const id of Object.keys(next)) {
@@ -286,7 +303,7 @@ export const useChecklistTemplates = () => {
     (fetched: ChecklistTemplate[]) => {
       if (!fetched.length) return;
       const newIds: string[] = [];
-      setChecklistTemplate(prev => {
+      queryClient.setQueryData<ChecklistTemplatesMap>(queryKey, prev => {
         const merged = { ...prev };
         let changed = false;
         for (const template of fetched) {
@@ -310,7 +327,7 @@ export const useChecklistTemplates = () => {
       });
 
       // `selectedChecklistTemplates` is local-only and never itself fetched
-      // from the backend (see CLAUDE.md) — a template landing here for the
+      // from the backend — a template landing here for the
       // first time on this device has never had a chance to be selected or
       // deselected, so it defaults in the same way creating one locally
       // already does (addChecklistTemplate). Without this, a fetched
@@ -329,7 +346,7 @@ export const useChecklistTemplates = () => {
         });
       }
     },
-    [setChecklistTemplate, setSelectedChecklist],
+    [queryClient, queryKey, setSelectedChecklist],
   );
 
   // "All mine" — needed by the management screen and by schedule-matching
@@ -349,7 +366,73 @@ export const useChecklistTemplates = () => {
       mergeTemplates(result.templates);
       setTemplatesLoading(false);
     });
-  }, [userId, ready, mergeTemplates, setTemplatesLoading]);
+  }, [userId, ready, mergeTemplates]);
+
+  // Canonical React Query optimistic-update shape (used by both `addChecklistTemplate` and
+  // `updateChecklistTemplate` below) — see useTags.tsx's own saveTagMutation for the full
+  // rationale (per-entity rollback, no onSettled refetch). Always called (even when there's
+  // nothing to send over the wire — `wire.kind === 'none'`) so the optimistic write always
+  // happens the same way regardless of branch, matching this hook's own previous behavior of
+  // writing the merged template locally unconditionally and only skipping the *network* call
+  // when nothing actually changed. Only a real create invalidates checklist-logs on success —
+  // matching this hook's own previous behavior, where an ordinary field patch never did.
+  const saveTemplateMutation = useMutation<{ ok: true }, Error, SaveTemplateArgs, RollbackContext>({
+    mutationFn: async ({ template, wire }) => {
+      if (wire.kind === 'none') return { ok: true };
+      const result =
+        wire.kind === 'create'
+          ? await saveChecklistTemplate(template)
+          : await patchChecklistTemplate(template.id, wire.changes);
+      if (!result) throw new Error('Failed to save checklist template');
+      return result;
+    },
+    onMutate: async ({ template }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousTemplate = queryClient.getQueryData<ChecklistTemplatesMap>(queryKey)?.[template.id];
+      queryClient.setQueryData<ChecklistTemplatesMap>(queryKey, prev => ({ ...prev, [template.id]: template }));
+      return { previousTemplate };
+    },
+    onSuccess: (_result, { wire }) => {
+      if (wire.kind === 'create') invalidateChecklistLogs();
+    },
+    onError: (_error, { template }, context) => {
+      queryClient.setQueryData<ChecklistTemplatesMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        if (context?.previousTemplate) {
+          next[template.id] = context.previousTemplate;
+        } else {
+          delete next[template.id];
+        }
+        return next;
+      });
+    },
+  });
+
+  const removeTemplateMutation = useMutation<{ ok: true }, Error, string, RollbackContext>({
+    mutationFn: async id => {
+      const result = await removeChecklistTemplateApi(id);
+      if (!result) throw new Error('Failed to remove checklist template');
+      return result;
+    },
+    onMutate: async id => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousTemplate = queryClient.getQueryData<ChecklistTemplatesMap>(queryKey)?.[id];
+      queryClient.setQueryData<ChecklistTemplatesMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      return { previousTemplate };
+    },
+    onSuccess: () => invalidateChecklistLogs(),
+    onError: (_error, id, context) => {
+      if (!context?.previousTemplate) return;
+      const restored = context.previousTemplate;
+      queryClient.setQueryData<ChecklistTemplatesMap>(queryKey, prev => ({ ...prev, [id]: restored }));
+    },
+  });
 
   const addChecklistTemplate = (
     currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt' | 'updatedAt'> & {
@@ -367,24 +450,22 @@ export const useChecklistTemplates = () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
-    setChecklistTemplate(prev => ({
-      ...prev,
-      [id]: template,
-    }));
     updateSelectedChecklistTemplate(prev => [...prev, id]);
     // Optimistic — the caller gets `id` back immediately, before this
-    // resolves, same as every other write in this app (see CLAUDE.md's
-    // "online-first"). `saved` is exposed alongside it for the rare caller
-    // that references this id from *another table's* row before this one
-    // has necessarily landed server-side (useJoinChallenge.tsx forking a
-    // template then immediately inserting a challenge_participants row whose
-    // checklist_template_id has a real FK to this table — awaiting `saved`
-    // there is what keeps that insert from racing this row's own POST).
-    // Most callers can ignore it; the local store is already up to date.
-    const saved = saveChecklistTemplate(template).then(result => {
-      if (result) invalidateChecklistLogs();
-      return result;
-    });
+    // resolves, same as every other write in this app. `saved` is exposed
+    // alongside it for the rare caller that references this id from
+    // *another table's* row before this one has necessarily landed
+    // server-side (useJoinChallenge.tsx forking a template then immediately
+    // inserting a challenge_participants row whose checklist_template_id
+    // has a real FK to this table — awaiting `saved` there is what keeps
+    // that insert from racing this row's own POST). Most callers can ignore
+    // it; the local store is already up to date. Never rejects, even
+    // though the underlying mutation can (and does, to trigger its own
+    // rollback on failure) — matches every other quiet write here: a
+    // caller that awaits `saved` shouldn't need a try/catch.
+    const saved = saveTemplateMutation
+      .mutateAsync({ template, wire: { kind: 'create' } })
+      .catch(() => null);
     return {
       id,
       saved,
@@ -401,17 +482,11 @@ export const useChecklistTemplates = () => {
       createdAt: existing?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
-    setChecklistTemplate(prev => ({
-      ...prev,
-      [currentChecklistTemplate.id]: template,
-    }));
 
     if (!existing) {
       // Nothing on the server yet for this id — this is really a create,
       // so it needs the full row, not a diff against nothing.
-      saveChecklistTemplate(template).then(result => {
-        if (result) invalidateChecklistLogs();
-      });
+      saveTemplateMutation.mutate({ template, wire: { kind: 'create' } });
       return;
     }
 
@@ -434,20 +509,14 @@ export const useChecklistTemplates = () => {
       }
     }
 
-    if (Object.keys(changes).length > 0) {
-      patchChecklistTemplate(currentChecklistTemplate.id, changes);
-    }
+    saveTemplateMutation.mutate({
+      template,
+      wire: Object.keys(changes).length > 0 ? { kind: 'patch', changes } : { kind: 'none' },
+    });
   };
 
   const deleteChecklistTemplate = (id: string) => {
-    setChecklistTemplate(prev => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    removeChecklistTemplateApi(id).then(result => {
-      if (result) invalidateChecklistLogs();
-    });
+    removeTemplateMutation.mutate(id);
     updateSelectedChecklistTemplate(prev => prev.filter(templateId => templateId !== id));
   };
 

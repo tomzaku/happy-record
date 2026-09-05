@@ -1,4 +1,6 @@
-import { act, renderHook } from '@testing-library/react';
+import React from 'react';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // scheduleUtils.ts (reached via useChecklistTemplates.tsx) imports `Day`
 // from this package only for `getDaysFromRepeat`, which nothing here calls
@@ -10,22 +12,62 @@ jest.mock('@dreamer/tasks-page-common', () => ({
 }));
 
 // Deterministic, always-signed-in session — these tests are about
-// `selectedChecklistTemplates` bookkeeping, not auth.
+// this hook's own cache/mutation behavior, not auth.
+let mockUserId: string | undefined = 'user-templates-test';
 jest.mock('../../hook/useSession', () => ({
-  useSession: () => ({ userId: 'user-templates-test', ready: true }),
+  useSession: () => ({ userId: mockUserId, ready: true }),
+}));
+
+// useFieldGroups.tsx transitively imports fieldGroupsApi.ts -> lib/api.ts -> lib/supabase.ts ->
+// @supabase/supabase-js, which fails to transform under this repo's current jest config (the
+// same pre-existing issue that already breaks useChecklists.test.tsx on a clean checkout —
+// confirmed unrelated to this migration). Mocking the whole hook here — useChecklistTemplates.tsx
+// calls it directly, not just its types — keeps that chain from ever loading.
+const mockGetFieldGroups = jest.fn(() => []);
+const mockEnsureAllFieldGroupsFetched = jest.fn();
+jest.mock('./useFieldGroups', () => ({
+  useFieldGroups: () => ({
+    getFieldGroups: mockGetFieldGroups,
+    ensureAllFieldGroupsFetched: mockEnsureAllFieldGroupsFetched,
+    fieldGroupList: {},
+  }),
 }));
 
 // No real network — every call resolves to "nothing fetched," so tests
-// exercise this hook's own local state, not a scoped-fetch merge.
+// exercise this hook's own local state, not a scoped-fetch merge, unless a
+// test overrides one of these for itself.
+const mockFetchChecklistTemplates = jest.fn();
+const mockFetchChecklistTemplateById = jest.fn();
+const mockSaveChecklistTemplate = jest.fn();
+const mockPatchChecklistTemplate = jest.fn();
+const mockRemoveChecklistTemplate = jest.fn();
+
 jest.mock('./checklistTemplatesApi', () => ({
-  fetchChecklistTemplates: jest.fn().mockResolvedValue({ templates: [] }),
-  fetchChecklistTemplateById: jest.fn().mockResolvedValue({ templates: [] }),
-  saveChecklistTemplate: jest.fn(),
-  patchChecklistTemplate: jest.fn(),
-  removeChecklistTemplate: jest.fn(),
+  fetchChecklistTemplates: (...args: unknown[]) => mockFetchChecklistTemplates(...args),
+  fetchChecklistTemplateById: (...args: unknown[]) => mockFetchChecklistTemplateById(...args),
+  saveChecklistTemplate: (...args: unknown[]) => mockSaveChecklistTemplate(...args),
+  patchChecklistTemplate: (...args: unknown[]) => mockPatchChecklistTemplate(...args),
+  removeChecklistTemplate: (...args: unknown[]) => mockRemoveChecklistTemplate(...args),
 }));
 
 import { useChecklistTemplates, type ChecklistTemplate } from './useChecklistTemplates';
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(res => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+};
 
 const baseTemplate = (id: string): Omit<ChecklistTemplate, 'createdAt' | 'updatedAt'> => ({
   id,
@@ -36,17 +78,19 @@ const baseTemplate = (id: string): Omit<ChecklistTemplate, 'createdAt' | 'update
   tags: [],
 });
 
-// Regression coverage for the "checklist template shows up more than once
-// on the same day" report: `getChecklistTemplateIdsByGivingDate` filters
-// `selectedChecklistTemplates` directly with no dedup of its own, so any
-// duplicate id in that list renders that template's checklist once per
-// occurrence, everywhere the day is read (WeeklyCalendarVertical,
-// ChecklistToday). `updateSelectedChecklistTemplate` is the one choke point
-// every write to the list goes through, so deduping there is what keeps a
-// duplicate from ever reaching that list in the first place.
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockUserId = 'user-templates-test';
+  mockFetchChecklistTemplates.mockResolvedValue({ templates: [] });
+  mockFetchChecklistTemplateById.mockResolvedValue({ templates: [] });
+  mockSaveChecklistTemplate.mockResolvedValue({ ok: true });
+  mockPatchChecklistTemplate.mockResolvedValue({ ok: true });
+  mockRemoveChecklistTemplate.mockResolvedValue({ ok: true });
+});
+
 describe('updateSelectedChecklistTemplate', () => {
   it('never lets the selected-templates list carry a duplicate id', () => {
-    const { result } = renderHook(() => useChecklistTemplates());
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.updateSelectedChecklistTemplate(['dup-a', 'dup-a', 'dup-b']);
@@ -61,13 +105,9 @@ describe('updateSelectedChecklistTemplate', () => {
   });
 
   it('self-heals a list that already carries a duplicate (e.g. left over from an older client build)', () => {
-    const { result } = renderHook(() => useChecklistTemplates());
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
 
     act(() => {
-      // Not something today's code path writes on its own — simulates state
-      // that predates this dedup, the way a real device's localStorage can
-      // still hold it. Any write through updateSelectedChecklistTemplate
-      // should clean an existing duplicate up, not just avoid adding new ones.
       result.current.updateSelectedChecklistTemplate(['dup-c', 'dup-c', 'dup-c']);
     });
 
@@ -77,7 +117,7 @@ describe('updateSelectedChecklistTemplate', () => {
   });
 
   it("doesn't duplicate an id that's re-added while already selected (e.g. a double-fired checkbox)", () => {
-    const { result } = renderHook(() => useChecklistTemplates());
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.addChecklistTemplate(baseTemplate('preselected-1'), true);
@@ -85,8 +125,6 @@ describe('updateSelectedChecklistTemplate', () => {
     expect(result.current.selectedChecklistTemplates).toContain('preselected-1');
 
     act(() => {
-      // The checklist-template-page-ui checkbox's "checked" path — appends
-      // the id without checking membership first.
       result.current.updateSelectedChecklistTemplate([
         ...result.current.selectedChecklistTemplates,
         'preselected-1',
@@ -96,5 +134,231 @@ describe('updateSelectedChecklistTemplate', () => {
     expect(
       result.current.selectedChecklistTemplates.filter(id => id === 'preselected-1'),
     ).toHaveLength(1);
+  });
+});
+
+describe('addChecklistTemplate', () => {
+  it("returns a `saved` promise that never rejects, even when the save fails", async () => {
+    mockSaveChecklistTemplate.mockResolvedValue(null);
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    let saved: unknown;
+    await act(async () => {
+      const created = result.current.addChecklistTemplate(baseTemplate('template-add-1'));
+      saved = await created.saved;
+    });
+
+    expect(saved).toBeNull();
+    await waitFor(() => expect(result.current.checklistTemplate['template-add-1']).toBeUndefined());
+  });
+
+  // Regression coverage carried over from useTags.test.tsx's own version of this test — same
+  // resource shape, same fix (a whole-map snapshot rolling back over a sibling write that had
+  // already saved fine).
+  it('rolls back only the template that failed to save, not a sibling created afterward', async () => {
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    const badSave = createDeferred<null>();
+    const goodSave = createDeferred<{ ok: true }>();
+    mockSaveChecklistTemplate.mockImplementation((template: ChecklistTemplate) =>
+      template.id === 'template-bad' ? badSave.promise : goodSave.promise,
+    );
+
+    act(() => {
+      result.current.addChecklistTemplate(baseTemplate('template-bad'), true);
+    });
+    await waitFor(() =>
+      expect(mockSaveChecklistTemplate).toHaveBeenCalledWith(expect.objectContaining({ id: 'template-bad' })),
+    );
+
+    act(() => {
+      result.current.addChecklistTemplate(baseTemplate('template-good'), true);
+    });
+    await waitFor(() => expect(result.current.checklistTemplate['template-good']).toBeDefined());
+
+    act(() => {
+      badSave.resolve(null);
+    });
+    await waitFor(() => expect(result.current.checklistTemplate['template-bad']).toBeUndefined());
+    expect(result.current.checklistTemplate['template-good']).toBeDefined();
+
+    act(() => {
+      goodSave.resolve({ ok: true });
+    });
+  });
+});
+
+describe('updateChecklistTemplate', () => {
+  it('sends only the changed keys as a PATCH, and never invalidates checklist-logs on success', async () => {
+    mockFetchChecklistTemplateById.mockResolvedValue({
+      templates: [{ ...baseTemplate('template-patch-1'), createdAt: 'now', updatedAt: '2024-01-01T00:00:00.000Z' }],
+    });
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.getChecklistTemplate('template-patch-1');
+    });
+    await waitFor(() => expect(result.current.checklistTemplate['template-patch-1']).toBeDefined());
+
+    act(() => {
+      // updateChecklistTemplate's own type omits createdAt/updatedAt from its argument — passing
+      // them (even unchanged) would make the diff below see `updatedAt` itself as "changed,"
+      // since the function always re-stamps it fresh regardless of what's passed.
+      const { createdAt: _createdAt, updatedAt: _updatedAt, ...rest } =
+        result.current.checklistTemplate['template-patch-1'];
+      result.current.updateChecklistTemplate({ ...rest, title: 'Renamed' });
+    });
+
+    await waitFor(() => expect(mockPatchChecklistTemplate).toHaveBeenCalledWith('template-patch-1', { title: 'Renamed' }));
+    expect(mockSaveChecklistTemplate).not.toHaveBeenCalled();
+  });
+
+  it("doesn't call the API at all when nothing actually changed, but still no-ops cleanly", async () => {
+    mockFetchChecklistTemplateById.mockResolvedValue({
+      templates: [{ ...baseTemplate('template-nochange-1'), createdAt: 'now', updatedAt: '2024-01-01T00:00:00.000Z' }],
+    });
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.getChecklistTemplate('template-nochange-1');
+    });
+    await waitFor(() => expect(result.current.checklistTemplate['template-nochange-1']).toBeDefined());
+
+    act(() => {
+      const { createdAt: _createdAt, updatedAt: _updatedAt, ...rest } =
+        result.current.checklistTemplate['template-nochange-1'];
+      result.current.updateChecklistTemplate(rest);
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(mockPatchChecklistTemplate).not.toHaveBeenCalled();
+    expect(mockSaveChecklistTemplate).not.toHaveBeenCalled();
+  });
+
+  it('rolls back to the previous value if the patch fails', async () => {
+    mockFetchChecklistTemplateById.mockResolvedValue({
+      templates: [{ ...baseTemplate('template-patch-rollback'), createdAt: 'now', updatedAt: '2024-01-01T00:00:00.000Z' }],
+    });
+    mockPatchChecklistTemplate.mockResolvedValue(null);
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.getChecklistTemplate('template-patch-rollback');
+    });
+    await waitFor(() => expect(result.current.checklistTemplate['template-patch-rollback']?.title).toBe('Gym'));
+
+    act(() => {
+      result.current.updateChecklistTemplate({
+        ...result.current.checklistTemplate['template-patch-rollback'],
+        title: 'Renamed',
+      });
+    });
+
+    await waitFor(() => expect(result.current.checklistTemplate['template-patch-rollback'].title).toBe('Gym'));
+  });
+});
+
+describe('deleteChecklistTemplate', () => {
+  it('rolls back if the delete fails, restoring exactly the removed template', async () => {
+    mockFetchChecklistTemplateById.mockResolvedValue({
+      templates: [{ ...baseTemplate('template-delete-1'), createdAt: 'now', updatedAt: 'now' }],
+    });
+    mockRemoveChecklistTemplate.mockResolvedValue(null);
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.getChecklistTemplate('template-delete-1');
+    });
+    await waitFor(() => expect(result.current.checklistTemplate['template-delete-1']).toBeDefined());
+
+    act(() => {
+      result.current.deleteChecklistTemplate('template-delete-1');
+    });
+
+    await waitFor(() => expect(result.current.checklistTemplate['template-delete-1']).toBeDefined());
+    expect(result.current.selectedChecklistTemplates).not.toContain('template-delete-1');
+  });
+});
+
+describe('updateMyReminder', () => {
+  it('always re-fetches afterward, bypassing the scoped-fetch dedup', async () => {
+    mockFetchChecklistTemplateById.mockResolvedValue({
+      templates: [
+        {
+          ...baseTemplate('template-reminder-1'),
+          createdAt: 'now',
+          updatedAt: '2024-02-01T00:00:00.000Z',
+          repeat: {
+            minute: '0',
+            hour: '8',
+            dayOfMonth: '',
+            month: '',
+            dayOfWeek: '1',
+            startedAt: '2024-01-01T00:00:00.000Z',
+          },
+        },
+      ],
+    });
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    // Marks the scope as already-fetched, same as a real page load would.
+    act(() => {
+      result.current.getChecklistTemplate('template-reminder-1');
+    });
+    await waitFor(() => expect(result.current.checklistTemplate['template-reminder-1']).toBeDefined());
+    mockFetchChecklistTemplateById.mockClear();
+
+    await act(async () => {
+      await result.current.updateMyReminder('template-reminder-1', null);
+    });
+
+    expect(mockPatchChecklistTemplate).toHaveBeenCalledWith('template-reminder-1', { repeat: null });
+    // Re-fetched despite the scope already being marked "fetched" by the earlier getChecklistTemplate call.
+    expect(mockFetchChecklistTemplateById).toHaveBeenCalledWith('template-reminder-1');
+  });
+});
+
+describe('mergeTemplates', () => {
+  it("a same-timestamped fetch still wins (repeat-only changes don't bump updatedAt)", async () => {
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mergeTemplates([
+        {
+          ...baseTemplate('template-merge-1'),
+          createdAt: 'now',
+          updatedAt: '2024-03-01T00:00:00.000Z',
+          repeat: {
+            minute: '0',
+            hour: '8',
+            dayOfMonth: '',
+            month: '',
+            dayOfWeek: '1',
+            startedAt: '2024-01-01T00:00:00.000Z',
+          },
+        },
+      ]);
+    });
+    await waitFor(() => expect(result.current.checklistTemplate['template-merge-1']).toBeDefined());
+
+    act(() => {
+      result.current.mergeTemplates([
+        {
+          ...baseTemplate('template-merge-1'),
+          createdAt: 'now',
+          updatedAt: '2024-03-01T00:00:00.000Z',
+          repeat: {
+            minute: '30',
+            hour: '20',
+            dayOfMonth: '',
+            month: '',
+            dayOfWeek: '2',
+            startedAt: '2024-01-01T00:00:00.000Z',
+          },
+        },
+      ]);
+    });
+
+    await waitFor(() => expect(result.current.checklistTemplate['template-merge-1'].repeat?.hour).toBe('20'));
   });
 });
