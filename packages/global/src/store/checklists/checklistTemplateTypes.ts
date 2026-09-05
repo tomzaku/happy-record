@@ -39,6 +39,10 @@ export type ChecklistTemplate = {
   /** Lineage only, set at fork time when joining a challenge (useJoinChallenge.tsx) — never read
    * for access control. */
   copiedFromId?: string;
+  /** Set when the owner has deleted this template — the row itself isn't removed, so a challenge
+   * participant still resolves it (see 20260905000000_checklist_templates_soft_delete.sql), just
+   * flagged. Absent means not deleted. */
+  deletedAt?: string;
   updatedAt: string;
 };
 

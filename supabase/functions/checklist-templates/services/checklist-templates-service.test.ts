@@ -57,3 +57,18 @@ Deno.test('deleteTemplate: no-ops silently (no log) when the row is already gone
   await deleteTemplate({ db, userId: 'u1' } as never, 'nope');
   assertEquals(calls.checklist_logs ?? 0, 0);
 });
+
+// removeTemplate is a soft delete now (sets deleted_at, never removes the row — see
+// 20260905000000_checklist_templates_soft_delete.sql) — a second DELETE on an already-deleted
+// row still finds it via fetchTemplateRow, so this guard is what keeps that from logging a
+// duplicate 'delete' entry.
+Deno.test('deleteTemplate: no-ops silently (no log) when the row was already soft-deleted', async () => {
+  const { db, calls } = countingDb({
+    checklist_templates: [
+      { data: { id: 't1', user_id: 'u1', deleted_at: '2024-01-01T00:00:00.000Z' }, error: null },
+      { data: null, error: null },
+    ],
+  });
+  await deleteTemplate({ db, userId: 'u1' } as never, 't1');
+  assertEquals(calls.checklist_logs ?? 0, 0);
+});

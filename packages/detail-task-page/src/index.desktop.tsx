@@ -306,6 +306,22 @@ const DetailTaskPageDesktop = () => {
             )}
           </div>
 
+          {/* The template row still exists (soft-deleted, not removed — see
+              20260905000000_checklist_templates_soft_delete.sql), so this page still resolves
+              for a participant instead of just breaking; the owner already navigates away on
+              their own delete (handleDeleteTask), so this only ever shows to someone else. */}
+          {!isOwner && checklistTemplate.deletedAt && (
+            <div className={styles.deletedBanner}>
+              <Icon icon="solar:danger-triangle-bold" width={20} />
+              <Typography.Text>
+                {intl.formatMessage({
+                  id: 'DetailTaskPage.template-deleted',
+                  defaultMessage: 'This challenge has been deleted. Please contact the owner to restore it.',
+                })}
+              </Typography.Text>
+            </div>
+          )}
+
           {/* Main Content */}
           <div className={styles.mainContent}>
             <div className={styles.main}>

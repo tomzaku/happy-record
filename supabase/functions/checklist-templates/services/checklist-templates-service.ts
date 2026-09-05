@@ -79,10 +79,12 @@ export async function updateTemplate(
 
 export async function deleteTemplate({ db, userId }: Ctx, id: string): Promise<void> {
   // DELETE is idempotent (removing what isn't there is a no-op, not an error) — read first so a
-  // repeat/no-op delete on someone else's id or an already-gone row doesn't log a phantom entry.
+  // repeat/no-op delete on someone else's id, an already-gone id, or an already soft-deleted row
+  // (removeTemplate no longer removes the row at all — see its own comment) doesn't log a
+  // duplicate/phantom entry.
   const existing = await fetchTemplateRow(db, id);
   await removeTemplate(db, userId, id);
-  if (existing && existing.user_id === userId) {
+  if (existing && existing.user_id === userId && !existing.deleted_at) {
     await recordChecklistLog(db, userId, { checklistTemplateId: id, action: 'delete' });
   }
 }

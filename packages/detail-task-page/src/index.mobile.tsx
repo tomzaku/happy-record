@@ -207,6 +207,32 @@ const DetailTaskPageMobile = () => {
           onLeaveChallenge={() => setLeaveModalVisible(true)}
         />
       )}
+      {/* The template row still exists (soft-deleted, not removed — see
+          20260905000000_checklist_templates_soft_delete.sql), so this page still resolves for a
+          participant instead of just breaking; the owner already navigates away on their own
+          delete (handleDeleteTask), so this only ever shows to someone else. */}
+      {!isOwner && checklistTemplate.deletedAt && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 16px',
+            margin: '0 0 16px',
+            borderRadius: '8px',
+            border: '1px solid var(--modal-logo-warning, #f5a623)',
+            background: 'color-mix(in srgb, var(--modal-logo-warning, #f5a623) 12%, transparent)',
+          }}
+        >
+          <Icon icon="solar:danger-triangle-bold" width={20} />
+          <Typography.Text>
+            {intl.formatMessage({
+              id: 'DetailTaskPage.template-deleted',
+              defaultMessage: 'This challenge has been deleted. Please contact the owner to restore it.',
+            })}
+          </Typography.Text>
+        </div>
+      )}
       {allRecordFieldsLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
           <Icon width={32} icon="svg-spinners:180-ring" />

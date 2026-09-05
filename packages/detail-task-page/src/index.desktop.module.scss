@@ -257,3 +257,16 @@
   font-size: 11px;
   line-height: 1;
 }
+
+.deletedBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--modal-logo-warning, #f5a623);
+  background: color-mix(in srgb, var(--modal-logo-warning, #f5a623) 12%, transparent);
+  color: var(--text-primary-color);
+  font-size: 14px;
+}

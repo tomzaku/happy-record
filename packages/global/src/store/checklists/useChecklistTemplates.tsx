@@ -67,6 +67,7 @@ export const useChecklistTemplates = () => {
       return selectedChecklistTemplates.filter(checklistTemplateId => {
         const raw = checklistTemplate[checklistTemplateId];
         const currentChecklistTemplate = raw && withFieldGroups(raw);
+        if (currentChecklistTemplate?.deletedAt) return false;
 
         // startedAt is when a schedule takes effect — a day-of-week match before it is history,
         // not a day it was ever actually scheduled on. endedAt is the symmetric cutoff.

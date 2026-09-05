@@ -10,8 +10,16 @@ export async function fetchTemplateRow(db: SupabaseClient, id: string): Promise<
   return (data as Record<string, unknown>) ?? null;
 }
 
+// Excludes soft-deleted rows — an owner's own "all mine" list shouldn't keep showing what they
+// deleted. A joined participant's own read (fetchTemplatesByIds below) deliberately does NOT
+// filter these out — see its own comment.
 export async function fetchOwnedTemplates(db: SupabaseClient, userId: string): Promise<Record<string, unknown>[]> {
-  const { data, error } = await db.from('checklist_templates').select('*').eq('user_id', userId).order('created_at');
+  const { data, error } = await db
+    .from('checklist_templates')
+    .select('*')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .order('created_at');
   if (error) throw new Error(error.message);
   return (data ?? []) as Record<string, unknown>[];
 }
@@ -28,6 +36,10 @@ export async function fetchJoinedTemplateIds(db: SupabaseClient, userId: string,
   return [...new Set(((data ?? []) as Record<string, unknown>[]).map(r => r.checklist_template_id as string))];
 }
 
+// Deliberately includes soft-deleted rows — used for a joined-challenge template
+// (listOwnedAndJoinedTemplates), which a participant still needs to resolve (flagged, via the
+// DTO's own `deletedAt`) so their client can show "this was deleted" instead of the row just
+// disappearing with no explanation.
 export async function fetchTemplatesByIds(db: SupabaseClient, ids: string[]): Promise<Record<string, unknown>[]> {
   if (!ids.length) return [];
   const { data, error } = await db.from('checklist_templates').select('*').in('id', ids);
@@ -52,7 +64,15 @@ export async function patchTemplate(
   if (error) throw new Error(error.message);
 }
 
+// A soft delete, not a real row removal — see 20260905000000_checklist_templates_soft_delete.sql
+// for why. Owner-only, same as patchTemplate above: a caller who doesn't own `id` matches
+// nothing, a silent no-op — including a participant "leaving" via useLeaveChallenge.tsx's own
+// reuse of this same route, which never owns the row it's nominally "deleting."
 export async function removeTemplate(db: SupabaseClient, userId: string, id: string): Promise<void> {
-  const { error } = await db.from('checklist_templates').delete().eq('user_id', userId).eq('id', id);
+  const { error } = await db
+    .from('checklist_templates')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('id', id);
   if (error) throw new Error(error.message);
 }

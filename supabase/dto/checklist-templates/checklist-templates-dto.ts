@@ -19,6 +19,10 @@
 // annotated onto `repeat.isPersonal` (see ChecklistTemplate['repeat'] in
 // useChecklistTemplates.tsx) so the client can tell "this is my personal reminder" from "this is
 // just the group's default" without knowing anything about how it was resolved.
+// `deletedAt`/`deleted_at` (20260905000000_checklist_templates_soft_delete.sql): a soft-deleted
+// row is still returned, not hidden, so a participant who joined a since-deleted challenge still
+// resolves the template — flagged, so their client can show "this was deleted" instead of it
+// just vanishing.
 
 import { toRepeat } from '../../shared/repeats.ts';
 
@@ -40,6 +44,7 @@ export function toChecklistTemplate(
     updatedAt: r.updated_at as string,
     ...(r.flag_id ? { flagId: r.flag_id as string } : {}),
     ...(r.copied_from_id ? { copiedFromId: r.copied_from_id as string } : {}),
+    ...(r.deleted_at ? { deletedAt: r.deleted_at as string } : {}),
   };
 }
 
