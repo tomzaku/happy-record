@@ -32,7 +32,13 @@ const DetailTaskPageDesktop = () => {
   const [search, setSearchParams] = useSearchParams();
   const { getChecklistTemplate, updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
-  const { addChecklist, getChecklistDetail, getChecklistForDateWithoutFetching } = useChecklist();
+  const {
+    addChecklist,
+    getChecklistDetail,
+    getChecklistForDateWithoutFetching,
+    getAllChecklistWithTemplate,
+    deleteChecklist,
+  } = useChecklist();
   const { getAllRecordFields, allRecordFieldsLoading, getRecordFieldsByTemplateId } = useRecordField();
   const { getFieldGroupsByTemplateId } = useFieldGroups();
   const { getChallengeForTemplate } = useChallenge();
@@ -196,9 +202,17 @@ const DetailTaskPageDesktop = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
-  const handleDeleteTask = () => {
+  const handleDeleteTask = async () => {
     if (!id) return;
     deleteChecklistTemplate(id);
+    // The template alone doesn't remove every day it's already generated a
+    // Checklist instance for — without this, an orphaned instance (its
+    // checklistTemplateId no longer resolving to anything) keeps showing up
+    // on the home page, since computeChecklistsForDate falls back to
+    // treating a missing template as "unscheduled" rather than excluding it.
+    // Mirrors EditChecklistForm's own delete-with-instances flow.
+    const checklistsToDelete = await getAllChecklistWithTemplate(id);
+    checklistsToDelete.forEach(checklistItem => deleteChecklist(checklistItem.id));
     navigate('/');
   };
 

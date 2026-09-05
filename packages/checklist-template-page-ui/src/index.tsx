@@ -5,7 +5,7 @@ import Checkbox from '@moon-ui/checkbox';
 import Typography from '@moon-ui/typography';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
 
-import { useChecklistTemplates } from '@dreamer/global';
+import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 import { useIntl } from '@dreamer/translation';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,6 +20,7 @@ const ChecklistTemplatePageUi = () => {
     updateSelectedChecklistTemplate,
     deleteChecklistTemplate,
   } = useChecklistTemplates();
+  const { getAllChecklistWithTemplate, deleteChecklist } = useChecklist();
   const intl = useIntl();
   const navigate = useNavigate();
   const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
@@ -58,9 +59,16 @@ const ChecklistTemplatePageUi = () => {
     setDeleteModalVisible(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (templateToDelete) {
       deleteChecklistTemplate(templateToDelete);
+      // Without this, a Checklist instance already generated for this
+      // template keeps showing on the home page — its checklistTemplateId
+      // no longer resolves to anything, but computeChecklistsForDate treats
+      // that as "unscheduled" rather than excluding it. Mirrors
+      // EditChecklistForm's own delete-with-instances flow.
+      const checklistsToDelete = await getAllChecklistWithTemplate(templateToDelete);
+      checklistsToDelete.forEach(checklistItem => deleteChecklist(checklistItem.id));
       setDeleteModalVisible(false);
       setTemplateToDelete(null);
     }
