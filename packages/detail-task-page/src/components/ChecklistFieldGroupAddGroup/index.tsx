@@ -64,11 +64,16 @@ const ChecklistFieldGroupAddGroup = ({
 
   const [isModalVisible, setIsModalVisible] = React.useState(false);
   const [view, setView] = React.useState<AddGroupView>(AddGroupView.Form);
-  const [groupName, setGroupName] = React.useState('');
+  const defaultGroupName = intl.formatMessage({
+    defaultMessage: 'General',
+    id: 'label-default-group-name',
+  });
+
+  const [groupName, setGroupName] = React.useState(defaultGroupName);
   const [selectedFields, setSelectedFields] = React.useState<string[]>([]);
 
   const resetForm = () => {
-    setGroupName('');
+    setGroupName(defaultGroupName);
     setSelectedFields([]);
     setView(AddGroupView.Form);
   };

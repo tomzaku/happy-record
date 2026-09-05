@@ -211,7 +211,9 @@ const AiChecklistGenerate = ({
             <Icon width={18} icon="solar:magic-stick-3-bold-duotone" color="#fff" />
           </div>
           <Typography.Title level={4} noMargin>
-            {intl.formatMessage({ id: 'ai-checklist-generate.title', defaultMessage: 'Generate with AI' })}
+            {mode === 'new'
+              ? intl.formatMessage({ id: 'ai-checklist-generate.title-new', defaultMessage: 'Build a Task with AI' })
+              : intl.formatMessage({ id: 'ai-checklist-generate.title-existing', defaultMessage: 'Add to This Task with AI' })}
           </Typography.Title>
         </div>
         <Icon onClick={handleDismiss} width={20} icon="basil:close-outline" className={styles.closeIcon} />

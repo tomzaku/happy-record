@@ -85,7 +85,7 @@ const CreateTaskModal = ({
               onClick={() => setIsAiModalVisible(true)}
             >
               <Icon icon="solar:magic-stick-3-bold-duotone" width={16} style={{ marginRight: 4 }} />
-              Generate with AI
+              Build with AI
             </button>
           </div>
         </div>

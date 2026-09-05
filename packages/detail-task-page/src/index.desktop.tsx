@@ -286,7 +286,7 @@ const DetailTaskPageDesktop = () => {
                   className={styles.aiButton}
                 >
                   <Icon icon="solar:magic-stick-3-bold-duotone" width={20} color="#fff" className={styles.aiIcon} />
-                  {intl.formatMessage({ id: 'DetailTaskPage.generate-with-ai', defaultMessage: 'Generate with AI' })}
+                  {intl.formatMessage({ id: 'DetailTaskPage.generate-with-ai', defaultMessage: 'Add with AI' })}
                   {/* The button itself isn't the Pro gate — AiChecklistGenerate's own upsell
                       screen is (see its `!isPro` branch). This is just a heads-up so a non-Pro
                       user isn't surprised by the paywall a click away; hidden once they have
