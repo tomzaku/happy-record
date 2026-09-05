@@ -10,10 +10,9 @@ import {
   rankChallengeParticipants,
   useChallenge,
   useChallengeComments,
-  useChecklistTemplates,
+  useChecklistTemplateDetail,
   useLeaveChallenge,
   useSession,
-  useSyncedSelector,
 } from '@dreamer/global';
 import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 import { useMediaUrl } from '@dreamer/global/src/store/media';
@@ -141,7 +140,6 @@ const ChallengeDashboardPageUi = () => {
   const { getChallengeDashboard } = useChallenge();
   const { getComments, postComment } = useChallengeComments();
   const { leaveTheChallenge } = useLeaveChallenge();
-  const { getChecklistTemplate } = useChecklistTemplates();
   const { theme } = usePomodoroGlobalConfig();
   const isDark = theme === Theme.Dark;
   const navigate = useNavigate();
@@ -364,19 +362,12 @@ const ChallengeDashboardPageUi = () => {
   // challenge (they'd delete/unshare it via CardShare instead).
   const isOwner = !!dashboard?.challenge && dashboard.challenge.ownerId === userId;
 
-  // The breadcrumb back to the task this challenge is for — see the render
-  // below. `useSyncedSelector` (not a hand-picked `useMemo` dep list — see
-  // CLAUDE.md) so this stays correct if the template's title changes after
-  // this page already loaded, not just on the first render. Guarded so it
-  // never calls the real, fetch-triggering `getChecklistTemplate` with an
-  // undefined id during the loading state above (before `dashboard.challenge`
-  // exists) — that would just be a wasted request for a literal "undefined"
-  // scope, not a broken one, but there's no reason to fire it at all.
+  // The breadcrumb back to the task this challenge is for — see the render below. A real per-id
+  // query, so this stays correct if the template's title changes after this page already loaded,
+  // not just on the first render. `useChecklistTemplateDetail` itself no-ops on an undefined id,
+  // so this is naturally inert during the loading state above (before `dashboard.challenge` exists).
   const checklistTemplateId = dashboard?.challenge?.checklistTemplateId;
-  const checklistTemplate = useSyncedSelector(
-    (templateId?: string) => (templateId ? getChecklistTemplate(templateId) : undefined),
-    checklistTemplateId,
-  );
+  const { template: checklistTemplate } = useChecklistTemplateDetail(checklistTemplateId);
 
   const confirmLeaveChallenge = async () => {
     if (!id || !dashboard?.challenge?.checklistTemplateId || leaving) return;

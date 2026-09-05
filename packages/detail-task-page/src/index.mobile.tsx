@@ -5,6 +5,7 @@ import {
   checklistInstanceId,
   useChallenge,
   useChecklist,
+  useChecklistTemplateDetail,
   useChecklistTemplates,
   useLeaveChallenge,
   useSession,
@@ -26,7 +27,7 @@ import MiniChallengeDashboard from './components/MiniChallengeDashboard';
 const DetailTaskPageMobile = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
-  const { getChecklistTemplate, updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
+  const { updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
   const {
     addChecklist,
@@ -43,11 +44,10 @@ const DetailTaskPageMobile = () => {
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
 
-  // Derived straight from each store's own function every render (see
-  // useSyncedSelector) instead of snapshotted into local state from an
-  // effect — a template/field synced in from another device now actually
-  // shows up here instead of only refreshing when `checklistId` changes.
-  const checklistTemplate = useSyncedSelector(getChecklistTemplate, id ?? '');
+  // A real per-id query — re-renders whenever this template's own data
+  // changes, without needing the useSyncedSelector wrapper a plain callback
+  // read would.
+  const { template: checklistTemplate } = useChecklistTemplateDetail(id);
   // A joined challenge's fields are the owner's own, private rows — `getAllRecordFields` (own +
   // public only) can never resolve them for a participant. This triggers the same `?templateId=`
   // fetch the shared-template page uses (a no-op for the caller's own, still-private template) —

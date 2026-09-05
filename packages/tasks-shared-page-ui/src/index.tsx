@@ -1,7 +1,6 @@
 import {
   getSharedChecklistTemplateUrl,
-  useChecklistTemplates,
-  useSyncedSelector,
+  useChecklistTemplateDetail,
 } from '@dreamer/global';
 import Card from '@moon-ui/card';
 import Icon from '@moon-ui/icon/Icon';
@@ -20,16 +19,14 @@ import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-t
 const TasksSharedPage = () => {
   const { id } = useParams<{ id: string }>();
   const [url, setUrl] = React.useState('');
-  const { getChecklistTemplate } = useChecklistTemplates();
   const [copied, setCopied] = React.useState(false);
   const [targetName, setTargetName] = React.useState('you');
   const [message, setMessage] = React.useState('');
   const [userName, setUserName] = React.useState('');
   const { updateChecklistTemplate } = useCreateChecklistTemplate();
-  // Derived straight from the store's own function every render instead of
-  // snapshotted into local state from an effect missing `getChecklistTemplate`
-  // itself — a template edited elsewhere now actually shows up here.
-  const checklistTemplate = useSyncedSelector(getChecklistTemplate, id ?? '');
+  // A real per-id query — re-renders whenever this template's own data changes, without needing
+  // the useSyncedSelector wrapper a plain callback read would.
+  const { template: checklistTemplate } = useChecklistTemplateDetail(id);
   const handleCopy = (fullUrl: string) => {
     navigator.clipboard
       .writeText(fullUrl)

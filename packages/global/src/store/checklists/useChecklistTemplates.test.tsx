@@ -23,7 +23,7 @@ jest.mock('../../hook/useSession', () => ({
 // same pre-existing issue that already breaks useChecklists.test.tsx on a clean checkout —
 // confirmed unrelated to this migration). Mocking the whole hook here — useChecklistTemplates.tsx
 // calls it directly, not just its types — keeps that chain from ever loading.
-const mockGetFieldGroups = jest.fn(() => []);
+const mockGetFieldGroups = jest.fn((_checklistTemplateId: string): unknown[] => []);
 const mockEnsureAllFieldGroupsFetched = jest.fn();
 jest.mock('./useFieldGroups', () => ({
   useFieldGroups: () => ({
@@ -50,7 +50,7 @@ jest.mock('./checklistTemplatesApi', () => ({
   removeChecklistTemplate: (...args: unknown[]) => mockRemoveChecklistTemplate(...args),
 }));
 
-import { useChecklistTemplates, type ChecklistTemplate } from './useChecklistTemplates';
+import { useChecklistTemplates, useChecklistTemplateDetail, type ChecklistTemplate } from './useChecklistTemplates';
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
@@ -360,5 +360,30 @@ describe('mergeTemplates', () => {
     });
 
     await waitFor(() => expect(result.current.checklistTemplate['template-merge-1'].repeat?.hour).toBe('20'));
+  });
+});
+
+describe('useChecklistTemplateDetail', () => {
+  it('fetches and returns one template by id, merging in fresh field groups', async () => {
+    mockFetchChecklistTemplateById.mockResolvedValueOnce({
+      templates: [{ ...baseTemplate('template-detail-1'), createdAt: 'now', updatedAt: 'now' }],
+    });
+    mockGetFieldGroups.mockReturnValueOnce([{ id: 'group-1', checklistTemplateId: 'template-detail-1', title: 'Push', fields: [], position: 0, updatedAt: 'now' }]);
+
+    const { result } = renderHook(() => useChecklistTemplateDetail('template-detail-1'), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => expect(result.current.template?.id).toBe('template-detail-1'));
+    expect(result.current.template?.fieldGroups).toEqual([
+      expect.objectContaining({ id: 'group-1' }),
+    ]);
+    expect(mockFetchChecklistTemplateById).toHaveBeenCalledWith('template-detail-1');
+  });
+
+  it('does nothing when no id is given', () => {
+    renderHook(() => useChecklistTemplateDetail(undefined), { wrapper: createWrapper() });
+    expect(mockFetchChecklistTemplateById).not.toHaveBeenCalled();
   });
 });
