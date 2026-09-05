@@ -1,7 +1,9 @@
 import React from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSessionStore } from '../../hook/useSessionStore';
 import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
+import { recordFieldsKeys } from './recordFieldsKeys';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure (offline, signed out, no backend configured) resolves to null
@@ -14,7 +16,6 @@ import {
   saveRecordField,
 } from './recordFieldApi';
 
-const RECORD_KEY = 'record_field';
 const RECORD_ALL_LOADING_KEY = 'record_field_all_loading';
 
 export type RecordField = {
@@ -132,6 +133,12 @@ export const getEffectiveFieldDisplay = (
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
+type RecordFieldsMap = Record<string, RecordField>;
+// Scoped to the one field being written, not a whole-map snapshot — see useTags.tsx's own
+// comment (same fix, same resource shape) for why a global snapshot isn't safe under concurrent
+// writes.
+type RollbackContext = { previousField: RecordField | undefined };
+
 // Fetched by whatever scope is actually asked for — "all mine + public"
 // (needed by most consumers: field pickers, the manage-fields screen, AI
 // context, dedupe checks) or a specific set of ids (the share-flow
@@ -142,39 +149,45 @@ const fetchedScopes = new Set<string>();
 const ALL_SCOPE = '__all__';
 
 export const useRecordField = () => {
-  // No local bootstrap defaults anymore — `duration`/`push-ups`/`note` are seeded server-side as
-  // system rows (20260821000000_seed_system_fields.sql, unowned + `visibility: 'public'`), so a
-  // fresh page load starts empty and picks them up from the real fetch below, same
-  // "never render a stale local copy" rule every other `useSessionStore`-backed resource already
-  // follows (see CLAUDE.md's "Fetching from the backend" section) — this store used to be the one
-  // exception.
-  const [recordFieldList, setRecordFieldList] = useSessionStore<Record<string, RecordField>>(
-    RECORD_KEY,
-    {},
-  );
+  const { userId, ready } = useSession();
+  const queryClient = useQueryClient();
+  const queryKey = recordFieldsKeys.map(userId);
+
+  // The shared fields cache, backed by React Query instead of useSessionStore — same "one cache
+  // entry, several imperative scoped fetches merging into it" shape as useNote.tsx's own notes
+  // cache (see recordFieldsKeys.ts's own comment on why). `enabled: false` since nothing
+  // auto-fetches this query itself; every read function below does its own scoped fetch and
+  // merges via setQueryData.
+  const { data: recordFieldList = {} } = useQuery<RecordFieldsMap>({
+    queryKey,
+    queryFn: () => queryClient.getQueryData<RecordFieldsMap>(queryKey) ?? {},
+    enabled: false,
+    staleTime: Infinity,
+  });
   // One flag for getAllRecordFields' own scope — starts `true` so a consumer's very first render
   // (before this hook has had a chance to even kick off the fetch) already reads as "loading,"
   // not "confirmed empty." Same shape useNote.tsx's own `allLoading`/`allNotesLoading` uses, for
   // the same reason: detail-task-page's field groups render against `fields.find(...)` results
   // that are empty either way (still loading, or genuinely no fields), so a consumer needs this
   // to tell those two apart and show a spinner for the former instead of flashing an "empty"
-  // state while the real fields are still in flight.
+  // state while the real fields are still in flight. Genuinely local UI bookkeeping (not itself
+  // fetched server data), so this stays on useSessionStore rather than moving into the query
+  // cache above.
   const [allLoading, setAllLoading] = useSessionStore<boolean>(RECORD_ALL_LOADING_KEY, true);
-  const { userId, ready } = useSession();
 
   /**
-   * Merges fetched (or shared-template, or system-default) fields into local state without
-   * writing them back if this device doesn't own them — already persisted, owned by whoever
-   * created them (the three system defaults, or a shared checklist template's own private
-   * fields, resolved via `GET /fields?templateId=` — see fields/index.ts's own listByTemplate).
-   * Saving them again here would upsert a row with this device's `user_id` against an id whose
-   * primary key already belongs to someone else, the exact "every client races to write the same
-   * global id" bug CLAUDE.md warns about for `fields.id`.
+   * Merges fetched (or shared-template, or system-default) fields into the cache without writing
+   * them back if this device doesn't own them — already persisted, owned by whoever created them
+   * (the three system defaults, or a shared checklist template's own private fields, resolved via
+   * `GET /fields?templateId=` — see fields/index.ts's own listByTemplate). Saving them again here
+   * would upsert a row with this device's `user_id` against an id whose primary key already
+   * belongs to someone else, the exact "every client races to write the same global id" bug
+   * CLAUDE.md warns about for `fields.id`.
    */
   const mergeRecordFields = React.useCallback(
     (fields: RecordField[]) => {
       if (!fields.length) return;
-      setRecordFieldList(prev => {
+      queryClient.setQueryData<RecordFieldsMap>(queryKey, prev => {
         const merged = { ...prev };
         let changed = false;
         for (const field of fields) {
@@ -187,7 +200,7 @@ export const useRecordField = () => {
         return changed ? merged : prev;
       });
     },
-    [setRecordFieldList],
+    [queryClient, queryKey],
   );
 
   // useCallback'd (not a plain closure) so a consumer's own useSyncedSelector
@@ -228,15 +241,15 @@ export const useRecordField = () => {
    * owner's exact field ids (see CLAUDE.md), and those fields stay `visibility: 'private'`, so a
    * non-owner's `getAllRecordFields` (own + public only) can never resolve them on its own.
    * `acceptChallenge` already merges them in once at join time, but that's a write into this same
-   * in-memory `useSessionStore`-backed state — gone the moment this device's session resets (a
-   * reload, a fresh sign-in), same as every other scope here, which is exactly why a participant
-   * stopped seeing a joined challenge's field names on a later visit. This is the same `GET
-   * /fields?templateId=` bypass the shared-template page's own `useGetChecklistTemplateApi.tsx`
-   * uses (authorized by the template being public, not by the field itself) — detail-task-page
-   * calls this unconditionally for whatever template it's showing, since the route is a no-op for
-   * the caller's own, still-private template (it only ever returns rows once that template is
+   * cache — gone the moment this device's session resets (a reload, a fresh sign-in), same as
+   * every other scope here, which is exactly why a participant stopped seeing a joined
+   * challenge's field names on a later visit. This is the same `GET /fields?templateId=` bypass
+   * the shared-template page's own `useGetChecklistTemplateApi.tsx` uses (authorized by the
+   * template being public, not by the field itself) — detail-task-page calls this
+   * unconditionally for whatever template it's showing, since the route is a no-op for the
+   * caller's own, still-private template (it only ever returns rows once that template is
    * genuinely `visibility: 'public'`) and the merged rows show up in `getAllRecordFields`' own
-   * return value once they land, both scopes sharing the one `recordFieldList` store.
+   * return value once they land, both scopes sharing the one cache entry.
    */
   const getRecordFieldsByTemplateId = React.useCallback(
     (templateId: string) => {
@@ -265,8 +278,8 @@ export const useRecordField = () => {
    * field data this tick to build a request payload — not a render-time
    * value that's fine to start empty and fill in on a later re-render.
    * Builds the return value from what was already cached plus the fresh
-   * response directly, rather than re-reading the store after the await —
-   * the `recordFieldList` closure here is stale by the time `setRecordFieldList`
+   * response directly, rather than re-reading the cache after the await —
+   * the `recordFieldList` closure here is stale by the time `setQueryData`
    * (inside `mergeRecordFields`) actually lands.
    */
   const getRecordFieldsByIds = React.useCallback(
@@ -289,6 +302,61 @@ export const useRecordField = () => {
     [recordFieldList, ready, mergeRecordFields],
   );
 
+  // Canonical React Query optimistic-update shape (used by both `addRecordField` and
+  // `updateRecordField` below, since the wire call for either is the same upsert) — see
+  // useTags.tsx's own saveTagMutation for the full rationale (per-entity rollback, no onSettled
+  // refetch). `saveRecordField` is "quiet" (resolves `null` instead of rejecting on failure) —
+  // `mutationFn` turns that into a real rejection, since `onError` would otherwise never fire.
+  const saveRecordFieldMutation = useMutation<{ ok: true }, Error, RecordField, RollbackContext>({
+    mutationFn: async field => {
+      const result = await saveRecordField(field);
+      if (!result) throw new Error('Failed to save field');
+      return result;
+    },
+    onMutate: async field => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousField = queryClient.getQueryData<RecordFieldsMap>(queryKey)?.[field.id];
+      queryClient.setQueryData<RecordFieldsMap>(queryKey, prev => ({ ...prev, [field.id]: field }));
+      return { previousField };
+    },
+    onError: (_error, field, context) => {
+      queryClient.setQueryData<RecordFieldsMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        if (context?.previousField) {
+          next[field.id] = context.previousField;
+        } else {
+          delete next[field.id];
+        }
+        return next;
+      });
+    },
+  });
+
+  const removeRecordFieldMutation = useMutation<{ ok: true }, Error, string, RollbackContext>({
+    mutationFn: async id => {
+      const result = await removeRecordFieldApi(id);
+      if (!result) throw new Error('Failed to remove field');
+      return result;
+    },
+    onMutate: async id => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousField = queryClient.getQueryData<RecordFieldsMap>(queryKey)?.[id];
+      queryClient.setQueryData<RecordFieldsMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      return { previousField };
+    },
+    onError: (_error, id, context) => {
+      if (!context?.previousField) return;
+      const restored = context.previousField;
+      queryClient.setQueryData<RecordFieldsMap>(queryKey, prev => ({ ...prev, [id]: restored }));
+    },
+  });
+
   const addRecordField = (
     checklistRecord: PartialBy<RecordField, 'id' | 'updatedAt'>,
     keepId = false,
@@ -299,41 +367,21 @@ export const useRecordField = () => {
       id: newId,
       updatedAt: new Date().toISOString(),
     };
-    setRecordFieldList(prev => ({
-      ...prev,
-      [newId]: field,
-    }));
-    saveRecordField(field);
+    saveRecordFieldMutation.mutate(field);
     return field;
   };
 
   const removeRecordField = (id: string) => {
-    setRecordFieldList(prev => {
-      const newChecklistRecord = { ...prev };
-      delete newChecklistRecord[id];
-      return newChecklistRecord;
-    });
-    removeRecordFieldApi(id);
+    removeRecordFieldMutation.mutate(id);
   };
 
   const updateRecordField = (id: string, updates: Partial<RecordField>) => {
-    let updatedRecord: RecordField | null = null;
-    setRecordFieldList(prev => {
-      if (!prev[id]) {
-        throw new Error(`Record field with id ${id} not found`);
-      }
-      const newRecord = {
-        ...prev[id],
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      };
-      updatedRecord = newRecord;
-      return {
-        ...prev,
-        [id]: newRecord,
-      };
-    });
-    if (updatedRecord) saveRecordField(updatedRecord);
+    const existing = queryClient.getQueryData<RecordFieldsMap>(queryKey)?.[id];
+    if (!existing) {
+      throw new Error(`Record field with id ${id} not found`);
+    }
+    const updatedRecord: RecordField = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    saveRecordFieldMutation.mutate(updatedRecord);
     return updatedRecord;
   };
 
