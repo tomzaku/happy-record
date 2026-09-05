@@ -1,16 +1,16 @@
 import React from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSessionStore } from '../../hook/useSessionStore';
 import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
 import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
+import { notesKeys } from './notesKeys';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
 // fallback, unchanged.
 import { fetchNoteById, fetchNotes, fetchOwnNoteForFieldGroup, removeNote as removeNoteApi, saveNote } from './noteApi';
 
-const NOTE_KEY = 'note';
 const NOTE_LOADING_KEY = 'note_loading';
 const NOTE_ALL_LOADING_KEY = 'note_all_loading';
 const OWN_FIELD_GROUP_NOTE_KEY = 'note_own_field_group';
@@ -70,6 +70,11 @@ export type NoteOrigin =
   | { ownerType: 'field'; ownerId: string; checklistId?: string; checklistTemplateId?: string }
   | { ownerType: 'field_group'; ownerId: string; checklistTemplateId: string; copiedFromId?: string };
 
+type NotesMap = Record<string, Note>;
+// Scoped to the one note being written, not a whole-map snapshot — see useTags.tsx's own comment
+// (same fix, same resource shape) for why a global snapshot isn't safe under concurrent writes.
+type RollbackContext = { previousNote: Note | undefined };
+
 // Ids already fetched (or created locally, which counts as "fetched" — see createNote) this page
 // load, so the same id isn't re-requested every call. Separate from the reactive `loadingIds`
 // store below: this is only ever a write-once dedup key, never rendered.
@@ -92,13 +97,33 @@ const fetchedFieldGroupScopes = new Set<string>();
  * with its own `note_id`.
  */
 export const useNote = () => {
-  const [notes, setNotes] = useSessionStore<Record<string, Note>>(NOTE_KEY, {});
+  const { ready, userId } = useSession();
   const queryClient = useQueryClient();
+  const queryKey = notesKeys.map(userId);
+
   const invalidateIfFieldGroupNote = (ownerType: Note['ownerType']) => {
     if (ownerType === 'field_group') queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
   };
+
+  // The shared notes cache, backed by React Query instead of useSessionStore. Not a single
+  // fetched query — see notesKeys.ts's own comment: there's no one "fetch everything" call, so
+  // `enabled: false` keeps this query's own `queryFn` from ever running on its own. Every read
+  // function below (getNote, getNotesByIds, getOwnFieldGroupNote, getAllNotes, searchNotes) does
+  // its own imperative fetch, deduped the same way it always was (the Sets above), and merges
+  // into this same cache entry via `setQueryData` — this `useQuery` call exists purely to give
+  // every one of those merges somewhere reactive to write into, so a component re-renders no
+  // matter which read path actually populated the note it's looking at.
+  const { data: notes = {} } = useQuery<NotesMap>({
+    queryKey,
+    queryFn: () => queryClient.getQueryData<NotesMap>(queryKey) ?? {},
+    enabled: false,
+    staleTime: Infinity,
+  });
+
   // Reactive (unlike `fetchedIds` above) — this is what lets a consumer render a loading state
-  // on its editor while a note it already has the id for is still in flight.
+  // on its editor while a note it already has the id for is still in flight. Genuinely local UI
+  // bookkeeping (not itself fetched server data), so this stays on useSessionStore rather than
+  // moving into the query cache above.
   const [loadingIds, setLoadingIds] = useSessionStore<Record<string, boolean>>(NOTE_LOADING_KEY, {});
   // Same idea, one flag for getAllNotes' own scope — starts `true` so a consumer's very first
   // render (before this hook has had a chance to even kick off the fetch) already reads as
@@ -113,7 +138,6 @@ export const useNote = () => {
     OWN_FIELD_GROUP_NOTE_KEY,
     {},
   );
-  const { ready, userId } = useSession();
 
   const setLoading = (ids: string[], value: boolean) => {
     setLoadingIds(prev => {
@@ -129,7 +153,7 @@ export const useNote = () => {
     });
   };
 
-  /** Merges a fetch result into the store — same last-write-wins-by-`updatedAt` shape every
+  /** Merges a fetch result into the cache — same last-write-wins-by-`updatedAt` shape every
    * other resource here uses, plus one more rule `value`'s own optionality needs: an incoming
    * *summary* (no `value` — a getAllNotes/searchNotes result) must never overwrite a `value`
    * this device already has loaded in full, even when the summary is nominally newer (its other
@@ -146,7 +170,7 @@ export const useNote = () => {
       return;
     }
     if (!result.notes.length) return;
-    setNotes(prev => {
+    queryClient.setQueryData<NotesMap>(queryKey, prev => {
       const merged = { ...prev };
       let changed = false;
       for (const incoming of result.notes) {
@@ -192,7 +216,7 @@ export const useNote = () => {
       }
       return { note: notes[noteId], loading: !!loadingIds[noteId] };
     },
-    [notes, loadingIds, ready, setNotes, setLoadingIds],
+    [notes, loadingIds, ready],
   );
 
   /**
@@ -231,7 +255,7 @@ export const useNote = () => {
       const checked = noteId !== undefined;
       return { note: noteId ? notes[noteId] : undefined, loading: ready && !checked, checked };
     },
-    [notes, ownFieldGroupNoteIds, userId, ready, setNotes, setOwnFieldGroupNoteIds],
+    [notes, ownFieldGroupNoteIds, userId, ready],
   );
 
   /** Several notes at once, by id — the standalone notebook's own listing (useNoteRecord.tsx):
@@ -247,7 +271,7 @@ export const useNote = () => {
       }
       return uniqueIds.map(id => notes[id]).filter((n): n is Note => !!n);
     },
-    [notes, ready, setNotes],
+    [notes, ready],
   );
 
   /**
@@ -282,7 +306,7 @@ export const useNote = () => {
     return Object.values(notes).sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     );
-  }, [notes, userId, ready, setNotes, setAllLoading]);
+  }, [notes, userId, ready]);
 
   /** Whether getAllNotes' own fetch is still in flight for the current identity — starts `true`
    * (see allLoading's own comment) and only flips once that fetch actually resolves, quiet
@@ -300,6 +324,61 @@ export const useNote = () => {
     return result?.notes ?? [];
   };
 
+  // Canonical React Query optimistic-update shape (used by both `createNote` and `updateNote`
+  // below, since the wire call for either is the same upsert) — see useTags.tsx's own
+  // saveTagMutation for the full rationale (per-entity rollback, no onSettled refetch). `saveNote`
+  // is "quiet" (resolves `null` instead of rejecting on failure) — `mutationFn` turns that into a
+  // real rejection, since `onError` would otherwise never fire.
+  const saveNoteMutation = useMutation<{ ok: true }, Error, Note, RollbackContext>({
+    mutationFn: async note => {
+      const result = await saveNote(note);
+      if (!result) throw new Error('Failed to save note');
+      return result;
+    },
+    onMutate: async note => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousNote = queryClient.getQueryData<NotesMap>(queryKey)?.[note.id];
+      queryClient.setQueryData<NotesMap>(queryKey, prev => ({ ...prev, [note.id]: note }));
+      return { previousNote };
+    },
+    onError: (_error, note, context) => {
+      queryClient.setQueryData<NotesMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        if (context?.previousNote) {
+          next[note.id] = context.previousNote;
+        } else {
+          delete next[note.id];
+        }
+        return next;
+      });
+    },
+  });
+
+  const removeNoteMutation = useMutation<{ ok: true }, Error, string, RollbackContext>({
+    mutationFn: async id => {
+      const result = await removeNoteApi(id);
+      if (!result) throw new Error('Failed to remove note');
+      return result;
+    },
+    onMutate: async id => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousNote = queryClient.getQueryData<NotesMap>(queryKey)?.[id];
+      queryClient.setQueryData<NotesMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      return { previousNote };
+    },
+    onError: (_error, id, context) => {
+      if (!context?.previousNote) return;
+      const restored = context.previousNote;
+      queryClient.setQueryData<NotesMap>(queryKey, prev => ({ ...prev, [id]: restored }));
+    },
+  });
+
   /** Creates a new note and returns it. When `origin` is given, the caller persists its `id`
    * onto its own owner right after (`updateFieldGroup`/`updateRecordField`) — omit it entirely
    * for a plain note with no field/field-group behind it at all (note-manager-page-ui's own "+",
@@ -316,7 +395,10 @@ export const useNote = () => {
    * (`field_groups.note_id`/`fields.note_id`) is a real FK into `notes`: persisting that id
    * before this row has actually landed server-side is a real race, not a hypothetical one — it
    * shipped once as exactly this, a field-group's `noteId` reaching the server before its note
-   * did and failing the FK check. */
+   * did and failing the FK check. Always returns the locally-built `note` regardless of whether
+   * the save actually succeeded (matching every other quiet write here) — a failed save still
+   * rolls the cache back via `saveNoteMutation`'s own `onError`, so the caller isn't left
+   * pointing an owner's FK at a note this device no longer shows either. */
   const createNote = async (value: unknown, origin?: NoteOrigin, title = '', folderId?: string) => {
     const id = v4();
     const now = new Date().toISOString();
@@ -345,48 +427,41 @@ export const useNote = () => {
       updatedAt: now,
     };
     fetchedIds.add(id);
-    setNotes(prev => ({ ...prev, [id]: note }));
     // Whether this becomes the group's own canonical note (the owner's very first one) or a
     // participant's own fork of it, it's this caller's own field-group note either way — see
     // getOwnFieldGroupNote's own comment.
     if (origin?.ownerType === 'field_group') {
       setOwnFieldGroupNoteIds(prev => ({ ...prev, [origin.ownerId]: id }));
     }
-    const saved = await saveNote(note);
-    if (saved) invalidateIfFieldGroupNote(origin?.ownerType);
+    try {
+      await saveNoteMutation.mutateAsync(note);
+      invalidateIfFieldGroupNote(origin?.ownerType);
+    } catch {
+      // Already rolled back locally via saveNoteMutation's own onError — quiet, same as every
+      // other write in this app.
+    }
     return note;
   };
 
-  const updateNote = (
-    id: string,
-    updates: Partial<Pick<Note, 'value' | 'folderId' | 'title'>>,
-  ) => {
-    let updated: Note | null = null;
-    setNotes(prev => {
-      if (!prev[id]) return prev;
-      updated = {
-        ...prev[id],
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      };
-      return { ...prev, [id]: updated };
-    });
-    if (updated) {
-      saveNote(updated).then(result => {
-        if (result) invalidateIfFieldGroupNote((updated as Note).ownerType);
+  const updateNote = React.useCallback(
+    (id: string, updates: Partial<Pick<Note, 'value' | 'folderId' | 'title'>>) => {
+      const existing = queryClient.getQueryData<NotesMap>(queryKey)?.[id];
+      if (!existing) return null;
+      const updated: Note = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+      saveNoteMutation.mutate(updated, {
+        onSuccess: () => invalidateIfFieldGroupNote(updated.ownerType),
       });
-    }
-    return updated;
-  };
+      return updated;
+    },
+    [queryClient, queryKey, saveNoteMutation],
+  );
 
-  const deleteNote = (id: string) => {
-    setNotes(prev => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    removeNoteApi(id);
-  };
+  const deleteNote = React.useCallback(
+    (id: string) => {
+      removeNoteMutation.mutate(id);
+    },
+    [removeNoteMutation],
+  );
 
   return {
     notes,
