@@ -7,7 +7,6 @@ import {
   patchChecklistTemplate,
   removeChecklistTemplate as removeChecklistTemplateApi,
   saveChecklistTemplate,
-  fetchChecklistTemplateById,
 } from './checklistTemplatesApi';
 import type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTemplateTypes';
 
@@ -52,7 +51,6 @@ type Deps = {
   markTemplateIdKnown: (id: string) => void;
   selectChecklistTemplate: (id: string) => void;
   deselectChecklistTemplate: (id: string) => void;
-  mergeTemplates: (fetched: ChecklistTemplate[]) => void;
 };
 
 /** The write side of checklist-templates — see useChecklistTemplates.tsx, which composes this
@@ -65,7 +63,6 @@ export function useChecklistTemplateMutations({
   markTemplateIdKnown,
   selectChecklistTemplate,
   deselectChecklistTemplate,
-  mergeTemplates,
 }: Deps) {
   const invalidateChecklistLogs = () => queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
 
@@ -183,13 +180,14 @@ export function useChecklistTemplateMutations({
   };
 
   /** Sets (or clears, `null`) the *caller's own* reminder — safe even for a template the caller
-   * doesn't own (a challenge participant following their own day/time). Always re-fetches
-   * afterward instead of trusting the local store: clearing needs the server's own
-   * fallback-to-owner value, which nothing on this device has a copy of. */
+   * doesn't own (a challenge participant following their own day/time). Invalidates rather than
+   * fetching and merging a fresh copy by hand: clearing needs the server's own
+   * fallback-to-owner value, which nothing on this device has a copy of, and the page that called
+   * this (detail-task-page, via useChecklistTemplateDetail) already has a live query on this
+   * exact id that refetches itself once invalidated. */
   const updateMyReminder = async (id: string, repeat: ChecklistTemplate['repeat'] | null) => {
     await patchChecklistTemplate(id, { repeat });
-    const result = await fetchChecklistTemplateById(id);
-    if (result) mergeTemplates(result.templates);
+    queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.byId(id, userId) });
   };
 
   return { addChecklistTemplate, updateChecklistTemplate, deleteChecklistTemplate, updateMyReminder };

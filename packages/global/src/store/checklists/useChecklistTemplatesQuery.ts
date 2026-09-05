@@ -26,7 +26,7 @@ export function useChecklistTemplatesQuery() {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
 
-  const [selectedChecklistTemplates, setSelectedChecklist] = useLocalStorage<string[]>(
+  const [selectedChecklistTemplates, setSelectedChecklistTemplates] = useLocalStorage<string[]>(
     SELECTED_CHECKLISTS_TEMPLATE_KEY,
     [],
   );
@@ -85,7 +85,7 @@ export function useChecklistTemplatesQuery() {
   const updateSelectedChecklistTemplate = (update: string[] | ((prev: string[]) => string[])) => {
     // Dedupes here, once — the single choke point every write to the list goes through — and
     // self-heals a list that already picked up a duplicate from an older client build.
-    setSelectedChecklist(prev => {
+    setSelectedChecklistTemplates(prev => {
       const next = typeof update === 'function' ? update(prev) : update;
       return Array.from(new Set(next));
     });
@@ -116,14 +116,14 @@ export function useChecklistTemplatesQuery() {
         }
         if (!existing) newIds.push(template.id);
       }
-      // Same dedup `updateSelectedChecklistTemplate` does, inlined against `setSelectedChecklist`
+      // Same dedup `updateSelectedChecklistTemplate` does, inlined against `setSelectedChecklistTemplates`
       // directly rather than calling that (unmemoized) function — keeps this callback's own
       // identity stable across renders, which callers rely on (see getChecklistTemplate's deps).
       if (newIds.length) {
-        setSelectedChecklist(prev => Array.from(new Set([...prev, ...newIds])));
+        setSelectedChecklistTemplates(prev => Array.from(new Set([...prev, ...newIds])));
       }
     },
-    [queryClient, userId, allTemplates, setSelectedChecklist, markTemplateIdKnown],
+    [queryClient, userId, allTemplates, setSelectedChecklistTemplates, markTemplateIdKnown],
   );
 
   // A template found here is definitely owned — lets getFieldGroups trust an empty "all mine"

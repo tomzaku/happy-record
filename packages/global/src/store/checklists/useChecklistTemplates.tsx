@@ -64,7 +64,6 @@ export const useChecklistTemplates = () => {
       markTemplateIdKnown,
       selectChecklistTemplate,
       deselectChecklistTemplate,
-      mergeTemplates,
     });
 
   // `field-groups` isn't a column on this row anymore — every read function below merges

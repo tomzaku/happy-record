@@ -279,8 +279,8 @@ describe('deleteChecklistTemplate', () => {
 });
 
 describe('updateMyReminder', () => {
-  it('always re-fetches afterward, bypassing the scoped-fetch dedup', async () => {
-    mockFetchChecklistTemplateById.mockResolvedValue({
+  it("invalidates this id's own query so the page observing it picks up the server's fresh value", async () => {
+    mockFetchChecklistTemplateById.mockResolvedValueOnce({
       templates: [
         {
           ...baseTemplate('template-reminder-1'),
@@ -304,15 +304,38 @@ describe('updateMyReminder', () => {
       result.current.getChecklistTemplate('template-reminder-1');
     });
     await waitFor(() => expect(result.current.checklistTemplate['template-reminder-1']).toBeDefined());
-    mockFetchChecklistTemplateById.mockClear();
+
+    // A different repeat than the initial fetch — clearing (`null`) resolves to the owner's own
+    // fallback schedule server-side, which this device never had a copy of, so the only way this
+    // shows up is a real refetch actually landing.
+    mockFetchChecklistTemplateById.mockResolvedValueOnce({
+      templates: [
+        {
+          ...baseTemplate('template-reminder-1'),
+          createdAt: 'now',
+          updatedAt: '2024-02-02T00:00:00.000Z',
+          repeat: {
+            minute: '30',
+            hour: '20',
+            dayOfMonth: '',
+            month: '',
+            dayOfWeek: '3',
+            startedAt: '2024-01-01T00:00:00.000Z',
+          },
+        },
+      ],
+    });
 
     await act(async () => {
       await result.current.updateMyReminder('template-reminder-1', null);
     });
 
     expect(mockPatchChecklistTemplate).toHaveBeenCalledWith('template-reminder-1', { repeat: null });
-    // Re-fetched despite the scope already being marked "fetched" by the earlier getChecklistTemplate call.
-    expect(mockFetchChecklistTemplateById).toHaveBeenCalledWith('template-reminder-1');
+    // The invalidated query re-fetches on its own — no direct fetch-and-merge call needed here —
+    // and the observed template reflects the server's fresh value, not the stale first fetch.
+    await waitFor(() =>
+      expect(result.current.checklistTemplate['template-reminder-1'].repeat?.hour).toBe('20'),
+    );
   });
 });
 
