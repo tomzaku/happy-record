@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSessionStore, useSession } from '../../hook';
 import { useChecklistTemplates } from './useChecklistTemplates';
+import { useFieldGroups } from './useFieldGroups';
 import { v4, v5 as uuidv5 } from 'uuid';
 import { startOfDay, endOfDay, addDays, format } from 'date-fns';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
@@ -64,6 +65,7 @@ export const useChecklist = () => {
   const invalidateChecklistLogs = () => queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
   const { getChecklistTemplateIdsByGivingDate, checklistTemplate } =
     useChecklistTemplates();
+  const { getFieldGroups } = useFieldGroups();
   // Starts `true`, flips to `false` once a checklists fetch (either path
   // below) settles — success or a quiet `null`. `checklist` being empty is
   // otherwise indistinguishable from "hasn't loaded yet"; ChecklistToday
@@ -216,7 +218,14 @@ export const useChecklist = () => {
         // shows up once from `scheduledChecklists` (found by id, today's
         // real row) *and* again here (its `startedAt` falls today too),
         // rendering the same template's checklist twice for the day.
-        const effectiveDayOfWeek = getEffectiveDayOfWeek(template ?? {});
+        // `fieldGroups` isn't a column on `template` itself anymore (see
+        // useFieldGroups.tsx) — `checklistTemplate[id]` alone never carries
+        // it, so this fetches/reads the real, current groups directly
+        // rather than trusting a stale (or perpetually empty) copy.
+        const effectiveDayOfWeek = getEffectiveDayOfWeek({
+          ...template,
+          fieldGroups: template ? getFieldGroups(template.id) : [],
+        });
         const hasSchedule = !!effectiveDayOfWeek && effectiveDayOfWeek.trim() !== '';
         if(hasSchedule) return false;
 
@@ -261,7 +270,7 @@ export const useChecklist = () => {
         ),
       };
     },
-    [checklist, getChecklistTemplateIdsByGivingDate, checklistTemplate],
+    [checklist, getChecklistTemplateIdsByGivingDate, checklistTemplate, getFieldGroups],
   );
 
   // The original combined "fetch this day, then read it" shape — still what

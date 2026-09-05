@@ -263,37 +263,13 @@ export const useChecklistTemplates = () => {
 
   // `field-groups` is its own resource now (see useFieldGroups.tsx) — a fetched template here
   // never carries real `fieldGroups` from the server anymore. `getChecklistTemplate`/
-  // `getRecommendChecklistTemplates` below merge that store's own fetch onto the object they
-  // return; the effect further down additionally keeps every *stored* template's own
-  // `.fieldGroups` in sync too, for the several places that still read `checklistTemplate[id]`
-  // directly instead of through those getters (WeeklyCalendarVertical/Horizontal,
-  // ChecklistToday, EditChecklistForm, useChecklists.tsx) — without it, only callers that went
-  // through `getChecklistTemplate` would ever see a group.
-  const { getFieldGroups, ensureAllFieldGroupsFetched, fieldGroupList } = useFieldGroups();
-
-  // Keeps every stored template's own `.fieldGroups` in sync with the field-groups store
-  // whenever it changes — see the comment above `getFieldGroups` for why this can't just live
-  // inside the read functions alone.
-  React.useEffect(() => {
-    queryClient.setQueryData<ChecklistTemplatesMap>(queryKey, prev => {
-      if (!prev) return prev;
-      let changed = false;
-      const next = { ...prev };
-      for (const id of Object.keys(next)) {
-        const groups = getFieldGroups(id);
-        if (JSON.stringify(next[id].fieldGroups) !== JSON.stringify(groups)) {
-          next[id] = { ...next[id], fieldGroups: groups };
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-    // Deliberately keyed on `fieldGroupList` alone, not `getFieldGroups`/`checklistTemplate` —
-    // this only needs to rerun when the field-groups store itself actually changes; including
-    // the others would refire on every template fetch too, for no benefit (a fetched template
-    // gets today's `fieldGroupList` snapshot in the very next tick anyway).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fieldGroupList]);
+  // `getRecommendChecklistTemplates` below merge that store's own `getFieldGroups(id)` onto the
+  // object they return, always fresh (a real per-scope React Query read, not a copy synced by an
+  // effect) — a consumer that wants a template's current groups calls one of those, or
+  // `getFieldGroups`/`useFieldGroupsForTemplate` directly, rather than reading `.fieldGroups` off
+  // whatever's cached on the template object itself (which, unlike everything else on
+  // `ChecklistTemplate`, isn't actually a column on this row anymore).
+  const { getFieldGroups, ensureAllFieldGroupsFetched } = useFieldGroups();
 
   // Shared by every fetch path below (one id, or "all mine") so a template
   // landing here for the first time — no matter which scope brought it in —

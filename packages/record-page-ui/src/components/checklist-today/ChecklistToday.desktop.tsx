@@ -2,6 +2,7 @@ import React from 'react';
 import {
   useChecklist,
   useChecklistTemplates,
+  useFieldGroups,
   ChecklistTemplate,
   getEffectiveDayOfWeek,
   formatDaysOfWeek,
@@ -65,6 +66,7 @@ const ChecklistTodayDesktop = ({
 }) => {
   const { getChecklistByGivingDate, updateChecklist, checklistsLoading } = useChecklist();
   const { checklistTemplate, templatesLoading } = useChecklistTemplates();
+  const { getFieldGroups } = useFieldGroups();
   const navigate = useNavigate();
   const intl = useIntl();
 
@@ -349,8 +351,14 @@ const ChecklistTodayDesktop = ({
 
   const renderTaskRow = (id: string) => {
     const currentChecklist = checklist[id];
-    const currentChecklistTemplate =
-      checklistTemplate[currentChecklist.checklistTemplateId];
+    const rawTemplate = checklistTemplate[currentChecklist.checklistTemplateId];
+    // `fieldGroups` isn't a column on the template row anymore (see useFieldGroups.tsx) —
+    // `checklistTemplate[id]` alone never carries it, so this merges in the real, current groups
+    // directly rather than trusting a stale (or perpetually empty) copy.
+    const currentChecklistTemplate = rawTemplate && {
+      ...rawTemplate,
+      fieldGroups: getFieldGroups(rawTemplate.id),
+    };
     const completed = Boolean(currentChecklist?.completedAt);
     const color = currentChecklistTemplate?.avatar.color || '#8A8A8A';
     const timeLabel = completed

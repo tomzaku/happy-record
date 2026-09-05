@@ -2,8 +2,9 @@ import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+let mockUserId: string | undefined = 'user-field-groups-test';
 jest.mock('../../hook/useSession', () => ({
-  useSession: () => ({ userId: 'user-field-groups-test', ready: true }),
+  useSession: () => ({ userId: mockUserId, ready: true }),
 }));
 
 // useChecklistTemplates.tsx transitively imports checklistTemplatesApi.ts -> lib/api.ts ->
@@ -27,7 +28,7 @@ jest.mock('./fieldGroupsApi', () => ({
   patchFieldGroupRepeat: (...args: unknown[]) => mockPatchFieldGroupRepeat(...args),
 }));
 
-import { useFieldGroups } from './useFieldGroups';
+import { useFieldGroups, useFieldGroupsForTemplate } from './useFieldGroups';
 import type { FieldGroup } from './useChecklistTemplates';
 
 function createDeferred<T>() {
@@ -59,9 +60,51 @@ const baseGroup = (overrides: Partial<FieldGroup> = {}): FieldGroup => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockUserId = 'user-field-groups-test';
   mockFetchFieldGroups.mockResolvedValue({ fieldGroups: [] });
   mockSaveFieldGroup.mockResolvedValue({ ok: true });
   mockPatchFieldGroupRepeat.mockResolvedValue({ ok: true });
+});
+
+describe('useFieldGroupsForTemplate', () => {
+  it('fetches and returns one template\'s own groups, ordered by position', async () => {
+    mockFetchFieldGroups.mockResolvedValueOnce({
+      fieldGroups: [
+        baseGroup({ id: 'group-b', position: 1 }),
+        baseGroup({ id: 'group-a', position: 0 }),
+      ],
+    });
+
+    const { result } = renderHook(() => useFieldGroupsForTemplate('template-direct-1'), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => expect(result.current.fieldGroups).toHaveLength(2));
+    expect(result.current.fieldGroups.map(g => g.id)).toEqual(['group-a', 'group-b']);
+    expect(mockFetchFieldGroups).toHaveBeenCalledWith({ checklistTemplateId: 'template-direct-1' });
+  });
+
+  it('normalizes a legacy plain-string fields array into FieldGroupField objects', async () => {
+    mockFetchFieldGroups.mockResolvedValueOnce({
+      fieldGroups: [
+        { ...baseGroup({ id: 'group-legacy-1' }), fields: ['field-a', 'field-b'] as unknown as FieldGroup['fields'] },
+      ],
+    });
+
+    const { result } = renderHook(() => useFieldGroupsForTemplate('template-legacy'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() =>
+      expect(result.current.fieldGroups[0]?.fields).toEqual([{ fieldId: 'field-a' }, { fieldId: 'field-b' }]),
+    );
+  });
+
+  it('does nothing when no id is given', () => {
+    renderHook(() => useFieldGroupsForTemplate(undefined), { wrapper: createWrapper() });
+    expect(mockFetchFieldGroups).not.toHaveBeenCalled();
+  });
 });
 
 describe('addFieldGroup', () => {
@@ -100,24 +143,47 @@ describe('addFieldGroup', () => {
     act(() => {
       good = result.current.addFieldGroup({ checklistTemplateId: 'template-add-2', title: 'Good', fields: [], position: 1 });
     });
-    await waitFor(() => expect(result.current.fieldGroupList[good.id]).toBeDefined());
+    await waitFor(() => expect(result.current.getFieldGroups('template-add-2').find(g => g.id === good.id)).toBeDefined());
 
     act(() => {
       badSave.resolve(null);
     });
-    await waitFor(() => expect(result.current.fieldGroupList[bad.id]).toBeUndefined());
-    expect(result.current.fieldGroupList[good.id]).toBeDefined();
+    await waitFor(() =>
+      expect(result.current.getFieldGroups('template-add-2').find(g => g.id === bad.id)).toBeUndefined(),
+    );
+    expect(result.current.getFieldGroups('template-add-2').find(g => g.id === good.id)).toBeDefined();
 
     act(() => {
       goodSave.resolve({ ok: true });
     });
+  });
+
+  // The `all` and `byTemplate` caches are two separate query keys now (not one shared cache
+  // entry) — a write has to reach both, or a reader looking through the other one would miss it.
+  it('is visible via getFieldGroupsByTemplateId even after ensureAllFieldGroupsFetched has run', async () => {
+    const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.ensureAllFieldGroupsFetched();
+    });
+    await waitFor(() => expect(mockFetchFieldGroups).toHaveBeenCalledWith());
+
+    let created!: FieldGroup;
+    act(() => {
+      created = result.current.addFieldGroup({ checklistTemplateId: 'template-add-3', title: 'Pull', fields: [], position: 0 });
+    });
+
+    await waitFor(() =>
+      expect(result.current.getFieldGroups('template-add-3').find(g => g.id === created.id)).toBeDefined(),
+    );
+    expect(result.current.getFieldGroupsByTemplateId('template-add-3').find(g => g.id === created.id)).toBeDefined();
   });
 });
 
 describe('updateMyFieldGroupRepeat', () => {
   it('rolls back to the previous repeat if the patch fails', async () => {
     mockFetchFieldGroups.mockResolvedValueOnce({
-      fieldGroups: [baseGroup({ id: 'group-repeat-1', repeat: { hour: '8', minute: '0', dayOfWeek: '*' } })],
+      fieldGroups: [baseGroup({ id: 'group-repeat-1', checklistTemplateId: 'template-repeat-rollback', repeat: { hour: '8', minute: '0', dayOfWeek: '*' } })],
     });
     mockPatchFieldGroupRepeat.mockResolvedValue(null);
 
@@ -125,71 +191,33 @@ describe('updateMyFieldGroupRepeat', () => {
     act(() => {
       result.current.getFieldGroups('template-repeat-rollback');
     });
-    await waitFor(() => expect(result.current.fieldGroupList['group-repeat-1']).toBeDefined());
+    await waitFor(() =>
+      expect(result.current.getFieldGroups('template-repeat-rollback').find(g => g.id === 'group-repeat-1')).toBeDefined(),
+    );
 
     act(() => {
-      result.current.updateMyFieldGroupRepeat('group-repeat-1', { hour: '20', minute: '30', dayOfWeek: '1' });
+      result.current.updateMyFieldGroupRepeat('group-repeat-1', 'template-repeat-rollback', {
+        hour: '20',
+        minute: '30',
+        dayOfWeek: '1',
+      });
     });
 
     await waitFor(() =>
-      expect(result.current.fieldGroupList['group-repeat-1'].repeat).toEqual({ hour: '8', minute: '0', dayOfWeek: '*' }),
+      expect(
+        result.current.getFieldGroups('template-repeat-rollback').find(g => g.id === 'group-repeat-1')?.repeat,
+      ).toEqual({ hour: '8', minute: '0', dayOfWeek: '*' }),
     );
   });
 
-  it("does nothing when the group isn't known locally yet", async () => {
+  it("doesn't write a local optimistic value when the group isn't known locally yet, but still fires the request", async () => {
     const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
 
     act(() => {
-      result.current.updateMyFieldGroupRepeat('missing-id', { hour: '8', minute: '0', dayOfWeek: '*' });
+      result.current.updateMyFieldGroupRepeat('missing-id', 'template-missing', { hour: '8', minute: '0', dayOfWeek: '*' });
     });
 
-    await waitFor(() => expect(mockPatchFieldGroupRepeat).toHaveBeenCalled());
-    expect(result.current.fieldGroupList['missing-id']).toBeUndefined();
-  });
-});
-
-describe('mergeFieldGroups (via getFieldGroups)', () => {
-  it('normalizes a legacy plain-string fields array into FieldGroupField objects', async () => {
-    mockFetchFieldGroups.mockResolvedValueOnce({
-      fieldGroups: [
-        { ...baseGroup({ id: 'group-legacy-1' }), fields: ['field-a', 'field-b'] as unknown as FieldGroup['fields'] },
-      ],
-    });
-
-    const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
-    act(() => {
-      result.current.getFieldGroups('template-legacy');
-    });
-
-    await waitFor(() =>
-      expect(result.current.fieldGroupList['group-legacy-1'].fields).toEqual([
-        { fieldId: 'field-a' },
-        { fieldId: 'field-b' },
-      ]),
-    );
-  });
-
-  it("never lets an older-updatedAt fetch overwrite a group's repeat-only change", async () => {
-    mockFetchFieldGroups.mockResolvedValueOnce({
-      fieldGroups: [baseGroup({ id: 'group-repeat-2', updatedAt: '2024-06-01T00:00:00.000Z', repeat: { hour: '9', minute: '0', dayOfWeek: '*' } })],
-    });
-
-    const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
-    act(() => {
-      result.current.getFieldGroups('template-repeat-merge');
-    });
-    await waitFor(() => expect(result.current.fieldGroupList['group-repeat-2']).toBeDefined());
-
-    // A same-timestamped fetch (a challenge participant's own repeat write doesn't bump this
-    // row's own updated_at — see mergeFieldGroups' own comment) must still win, not lose to `>`.
-    act(() => {
-      result.current.mergeFieldGroups([
-        baseGroup({ id: 'group-repeat-2', updatedAt: '2024-06-01T00:00:00.000Z', repeat: { hour: '10', minute: '0', dayOfWeek: '2' } }),
-      ]);
-    });
-
-    await waitFor(() =>
-      expect(result.current.fieldGroupList['group-repeat-2'].repeat).toEqual({ hour: '10', minute: '0', dayOfWeek: '2' }),
-    );
+    await waitFor(() => expect(mockPatchFieldGroupRepeat).toHaveBeenCalledWith('missing-id', { hour: '8', minute: '0', dayOfWeek: '*' }));
+    expect(result.current.getFieldGroups('template-missing').find(g => g.id === 'missing-id')).toBeUndefined();
   });
 });

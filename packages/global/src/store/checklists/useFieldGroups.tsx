@@ -1,7 +1,8 @@
 import React from 'react';
 import { v4 } from 'uuid';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
+import { createSharedState } from '../../hook/createSharedState';
 import { normalizeFieldGroupFields, type FieldGroup, type FieldGroupField } from './useChecklistTemplates';
 import { fieldGroupsKeys } from './fieldGroupsKeys';
 
@@ -10,180 +11,225 @@ import { fieldGroupsKeys } from './fieldGroupsKeys';
 import { fetchFieldGroups, patchFieldGroupRepeat, saveFieldGroup } from './fieldGroupsApi';
 
 type FieldGroupsMap = Record<string, FieldGroup>;
-// Scoped to the one group being written, not a whole-map snapshot — see useTags.tsx's own comment
-// (same fix, same resource shape) for why a global snapshot isn't safe under concurrent writes.
-type RollbackContext = { previousGroup: FieldGroup | undefined };
+type RollbackContext = {
+  previousFromAll: FieldGroup | undefined;
+  previousFromTemplate: FieldGroup | undefined;
+};
 
-// Fetched by whatever scope is actually asked for — one template's own groups (detail-task-page,
-// which already knows the exact checklistTemplateId from the URL) or "all mine" (the home page's
-// own schedule-matching, which needs every selected template's own groups loaded at once — see
-// useChecklistTemplates.tsx's getChecklistTemplateIdsByGivingDate) — never unconditionally on
-// mount. Keyed so the same (identity, scope) tuple isn't re-fetched every call within a page load.
-const fetchedScopes = new Set<string>();
-const ALL_SCOPE = '__all__';
+// A row saved before FieldGroupField existed still has `fields` as plain id strings — see
+// normalizeFieldGroupFields' own comment. Every fetch path below funnels through here.
+function toFieldGroupsMap(groups: FieldGroup[]): FieldGroupsMap {
+  const map: FieldGroupsMap = {};
+  for (const group of groups) {
+    map[group.id] = {
+      ...group,
+      fields: normalizeFieldGroupFields(group.fields as unknown as (string | FieldGroupField)[]),
+    };
+  }
+  return map;
+}
+
+// Writes unconditionally — creates the cache entry from nothing if it didn't exist yet. Used for
+// the query most directly relevant to whoever's making a given write (byTemplate), matching this
+// app's usual "an optimistic write is always visible immediately" rule.
+function writeGroup(queryClient: QueryClient, key: QueryKey, groupId: string, group: FieldGroup | undefined) {
+  queryClient.setQueryData<FieldGroupsMap>(key, prev => {
+    const next = { ...prev };
+    if (group) next[groupId] = group;
+    else delete next[groupId];
+    return next;
+  });
+}
+
+// Writes only if the cache already holds real data — used for the bulk "all mine" query, which a
+// write shouldn't silently fabricate a "loaded" state for if it was never actually fetched.
+function writeGroupIfPresent(queryClient: QueryClient, key: QueryKey, groupId: string, group: FieldGroup | undefined) {
+  queryClient.setQueryData<FieldGroupsMap>(key, prev => {
+    if (!prev) return prev;
+    const next = { ...prev };
+    if (group) next[groupId] = group;
+    else delete next[groupId];
+    return next;
+  });
+}
+
+// Whether "all mine" has been requested at all this session — see its own use in useFieldGroups
+// below for why this has to be shared across every call to that hook, not a plain useState.
+const useWantsAllFieldGroupsStore = createSharedState(false);
+
+/**
+ * One template's own groups (active + archived — callers filter via getActiveFieldGroups),
+ * ordered by `position`, as a real per-scope query — this is what a single-id consumer
+ * (detail-task-page, which already knows its exact checklistTemplateId from the URL) should call
+ * directly, in place of the old `useSyncedSelector(getFieldGroupsByTemplateId, id)` pattern.
+ *
+ * Never short-circuited by the bulk "all mine" query — a joined challenge's field groups are the
+ * *owner's* own rows, which "all mine" (own templates only) never includes. Exactly the same
+ * "own + public only can't resolve a participant's template" gap `fields`' own
+ * `getRecordFieldsByTemplateId` has: this always fetches (or reads, once cached) the specific
+ * template's own groups regardless of ownership, which is what actually resolves a challenge
+ * participant otherwise seeing "No groups created" on the owner's real template.
+ */
+export const useFieldGroupsForTemplate = (checklistTemplateId: string | undefined) => {
+  const { userId, ready } = useSession();
+  const { data, isLoading } = useQuery<FieldGroupsMap>({
+    queryKey: fieldGroupsKeys.byTemplate(checklistTemplateId, userId),
+    queryFn: async () => {
+      const result = await fetchFieldGroups({ checklistTemplateId });
+      if (!result) throw new Error('Failed to fetch field groups');
+      return toFieldGroupsMap(result.fieldGroups);
+    },
+    enabled: ready && !!checklistTemplateId,
+    staleTime: Infinity,
+  });
+
+  const fieldGroups = React.useMemo(
+    () => Object.values(data ?? {}).sort((a, b) => a.position - b.position),
+    [data],
+  );
+
+  return { fieldGroups, isLoading };
+};
 
 /**
  * A real table now (`field_groups`), not jsonb embedded in `checklist_templates.field_groups` —
- * see 20260829010000_notes_note_id_ownership.sql. Flat store keyed by group id, same shape
- * `checklist-record`'s own store uses — `useChecklistTemplates.tsx`'s own `getChecklistTemplate`/
- * `getRecommendChecklistTemplates` merge this store's `getFieldGroups(templateId)` onto the
- * returned template's `.fieldGroups` so every read-only consumer of that field keeps working
- * unchanged; only a write needs to reach for this hook directly.
+ * see 20260829010000_notes_note_id_ownership.sql. Reads are real, per-scope React Query queries
+ * (see useFieldGroupsForTemplate above and `allKey` below) rather than one shared cache entry —
+ * `getFieldGroups`/`getFieldGroupsByTemplateId` stay plain callback functions here (not hooks
+ * themselves) because they're called with a dynamic id from loops over many templates
+ * (getChecklistTemplateIdsByGivingDate) and one-off call sites across many components, neither of
+ * which rules-of-hooks allows for a real `useQuery` call — they read from (and, for a template not
+ * yet covered by the bulk query, actively populate via `queryClient.ensureQueryData`) the exact
+ * same cache entries `useFieldGroupsForTemplate` and the bulk query below use, so all three stay
+ * consistent no matter which one a given caller reaches for.
  */
 export const useFieldGroups = () => {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
-  const queryKey = fieldGroupsKeys.map(userId);
 
-  // The shared field-groups cache, backed by React Query instead of useSessionStore — same "one
-  // cache entry, several imperative scoped fetches merging into it" shape as useNote.tsx's own
-  // notes cache. `enabled: false` since nothing auto-fetches this query itself.
-  const { data: fieldGroupList = {} } = useQuery<FieldGroupsMap>({
-    queryKey,
-    queryFn: () => queryClient.getQueryData<FieldGroupsMap>(queryKey) ?? {},
-    enabled: false,
+  // "All mine" — lazy: stays disabled until `ensureAllFieldGroupsFetched` is actually called (the
+  // management screen, or the home page's own schedule-matching loop), same "don't fetch until
+  // actually needed" rule the old fetchedScopes Set enforced, now via `enabled` instead. Shared
+  // across every `useFieldGroups()` call in the app (via createSharedState), not a plain
+  // per-component `useState` — this hook is called independently by many components (through
+  // useChecklistTemplates.tsx too), and a plain local flag would mean the home page's own
+  // "all mine" request wouldn't be visible to, say, detail-task-page's own separate instance,
+  // which would then redundantly re-fetch each template it needs one at a time even though the
+  // bulk data already sits in the (genuinely shared) query cache.
+  const [wantsAll, setWantsAll] = useWantsAllFieldGroupsStore();
+  const allKey = fieldGroupsKeys.all(userId);
+  const { data: allGroups } = useQuery<FieldGroupsMap>({
+    queryKey: allKey,
+    queryFn: async () => {
+      const result = await fetchFieldGroups();
+      if (!result) throw new Error('Failed to fetch field groups');
+      return toFieldGroupsMap(result.fieldGroups);
+    },
+    enabled: ready && wantsAll,
     staleTime: Infinity,
   });
 
-  // A row saved before FieldGroupField existed still has `fields` as plain id strings — see
-  // normalizeFieldGroupFields' own comment. Every fetch path (one template, all mine) funnels
-  // through here, so this is the one place that needs to know that.
-  const mergeFieldGroups = React.useCallback(
-    (groups: FieldGroup[]) => {
-      if (!groups.length) return;
-      const normalized = groups.map(group => ({
-        ...group,
-        fields: normalizeFieldGroupFields(group.fields as unknown as (string | FieldGroupField)[]),
-      }));
-      queryClient.setQueryData<FieldGroupsMap>(queryKey, prev => {
-        const merged = { ...prev };
-        let changed = false;
-        for (const group of normalized) {
-          const existing = merged[group.id];
-          // Last-write-wins by `updatedAt` — cheap safety even though a direct scoped fetch
-          // makes a real conflict rare. `>=`, not `>`: a group's own `repeat` comes from a
-          // separate `repeats` row (see field-groups-dto.ts's own toFieldGroup) whose write
-          // doesn't touch this row's `updated_at` at all — a challenge participant's schedule
-          // seeded at join time (challenge-participants-service.ts's own seedReminderFromOwner)
-          // or set via the group's own menu are exactly this: the *only* thing that changed is
-          // `repeat`, so an incoming fetch can tie the cached `updatedAt` exactly while still
-          // carrying materially different data. A strict `>` would keep discarding that forever.
-          if (!existing || new Date(group.updatedAt) >= new Date(existing.updatedAt)) {
-            merged[group.id] = group;
-            changed = true;
-          }
-        }
-        return changed ? merged : prev;
-      });
-    },
-    [queryClient, queryKey],
-  );
-
-  /** One template's own groups (active + archived — callers filter via getActiveFieldGroups),
-   * ordered by `position`. Skips its own fetch once "all mine" has already covered every
-   * template (see ensureAllFieldGroupsFetched) — called in a loop over many templates
-   * (getRecommendChecklistTemplates/getChecklistTemplateIdsByGivingDate), this would otherwise
-   * fire one redundant per-template request on top of the single unscoped one. */
-  const getFieldGroups = React.useCallback(
-    (checklistTemplateId: string): FieldGroup[] => {
-      const scopeKey = JSON.stringify({ userId, checklistTemplateId });
-      const allScopeKey = JSON.stringify({ userId, scope: ALL_SCOPE });
-      if (ready && checklistTemplateId && !fetchedScopes.has(scopeKey) && !fetchedScopes.has(allScopeKey)) {
-        fetchedScopes.add(scopeKey);
-        fetchFieldGroups({ checklistTemplateId }).then(result => {
-          if (!result) {
-            fetchedScopes.delete(scopeKey);
-            return;
-          }
-          mergeFieldGroups(result.fieldGroups);
-        });
-      }
-      return Object.values(fieldGroupList)
-        .filter(group => group.checklistTemplateId === checklistTemplateId)
-        .sort((a, b) => a.position - b.position);
-    },
-    [fieldGroupList, userId, ready, mergeFieldGroups],
-  );
-
-  /**
-   * Same as getFieldGroups, but never short-circuited by "all mine" already being fetched — a
-   * joined challenge's field groups are the *owner's* own rows, which "all mine"
-   * (`listMyFieldGroups`, own templates only — see field-groups/api/list-field-groups-handler.ts)
-   * never includes. Exactly the same "own + public only can't resolve a participant's template"
-   * gap `fields`' own `getRecordFieldsByTemplateId` has — detail-task-page calls this
-   * unconditionally for whatever template it's showing (a no-op re-fetch for the caller's own
-   * template, already covered by "all mine") instead of relying on `getFieldGroups` alone, which
-   * is what left a challenge participant seeing "No groups created" on the owner's real template.
-   */
-  const getFieldGroupsByTemplateId = React.useCallback(
-    (checklistTemplateId: string): FieldGroup[] => {
-      const scopeKey = JSON.stringify({ userId, checklistTemplateId });
-      if (ready && checklistTemplateId && !fetchedScopes.has(scopeKey)) {
-        fetchedScopes.add(scopeKey);
-        fetchFieldGroups({ checklistTemplateId }).then(result => {
-          if (!result) {
-            fetchedScopes.delete(scopeKey);
-            return;
-          }
-          mergeFieldGroups(result.fieldGroups);
-        });
-      }
-      return Object.values(fieldGroupList)
-        .filter(group => group.checklistTemplateId === checklistTemplateId)
-        .sort((a, b) => a.position - b.position);
-    },
-    [fieldGroupList, userId, ready, mergeFieldGroups],
-  );
-
   /** Every group across every one of the caller's templates, unscoped — see
    * getChecklistTemplateIdsByGivingDate's own need for this in useChecklistTemplates.tsx. */
-  const ensureAllFieldGroupsFetched = React.useCallback(() => {
-    const scopeKey = JSON.stringify({ userId, scope: ALL_SCOPE });
-    if (!ready || fetchedScopes.has(scopeKey)) return;
-    fetchedScopes.add(scopeKey);
-    fetchFieldGroups().then(result => {
-      if (!result) {
-        fetchedScopes.delete(scopeKey);
-        return;
+  const ensureAllFieldGroupsFetched = React.useCallback(() => setWantsAll(true), []);
+
+  const fetchOneTemplate = React.useCallback(
+    (checklistTemplateId: string) => {
+      const byTemplateKey = fieldGroupsKeys.byTemplate(checklistTemplateId, userId);
+      // `ensureQueryData` is the imperative, one-shot-fetch primitive here — it dedupes on its
+      // own (a second call for the same key while the first is still in flight reuses it, and a
+      // key already fresh — see staleTime — skips the network call entirely), replacing the old
+      // hand-rolled `fetchedScopes` Set for this exact purpose. Quiet: a failure just leaves
+      // whatever's already cached (nothing, the first time) as the fallback, same as every other
+      // read in this app.
+      queryClient
+        .ensureQueryData({
+          queryKey: byTemplateKey,
+          queryFn: async () => {
+            const result = await fetchFieldGroups({ checklistTemplateId });
+            if (!result) throw new Error('Failed to fetch field groups');
+            return toFieldGroupsMap(result.fieldGroups);
+          },
+          staleTime: Infinity,
+        })
+        .catch(() => {});
+      return byTemplateKey;
+    },
+    [queryClient, userId],
+  );
+
+  const readByTemplateCache = React.useCallback(
+    (checklistTemplateId: string): FieldGroup[] => {
+      if (!ready || !checklistTemplateId) return [];
+      const byTemplateKey = fetchOneTemplate(checklistTemplateId);
+      return Object.values(queryClient.getQueryData<FieldGroupsMap>(byTemplateKey) ?? {})
+        .filter(group => group.checklistTemplateId === checklistTemplateId)
+        .sort((a, b) => a.position - b.position);
+    },
+    [ready, queryClient, fetchOneTemplate],
+  );
+
+  /** One template's own groups. Prefers the bulk "all mine" query once that's covered this
+   * template (an owned template with at least one real group) — no extra network call for the
+   * common case. Falls back to the per-template cache/fetch otherwise, which covers both "this
+   * template genuinely has none" (the fallback just confirms empty) and the case "all mine" can
+   * never cover at all: a joined challenge's field groups are the *owner's* own rows, invisible
+   * to "all mine" (own templates only) no matter how long it's been fetched — same bypass
+   * `getFieldGroupsByTemplateId` below always takes unconditionally. Called in a loop over many
+   * templates (getRecommendChecklistTemplates/getChecklistTemplateIdsByGivingDate), so this can't
+   * wait for some other component to mount `useFieldGroupsForTemplate` itself first. */
+  const getFieldGroups = React.useCallback(
+    (checklistTemplateId: string): FieldGroup[] => {
+      if (wantsAll) {
+        const fromAll = Object.values(allGroups ?? {})
+          .filter(group => group.checklistTemplateId === checklistTemplateId)
+          .sort((a, b) => a.position - b.position);
+        if (fromAll.length > 0) return fromAll;
       }
-      mergeFieldGroups(result.fieldGroups);
-    });
-  }, [userId, ready, mergeFieldGroups]);
+      return readByTemplateCache(checklistTemplateId);
+    },
+    [wantsAll, allGroups, readByTemplateCache],
+  );
+
+  /** Same as getFieldGroups, but always takes the per-template path — see its own comment for
+   * when that fallback matters. Exposed separately for a caller that wants to force the bypass
+   * without relying on getFieldGroups' own "empty in 'all mine' means try per-template" heuristic
+   * (a joined challenge's own detail view, which already knows this is exactly that case). */
+  const getFieldGroupsByTemplateId = readByTemplateCache;
 
   // Canonical React Query optimistic-update shape (used by both `addFieldGroup` and
   // `updateFieldGroup` below, since the wire call for either is the same upsert) — see
   // useTags.tsx's own saveTagMutation for the full rationale (per-entity rollback, no onSettled
-  // refetch).
-  const saveFieldGroupMutation = useMutation<{ ok: true } | null, Error, FieldGroup, RollbackContext>({
+  // refetch). Writes to both the bulk "all mine" cache (if it's actually loaded) and this group's
+  // own `byTemplate` cache (unconditionally), so whichever one a reader is looking at reflects
+  // the write.
+  const saveFieldGroupMutation = useMutation<{ ok: true }, Error, FieldGroup, RollbackContext>({
     mutationFn: async group => {
       const result = await saveFieldGroup(group);
       if (!result) throw new Error('Failed to save field group');
       return result;
     },
     onMutate: async group => {
-      await queryClient.cancelQueries({ queryKey });
-      const previousGroup = queryClient.getQueryData<FieldGroupsMap>(queryKey)?.[group.id];
-      queryClient.setQueryData<FieldGroupsMap>(queryKey, prev => ({ ...prev, [group.id]: group }));
-      return { previousGroup };
+      const byTemplateKey = fieldGroupsKeys.byTemplate(group.checklistTemplateId, userId);
+      await queryClient.cancelQueries({ queryKey: allKey });
+      await queryClient.cancelQueries({ queryKey: byTemplateKey });
+      const previousFromAll = queryClient.getQueryData<FieldGroupsMap>(allKey)?.[group.id];
+      const previousFromTemplate = queryClient.getQueryData<FieldGroupsMap>(byTemplateKey)?.[group.id];
+      writeGroupIfPresent(queryClient, allKey, group.id, group);
+      writeGroup(queryClient, byTemplateKey, group.id, group);
+      return { previousFromAll, previousFromTemplate };
     },
     onError: (_error, group, context) => {
-      queryClient.setQueryData<FieldGroupsMap>(queryKey, prev => {
-        if (!prev) return prev;
-        const next = { ...prev };
-        if (context?.previousGroup) {
-          next[group.id] = context.previousGroup;
-        } else {
-          delete next[group.id];
-        }
-        return next;
-      });
+      const byTemplateKey = fieldGroupsKeys.byTemplate(group.checklistTemplateId, userId);
+      writeGroupIfPresent(queryClient, allKey, group.id, context?.previousFromAll);
+      writeGroup(queryClient, byTemplateKey, group.id, context?.previousFromTemplate);
     },
   });
 
   const updateMyFieldGroupRepeatMutation = useMutation<
-    { ok: true } | null,
+    { ok: true },
     Error,
-    { fieldGroupId: string; repeat: FieldGroup['repeat'] | null },
+    { fieldGroupId: string; checklistTemplateId: string; repeat: FieldGroup['repeat'] | null },
     RollbackContext
   >({
     mutationFn: async ({ fieldGroupId, repeat }) => {
@@ -191,23 +237,25 @@ export const useFieldGroups = () => {
       if (!result) throw new Error('Failed to update field group repeat');
       return result;
     },
-    onMutate: async ({ fieldGroupId, repeat }) => {
-      await queryClient.cancelQueries({ queryKey });
-      const previousGroup = queryClient.getQueryData<FieldGroupsMap>(queryKey)?.[fieldGroupId];
-      queryClient.setQueryData<FieldGroupsMap>(queryKey, prev => {
-        const existing = prev?.[fieldGroupId];
-        if (!existing) return prev;
-        return {
-          ...prev,
-          [fieldGroupId]: { ...existing, repeat: repeat ?? undefined, updatedAt: new Date().toISOString() },
-        };
-      });
-      return { previousGroup };
+    onMutate: async ({ fieldGroupId, checklistTemplateId, repeat }) => {
+      const byTemplateKey = fieldGroupsKeys.byTemplate(checklistTemplateId, userId);
+      await queryClient.cancelQueries({ queryKey: allKey });
+      await queryClient.cancelQueries({ queryKey: byTemplateKey });
+      const previousFromAll = queryClient.getQueryData<FieldGroupsMap>(allKey)?.[fieldGroupId];
+      const previousFromTemplate = queryClient.getQueryData<FieldGroupsMap>(byTemplateKey)?.[fieldGroupId];
+      const updatedAt = new Date().toISOString();
+      const applyRepeat = (existing: FieldGroup | undefined) =>
+        existing && { ...existing, repeat: repeat ?? undefined, updatedAt };
+      writeGroupIfPresent(queryClient, allKey, fieldGroupId, applyRepeat(previousFromAll) || undefined);
+      writeGroupIfPresent(queryClient, byTemplateKey, fieldGroupId, applyRepeat(previousFromTemplate) || undefined);
+      return { previousFromAll, previousFromTemplate };
     },
-    onError: (_error, { fieldGroupId }, context) => {
-      if (!context?.previousGroup) return;
-      const restored = context.previousGroup;
-      queryClient.setQueryData<FieldGroupsMap>(queryKey, prev => ({ ...prev, [fieldGroupId]: restored }));
+    onError: (_error, { fieldGroupId, checklistTemplateId }, context) => {
+      const byTemplateKey = fieldGroupsKeys.byTemplate(checklistTemplateId, userId);
+      if (context?.previousFromAll) writeGroupIfPresent(queryClient, allKey, fieldGroupId, context.previousFromAll);
+      if (context?.previousFromTemplate) {
+        writeGroupIfPresent(queryClient, byTemplateKey, fieldGroupId, context.previousFromTemplate);
+      }
     },
   });
 
@@ -233,13 +281,15 @@ export const useFieldGroups = () => {
    * { repeat }`, never the owner's full-row `updateFieldGroup` above (which they can't write
    * anyway — see the edge function's own doc comment). `repeat: null` clears it back to
    * following the owner's. Optimistic, same as every other write here: updates the local copy
-   * immediately, fires the request, doesn't await it. */
-  const updateMyFieldGroupRepeat = (fieldGroupId: string, repeat: FieldGroup['repeat'] | null) => {
-    updateMyFieldGroupRepeatMutation.mutate({ fieldGroupId, repeat });
+   * immediately, fires the request, doesn't await it. The request itself always fires regardless
+   * of whether this device has the group cached yet — only the *local* optimistic write is
+   * skipped when it isn't (there's nothing cached to update), matching this function's original
+   * behavior. */
+  const updateMyFieldGroupRepeat = (fieldGroupId: string, checklistTemplateId: string, repeat: FieldGroup['repeat'] | null) => {
+    updateMyFieldGroupRepeatMutation.mutate({ fieldGroupId, checklistTemplateId, repeat });
   };
 
   return {
-    fieldGroupList,
     getFieldGroups,
     getFieldGroupsByTemplateId,
     ensureAllFieldGroupsFetched,
@@ -247,6 +297,5 @@ export const useFieldGroups = () => {
     addFieldGroup,
     updateFieldGroup,
     archiveFieldGroup,
-    mergeFieldGroups,
   };
 };

@@ -1,12 +1,11 @@
-// Query-key factory for the `field-groups` resource.
-//
-// Same shape as notesKeys.ts/checklistRecordsKeys.ts: getFieldGroups/getFieldGroupsByTemplateId
-// (one template's own groups) and ensureAllFieldGroupsFetched ("all mine") are genuinely
-// different fetches that all merge into the *same* shared cache entry per identity, since a
-// group resolved one way needs to be visible to every other read path too (see
-// useFieldGroups.tsx's own `mergeFieldGroups`).
+// Query-key factory for the `field-groups` resource — normalized per-scope keys (not one shared
+// cache entry): `all` is the bulk "every group across every one of my templates" fetch,
+// `byTemplate` is one template's own groups (used both for a single-template read and as the
+// bypass that resolves a joined challenge's owner-authored groups, which `all` never covers —
+// see useFieldGroups.tsx's own `getFieldGroups`/`useFieldGroupsForTemplate`).
 
 export const fieldGroupsKeys = {
-  all: ['field-groups'] as const,
-  map: (userId: string | undefined) => [...fieldGroupsKeys.all, userId] as const,
+  all: (userId: string | undefined) => ['field-groups', userId, 'all'] as const,
+  byTemplate: (checklistTemplateId: string | undefined, userId: string | undefined) =>
+    ['field-groups', userId, 'template', checklistTemplateId] as const,
 };

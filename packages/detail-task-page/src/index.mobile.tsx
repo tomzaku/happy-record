@@ -6,7 +6,6 @@ import {
   useChallenge,
   useChecklist,
   useChecklistTemplates,
-  useFieldGroups,
   useLeaveChallenge,
   useSession,
   useSyncedSelector,
@@ -37,7 +36,6 @@ const DetailTaskPageMobile = () => {
     deleteChecklist,
   } = useChecklist();
   const { getAllRecordFields, allRecordFieldsLoading, getRecordFieldsByTemplateId } = useRecordField();
-  const { getFieldGroupsByTemplateId } = useFieldGroups();
   const { getChallengeForTemplate } = useChallenge();
   const { leaveTheChallenge } = useLeaveChallenge();
   const { userId } = useSession();
@@ -56,11 +54,10 @@ const DetailTaskPageMobile = () => {
   // see useRecordField.tsx's own comment — merging into the same store `getAllRecordFields` reads.
   useSyncedSelector(getRecordFieldsByTemplateId, id ?? '');
   // Same gap, one resource over: a joined challenge's field groups are the owner's own rows,
-  // which `getFieldGroups`' own "all mine" fetch (home page's calendar scanning, see
-  // useFieldGroups.tsx) never includes once it's already run this session — this bypass is what
-  // actually loads them, merging into the same store `checklistTemplate.fieldGroups` is synced
-  // from (see useChecklistTemplates.tsx's own effect).
-  useSyncedSelector(getFieldGroupsByTemplateId, id ?? '');
+  // which `getFieldGroups`' own "all mine" fetch (home page's calendar scanning) never includes —
+  // `checklistTemplate.fieldGroups` above is already bypass-aware for this (see
+  // useFieldGroups.tsx's own `getFieldGroups`, which falls back to a per-template fetch whenever
+  // "all mine" doesn't cover this specific template), so nothing further is needed here.
   const fields = useSyncedSelector(getAllRecordFields);
   // Joining a challenge never forks the template (see CLAUDE.md) — a
   // participant's local copy is the owner's exact row, so this page needs

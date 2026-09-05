@@ -293,7 +293,7 @@ const ChecklistGenericInfo = ({
       tempFieldGroups.forEach(group => {
         const original = checklistTemplate.fieldGroups.find(g => g.id === group.id);
         if (original && JSON.stringify(group.repeat ?? null) !== JSON.stringify(original.repeat ?? null)) {
-          updateMyFieldGroupRepeat(group.id, group.repeat ?? null);
+          updateMyFieldGroupRepeat(group.id, group.checklistTemplateId, group.repeat ?? null);
         }
       });
       setActiveModal(EditModal.None);
@@ -318,7 +318,7 @@ const ChecklistGenericInfo = ({
   const handleResetMyReminder = () => {
     if (hasFieldGroups) {
       getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).forEach(group => {
-        updateMyFieldGroupRepeat(group.id, null);
+        updateMyFieldGroupRepeat(group.id, group.checklistTemplateId, null);
       });
       setActiveModal(EditModal.None);
       return;

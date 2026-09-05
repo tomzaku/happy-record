@@ -15,12 +15,15 @@ const EditChecklistForm = () => {
     useChecklistTemplates();
   const { getAllChecklistWithTemplate, deleteChecklist } = useChecklist();
   const { id } = useParams<{ id: string }>();
-  const template = checklistTemplate[id || ''];
   const { updateChecklistTemplate } = useChecklistTemplates();
   // `fieldGroups` isn't part of the template's own row anymore — a schedule edit made via
   // GroupScheduleList (the only thing this form's own fieldGroups field ever changes; see that
-  // component's own doc comment) is its own write now, one row at a time.
-  const { updateFieldGroup } = useFieldGroups();
+  // component's own doc comment) is its own write now, one row at a time. `getFieldGroups` is
+  // what actually resolves the template's real, current groups (`checklistTemplate[id]` alone
+  // never carries them) — merged onto `template` below so every read in this component sees them.
+  const { getFieldGroups, updateFieldGroup } = useFieldGroups();
+  const rawTemplate = checklistTemplate[id || ''];
+  const template = rawTemplate && { ...rawTemplate, fieldGroups: getFieldGroups(rawTemplate.id) };
   const navigate = useNavigate();
   const intl = useIntl();
   const onSubmit = ({
