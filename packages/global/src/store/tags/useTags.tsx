@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSessionStore } from '../../hook/useSessionStore';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
 
@@ -13,8 +13,7 @@ import { v4 } from 'uuid';
 // this by the same table fixes that: every device now sees the same
 // registry, same as `flags`.
 import { fetchTags, removeTag as removeTagApi, saveTag } from './tagsApi';
-
-const TAG_KEY = 'tag';
+import { tagsKeys } from './tagsKeys';
 
 export type Tag = {
   id: string;
@@ -23,102 +22,106 @@ export type Tag = {
   updatedAt: string;
 };
 
-// Fetched once per identity ("all mine" — no consumer narrows this today),
-// not unconditionally on mount. Same shape as useFlag.tsx's `fetchedFor`.
-const fetchedFor = new Set<string | undefined>();
-
 export const useTags = () => {
-  const [tags, setTags] = useSessionStore<Record<string, Tag>>(TAG_KEY, {});
   const { userId, ready } = useSession();
+  const queryClient = useQueryClient();
+  const queryKey = tagsKeys.list(userId);
 
-  const addTag = React.useCallback((name: string) => {
-    const trimmedName = name.trim();
-    if (!trimmedName) return null;
+  // Backed by React Query's own cache instead of useSessionStore — no more hand-rolled
+  // "have I already fetched this identity" Set (see git history for the old shape): the query
+  // key itself is that dedup, shared across every mounted consumer. `staleTime: Infinity` keeps
+  // this "fetch once per identity" like the code it replaces, rather than React Query's default
+  // refetch-on-refocus — a background refetch would otherwise race an optimistic `addTag`/
+  // `updateTag` below and silently overwrite it with the pre-write server response.
+  const { data: tags = {} } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const result = await fetchTags();
+      if (!result) throw new Error('Failed to fetch tags');
+      const map: Record<string, Tag> = {};
+      for (const tag of result.tags) map[tag.id] = tag;
+      return map;
+    },
+    enabled: ready && !!userId,
+    staleTime: Infinity,
+  });
 
-    // Check if tag already exists
-    const existingTag = Object.values(tags).find(
-      tag => tag.name.toLowerCase() === trimmedName.toLowerCase()
-    );
-    if (existingTag) return existingTag;
+  // Every write below is optimistic against the query cache directly (`setQueryData`) with no
+  // rollback on failure — same "quiet call, local state is the fallback" rule as everywhere else
+  // in this app (see CLAUDE.md's "online-first").
+  const addTag = React.useCallback(
+    (name: string) => {
+      const trimmedName = name.trim();
+      if (!trimmedName) return null;
 
-    const now = new Date().toISOString();
-    const newTag: Tag = {
-      id: v4(),
-      name: trimmedName,
-      createdAt: now,
-      updatedAt: now,
-    };
+      const existingTag = Object.values(tags).find(
+        tag => tag.name.toLowerCase() === trimmedName.toLowerCase(),
+      );
+      if (existingTag) return existingTag;
 
-    setTags(prev => ({ ...prev, [newTag.id]: newTag }));
-    saveTag(newTag);
+      const now = new Date().toISOString();
+      const newTag: Tag = {
+        id: v4(),
+        name: trimmedName,
+        createdAt: now,
+        updatedAt: now,
+      };
 
-    return newTag;
-  }, [tags, setTags]);
+      queryClient.setQueryData<Record<string, Tag>>(queryKey, prev => ({
+        ...prev,
+        [newTag.id]: newTag,
+      }));
+      saveTag(newTag);
 
-  const removeTag = React.useCallback((id: string) => {
-    setTags(prev => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    removeTagApi(id);
-  }, [setTags]);
+      return newTag;
+    },
+    [tags, queryClient, queryKey],
+  );
 
-  const updateTag = React.useCallback((id: string, name: string) => {
-    const trimmedName = name.trim();
-    if (!trimmedName) return;
+  const removeTag = React.useCallback(
+    (id: string) => {
+      queryClient.setQueryData<Record<string, Tag>>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      removeTagApi(id);
+    },
+    [queryClient, queryKey],
+  );
 
-    let updated: Tag | null = null;
-    setTags(prev => {
-      if (!prev[id]) return prev;
-      updated = { ...prev[id], name: trimmedName, updatedAt: new Date().toISOString() };
-      return { ...prev, [id]: updated };
-    });
-    if (updated) saveTag(updated);
-  }, [setTags]);
+  const updateTag = React.useCallback(
+    (id: string, name: string) => {
+      const trimmedName = name.trim();
+      if (!trimmedName) return;
+
+      let updated: Tag | null = null;
+      queryClient.setQueryData<Record<string, Tag>>(queryKey, prev => {
+        if (!prev?.[id]) return prev;
+        updated = { ...prev[id], name: trimmedName, updatedAt: new Date().toISOString() };
+        return { ...prev, [id]: updated };
+      });
+      if (updated) saveTag(updated);
+    },
+    [queryClient, queryKey],
+  );
 
   const getAllTags = React.useCallback(() => {
-    if (ready && !fetchedFor.has(userId)) {
-      fetchedFor.add(userId);
-      fetchTags().then(result => {
-        if (!result) {
-          fetchedFor.delete(userId);
-          return;
-        }
-        if (!result.tags.length) return;
-        setTags(prev => {
-          const merged = { ...prev };
-          let changed = false;
-          for (const tag of result.tags) {
-            const existing = merged[tag.id];
-            // Last-write-wins by `updatedAt` — cheap safety even though a
-            // direct scoped fetch makes a real conflict rare.
-            if (!existing || new Date(tag.updatedAt) > new Date(existing.updatedAt)) {
-              merged[tag.id] = tag;
-              changed = true;
-            }
-          }
-          return changed ? merged : prev;
-        });
-      });
-    }
-    return Object.values(tags).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-  }, [tags, userId, ready, setTags]);
-
-  const getTagById = React.useCallback((id: string) => {
-    return tags[id];
+    return Object.values(tags).sort((a, b) => a.name.localeCompare(b.name));
   }, [tags]);
 
-  const searchTags = React.useCallback((query: string) => {
-    const trimmedQuery = query.trim().toLowerCase();
-    if (!trimmedQuery) return getAllTags();
+  const getTagById = React.useCallback((id: string) => tags[id], [tags]);
 
-    return getAllTags().filter(tag =>
-      tag.name.toLowerCase().includes(trimmedQuery)
-    );
-  }, [getAllTags]);
+  const searchTags = React.useCallback(
+    (query: string) => {
+      const trimmedQuery = query.trim().toLowerCase();
+      if (!trimmedQuery) return getAllTags();
+
+      return getAllTags().filter(tag => tag.name.toLowerCase().includes(trimmedQuery));
+    },
+    [getAllTags],
+  );
 
   return {
     tags,
