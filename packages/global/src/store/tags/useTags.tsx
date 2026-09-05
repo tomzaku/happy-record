@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
 
@@ -22,6 +22,9 @@ export type Tag = {
   updatedAt: string;
 };
 
+type TagsMap = Record<string, Tag>;
+type RollbackContext = { previous: TagsMap | undefined };
+
 export const useTags = () => {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
@@ -31,14 +34,15 @@ export const useTags = () => {
   // "have I already fetched this identity" Set (see git history for the old shape): the query
   // key itself is that dedup, shared across every mounted consumer. `staleTime: Infinity` keeps
   // this "fetch once per identity" like the code it replaces, rather than React Query's default
-  // refetch-on-refocus — a background refetch would otherwise race an optimistic `addTag`/
-  // `updateTag` below and silently overwrite it with the pre-write server response.
+  // refetch-on-refocus — a background refetch would otherwise race an optimistic write below and
+  // silently overwrite it with the pre-write server response before the mutation's own
+  // `onSettled` refetch (which reconciles for real) gets a chance to run.
   const { data: tags = {} } = useQuery({
     queryKey,
     queryFn: async () => {
       const result = await fetchTags();
       if (!result) throw new Error('Failed to fetch tags');
-      const map: Record<string, Tag> = {};
+      const map: TagsMap = {};
       for (const tag of result.tags) map[tag.id] = tag;
       return map;
     },
@@ -46,9 +50,58 @@ export const useTags = () => {
     staleTime: Infinity,
   });
 
-  // Every write below is optimistic against the query cache directly (`setQueryData`) with no
-  // rollback on failure — same "quiet call, local state is the fallback" rule as everywhere else
-  // in this app (see CLAUDE.md's "online-first").
+  // Canonical React Query optimistic-update shape (used by both `addTag` and `updateTag` below,
+  // since the wire call for either is the same upsert): `onMutate` snapshots the cache before
+  // writing so a failure has something to restore; `onError` rolls back to that snapshot instead
+  // of leaving a write that never actually landed server-side sitting in the UI forever;
+  // `onSettled` refetches regardless of outcome so the cache reconciles with the server's real
+  // state. `saveTag` is "quiet" (resolves `null` instead of rejecting on failure) — `mutationFn`
+  // turns that into a real rejection, since `onError` would otherwise never fire.
+  const saveTagMutation = useMutation<{ ok: true }, Error, Tag, RollbackContext>({
+    mutationFn: async tag => {
+      const result = await saveTag(tag);
+      if (!result) throw new Error('Failed to save tag');
+      return result;
+    },
+    onMutate: async tag => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<TagsMap>(queryKey);
+      queryClient.setQueryData<TagsMap>(queryKey, prev => ({ ...prev, [tag.id]: tag }));
+      return { previous };
+    },
+    onError: (_error, _tag, context) => {
+      queryClient.setQueryData(queryKey, context?.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const removeTagMutation = useMutation<{ ok: true }, Error, string, RollbackContext>({
+    mutationFn: async id => {
+      const result = await removeTagApi(id);
+      if (!result) throw new Error('Failed to remove tag');
+      return result;
+    },
+    onMutate: async id => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<TagsMap>(queryKey);
+      queryClient.setQueryData<TagsMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      return { previous };
+    },
+    onError: (_error, _id, context) => {
+      queryClient.setQueryData(queryKey, context?.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   const addTag = React.useCallback(
     (name: string) => {
       const trimmedName = name.trim();
@@ -67,44 +120,29 @@ export const useTags = () => {
         updatedAt: now,
       };
 
-      queryClient.setQueryData<Record<string, Tag>>(queryKey, prev => ({
-        ...prev,
-        [newTag.id]: newTag,
-      }));
-      saveTag(newTag);
+      saveTagMutation.mutate(newTag);
 
       return newTag;
     },
-    [tags, queryClient, queryKey],
+    [tags, saveTagMutation],
   );
 
   const removeTag = React.useCallback(
     (id: string) => {
-      queryClient.setQueryData<Record<string, Tag>>(queryKey, prev => {
-        if (!prev) return prev;
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
-      removeTagApi(id);
+      removeTagMutation.mutate(id);
     },
-    [queryClient, queryKey],
+    [removeTagMutation],
   );
 
   const updateTag = React.useCallback(
     (id: string, name: string) => {
       const trimmedName = name.trim();
-      if (!trimmedName) return;
+      const existing = tags[id];
+      if (!trimmedName || !existing) return;
 
-      let updated: Tag | null = null;
-      queryClient.setQueryData<Record<string, Tag>>(queryKey, prev => {
-        if (!prev?.[id]) return prev;
-        updated = { ...prev[id], name: trimmedName, updatedAt: new Date().toISOString() };
-        return { ...prev, [id]: updated };
-      });
-      if (updated) saveTag(updated);
+      saveTagMutation.mutate({ ...existing, name: trimmedName, updatedAt: new Date().toISOString() });
     },
-    [queryClient, queryKey],
+    [tags, saveTagMutation],
   );
 
   const getAllTags = React.useCallback(() => {
