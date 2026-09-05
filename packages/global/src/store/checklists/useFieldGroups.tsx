@@ -2,7 +2,6 @@ import React from 'react';
 import { v4 } from 'uuid';
 import { useMutation, useQuery, useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
-import { createSharedState } from '../../hook/createSharedState';
 import { normalizeFieldGroupFields, type FieldGroup, type FieldGroupField } from './useChecklistTemplates';
 import { fieldGroupsKeys } from './fieldGroupsKeys';
 
@@ -52,10 +51,6 @@ function writeGroupIfPresent(queryClient: QueryClient, key: QueryKey, groupId: s
     return next;
   });
 }
-
-// Whether "all mine" has been requested at all this session — see its own use in useFieldGroups
-// below for why this has to be shared across every call to that hook, not a plain useState.
-const useWantsAllFieldGroupsStore = createSharedState(false);
 
 /**
  * One template's own groups (active + archived — callers filter via getActiveFieldGroups),
@@ -107,16 +102,8 @@ export const useFieldGroups = () => {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
 
-  // "All mine" — lazy: stays disabled until `ensureAllFieldGroupsFetched` is actually called (the
-  // management screen, or the home page's own schedule-matching loop), same "don't fetch until
-  // actually needed" rule the old fetchedScopes Set enforced, now via `enabled` instead. Shared
-  // across every `useFieldGroups()` call in the app (via createSharedState), not a plain
-  // per-component `useState` — this hook is called independently by many components (through
-  // useChecklistTemplates.tsx too), and a plain local flag would mean the home page's own
-  // "all mine" request wouldn't be visible to, say, detail-task-page's own separate instance,
-  // which would then redundantly re-fetch each template it needs one at a time even though the
-  // bulk data already sits in the (genuinely shared) query cache.
-  const [wantsAll, setWantsAll] = useWantsAllFieldGroupsStore();
+  // Always fetched once the session is ready — every one of this app's other resources this size
+  // fetches "all mine" unconditionally the same way; there's no lazy trigger to reason about.
   const allKey = fieldGroupsKeys.all(userId);
   const { data: allGroups, isSuccess: allGroupsSettled } = useQuery<FieldGroupsMap>({
     queryKey: allKey,
@@ -125,13 +112,9 @@ export const useFieldGroups = () => {
       if (!result) throw new Error('Failed to fetch field groups');
       return toFieldGroupsMap(result.fieldGroups);
     },
-    enabled: ready && wantsAll,
+    enabled: ready,
     staleTime: Infinity,
   });
-
-  /** Every group across every one of the caller's templates, unscoped — see
-   * getChecklistTemplateIdsByGivingDate's own need for this in useChecklistTemplates.tsx. */
-  const ensureAllFieldGroupsFetched = React.useCallback(() => setWantsAll(true), []);
 
   const fetchOneTemplate = React.useCallback(
     (checklistTemplateId: string) => {
@@ -181,40 +164,27 @@ export const useFieldGroups = () => {
     [ready, fetchOneTemplate, peekByTemplateCache],
   );
 
-  /** One template's own groups. Prefers the bulk "all mine" query once that's covered this
-   * template — no extra network call for the common case, including a template that genuinely
-   * has zero groups (an owned template simply absent from "all mine"'s response — see `isOwned`
-   * below). Falls back to the per-template cache/fetch otherwise: the case "all mine" can never
-   * cover at all — a joined challenge's field groups are the *owner's* own rows, invisible to
-   * "all mine" (own templates only) no matter how long it's been fetched — same bypass
-   * `getFieldGroupsByTemplateId` below always takes unconditionally. Called in a loop over many
-   * templates (getRecommendChecklistTemplates/getChecklistTemplateIdsByGivingDate), so this can't
-   * wait for some other component to mount `useFieldGroupsForTemplate` itself first.
-   *
-   * `isOwned` — pass `true` when the caller already knows this id is one of the current user's
-   * own templates (present in checklist-templates' own "all mine" map). Once settled, an owned id
-   * missing from "all mine" is proof it has zero groups, not "not checked yet" — without this, a
-   * zero-group owned template refetches its own empty result forever, once per page load. Omit
-   * when the caller doesn't know (useChecklistTemplateDetail's single-id lookup needs its own
-   * fetch regardless, so it isn't worth wiring there). */
+  /** One template's own groups:
+   *   1. "All mine" hasn't settled yet → peek whatever's already cached for this one template
+   *      (an in-progress optimistic write, say), without firing a new fetch — the bulk request
+   *      already in flight will cover it in a moment.
+   *   2. Settled and this template is in there → done, no network call.
+   *   3. Settled and it's not, but the caller knows this id is owned (`isOwned: true`, from
+   *      checklist-templates' own "all mine" map) → that's proof it genuinely has zero groups.
+   *   4. Otherwise (not owned, or ownership unknown) → fetch it directly. This is what actually
+   *      resolves a joined challenge's field groups, which are the *owner's* rows and never show
+   *      up in "all mine" (own templates only), no matter how long it's been fetched.
+   * Called in a loop over many templates (getRecommendChecklistTemplates/
+   * getChecklistTemplateIdsByGivingDate), so this can't wait for some other component to mount
+   * `useFieldGroupsForTemplate` itself first. */
   const getFieldGroups = React.useCallback(
     (checklistTemplateId: string, isOwned?: boolean): FieldGroup[] => {
-      // Reads the store directly rather than the `wantsAll` above — `ensureAllFieldGroupsFetched`
-      // can flip this moments earlier in the very same render (called from useChecklistTemplates,
-      // after this hook's own body already ran), which that React-subscribed value won't see
-      // until the next render — this call needs it now, since it may run in the same loop.
-      if (useWantsAllFieldGroupsStore.getValue()) {
-        // Not settled yet (still disabled pending that flip, or still in flight) — peek whatever's
-        // already cached for this one template (an optimistic write in progress, say) instead of
-        // firing a redundant individual fetch for every template in the same loop; a real render
-        // follows once "all mine" actually resolves.
-        if (!allGroupsSettled) return peekByTemplateCache(checklistTemplateId);
-        const fromAll = Object.values(allGroups ?? {})
-          .filter(group => group.checklistTemplateId === checklistTemplateId)
-          .sort((a, b) => a.position - b.position);
-        if (fromAll.length > 0) return fromAll;
-        if (isOwned) return [];
-      }
+      if (!allGroupsSettled) return peekByTemplateCache(checklistTemplateId);
+      const fromAll = Object.values(allGroups ?? {})
+        .filter(group => group.checklistTemplateId === checklistTemplateId)
+        .sort((a, b) => a.position - b.position);
+      if (fromAll.length > 0) return fromAll;
+      if (isOwned) return [];
       return readByTemplateCache(checklistTemplateId);
     },
     [allGroupsSettled, allGroups, peekByTemplateCache, readByTemplateCache],
@@ -321,7 +291,6 @@ export const useFieldGroups = () => {
   return {
     getFieldGroups,
     getFieldGroupsByTemplateId,
-    ensureAllFieldGroupsFetched,
     updateMyFieldGroupRepeat,
     addFieldGroup,
     updateFieldGroup,

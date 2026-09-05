@@ -66,16 +66,12 @@ beforeEach(() => {
   mockPatchFieldGroupRepeat.mockResolvedValue({ ok: true });
 });
 
-// Must run before any other test in this file calls ensureAllFieldGroupsFetched() — the "all
-// mine" wanted-flag is a module-level shared store (see createSharedState), so once a later test
-// flips it true, it stays true for the rest of this file and this exact race can't be observed.
-describe('ensureAllFieldGroupsFetched', () => {
-  // Reproduces a production flood: a caller (useChecklistTemplates' getChecklistTemplateIdsByGivingDate)
-  // calls ensureAllFieldGroupsFetched() and then getFieldGroups(id) for every owned template in the
-  // same tick, before the bulk fetch has settled. getFieldGroups must wait for the bulk fetch rather
-  // than falling back to an individual request for each id — otherwise every owned template fires
-  // its own /field-groups?checklistTemplateId= call in parallel with the bulk one covering them all.
-  it("doesn't fire an individual fetch for an owned template while the bulk fetch is still settling", async () => {
+describe('getFieldGroups while "all mine" is still settling', () => {
+  // "All mine" always starts fetching on mount now (no lazy trigger) but still takes a tick to
+  // settle. getFieldGroups must wait for it rather than firing an individual request for every
+  // template in the meantime — otherwise every owned template would fire its own
+  // /field-groups?checklistTemplateId= call in parallel with the bulk one covering them all.
+  it("doesn't fire an individual fetch for a template while the bulk fetch is still settling", async () => {
     const bulk = createDeferred<{ fieldGroups: FieldGroup[] }>();
     mockFetchFieldGroups.mockImplementation((args?: { checklistTemplateId?: string }) =>
       args?.checklistTemplateId ? Promise.resolve({ fieldGroups: [] }) : bulk.promise,
@@ -84,10 +80,8 @@ describe('ensureAllFieldGroupsFetched', () => {
     const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
 
     act(() => {
-      result.current.ensureAllFieldGroupsFetched();
       result.current.getFieldGroups('template-owned-flood-1');
     });
-
     expect(mockFetchFieldGroups).not.toHaveBeenCalledWith({ checklistTemplateId: 'template-owned-flood-1' });
 
     act(() => {
@@ -196,12 +190,9 @@ describe('addFieldGroup', () => {
 
   // The `all` and `byTemplate` caches are two separate query keys now (not one shared cache
   // entry) — a write has to reach both, or a reader looking through the other one would miss it.
-  it('is visible via getFieldGroupsByTemplateId even after ensureAllFieldGroupsFetched has run', async () => {
+  it('is visible via getFieldGroupsByTemplateId even after "all mine" has settled', async () => {
     const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
 
-    act(() => {
-      result.current.ensureAllFieldGroupsFetched();
-    });
     await waitFor(() => expect(mockFetchFieldGroups).toHaveBeenCalledWith());
 
     let created!: FieldGroup;
@@ -229,9 +220,6 @@ describe('getFieldGroups isOwned', () => {
     );
 
     const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
-    act(() => {
-      result.current.ensureAllFieldGroupsFetched();
-    });
     // Waiting for the mock to have been *called* only proves the bulk fetch started — its
     // Promise still needs another tick to resolve, so assert on data a settled bulk fetch would
     // actually produce (a real, present id) rather than just "was it invoked."
@@ -254,9 +242,6 @@ describe('getFieldGroups isOwned', () => {
     );
 
     const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
-    act(() => {
-      result.current.ensureAllFieldGroupsFetched();
-    });
     await waitFor(() => expect(mockFetchFieldGroups).toHaveBeenCalledWith());
 
     await waitFor(() =>

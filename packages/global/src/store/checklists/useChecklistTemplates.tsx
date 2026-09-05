@@ -203,14 +203,11 @@ type SaveTemplateArgs = {
   wire: { kind: 'create' } | { kind: 'patch'; changes: Record<string, unknown> } | { kind: 'none' };
 };
 
-// Whether "all mine" has been requested this session — shared across every
-// `useChecklistTemplates()` call (see createSharedState) so one component's own request is
-// visible to every other instance, not just its own.
-const useWantsAllTemplatesStore = createSharedState(false);
-
 // Every template id ever resolved by id, kept even after `selectedChecklistTemplates` drops it
 // (deselect/delete) — otherwise `useQueries` below stops observing that id's cache entry, and a
-// rollback after a failed write has nothing left to notify. Shared for the same reason `wantsAll` is.
+// rollback after a failed write has nothing left to notify. Shared across every
+// `useChecklistTemplates()` call (see createSharedState) so a template resolved by one component
+// instance stays observed by every other instance too.
 const useKnownTemplateIdsStore = createSharedState<string[]>([]);
 
 // Dedup for `getChecklistTemplate`'s own byId bypass fetch — see its own comment.
@@ -305,20 +302,14 @@ export const useChecklistTemplates = () => {
 
   // `field-groups` isn't a column on this row anymore — `getChecklistTemplate`/
   // `getRecommendChecklistTemplates` merge `getFieldGroups(id)` onto the object they return.
-  const { getFieldGroups, ensureAllFieldGroupsFetched } = useFieldGroups();
+  const { getFieldGroups } = useFieldGroups();
 
-  // "All mine" — lazy, enabled once `ensureAllTemplatesFetched` is called. Also true synchronously
-  // whenever there's already a selected template: `setWantsAll(true)` only becomes visible on the
-  // *next* render, one render too late to stop this render's own per-id queries below from firing
-  // in parallel with the bulk fetch — `selectedChecklistTemplates` (from useLocalStorage) is
-  // available immediately, so ORing it in closes that gap for the common "returning user, already
-  // has selected templates" case.
-  const [wantsAllRequested, setWantsAll] = useWantsAllTemplatesStore();
-  const wantsAll = wantsAllRequested || selectedChecklistTemplates.length > 0;
+  // Always fetched once the session is ready — no lazy trigger to reason about.
   const allKey = checklistTemplatesKeys.all(userId);
   const {
     data: allTemplates,
     isLoading: allTemplatesLoading,
+    isSuccess: allTemplatesSettled,
   } = useQuery<ChecklistTemplatesMap>({
     queryKey: allKey,
     queryFn: async () => {
@@ -328,15 +319,11 @@ export const useChecklistTemplates = () => {
       for (const template of result.templates) map[template.id] = template;
       return map;
     },
-    enabled: ready && wantsAll,
+    enabled: ready,
     staleTime: Infinity,
   });
 
-  const ensureAllTemplatesFetched = React.useCallback(() => setWantsAll(true), [setWantsAll]);
-
-  // `!wantsAll` matters: a disabled query reads `isLoading: false`, which would flash a wrong
-  // "done loading" for the one render before `ensureAllTemplatesFetched` flips `wantsAll` true.
-  const templatesLoading = !wantsAll || allTemplatesLoading;
+  const templatesLoading = !ready || allTemplatesLoading;
 
   const [knownTemplateIds, setKnownTemplateIds] = useKnownTemplateIdsStore();
   const markTemplateIdKnown = React.useCallback(
@@ -354,16 +341,15 @@ export const useChecklistTemplates = () => {
   const observedTemplateIds = knownTemplateIds;
 
   // One real query per known template — `useQueries` since the id list is dynamic (can't call
-  // useChecklistTemplateDetail in a loop). Waits for "all mine" to actually settle before
-  // deciding whether an id needs its own fetch (not just `wantsAll` being true) — otherwise every
-  // observed id fires its own request the instant "all mine" is requested, in parallel with the
-  // bulk fetch that would have covered it a moment later. Only fires for real once settled and
+  // useChecklistTemplateDetail in a loop). Waits for "all mine" to actually settle before firing
+  // its own fetch — otherwise every observed id would fire its own request in parallel with the
+  // bulk fetch that was about to cover it a moment later. Only fires for real once settled and
   // still missing: a joined challenge's template, which "all mine" (own templates only) never has.
   const byIdResults = useQueries({
     queries: observedTemplateIds.map(id => ({
       queryKey: checklistTemplatesKeys.byId(id, userId),
       queryFn: () => fetchOneTemplate(id),
-      enabled: ready && (!wantsAll || (!allTemplatesLoading && !allTemplates?.[id])),
+      enabled: ready && allTemplatesSettled && !allTemplates?.[id],
       staleTime: Infinity,
     })),
   });
@@ -603,15 +589,11 @@ export const useChecklistTemplates = () => {
   // can memoize on it — its identity now only changes when `checklistTemplate`
   // itself changes, instead of on every render.
   const getRecommendChecklistTemplates = React.useCallback((): ChecklistTemplate[] => {
-    ensureAllTemplatesFetched();
-    ensureAllFieldGroupsFetched();
     return Object.values(checklistTemplate).map(withFieldGroups);
-  }, [checklistTemplate, ensureAllTemplatesFetched, ensureAllFieldGroupsFetched, withFieldGroups]);
+  }, [checklistTemplate, withFieldGroups]);
 
   const getChecklistTemplateIdsByGivingDate = React.useCallback(
     ({ date }: { date: Date } = { date: new Date() }) => {
-      ensureAllTemplatesFetched();
-      ensureAllFieldGroupsFetched();
       return selectedChecklistTemplates.filter(checklistTemplateId => {
         const raw = checklistTemplate[checklistTemplateId];
         const currentChecklistTemplate = raw && withFieldGroups(raw);
@@ -643,7 +625,7 @@ export const useChecklistTemplates = () => {
         );
       });
     },
-    [selectedChecklistTemplates, checklistTemplate, ensureAllTemplatesFetched, ensureAllFieldGroupsFetched, withFieldGroups],
+    [selectedChecklistTemplates, checklistTemplate, withFieldGroups],
   );
 
   /**
@@ -679,7 +661,7 @@ export const useChecklistTemplates = () => {
       // trade-off — this function is only ever called for one specific id at a time, never in a
       // loop over many templates, so it isn't the source of the N-parallel-request flood
       // `useQueries` above guards against.
-      if (ready && id && !(wantsAll && allTemplates?.[id]) && !fetchedByIdScopes.has(scopeKey)) {
+      if (ready && id && !allTemplates?.[id] && !fetchedByIdScopes.has(scopeKey)) {
         fetchedByIdScopes.add(scopeKey);
         fetchOneTemplate(id)
           .then(template => {
@@ -696,7 +678,7 @@ export const useChecklistTemplates = () => {
       const template = checklistTemplate[id];
       return template && withFieldGroups(template);
     },
-    [checklistTemplate, userId, ready, wantsAll, allTemplates, mergeTemplates, withFieldGroups],
+    [checklistTemplate, userId, ready, allTemplates, mergeTemplates, withFieldGroups],
   );
 
   return {

@@ -199,8 +199,8 @@ export const useChallenge = () => {
     // Same shape, same reasoning — challenge-list-page-ui is a dedicated page that wants its
     // whole roster fresh on load, not a value other components read reactively, so this is a
     // plain imperative fetch (like getChallengeDashboard above) rather than a cached "all mine"
-    // query the way useChecklistTemplates.tsx's ensureAllTemplatesFetched is — nothing else in
-    // the app needs this list outside that one page today.
+    // query the way useChecklistTemplates.tsx's own bulk fetch is — nothing else in the app needs
+    // this list outside that one page today.
     getMyChallenges: fetchMyChallenges,
   };
 };

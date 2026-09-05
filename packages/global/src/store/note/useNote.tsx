@@ -80,9 +80,8 @@ type RollbackContext = { previousNote: Note | undefined };
 const fetchedIds = new Set<string>();
 
 // Same "have I already fetched this scope" shape every other resource's own "all mine" read
-// uses (see useRecordField.tsx's getAllRecordFields, useFieldGroups.tsx's
-// ensureAllFieldGroupsFetched) — keyed by identity so a scope already fetched for one user
-// re-fetches once the signed-in identity actually changes.
+// uses (see useRecordField.tsx's getAllRecordFields) — keyed by identity so a scope already
+// fetched for one user re-fetches once the signed-in identity actually changes.
 const fetchedAllScopes = new Set<string>();
 
 // Same idea, keyed by (identity, fieldGroupId) — see getOwnFieldGroupNote below.
