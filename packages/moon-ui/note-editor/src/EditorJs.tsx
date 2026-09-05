@@ -18,6 +18,7 @@ import Undo from 'editorjs-undo';
 import DragDrop from 'editorjs-drag-drop';
 import cx from 'classnames';
 import AiWriteTool, { DEFAULT_CONFIG, type AiNoteToolConfig } from './AiWriteTool';
+import EmbedInsertTool from './EmbedInsertTool';
 
 
 interface NoteEditorProps {
@@ -78,7 +79,10 @@ const EditorJs = forwardRef<NoteEditorHandle, NoteEditorProps>(
     const editor = new EditorJS({
       holder: holderRef.current,
       readOnly,
-      placeholder: "Start writing your note...",
+      // @editorjs/embed (below) has no "+" toolbox entry in this version — it only activates by
+      // matching a pasted URL against its own regex patterns, so without a hint here there's
+      // nothing in the UI suggesting you can paste a link at all.
+      placeholder: "Start writing your note... Tip: paste a YouTube, Facebook, or other link to embed it",
       // EditorJS has no undo/redo of its own — native browser undo only ever tracked plain
       // typing, so a paste/cut (which EditorJS rewrites via its own sanitizer/block APIs, not a
       // DOM mutation the browser's own undo manager sees) silently didn't revert on ctrl+Z.
@@ -174,14 +178,35 @@ const EditorJs = forwardRef<NoteEditorHandle, NoteEditorProps>(
           class: Embed,
           inlineToolbar: true,
           config: {
+            // Every service @editorjs/embed 2.7.7 ships regex patterns for — see its own
+            // services registry (the `w` object in embed.mjs) for the exact set; there's no
+            // "support everything" shorthand, each has to be named.
             services: {
               youtube: true,
+              vimeo: true,
               coub: true,
+              vine: true,
+              imgur: true,
+              gfycat: true,
               codepen: true,
-              vimeo: true
+              instagram: true,
+              twitter: true,
+              reddit: true,
+              pinterest: true,
+              facebook: true,
+              aparat: true,
+              miro: true,
+              github: true
             }
           }
         } as any,
+        // The discoverable "+"-menu counterpart to `embed` above — that tool has no toolbox
+        // entry of its own in this version and only activates on a matching paste (see
+        // EmbedInsertTool.tsx's own top comment). Always registered, unlike `aiWrite` below,
+        // since embedding isn't gated behind anything.
+        embedInsert: {
+          class: EmbedInsertTool
+        },
         // Only registered when a consumer opts in (see NoteEditorProps.ai above) — `ai` here is
         // this effect's captured-at-mount value (whether the prop was passed at all). The
         // subscribe/getSnapshot pair below is what actually stays live afterward — see

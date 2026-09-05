@@ -1,0 +1,97 @@
+@use '@moon-ui/app-scss/theme/light.scss' as *;
+@use '@moon-ui/app-scss/theme/dark.scss' as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  // See AiWriteTool.module.scss's identical rule for why: Editor.js's own redactor doesn't apply
+  // a border-box reset to arbitrary tool markup.
+  box-sizing: border-box;
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.headerTitle {
+  font-weight: 600;
+  color: var(--text-title-primary-color);
+}
+
+.serviceChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.serviceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: var(--card-background);
+  color: var(--text-description-color);
+  font-size: 0.8125rem;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-color);
+    border-color: var(--icon-primary);
+  }
+}
+
+.serviceChipActive {
+  color: var(--text-title-primary-color);
+  border-color: var(--icon-primary);
+  background: var(--card-selected-background);
+}
+
+.exampleText {
+  font-size: 0.8125rem;
+  color: var(--text-description-color);
+
+  code {
+    color: var(--text-color);
+    word-break: break-all;
+  }
+}
+
+.urlInput {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--card-background);
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.9375rem;
+
+  &::placeholder {
+    color: var(--text-description-color);
+  }
+}
+
+.errorText {
+  font-size: 0.875rem;
+  color: var(--error-color, #e5484d);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
