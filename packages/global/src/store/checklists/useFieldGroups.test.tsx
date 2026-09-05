@@ -216,6 +216,56 @@ describe('addFieldGroup', () => {
   });
 });
 
+describe('getFieldGroups isOwned', () => {
+  // A real production case: an owned template with zero field groups never appears in "all
+  // mine"'s response at all (there's nothing to return for it) — without the isOwned hint this
+  // looked identical to "all mine" simply not having gotten to it yet, so it refetched its own
+  // empty result individually forever, once per page load.
+  it("trusts an empty 'all mine' result as zero groups for an owned template, without an individual fetch", async () => {
+    mockFetchFieldGroups.mockImplementation((args?: { checklistTemplateId?: string }) =>
+      args?.checklistTemplateId
+        ? Promise.resolve({ fieldGroups: [] })
+        : Promise.resolve({ fieldGroups: [baseGroup({ id: 'group-other', checklistTemplateId: 'template-other' })] }),
+    );
+
+    const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
+    act(() => {
+      result.current.ensureAllFieldGroupsFetched();
+    });
+    // Waiting for the mock to have been *called* only proves the bulk fetch started — its
+    // Promise still needs another tick to resolve, so assert on data a settled bulk fetch would
+    // actually produce (a real, present id) rather than just "was it invoked."
+    await waitFor(() =>
+      expect(result.current.getFieldGroups('template-other', true)).toHaveLength(1),
+    );
+
+    expect(result.current.getFieldGroups('template-owned-no-groups', true)).toEqual([]);
+    expect(mockFetchFieldGroups).not.toHaveBeenCalledWith({ checklistTemplateId: 'template-owned-no-groups' });
+  });
+
+  // A joined challenge's field groups are the owner's own rows — "all mine" never covers them no
+  // matter how long it's been fetched, so this case still needs its individual fetch. Without
+  // `isOwned` (the caller doesn't know, or knows it's not theirs), the fallback must still fire.
+  it('still falls back to an individual fetch for a template not known to be owned', async () => {
+    mockFetchFieldGroups.mockImplementation((args?: { checklistTemplateId?: string }) =>
+      args?.checklistTemplateId
+        ? Promise.resolve({ fieldGroups: [baseGroup({ id: 'group-challenge', checklistTemplateId: 'template-challenge-1' })] })
+        : Promise.resolve({ fieldGroups: [] }),
+    );
+
+    const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
+    act(() => {
+      result.current.ensureAllFieldGroupsFetched();
+    });
+    await waitFor(() => expect(mockFetchFieldGroups).toHaveBeenCalledWith());
+
+    await waitFor(() =>
+      expect(result.current.getFieldGroups('template-challenge-1')).toHaveLength(1),
+    );
+    expect(mockFetchFieldGroups).toHaveBeenCalledWith({ checklistTemplateId: 'template-challenge-1' });
+  });
+});
+
 describe('updateMyFieldGroupRepeat', () => {
   it('rolls back to the previous repeat if the patch fails', async () => {
     mockFetchFieldGroups.mockResolvedValueOnce({

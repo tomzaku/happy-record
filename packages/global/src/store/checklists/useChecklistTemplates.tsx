@@ -583,15 +583,20 @@ export const useChecklistTemplates = () => {
     });
   };
 
+  // A template found in `allTemplates` (checklist-templates' own "all mine" bulk map) is
+  // definitely owned by the current user — see getFieldGroups' own `isOwned` param for why that
+  // lets it trust an empty "all mine" field-groups result as a real zero instead of refetching.
+  const isOwnedTemplate = React.useCallback((id: string) => !!allTemplates?.[id], [allTemplates]);
+
   // `field-groups` is fetched/stored separately (see useFieldGroups.tsx) — every read function
   // below that hands back a `ChecklistTemplate` merges that store's own `getFieldGroups` onto it
   // here, once, so nothing downstream has to know the two ever lived in different places.
   const withFieldGroups = React.useCallback(
     (template: ChecklistTemplate): ChecklistTemplate => ({
       ...template,
-      fieldGroups: getFieldGroups(template.id),
+      fieldGroups: getFieldGroups(template.id, isOwnedTemplate(template.id)),
     }),
-    [getFieldGroups],
+    [getFieldGroups, isOwnedTemplate],
   );
 
   // useCallback'd (not a plain closure) so a consumer's own useSyncedSelector
@@ -706,6 +711,7 @@ export const useChecklistTemplates = () => {
     updateSelectedChecklistTemplate,
     getRecommendChecklistTemplates,
     getChecklistTemplateIdsByGivingDate,
+    isOwnedTemplate,
     // Exposed for the challenge join flow (checklist-template-shared-page-ui,
     // useResumePendingChallengeJoin): merging a shared template under its
     // own id — never forking a new one — is exactly this function, already

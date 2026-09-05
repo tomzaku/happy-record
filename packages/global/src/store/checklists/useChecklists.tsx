@@ -63,7 +63,7 @@ export const useChecklist = () => {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
   const invalidateChecklistLogs = () => queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
-  const { getChecklistTemplateIdsByGivingDate, checklistTemplate } =
+  const { getChecklistTemplateIdsByGivingDate, checklistTemplate, isOwnedTemplate } =
     useChecklistTemplates();
   const { getFieldGroups } = useFieldGroups();
   // Starts `true`, flips to `false` once a checklists fetch (either path
@@ -224,7 +224,7 @@ export const useChecklist = () => {
         // rather than trusting a stale (or perpetually empty) copy.
         const effectiveDayOfWeek = getEffectiveDayOfWeek({
           ...template,
-          fieldGroups: template ? getFieldGroups(template.id) : [],
+          fieldGroups: template ? getFieldGroups(template.id, isOwnedTemplate(template.id)) : [],
         });
         const hasSchedule = !!effectiveDayOfWeek && effectiveDayOfWeek.trim() !== '';
         if(hasSchedule) return false;
@@ -270,7 +270,7 @@ export const useChecklist = () => {
         ),
       };
     },
-    [checklist, getChecklistTemplateIdsByGivingDate, checklistTemplate, getFieldGroups],
+    [checklist, getChecklistTemplateIdsByGivingDate, checklistTemplate, getFieldGroups, isOwnedTemplate],
   );
 
   // The original combined "fetch this day, then read it" shape — still what

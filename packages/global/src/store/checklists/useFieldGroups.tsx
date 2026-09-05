@@ -182,16 +182,23 @@ export const useFieldGroups = () => {
   );
 
   /** One template's own groups. Prefers the bulk "all mine" query once that's covered this
-   * template (an owned template with at least one real group) — no extra network call for the
-   * common case. Falls back to the per-template cache/fetch otherwise, which covers both "this
-   * template genuinely has none" (the fallback just confirms empty) and the case "all mine" can
-   * never cover at all: a joined challenge's field groups are the *owner's* own rows, invisible
-   * to "all mine" (own templates only) no matter how long it's been fetched — same bypass
+   * template — no extra network call for the common case, including a template that genuinely
+   * has zero groups (an owned template simply absent from "all mine"'s response — see `isOwned`
+   * below). Falls back to the per-template cache/fetch otherwise: the case "all mine" can never
+   * cover at all — a joined challenge's field groups are the *owner's* own rows, invisible to
+   * "all mine" (own templates only) no matter how long it's been fetched — same bypass
    * `getFieldGroupsByTemplateId` below always takes unconditionally. Called in a loop over many
    * templates (getRecommendChecklistTemplates/getChecklistTemplateIdsByGivingDate), so this can't
-   * wait for some other component to mount `useFieldGroupsForTemplate` itself first. */
+   * wait for some other component to mount `useFieldGroupsForTemplate` itself first.
+   *
+   * `isOwned` — pass `true` when the caller already knows this id is one of the current user's
+   * own templates (present in checklist-templates' own "all mine" map). Once settled, an owned id
+   * missing from "all mine" is proof it has zero groups, not "not checked yet" — without this, a
+   * zero-group owned template refetches its own empty result forever, once per page load. Omit
+   * when the caller doesn't know (useChecklistTemplateDetail's single-id lookup needs its own
+   * fetch regardless, so it isn't worth wiring there). */
   const getFieldGroups = React.useCallback(
-    (checklistTemplateId: string): FieldGroup[] => {
+    (checklistTemplateId: string, isOwned?: boolean): FieldGroup[] => {
       // Reads the store directly rather than the `wantsAll` above — `ensureAllFieldGroupsFetched`
       // can flip this moments earlier in the very same render (called from useChecklistTemplates,
       // after this hook's own body already ran), which that React-subscribed value won't see
@@ -206,6 +213,7 @@ export const useFieldGroups = () => {
           .filter(group => group.checklistTemplateId === checklistTemplateId)
           .sort((a, b) => a.position - b.position);
         if (fromAll.length > 0) return fromAll;
+        if (isOwned) return [];
       }
       return readByTemplateCache(checklistTemplateId);
     },

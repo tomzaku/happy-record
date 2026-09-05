@@ -11,7 +11,7 @@ import { startOfDay } from 'date-fns';
 import styles from './index.module.scss';
 
 const EditChecklistForm = () => {
-  const { checklistTemplate, deleteChecklistTemplate } =
+  const { checklistTemplate, deleteChecklistTemplate, isOwnedTemplate } =
     useChecklistTemplates();
   const { getAllChecklistWithTemplate, deleteChecklist } = useChecklist();
   const { id } = useParams<{ id: string }>();
@@ -23,7 +23,10 @@ const EditChecklistForm = () => {
   // never carries them) — merged onto `template` below so every read in this component sees them.
   const { getFieldGroups, updateFieldGroup } = useFieldGroups();
   const rawTemplate = checklistTemplate[id || ''];
-  const template = rawTemplate && { ...rawTemplate, fieldGroups: getFieldGroups(rawTemplate.id) };
+  const template = rawTemplate && {
+    ...rawTemplate,
+    fieldGroups: getFieldGroups(rawTemplate.id, isOwnedTemplate(rawTemplate.id)),
+  };
   const navigate = useNavigate();
   const intl = useIntl();
   const onSubmit = ({

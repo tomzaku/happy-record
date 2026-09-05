@@ -65,7 +65,7 @@ const ChecklistTodayDesktop = ({
   selectedTag?: string;
 }) => {
   const { getChecklistByGivingDate, updateChecklist, checklistsLoading } = useChecklist();
-  const { checklistTemplate, templatesLoading } = useChecklistTemplates();
+  const { checklistTemplate, templatesLoading, isOwnedTemplate } = useChecklistTemplates();
   const { getFieldGroups } = useFieldGroups();
   const navigate = useNavigate();
   const intl = useIntl();
@@ -357,7 +357,7 @@ const ChecklistTodayDesktop = ({
     // directly rather than trusting a stale (or perpetually empty) copy.
     const currentChecklistTemplate = rawTemplate && {
       ...rawTemplate,
-      fieldGroups: getFieldGroups(rawTemplate.id),
+      fieldGroups: getFieldGroups(rawTemplate.id, isOwnedTemplate(rawTemplate.id)),
     };
     const completed = Boolean(currentChecklist?.completedAt);
     const color = currentChecklistTemplate?.avatar.color || '#8A8A8A';
