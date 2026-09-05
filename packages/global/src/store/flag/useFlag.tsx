@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSessionStore } from '../../hook/useSessionStore';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import { v4 } from 'uuid';
 
@@ -7,8 +7,7 @@ import { v4 } from 'uuid';
 // a failure resolves to null and this hook's own in-memory state is the
 // fallback, unchanged.
 import { fetchFlags, removeFlag as removeFlagApi, saveFlag } from './flagApi';
-
-const FLAG_KEY = 'flag';
+import { flagsKeys } from './flagsKeys';
 
 /**
  * A real grouping entity for checklist templates — one flag groups many
@@ -24,70 +23,120 @@ export type Flag = {
   updatedAt: string;
 };
 
-// Fetched once per identity ("all mine" — no consumer narrows this today),
-// not unconditionally on mount.
-const fetchedFor = new Set<string | undefined>();
+type FlagsMap = Record<string, Flag>;
+// Scoped to the one flag being written, not a whole-map snapshot — see useTags.tsx's own
+// comment (same resource shape, same fix) for why a global snapshot isn't safe under concurrent
+// writes.
+type RollbackContext = { previousFlag: Flag | undefined };
 
 export const useFlag = () => {
-  const [flags, setFlags] = useSessionStore<Record<string, Flag>>(FLAG_KEY, {});
   const { userId, ready } = useSession();
+  const queryClient = useQueryClient();
+  const queryKey = flagsKeys.list(userId);
 
-  const addFlag = (data: { name: string; description?: string }) => {
-    const id = v4();
-    const now = new Date().toISOString();
-    const flag: Flag = { ...data, id, createdAt: now, updatedAt: now };
-    setFlags(prev => ({ ...prev, [id]: flag }));
-    saveFlag(flag);
-    return flag;
-  };
+  // Backed by React Query's own cache instead of useSessionStore — see useTags.tsx's own
+  // comment on this exact shape (same resource pattern, ported from the same code).
+  const { data: flags = {} } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const result = await fetchFlags();
+      if (!result) throw new Error('Failed to fetch flags');
+      const map: FlagsMap = {};
+      for (const flag of result.flags) map[flag.id] = flag;
+      return map;
+    },
+    enabled: ready && !!userId,
+    staleTime: Infinity,
+  });
 
-  const updateFlag = (id: string, updates: Partial<Pick<Flag, 'name' | 'description'>>) => {
-    let updated: Flag | null = null;
-    setFlags(prev => {
-      if (!prev[id]) return prev;
-      updated = { ...prev[id], ...updates, updatedAt: new Date().toISOString() };
-      return { ...prev, [id]: updated };
-    });
-    if (updated) saveFlag(updated);
-    return updated;
-  };
+  // Same optimistic-update shape as useTags.tsx's saveTagMutation — onMutate snapshots just the
+  // one flag being written, onError rolls back only that key, and there's deliberately no
+  // onSettled refetch (see useTags.tsx's own comment on why one isn't needed here either: the
+  // object sent is exactly what gets persisted, and a follow-up refetch could otherwise wipe a
+  // different, still-in-flight write before its own save has landed).
+  const saveFlagMutation = useMutation<{ ok: true }, Error, Flag, RollbackContext>({
+    mutationFn: async flag => {
+      const result = await saveFlag(flag);
+      if (!result) throw new Error('Failed to save flag');
+      return result;
+    },
+    onMutate: async flag => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousFlag = queryClient.getQueryData<FlagsMap>(queryKey)?.[flag.id];
+      queryClient.setQueryData<FlagsMap>(queryKey, prev => ({ ...prev, [flag.id]: flag }));
+      return { previousFlag };
+    },
+    onError: (_error, flag, context) => {
+      queryClient.setQueryData<FlagsMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        if (context?.previousFlag) {
+          next[flag.id] = context.previousFlag;
+        } else {
+          delete next[flag.id];
+        }
+        return next;
+      });
+    },
+  });
 
-  const deleteFlag = (id: string) => {
-    setFlags(prev => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    removeFlagApi(id);
-  };
+  const removeFlagMutation = useMutation<{ ok: true }, Error, string, RollbackContext>({
+    mutationFn: async id => {
+      const result = await removeFlagApi(id);
+      if (!result) throw new Error('Failed to remove flag');
+      return result;
+    },
+    onMutate: async id => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousFlag = queryClient.getQueryData<FlagsMap>(queryKey)?.[id];
+      queryClient.setQueryData<FlagsMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      return { previousFlag };
+    },
+    onError: (_error, id, context) => {
+      if (!context?.previousFlag) return;
+      const restored = context.previousFlag;
+      queryClient.setQueryData<FlagsMap>(queryKey, prev => ({ ...prev, [id]: restored }));
+    },
+  });
+
+  const addFlag = React.useCallback(
+    (data: { name: string; description?: string }) => {
+      const now = new Date().toISOString();
+      const flag: Flag = { ...data, id: v4(), createdAt: now, updatedAt: now };
+      saveFlagMutation.mutate(flag);
+      return flag;
+    },
+    [saveFlagMutation],
+  );
+
+  const updateFlag = React.useCallback(
+    (id: string, updates: Partial<Pick<Flag, 'name' | 'description'>>) => {
+      const existing = flags[id];
+      if (!existing) return null;
+      const updated: Flag = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+      saveFlagMutation.mutate(updated);
+      return updated;
+    },
+    [flags, saveFlagMutation],
+  );
+
+  const deleteFlag = React.useCallback(
+    (id: string) => {
+      removeFlagMutation.mutate(id);
+    },
+    [removeFlagMutation],
+  );
 
   const getAllFlags = React.useCallback(() => {
-    if (ready && !fetchedFor.has(userId)) {
-      fetchedFor.add(userId);
-      fetchFlags().then(result => {
-        if (!result) {
-          fetchedFor.delete(userId);
-          return;
-        }
-        if (!result.flags.length) return;
-        setFlags(prev => {
-          const merged = { ...prev };
-          let changed = false;
-          for (const flag of result.flags) {
-            const existing = merged[flag.id];
-            if (!existing || new Date(flag.updatedAt) > new Date(existing.updatedAt)) {
-              merged[flag.id] = flag;
-              changed = true;
-            }
-          }
-          return changed ? merged : prev;
-        });
-      });
-    }
     return Object.values(flags).sort((a, b) => a.name.localeCompare(b.name));
-  }, [flags, userId, ready, setFlags]);
+  }, [flags]);
 
-  const getFlag = (id: string) => flags[id];
+  const getFlag = React.useCallback((id: string) => flags[id], [flags]);
 
   return {
     addFlag,
