@@ -83,6 +83,15 @@ const ChecklistFieldGroup = ({
       };
     }, {}),
   );
+  // Clipped only while the height:0<->auto collapse animation below is actually running (see
+  // .cardContainer's own history — it used to carry a permanent `overflow: hidden` to fix that
+  // animation's visual glitch, but that also clipped anything a settled, expanded group's content
+  // draws outside its own bounds, e.g. the note editor's "+" block-type popover, which isn't
+  // portaled and relies on being visible past this card). Once the animation settles, overflow
+  // goes back to visible so content like that popover isn't clipped during normal use.
+  const [collapseAnimating, setCollapseAnimating] = React.useState<
+    Record<string, boolean>
+  >({});
 
   // Keyed by fieldGroup id so each group's `fieldDetails` array keeps the
   // same reference across renders where `checklistTemplate.fieldGroups`/
@@ -344,6 +353,15 @@ const ChecklistFieldGroup = ({
                 opacity: {
                   duration: 0.2,
                 },
+              }}
+              onAnimationStart={() =>
+                setCollapseAnimating(prev => ({ ...prev, [fieldGroup.id]: true }))
+              }
+              onAnimationComplete={() =>
+                setCollapseAnimating(prev => ({ ...prev, [fieldGroup.id]: false }))
+              }
+              style={{
+                overflow: isCollapsed || collapseAnimating[fieldGroup.id] ? 'hidden' : 'visible',
               }}
             >
               <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />

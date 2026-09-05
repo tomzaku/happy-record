@@ -3045,12 +3045,26 @@
   resolved "https://registry.yarnpkg.com/@editorjs/helpers/-/helpers-1.0.1.tgz#e96f7d485c15f563e69c37bd82282c148e0187cc"
   integrity sha512-Lmr8ImoQvoROXtzhsIJsA1ZtXzH46DmE6O8hMjn9/AvQq62UfjREjn+Ewi6KxjIZMay2PsgDEbLlsVyNJGEaxw==
 
+"@editorjs/inline-code@^1.5.2":
+  version "1.5.2"
+  resolved "https://registry.yarnpkg.com/@editorjs/inline-code/-/inline-code-1.5.2.tgz#325bbb06a6e79864ddf86019822cf1eba629b0a7"
+  integrity sha512-IpEvwMTP3q89T/6vTi3ACoSMOcTdywtMsci1w19+Z/lxQn/NVuVah++ro93wQ/1ZVTyCr+TPUCchxwzY1/xaMg==
+  dependencies:
+    "@codexteam/icons" "^0.3.2"
+
 "@editorjs/list@^2.0.8":
   version "2.0.9"
   resolved "https://registry.yarnpkg.com/@editorjs/list/-/list-2.0.9.tgz#472c37e1584d4285cafa2fe93dd13c664b9514dd"
   integrity sha512-rUTgDSt5wygD3Dp24bNyp6vvye/Xf4UWju0ZuvWeP13Z4cu2z1Jb5JFSTEhCou72XUGuf4xVhtsd8cm/bwUS1g==
   dependencies:
     "@codexteam/icons" "^0.3.2"
+
+"@editorjs/marker@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@editorjs/marker/-/marker-1.4.0.tgz#c5553c54ced70d28502fb47f2dbc7d50c53fc88e"
+  integrity sha512-5ipEXfL44jTTRzgNp/p/YjMO7jT08S5z4V8qA3FFJTfdhKgQyM3mvP1zpdYKw47ZZpVWMCncvk5Nto3BxihEtg==
+  dependencies:
+    "@codexteam/icons" "^0.0.5"
 
 "@editorjs/quote@^2.7.6":
   version "2.7.6"
@@ -3073,6 +3087,13 @@
   integrity sha512-2dtum3RGqyXHX9OoMsmz92piSrzwy+QWnpN/Kt5n0oVHFfpeJwd25xLzwPVjwMlvUYrun1VPrKio5/63SLGbuQ==
   dependencies:
     "@codexteam/icons" "^0.0.6"
+
+"@editorjs/underline@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@editorjs/underline/-/underline-1.2.1.tgz#72ad63e9821b2ebca17f25536682b53b7a2c90df"
+  integrity sha512-LjJ01ia6Pj0Z/elifycp9+T1bQs0eXNnIcEYKOlk0sGHLy88DPcBOh9oz1i+uWarZ4AjGsvSMaptpWe+yQNsjQ==
+  dependencies:
+    "@codexteam/icons" "^0.3.2"
 
 "@emnapi/core@^1.1.0":
   version "1.4.3"
@@ -8921,6 +8942,18 @@ eastasianwidth@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/eastasianwidth/-/eastasianwidth-0.2.0.tgz#696ce2ec0aa0e6ea93a397ffcf24aa7840c827cb"
   integrity sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==
+
+editorjs-drag-drop@^1.1.16:
+  version "1.1.16"
+  resolved "https://registry.yarnpkg.com/editorjs-drag-drop/-/editorjs-drag-drop-1.1.16.tgz#428f44520272260e3d0e1ec7b7676ddf4a78d3a0"
+  integrity sha512-yOyKZqqZepkdbDQbAw1bZr3mQewkT4a9QgufWW3Aoy1qcTka8uHR01T/dGHqrpyYrF56ykyidPyp0LX79LEHHQ==
+
+editorjs-undo@^2.0.28:
+  version "2.0.28"
+  resolved "https://registry.yarnpkg.com/editorjs-undo/-/editorjs-undo-2.0.28.tgz#94ba953b800442fa84cea2b93139e38b8623fb16"
+  integrity sha512-7MiLdjIsPOXn8+cHDeAt2HapVklg4vcLWWkd2eMMlGI6UVtwYSjdQquDSv9752B/fOEP1C3NMF2sdiCoZV3tTA==
+  dependencies:
+    vanilla-caret-js "^1.0.1"
 
 ejs@^3.1.10, ejs@^3.1.7:
   version "3.1.10"
@@ -17868,6 +17901,11 @@ validator@^13.12.0:
   version "13.15.15"
   resolved "https://registry.yarnpkg.com/validator/-/validator-13.15.15.tgz#246594be5671dc09daa35caec5689fcd18c6e7e4"
   integrity sha512-BgWVbCI72aIQy937xbawcs+hrVaN/CZ2UwutgaJ36hGqRrLNM+f5LUT/YPRbo8IV/ASeFzXszezV+y2+rq3l8A==
+
+vanilla-caret-js@^1.0.1:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/vanilla-caret-js/-/vanilla-caret-js-1.1.0.tgz#851acd7be81998223ce69ae1b62e03f472fa4e90"
+  integrity sha512-vl3R4Xjqb+xnM0gYyg+wcqWGYwKKnkz58Yj29/FQB+w+yP7R8IR1DGoJnDIs05moEZiGlQUTabPMoEtnQNcrpQ==
 
 vfile-location@^5.0.0:
   version "5.0.3"

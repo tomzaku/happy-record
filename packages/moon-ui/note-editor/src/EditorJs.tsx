@@ -8,9 +8,14 @@ import Delimiter from "@editorjs/delimiter";
 import Table from "@editorjs/table";
 import SimpleImage from "@editorjs/simple-image";
 import Embed from "@editorjs/embed";
+import Marker from "@editorjs/marker";
+import Underline from "@editorjs/underline";
+import InlineCode from "@editorjs/inline-code";
 // import Code from "@editorjs/code";
 import styles from './EditorJs.module.scss';
 import editorjsCodecup from '@calumk/editorjs-codecup';
+import Undo from 'editorjs-undo';
+import DragDrop from 'editorjs-drag-drop';
 import cx from 'classnames';
 import AiWriteTool, { DEFAULT_CONFIG, type AiNoteToolConfig } from './AiWriteTool';
 
@@ -68,11 +73,25 @@ const EditorJs = forwardRef<NoteEditorHandle, NoteEditorProps>(
   useEffect(() => {
     if (!holderRef.current) return;
 
+    const initialContent = (value || initialData as any);
 
     const editor = new EditorJS({
       holder: holderRef.current,
       readOnly,
       placeholder: "Start writing your note...",
+      // EditorJS has no undo/redo of its own — native browser undo only ever tracked plain
+      // typing, so a paste/cut (which EditorJS rewrites via its own sanitizer/block APIs, not a
+      // DOM mutation the browser's own undo manager sees) silently didn't revert on ctrl+Z.
+      // editorjs-undo tracks changes through the editor's own API instead, so it also catches
+      // paste/cut. `initialize` seeds its stack with whatever's already loaded — without it, the
+      // first undo would clear a pre-existing note back to empty.
+      onReady() {
+        const undo = new (Undo as any)({ editor });
+        if (initialContent) {
+          undo.initialize(initialContent);
+        }
+        new (DragDrop as any)(editor);
+      },
       onChange(api) {
         if (setValue) {
           api.saver.save().then((outputData) => {
@@ -80,7 +99,7 @@ const EditorJs = forwardRef<NoteEditorHandle, NoteEditorProps>(
           });
         }
       },
-      data: (value || initialData as any),
+      data: initialContent,
       tools: {
         header: {
           class: Header,
@@ -90,6 +109,18 @@ const EditorJs = forwardRef<NoteEditorHandle, NoteEditorProps>(
             defaultLevel: 2
           }
         } as any,
+        marker: {
+          class: Marker,
+          shortcut: 'CMD+SHIFT+M'
+        },
+        underline: {
+          class: Underline,
+          shortcut: 'CMD+U'
+        },
+        inlineCode: {
+          class: InlineCode,
+          shortcut: 'CMD+SHIFT+C'
+        },
         list: {
           class: List,
           inlineToolbar: true,
@@ -105,9 +136,21 @@ const EditorJs = forwardRef<NoteEditorHandle, NoteEditorProps>(
             captionPlaceholder: "Quote's author"
           }
         },
+        // @editorjs/list 2.x's own toolbox already includes a "Checklist" entry (`style:
+        // 'checklist'`), alongside Unordered/Ordered List — registering this older, separate
+        // @editorjs/checklist tool too was giving the "+" menu two "Checklist" entries. This tool
+        // still has to stay registered (`toolbox: false` only hides its own menu entry, it
+        // doesn't unregister it) — it's the tool that renders any block whose type is
+        // `'checklist'`, which is still a live shape, not just legacy data: AI-generated notes
+        // (packages/global/src/lib/editorJsNoteBlocks.ts, used by useAiNoteGenerate and
+        // useApplyAiChecklistTemplate) build fresh blocks in exactly this tool's `{ items: [{
+        // text, checked }] }` shape today. A user manually adding a checklist now goes through
+        // the `list` tool's own Checklist variant instead — it also supports nesting, which this
+        // one never did.
         checklist: {
           class: Checklist,
-          inlineToolbar: true
+          inlineToolbar: true,
+          toolbox: false
         },
         delimiter: Delimiter,
         table: {
@@ -118,7 +161,14 @@ const EditorJs = forwardRef<NoteEditorHandle, NoteEditorProps>(
           class: SimpleImage
         },
         code: {
-          class: editorjsCodecup
+          class: editorjsCodecup,
+          // Overrides CodeCup's own default toolbox entry (icon + "CodeCup" title) — this is the
+          // same stroke="currentColor" 24x24 icon @editorjs/code uses, matching the monochrome
+          // style of the other toolbox icons here so it themes correctly in dark mode too.
+          toolbox: {
+            title: 'Code',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8L5 12L9 16"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 8L19 12L15 16"/></svg>',
+          },
         },
         embed: {
           class: Embed,

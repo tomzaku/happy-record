@@ -133,9 +133,31 @@
       }
     }
   }
-  
-  // Inline code styling
-  :global(code:not(.ce-code code):not(.ce-code-block code)) {
+
+  // CodeCup (@calumk/editorjs-codecup, the `code` tool actually registered below — the
+  // `.ce-code`/`.ce-code-block` rules above target the older @editorjs/code markup and don't
+  // match this tool's own `.codecup*` classes). CodeCup renders an invisible `<textarea>`
+  // (`color: transparent`) stacked on top of its own Prism-highlighted `<pre>` so the visible
+  // text comes from the overlay, not the textarea — but it hardcodes `caret-color: #111` in the
+  // stylesheet it injects at runtime, so on this app's dark theme the caret sits near-black on a
+  // near-black surface and reads as "no cursor at all" while typing. Only override caret-color,
+  // never the textarea's own `color` — doing that would double-render the typed text on top of
+  // the highlighted overlay. `!important` because CodeCup injects its stylesheet into
+  // `document.head` at runtime, after this module's own styles, so a plain override loses the
+  // cascade otherwise.
+  :global(.codecup__textarea) {
+    caret-color: var(--text-color) !important;
+  }
+
+  // Inline code styling. Must also exclude CodeCup's own `<code>` (`.codecup__code`, nested in
+  // `.codecup__pre`) — without `:not(.codecup code)` this rule was landing on it too, since it
+  // isn't `.ce-code`/`.ce-code-block` markup. CodeCup stacks that `<pre>` (with `pointer-events:
+  // none`) directly on top of the real, invisible `<textarea>` the user actually types into, so
+  // clicks/selection reach the textarea underneath while the pre shows the syntax-highlighted
+  // text. Giving `.codecup__code` an opaque `background` here made that overlay opaque too,
+  // hiding the textarea's native caret and selection highlight completely — and the differing
+  // `padding`/`font-size` threw off the pixel-for-pixel alignment the overlay depends on.
+  :global(code:not(.ce-code code):not(.ce-code-block code):not(.codecup code)) {
     background: var(--surface-secondary);
     color: var(--text-color);
     padding: 0.2em 0.4em;
