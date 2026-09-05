@@ -29,11 +29,6 @@ type Props = {
 
 const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Props) => {
   const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
-  // A plain lookup, not `getChecklistTemplate` — that helper carries its own
-  // fetch-by-id side effect (for callers who only know one id), which fired
-  // redundantly here, racing the bulk "all mine" fetch that
-  // `getChecklistForDateWithoutFetching`'s own template-id resolution below
-  // already triggers.
   const { checklistTemplate } = useChecklistTemplates();
   const [showCalendarDialog, setShowCalendarDialog] = React.useState(false);
 

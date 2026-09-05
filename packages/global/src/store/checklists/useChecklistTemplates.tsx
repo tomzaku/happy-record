@@ -2,7 +2,6 @@ import React from 'react';
 import { endOfDay, startOfDay } from 'date-fns';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
 import { useFieldGroups } from './useFieldGroups';
-import { fetchOneTemplate } from './checklistTemplateFetch';
 import { useChecklistTemplatesQuery } from './useChecklistTemplatesQuery';
 import { useChecklistTemplateMutations } from './useChecklistTemplateMutations';
 import type { ChecklistTemplate } from './checklistTemplateTypes';
@@ -10,9 +9,6 @@ import type { ChecklistTemplate } from './checklistTemplateTypes';
 export type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTemplateTypes';
 export * from './fieldGroupTypes';
 export { useChecklistTemplateDetail } from './useChecklistTemplateDetail';
-
-// Dedup for `getChecklistTemplate`'s own byId bypass fetch, below.
-const fetchedByIdScopes = new Set<string>();
 
 // Not scheduled once deleted, regardless of what its own repeat says. startedAt is when a
 // schedule takes effect — a day-of-week match before it is history, not a day it was ever
@@ -41,10 +37,8 @@ export const useChecklistTemplates = () => {
   const { getFieldGroups } = useFieldGroups();
   const {
     userId,
-    ready,
     queryClient,
     allKey,
-    allTemplates,
     checklistTemplate,
     templatesLoading,
     selectedChecklistTemplates,
@@ -52,7 +46,6 @@ export const useChecklistTemplates = () => {
     selectChecklistTemplate,
     deselectChecklistTemplate,
     isOwnedTemplate,
-    mergeTemplates,
     markTemplateIdKnown,
   } = useChecklistTemplatesQuery();
   const { addChecklistTemplate, updateChecklistTemplate, deleteChecklistTemplate, updateMyReminder } =
@@ -90,40 +83,9 @@ export const useChecklistTemplates = () => {
     [selectedChecklistTemplates, checklistTemplate, withFieldGroups],
   );
 
-  /** One template by id — own, or anyone's if public. Prefers "all mine"; falls back to a
-   * one-off fetch otherwise (not yet fetched, or a joined template "all mine" never covers).
-   * Routed through mergeTemplates so the id gets a real per-id query observer. */
-  const getChecklistTemplate = React.useCallback(
-    (id: string): ChecklistTemplate | undefined => {
-      const scopeKey = `${userId}:${id}`;
-      // A plain callback some callers invoke only once — not gated on the bulk fetch settling
-      // (unlike useChecklistTemplatesQuery's own per-id queries), since that could mean never
-      // fetching at all for those callers. One redundant request during the brief bulk-loading
-      // race is an accepted trade-off: this only ever runs for one id at a time.
-      if (ready && id && !allTemplates?.[id] && !fetchedByIdScopes.has(scopeKey)) {
-        fetchedByIdScopes.add(scopeKey);
-        fetchOneTemplate(id)
-          .then(template => {
-            if (!template) {
-              fetchedByIdScopes.delete(scopeKey);
-              return;
-            }
-            mergeTemplates([template]);
-          })
-          .catch(() => {
-            fetchedByIdScopes.delete(scopeKey);
-          });
-      }
-      const template = checklistTemplate[id];
-      return template && withFieldGroups(template);
-    },
-    [checklistTemplate, userId, ready, allTemplates, mergeTemplates, withFieldGroups],
-  );
-
   return {
     checklistTemplate,
     templatesLoading,
-    getChecklistTemplate,
     addChecklistTemplate,
     updateChecklistTemplate,
     deleteChecklistTemplate,
@@ -135,8 +97,5 @@ export const useChecklistTemplates = () => {
     getRecommendChecklistTemplates,
     getChecklistTemplateIdsByGivingDate,
     isOwnedTemplate,
-    // Exposed for the challenge join flow — merging a shared template under its own id, never
-    // forking a new one.
-    mergeTemplates,
   };
 };

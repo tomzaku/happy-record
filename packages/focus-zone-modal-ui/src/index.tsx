@@ -22,7 +22,7 @@ import { getCountdownAnimation } from './countdownAnimations';
 // Hooks and utilities
 import { usePomodoroGlobalConfig, usePomodoroTitle } from '@dreamer/pomodoro-common';
 import { notify } from '@dreamer/notification';
-import { useChecklistTemplates, useIsMobile } from '@dreamer/global';
+import { useChecklistTemplateDetail, useIsMobile } from '@dreamer/global';
 
 // Styles
 import styles from './index.module.scss';
@@ -65,7 +65,7 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
   hideFab
 }) => {
   const { pomodoro, shortBreak, longBreak } = usePomodoroGlobalConfig();
-  const { getChecklistTemplate } = useChecklistTemplates();
+  const { template: taskTemplate } = useChecklistTemplateDetail(taskId);
 
   // Create POMODORO_PHASES dynamically using global config
   const POMODORO_PHASES: PomodoroPhase[] = [
@@ -77,8 +77,9 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
     { type: 'break', duration: longBreak / 1000, label: 'Long Break' },
   ];
 
-  // Get task information
-  const [taskTitle, setTaskTitle] = useState<string>(propTaskTitle || '');
+  // Get task information — an explicit `taskTitle` prop always wins (a deliberate override);
+  // otherwise derived straight from the real per-id query, no local state/effect to keep in sync.
+  const taskTitle = propTaskTitle || taskTemplate?.title || '';
 
   // Timer states
   const [timerMode, setTimerMode] = useState<'stopwatch' | 'pomodoro'>(
@@ -120,22 +121,6 @@ const FocusZoneModal: React.FC<FocusZoneModalProps> = ({
   const [hasNotificationPermission, setHasNotificationPermission] =
     useState(false);
 
-  // Update task title when prop changes
-  useEffect(() => {
-    if (propTaskTitle) {
-      setTaskTitle(propTaskTitle);
-    }
-  }, [propTaskTitle]);
-
-  // Get task information when taskId changes
-  useEffect(() => {
-    if (taskId && getChecklistTemplate) {
-      const template = getChecklistTemplate(taskId);
-      if (template) {
-        setTaskTitle(template.title || '');
-      }
-    }
-  }, [taskId, getChecklistTemplate]);
 
   // Stopwatch timer effect
   useEffect(() => {

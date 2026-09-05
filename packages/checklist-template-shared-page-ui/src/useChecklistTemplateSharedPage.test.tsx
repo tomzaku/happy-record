@@ -21,7 +21,7 @@ let mockIsAnonymous = false;
 const mockNavigate = jest.fn();
 const mockAcceptChallenge = jest.fn().mockResolvedValue({ id: 'joined-template-1' });
 const mockAddChecklistTemplate = jest.fn();
-const mockGetChecklistTemplate = jest.fn().mockReturnValue(undefined);
+let mockMyChecklistTemplates: Record<string, unknown> = {};
 const mockSavePendingChallengeJoin = jest.fn();
 const mockSignInWithGoogle = jest.fn().mockResolvedValue(undefined);
 const mockGetRecordFieldsByIds = jest.fn().mockResolvedValue([]);
@@ -41,7 +41,7 @@ jest.mock('@dreamer/global', () => ({
   useChallenge: () => ({ getChallengeForTemplate: () => mockChallenge }),
   useChecklistTemplates: () => ({
     addChecklistTemplate: mockAddChecklistTemplate,
-    getChecklistTemplate: mockGetChecklistTemplate,
+    checklistTemplate: mockMyChecklistTemplates,
   }),
   useJoinChallenge: () => ({ acceptChallenge: mockAcceptChallenge }),
   usePendingChallengeJoin: () => ({ savePendingChallengeJoin: mockSavePendingChallengeJoin }),
@@ -75,7 +75,7 @@ beforeEach(() => {
   mockNavigate.mockClear();
   mockAcceptChallenge.mockClear();
   mockAddChecklistTemplate.mockClear();
-  mockGetChecklistTemplate.mockClear();
+  mockMyChecklistTemplates = {};
   mockSavePendingChallengeJoin.mockClear();
   mockSignInWithGoogle.mockClear();
   mockGetRecordFieldsByIds.mockClear();

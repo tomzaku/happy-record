@@ -1,9 +1,8 @@
 import React from 'react';
 import {
   Checklist,
-  ChecklistTemplate,
   useChecklist,
-  useChecklistTemplates,
+  useChecklistTemplateDetail,
 } from '@dreamer/global';
 import { useIntl } from '@dreamer/translation';
 import Card from '@moon-ui/card';
@@ -30,9 +29,7 @@ const RecordDayEdit = ({
   onSubmit?: () => void;
   fields: RecordField[];
 }) => {
-  const { getChecklistTemplate } = useChecklistTemplates();
-  const [currentChecklistTemplate, setCurrentChecklistTemplate] =
-    React.useState<ChecklistTemplate>();
+  const { template: currentChecklistTemplate } = useChecklistTemplateDetail(checklistTemplateId);
   const { addChecklistRecord } = useChecklistRecord();
   const getEmptyFieldRecord = () =>
     fields.reduce(
@@ -51,11 +48,6 @@ const RecordDayEdit = ({
   // each Input on it forces a real remount, the same trick AddInlineTask
   // and ChecklistFieldGroupAdd already use for the same reason.
   const [resetKey, setResetKey] = React.useState(0);
-
-  React.useEffect(() => {
-    const checklistTemplate = getChecklistTemplate(checklistTemplateId);
-    setCurrentChecklistTemplate(checklistTemplate);
-  }, [checklistTemplateId]);
 
   return (
     <>

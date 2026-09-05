@@ -6,7 +6,7 @@ import { useSession } from '../../hook/useSession';
 import { checklistTemplatesKeys } from './checklistTemplatesKeys';
 import { fetchChecklistTemplates } from './checklistTemplatesApi';
 import { fetchOneTemplate } from './checklistTemplateFetch';
-import type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTemplateTypes';
+import type { ChecklistTemplatesMap } from './checklistTemplateTypes';
 
 const SELECTED_CHECKLISTS_TEMPLATE_KEY = 'selected_checklist_templates';
 
@@ -99,33 +99,6 @@ export function useChecklistTemplatesQuery() {
   const deselectChecklistTemplate = (id: string) =>
     updateSelectedChecklistTemplate(prev => prev.filter(templateId => templateId !== id));
 
-  // Seeds a template fetched some other way (useJoinChallenge.tsx's accept-a-shared-template
-  // flow) so a later getChecklistTemplate/useChecklistTemplateDetail call doesn't need its own
-  // fetch, and selects it if this device has never seen it before.
-  const mergeTemplates = React.useCallback(
-    (fetched: ChecklistTemplate[]) => {
-      if (!fetched.length) return;
-      const newIds: string[] = [];
-      for (const template of fetched) {
-        markTemplateIdKnown(template.id);
-        const key = checklistTemplatesKeys.byId(template.id, userId);
-        const existing = allTemplates?.[template.id] ?? queryClient.getQueryData<ChecklistTemplate | null>(key);
-        // `>=`, not `>`: a repeat-only write (seeded at join time) doesn't bump `updatedAt`.
-        if (!existing || new Date(template.updatedAt) >= new Date(existing.updatedAt)) {
-          queryClient.setQueryData(key, template);
-        }
-        if (!existing) newIds.push(template.id);
-      }
-      // Same dedup `updateSelectedChecklistTemplate` does, inlined against `setSelectedChecklistTemplates`
-      // directly rather than calling that (unmemoized) function — keeps this callback's own
-      // identity stable across renders, which callers rely on (see getChecklistTemplate's deps).
-      if (newIds.length) {
-        setSelectedChecklistTemplates(prev => Array.from(new Set([...prev, ...newIds])));
-      }
-    },
-    [queryClient, userId, allTemplates, setSelectedChecklistTemplates, markTemplateIdKnown],
-  );
-
   // A template found here is definitely owned — lets getFieldGroups trust an empty "all mine"
   // field-groups result as a real zero instead of refetching (see its own `isOwned`).
   const isOwnedTemplate = React.useCallback((id: string) => !!allTemplates?.[id], [allTemplates]);
@@ -143,7 +116,6 @@ export function useChecklistTemplatesQuery() {
     selectChecklistTemplate,
     deselectChecklistTemplate,
     isOwnedTemplate,
-    mergeTemplates,
     markTemplateIdKnown,
   };
 }

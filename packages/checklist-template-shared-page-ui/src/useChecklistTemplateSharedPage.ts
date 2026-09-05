@@ -24,7 +24,10 @@ export function useChecklistTemplateSharedPage() {
   const targetName = searchParams.get('to') || 'you';
   const { getRecordFieldsByIds, mergeRecordFields } = useRecordField();
   const [dialogRejectOpen, setDialogRejectOpen] = React.useState(false);
-  const { addChecklistTemplate, getChecklistTemplate } = useChecklistTemplates();
+  // `checklistTemplate` here (own + joined map) is the same map every "all mine" consumer reads
+  // — aliased since this file already has its own singular `checklistTemplate` state below (the
+  // *shared* template being displayed, a completely different thing).
+  const { addChecklistTemplate, checklistTemplate: myChecklistTemplates } = useChecklistTemplates();
   const { getChallengeForTemplate } = useChallenge();
   const { acceptChallenge } = useJoinChallenge();
   const { savePendingChallengeJoin } = usePendingChallengeJoin();
@@ -123,7 +126,10 @@ export function useChecklistTemplateSharedPage() {
 
   const handleSubmit = () => {
     if (!checklistTemplate || fieldsLoading || submitting) return;
-    if (getChecklistTemplate(checklistTemplate.id)) {
+    // A challenge id is reused as-is on join (never forked — see useJoinChallenge.tsx), so
+    // already having it here means this device already joined; a plain "take it" always forks a
+    // new id (addChecklistTemplate's own default), so this never true-positives for that path.
+    if (myChecklistTemplates[checklistTemplate.id]) {
       alert("You've have this task!!!");
       return;
     }

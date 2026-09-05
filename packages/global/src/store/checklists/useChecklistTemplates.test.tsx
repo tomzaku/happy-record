@@ -188,15 +188,13 @@ describe('addChecklistTemplate', () => {
 
 describe('updateChecklistTemplate', () => {
   it('sends only the changed keys as a PATCH, and never invalidates checklist-logs on success', async () => {
-    mockFetchChecklistTemplateById.mockResolvedValue({
-      templates: [{ ...baseTemplate('template-patch-1'), createdAt: 'now', updatedAt: '2024-01-01T00:00:00.000Z' }],
-    });
     const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
 
     act(() => {
-      result.current.getChecklistTemplate('template-patch-1');
+      result.current.addChecklistTemplate(baseTemplate('template-patch-1'), true);
     });
     await waitFor(() => expect(result.current.checklistTemplate['template-patch-1']).toBeDefined());
+    mockSaveChecklistTemplate.mockClear();
 
     act(() => {
       // updateChecklistTemplate's own type omits createdAt/updatedAt from its argument — passing
@@ -212,15 +210,13 @@ describe('updateChecklistTemplate', () => {
   });
 
   it("doesn't call the API at all when nothing actually changed, but still no-ops cleanly", async () => {
-    mockFetchChecklistTemplateById.mockResolvedValue({
-      templates: [{ ...baseTemplate('template-nochange-1'), createdAt: 'now', updatedAt: '2024-01-01T00:00:00.000Z' }],
-    });
     const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
 
     act(() => {
-      result.current.getChecklistTemplate('template-nochange-1');
+      result.current.addChecklistTemplate(baseTemplate('template-nochange-1'), true);
     });
     await waitFor(() => expect(result.current.checklistTemplate['template-nochange-1']).toBeDefined());
+    mockSaveChecklistTemplate.mockClear();
 
     act(() => {
       const { createdAt: _createdAt, updatedAt: _updatedAt, ...rest } =
@@ -234,14 +230,11 @@ describe('updateChecklistTemplate', () => {
   });
 
   it('rolls back to the previous value if the patch fails', async () => {
-    mockFetchChecklistTemplateById.mockResolvedValue({
-      templates: [{ ...baseTemplate('template-patch-rollback'), createdAt: 'now', updatedAt: '2024-01-01T00:00:00.000Z' }],
-    });
     mockPatchChecklistTemplate.mockResolvedValue(null);
     const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
 
     act(() => {
-      result.current.getChecklistTemplate('template-patch-rollback');
+      result.current.addChecklistTemplate(baseTemplate('template-patch-rollback'), true);
     });
     await waitFor(() => expect(result.current.checklistTemplate['template-patch-rollback']?.title).toBe('Gym'));
 
@@ -258,14 +251,11 @@ describe('updateChecklistTemplate', () => {
 
 describe('deleteChecklistTemplate', () => {
   it('rolls back if the delete fails, restoring exactly the removed template', async () => {
-    mockFetchChecklistTemplateById.mockResolvedValue({
-      templates: [{ ...baseTemplate('template-delete-1'), createdAt: 'now', updatedAt: 'now' }],
-    });
     mockRemoveChecklistTemplate.mockResolvedValue(null);
     const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
 
     act(() => {
-      result.current.getChecklistTemplate('template-delete-1');
+      result.current.addChecklistTemplate(baseTemplate('template-delete-1'), true);
     });
     await waitFor(() => expect(result.current.checklistTemplate['template-delete-1']).toBeDefined());
 
@@ -279,7 +269,12 @@ describe('deleteChecklistTemplate', () => {
 });
 
 describe('updateMyReminder', () => {
-  it("invalidates this id's own query so the page observing it picks up the server's fresh value", async () => {
+  // Exercises the real production composition: the mutation lives on useChecklistTemplates(),
+  // but the page that actually reads a challenge participant's template
+  // (detail-task-page, via useChecklistTemplateDetail) is a wholly separate, always-enabled
+  // query on the exact same id — sharing one QueryClient (`wrapper`) between both hooks here is
+  // what makes this test observe the same cache updateMyReminder invalidates.
+  it("invalidates this id's own query so a useChecklistTemplateDetail observer refetches", async () => {
     mockFetchChecklistTemplateById.mockResolvedValueOnce({
       templates: [
         {
@@ -297,13 +292,11 @@ describe('updateMyReminder', () => {
         },
       ],
     });
-    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+    const wrapper = createWrapper();
+    const { result: templates } = renderHook(() => useChecklistTemplates(), { wrapper });
+    const { result: detail } = renderHook(() => useChecklistTemplateDetail('template-reminder-1'), { wrapper });
 
-    // Marks the scope as already-fetched, same as a real page load would.
-    act(() => {
-      result.current.getChecklistTemplate('template-reminder-1');
-    });
-    await waitFor(() => expect(result.current.checklistTemplate['template-reminder-1']).toBeDefined());
+    await waitFor(() => expect(detail.current.template?.repeat?.hour).toBe('8'));
 
     // A different repeat than the initial fetch — clearing (`null`) resolves to the owner's own
     // fallback schedule server-side, which this device never had a copy of, so the only way this
@@ -327,60 +320,12 @@ describe('updateMyReminder', () => {
     });
 
     await act(async () => {
-      await result.current.updateMyReminder('template-reminder-1', null);
+      await templates.current.updateMyReminder('template-reminder-1', null);
     });
 
     expect(mockPatchChecklistTemplate).toHaveBeenCalledWith('template-reminder-1', { repeat: null });
-    // The invalidated query re-fetches on its own — no direct fetch-and-merge call needed here —
-    // and the observed template reflects the server's fresh value, not the stale first fetch.
-    await waitFor(() =>
-      expect(result.current.checklistTemplate['template-reminder-1'].repeat?.hour).toBe('20'),
-    );
-  });
-});
-
-describe('mergeTemplates', () => {
-  it("a same-timestamped fetch still wins (repeat-only changes don't bump updatedAt)", async () => {
-    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
-
-    act(() => {
-      result.current.mergeTemplates([
-        {
-          ...baseTemplate('template-merge-1'),
-          createdAt: 'now',
-          updatedAt: '2024-03-01T00:00:00.000Z',
-          repeat: {
-            minute: '0',
-            hour: '8',
-            dayOfMonth: '',
-            month: '',
-            dayOfWeek: '1',
-            startedAt: '2024-01-01T00:00:00.000Z',
-          },
-        },
-      ]);
-    });
-    await waitFor(() => expect(result.current.checklistTemplate['template-merge-1']).toBeDefined());
-
-    act(() => {
-      result.current.mergeTemplates([
-        {
-          ...baseTemplate('template-merge-1'),
-          createdAt: 'now',
-          updatedAt: '2024-03-01T00:00:00.000Z',
-          repeat: {
-            minute: '30',
-            hour: '20',
-            dayOfMonth: '',
-            month: '',
-            dayOfWeek: '2',
-            startedAt: '2024-01-01T00:00:00.000Z',
-          },
-        },
-      ]);
-    });
-
-    await waitFor(() => expect(result.current.checklistTemplate['template-merge-1'].repeat?.hour).toBe('20'));
+    // The invalidated query re-fetches on its own — no direct fetch-and-merge call needed here.
+    await waitFor(() => expect(detail.current.template?.repeat?.hour).toBe('20'));
   });
 });
 
@@ -413,8 +358,9 @@ describe('getChecklistTemplateIdsByGivingDate', () => {
   // Regression coverage: `selectedChecklistTemplates` is persisted (localStorage) and never
   // pruned when a template is deleted — a real user's list can carry ids for templates that no
   // longer exist at all. These must never get their own individual fetch: unlike a joined
-  // challenge's template (resolved once, explicitly, via getChecklistTemplate/mergeTemplates),
-  // an orphaned id was never explicitly resolved by anything, so nothing should try to fetch it
+  // challenge's template (already covered by the bulk "all mine" fetch itself — see
+  // listOwnedAndJoinedTemplates), an orphaned id was never resolved by anything, so nothing
+  // should try to fetch it
   // speculatively just because it's selected — that would flood /checklist-templates/:id with
   // permanent 404-shaped calls on every single page load, forever.
   it("never fetches a selected id that was never explicitly resolved (an orphaned/deleted template)", async () => {

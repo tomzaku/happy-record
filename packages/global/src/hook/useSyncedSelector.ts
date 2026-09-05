@@ -8,9 +8,9 @@ import { useMemo } from 'react';
  * the same bug class found again across detail-task-page/note-manager-page-ui).
  *
  * Use for a value read from a store's own function — `getChecklistByGivingDate`,
- * `getChecklistDetail`, `getChecklistTemplate`, `getAllRecordFields`, ... —
- * instead of snapshotting the result into local `useState` from a
- * `useEffect` with a hand-picked dependency list. A selector that isn't
+ * `getChecklistDetail`, `getAllRecordFields`, ... — instead of snapshotting the
+ * result into local `useState` from a `useEffect` with a hand-picked
+ * dependency list. A selector that isn't
  * itself wrapped in `useCallback` by its owning hook (a plain closure with a
  * new identity every render) still works here — it just recomputes every
  * render instead of memoizing, which is correct, only not free.

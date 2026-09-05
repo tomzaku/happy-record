@@ -13,7 +13,7 @@ import NotificationPermissionModal from './NotificationPermissionModal';
 // Hooks and utilities
 import { usePomodoroGlobalConfig, Theme, usePomodoroTitle } from '@dreamer/pomodoro-common';
 import { notify } from '@dreamer/notification';
-import { useChecklistTemplates } from '@dreamer/global';
+import { useChecklistTemplateDetail } from '@dreamer/global';
 
 // Styles
 import styles from './index.module.scss';
@@ -39,7 +39,7 @@ const FocusZonePage: React.FC = () => {
   const navigate = useNavigate();
   const { taskId } = useParams<{ taskId: string }>();
   const { theme, setTheme, pomodoro, shortBreak, longBreak } = usePomodoroGlobalConfig();
-  const { getChecklistTemplate } = useChecklistTemplates();
+  const { template: taskTemplate } = useChecklistTemplateDetail(taskId);
 
   // Create POMODORO_PHASES dynamically using global config
   const POMODORO_PHASES: PomodoroPhase[] = [
@@ -51,8 +51,9 @@ const FocusZonePage: React.FC = () => {
     { type: 'break', duration: longBreak / 1000, label: 'Long Break' },
   ];
 
-  // Get task information
-  const [taskTitle, setTaskTitle] = useState<string>('');
+  // Get task information — derived straight from the real per-id query, no local state/effect
+  // to keep in sync by hand.
+  const taskTitle = taskTemplate?.title ?? '';
 
   // Timer states
   const [timerMode, setTimerMode] = useState<'stopwatch' | 'pomodoro'>(
@@ -127,15 +128,6 @@ const FocusZonePage: React.FC = () => {
     defaultTitle: 'Dreamer'
   });
 
-  // Get task information when component mounts
-  useEffect(() => {
-    if (taskId) {
-      const checklistTemplate = getChecklistTemplate(taskId);
-      if (checklistTemplate) {
-        setTaskTitle(checklistTemplate.title);
-      }
-    }
-  }, [taskId, getChecklistTemplate]);
 
   // Format time functions
   const formatStopwatchTime = (time: number): string => {
