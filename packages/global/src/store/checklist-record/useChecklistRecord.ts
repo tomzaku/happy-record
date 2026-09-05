@@ -1,9 +1,10 @@
 import React from 'react';
 import { v4 } from 'uuid';
 import { format } from 'date-fns';
-import { useQueryClient } from '@tanstack/react-query';
-import { useSessionStore, useSession } from '../../hook';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSession } from '../../hook';
 import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
+import { checklistRecordsKeys } from './checklistRecordsKeys';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
@@ -14,8 +15,6 @@ import {
   saveChecklistRecords,
   updateChecklistRecordValue,
 } from './checklistRecordApi';
-
-const CHECKLIST_RECORD_KEY = 'checklist_record';
 
 export type ChecklistRecord = {
   id: string;
@@ -64,6 +63,22 @@ type AddChecklistRecordData = {
   createdAt: string;
 };
 
+type AddChecklistRecordBatch = {
+  records: ChecklistRecord[];
+  checklistId: string;
+  checklistTemplateId: string;
+  createdAt: string;
+  submissionId: string;
+};
+
+type UpdateChecklistRecordArgs = {
+  recordId: string;
+  checklistTemplateId: string;
+  value?: number | string;
+  title?: string;
+  folderId?: string;
+};
+
 // Records are unbounded (every day, forever), so this fetches only the one
 // range it's actually asked for, keyed so the same (identity, template,
 // range, fields) tuple isn't re-fetched every call within a page load —
@@ -74,46 +89,79 @@ type AddChecklistRecordData = {
 const syncedRanges = new Set<string>();
 
 export const useChecklistRecord = () => {
-  const [checklistRecordList, setChecklistRecordList] =
-    useSessionStore<ChecklistRecorStore>(CHECKLIST_RECORD_KEY, {});
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
+  const queryKey = checklistRecordsKeys.store(userId);
+
+  // The shared checklist-records cache, backed by React Query instead of useSessionStore — same
+  // "one cache entry, several imperative scoped fetches merging into it" shape as useNote.tsx's
+  // own notes cache (see checklistRecordsKeys.ts's own comment on why). `enabled: false` since
+  // nothing auto-fetches this query itself; getChecklistRecords' own background sync below is
+  // what actually populates it, via setQueryData.
+  const { data: checklistRecordList = {} } = useQuery<ChecklistRecorStore>({
+    queryKey,
+    queryFn: () => queryClient.getQueryData<ChecklistRecorStore>(queryKey) ?? {},
+    enabled: false,
+    staleTime: Infinity,
+  });
+
+  const invalidateChecklistLogs = () => queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
+
+  // `addChecklistRecord`'s own mutation — one Submit click's whole batch is the unit of work,
+  // not one record. Rollback removes exactly the ids this batch added (not a snapshot restore —
+  // see useTags.tsx's own comment on why a snapshot can clobber a concurrent sibling write; here
+  // that'd be a second Submit click landing for the same template while this one's save is still
+  // in flight), so it can't touch anything a different batch added to the same template.
+  const addChecklistRecordMutation = useMutation<{ ok: true }, Error, AddChecklistRecordBatch>({
+    mutationFn: async batch => {
+      const result = await saveChecklistRecords(batch);
+      if (!result) throw new Error('Failed to save checklist records');
+      return result;
+    },
+    onMutate: async batch => {
+      await queryClient.cancelQueries({ queryKey });
+      queryClient.setQueryData<ChecklistRecorStore>(queryKey, prev => ({
+        ...prev,
+        [batch.checklistTemplateId]: [...(prev?.[batch.checklistTemplateId] ?? []), ...batch.records],
+      }));
+    },
+    onError: (_error, batch) => {
+      const ids = new Set(batch.records.map(record => record.id));
+      queryClient.setQueryData<ChecklistRecorStore>(queryKey, prev => {
+        const bucket = prev?.[batch.checklistTemplateId];
+        if (!bucket) return prev;
+        return { ...prev, [batch.checklistTemplateId]: bucket.filter(record => !ids.has(record.id)) };
+      });
+    },
+    onSuccess: () => invalidateChecklistLogs(),
+  });
 
   const addChecklistRecord = (data: AddChecklistRecordData) => {
-    if (data.records.length) {
-      // One id for the whole click, not per field — every record below
-      // shares it, which is what makes them "one commit" rather than a
-      // coincidence of matching timestamps.
-      const submissionId = v4();
-      const result = data.records.map(record => ({
-        id: v4(),
-        ...record,
-        checklistId: data.checklistId,
-        checklistTemplateId: data.checklistTemplateId,
-        createdAt: data.createdAt,
-        submissionId,
-        updatedAt: data.createdAt,
-      }));
+    if (!data.records.length) return;
+    // One id for the whole click, not per field — every record below
+    // shares it, which is what makes them "one commit" rather than a
+    // coincidence of matching timestamps.
+    const submissionId = v4();
+    const result = data.records.map(record => ({
+      id: v4(),
+      ...record,
+      checklistId: data.checklistId,
+      checklistTemplateId: data.checklistTemplateId,
+      createdAt: data.createdAt,
+      submissionId,
+      updatedAt: data.createdAt,
+    }));
 
-      setChecklistRecordList(prev => ({
-        ...prev,
-        [data.checklistTemplateId]: [
-          ...(prev[data.checklistTemplateId] || []),
-          ...result,
-        ],
-      }));
-      saveChecklistRecords({
-        records: result,
-        checklistId: data.checklistId,
-        checklistTemplateId: data.checklistTemplateId,
-        createdAt: data.createdAt,
-        submissionId,
-      }).then(res => {
-        if (res) queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
-      });
-      return result;
-    }
+    addChecklistRecordMutation.mutate({
+      records: result,
+      checklistId: data.checklistId,
+      checklistTemplateId: data.checklistTemplateId,
+      createdAt: data.createdAt,
+      submissionId,
+    });
+    return result;
   };
+
   // useCallback'd (not a plain closure) so a consumer's own useSyncedSelector
   // can memoize on it — its identity now only changes when the data it
   // actually reads (`checklistRecordList`, `userId`, `ready`) changes,
@@ -141,7 +189,7 @@ export const useChecklistRecord = () => {
       limit?: number;
     },
   ) => {
-    // Background sync for this exact range — merges into the store when it
+    // Background sync for this exact range — merges into the cache when it
     // lands, so it's visible next time this range is read (e.g. the next
     // time this component mounts), not necessarily in the result returned
     // below. See CLAUDE.md: null (offline, no backend) just means "use what
@@ -162,7 +210,7 @@ export const useChecklistRecord = () => {
           syncedRanges.delete(rangeKey);
           return;
         }
-        setChecklistRecordList(prev => {
+        queryClient.setQueryData<ChecklistRecorStore>(queryKey, prev => {
           const merged = { ...prev };
           let changed = false;
           for (const record of result.records) {
@@ -272,49 +320,105 @@ export const useChecklistRecord = () => {
     }
 
     return groupsByDay;
-  }, [checklistRecordList, userId, ready, setChecklistRecordList]);
+  }, [checklistRecordList, userId, ready, queryClient, queryKey]);
+
+  // Per-entity rollback (used by both updateChecklistRecord and deleteChecklistRecord below) —
+  // finds the one record by id inside its own checklistTemplateId's array. Sharing this between
+  // the two isn't practical the way saveTagMutation's single mutation is shared by add/update
+  // (an update always has a previous value to restore; a delete's "previous" is the record
+  // being removed) — kept as two mutations instead, same rollback shape either way.
+  const updateChecklistRecordMutation = useMutation<
+    { ok: true },
+    Error,
+    UpdateChecklistRecordArgs,
+    { previousRecord: ChecklistRecord | undefined }
+  >({
+    mutationFn: async ({ recordId, value, title, folderId }) => {
+      const result = await updateChecklistRecordValue(recordId, { value, title, folderId });
+      if (!result) throw new Error('Failed to update checklist record');
+      return result;
+    },
+    onMutate: async ({ recordId, checklistTemplateId, value, title, folderId }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const bucket = queryClient.getQueryData<ChecklistRecorStore>(queryKey)?.[checklistTemplateId] ?? [];
+      const previousRecord = bucket.find(record => record.id === recordId);
+      queryClient.setQueryData<ChecklistRecorStore>(queryKey, prev => {
+        const existingRecords = prev?.[checklistTemplateId] ?? [];
+        return {
+          ...prev,
+          [checklistTemplateId]: existingRecords.map(record =>
+            record.id === recordId
+              ? {
+                ...record,
+                ...(value !== undefined && { value }),
+                ...(title !== undefined && { title }),
+                ...(folderId !== undefined && { folderId }),
+                updatedAt: new Date().toISOString(),
+              }
+              : record,
+          ),
+        };
+      });
+      return { previousRecord };
+    },
+    onError: (_error, { recordId, checklistTemplateId }, context) => {
+      if (!context?.previousRecord) return;
+      const restored = context.previousRecord;
+      queryClient.setQueryData<ChecklistRecorStore>(queryKey, prev => {
+        const bucket = prev?.[checklistTemplateId] ?? [];
+        return {
+          ...prev,
+          [checklistTemplateId]: bucket.map(record => (record.id === recordId ? restored : record)),
+        };
+      });
+    },
+  });
 
   const updateChecklistRecord = (
     recordId: string,
-    {
-      value,
-      title,
-      checklistTemplateId,
-      folderId,
-    }: {
-      // Optional — a note-type field's own title-only edit (ChecklistFieldGeneral) touches
-      // nothing else. A number/text/date/datetime field's own edit always sends this.
+    args: {
       value?: number | string;
       title?: string;
       checklistTemplateId: string;
       folderId?: string;
     },
   ) => {
-    setChecklistRecordList(prev => {
-      // Get the existing records for the given checklistTemplateId
-      const existingRecords = prev[checklistTemplateId] || [];
-
-      // Update the record with the matching id
-      const updatedRecords = existingRecords.map(record => {
-        if (record.id === recordId) {
-          return {
-            ...record,
-            ...(value !== undefined && { value }),
-            ...(title !== undefined && { title }),
-            ...(folderId !== undefined && { folderId }),
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return record;
-      });
-
-      return {
-        ...prev,
-        [checklistTemplateId]: updatedRecords,
-      };
-    });
-    updateChecklistRecordValue(recordId, { value, title, folderId });
+    updateChecklistRecordMutation.mutate({ recordId, ...args });
   };
+
+  const removeChecklistRecordMutation = useMutation<
+    { ok: true },
+    Error,
+    { recordId: string; checklistTemplateId: string },
+    { previousRecord: ChecklistRecord | undefined }
+  >({
+    mutationFn: async ({ recordId }) => {
+      const result = await removeChecklistRecordApi(recordId);
+      if (!result) throw new Error('Failed to remove checklist record');
+      return result;
+    },
+    onMutate: async ({ recordId, checklistTemplateId }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const bucket = queryClient.getQueryData<ChecklistRecorStore>(queryKey)?.[checklistTemplateId] ?? [];
+      const previousRecord = bucket.find(record => record.id === recordId);
+      queryClient.setQueryData<ChecklistRecorStore>(queryKey, prev => {
+        const existingRecords = prev?.[checklistTemplateId] ?? [];
+        return {
+          ...prev,
+          [checklistTemplateId]: existingRecords.filter(record => record.id !== recordId),
+        };
+      });
+      return { previousRecord };
+    },
+    onError: (_error, { checklistTemplateId }, context) => {
+      if (!context?.previousRecord) return;
+      const restored = context.previousRecord;
+      queryClient.setQueryData<ChecklistRecorStore>(queryKey, prev => {
+        const bucket = prev?.[checklistTemplateId] ?? [];
+        return { ...prev, [checklistTemplateId]: [...bucket, restored] };
+      });
+    },
+  });
 
   return {
     addChecklistRecord,
@@ -324,17 +428,7 @@ export const useChecklistRecord = () => {
       recordId: string,
       { checklistTemplateId }: { checklistTemplateId: string },
     ) => {
-      setChecklistRecordList(prev => {
-        const existingRecords = prev[checklistTemplateId] || [];
-        const updatedRecords = existingRecords.filter(
-          record => record.id !== recordId,
-        );
-        return {
-          ...prev,
-          [checklistTemplateId]: updatedRecords,
-        };
-      });
-      removeChecklistRecordApi(recordId);
+      removeChecklistRecordMutation.mutate({ recordId, checklistTemplateId });
     },
   };
 };
