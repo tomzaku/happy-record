@@ -1,12 +1,7 @@
-import React from 'react';
-import { useSessionStore } from '../../hook/useSessionStore';
+import { useQuery } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
-
-// Backend — see CLAUDE.md. Every call is quiet: a failure resolves to null
-// and this hook's own state is the fallback, unchanged.
 import { fetchProStatus } from './proApi';
-
-const PRO_STATUS_KEY = 'pro_status';
+import { proStatusKeys } from './proStatusKeys';
 
 export type ProStatus = {
   isPro: boolean;
@@ -20,37 +15,30 @@ const DEFAULT_PRO_STATUS: ProStatus = {
   proExpiresAt: null,
 };
 
-// Fetched once per identity, in memory only — see CLAUDE.md's "online-first"
-// data layer. A single small read-only row, so this doesn't need the
-// scoped-fetch-by-query-key pattern the keyed-collection resources use.
-const fetchedFor = new Set<string | undefined>();
-
 /**
- * Pro entitlement — see CLAUDE.md and supabase/migrations/*_pro_users.sql.
- * There's no self-serve upgrade: a `pro_users` row is granted by hand (SQL
- * editor) or by the signup trial trigger, never by this app. This hook only
- * ever reads it.
+ * Pro entitlement — see supabase/migrations/*_pro_users.sql. There's no self-serve upgrade: a
+ * `pro_users` row is granted by hand (SQL editor) or by the signup trial trigger, never by this
+ * app. This hook only ever reads it.
  *
- * `proExpiresAt` is re-checked against `Date.now()` on every call rather
- * than trusted as whatever the last fetch returned — a trial that was
- * active at last fetch may have lapsed since, and this is the one place
- * that actually matters for it.
+ * `proExpiresAt` is re-checked against `Date.now()` on every call rather than trusted as whatever
+ * the last fetch returned — a trial that was active at last fetch may have lapsed since, and this
+ * is the one place that actually matters for it. `staleTime: Infinity` still keeps this "fetch
+ * once per identity, not on every focus/reconnect" — this row essentially never changes for a
+ * signed-in session, and nothing here invalidates it.
  */
 export const useIsPro = () => {
-  const [status, setStatus] = useSessionStore<ProStatus>(PRO_STATUS_KEY, DEFAULT_PRO_STATUS);
   const { userId, ready } = useSession();
 
-  React.useEffect(() => {
-    if (!ready || fetchedFor.has(userId)) return;
-    fetchedFor.add(userId);
-    fetchProStatus().then(result => {
-      if (!result) {
-        fetchedFor.delete(userId);
-        return;
-      }
-      setStatus(result);
-    });
-  }, [ready, userId, setStatus]);
+  const { data: status = DEFAULT_PRO_STATUS } = useQuery({
+    queryKey: proStatusKeys.status(userId),
+    queryFn: async () => {
+      const result = await fetchProStatus();
+      if (!result) throw new Error('Failed to fetch pro status');
+      return result;
+    },
+    enabled: ready && !!userId,
+    staleTime: Infinity,
+  });
 
   const isPro =
     status.isPro && (!status.proExpiresAt || new Date(status.proExpiresAt) > new Date());
