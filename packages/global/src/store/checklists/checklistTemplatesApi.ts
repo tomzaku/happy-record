@@ -1,10 +1,9 @@
-// Client for the `checklist-templates` resource. See CLAUDE.md.
-//
-// Quiet throughout — useChecklistTemplates.tsx's own useLocalStorage state
-// is the fallback.
+// Thin typed client for the `checklist-templates` edge function — one exported function per
+// route. Quiet throughout: a failure resolves to null, and useChecklistTemplatesQuery.ts's own
+// cache is the fallback.
 
 import { request } from '../../lib/api';
-import type { ChecklistTemplate } from './useChecklistTemplates';
+import type { ChecklistTemplate } from './checklistTemplateTypes';
 
 export function fetchChecklistTemplates(): Promise<{ templates: ChecklistTemplate[] } | null> {
   return request.get('/checklist-templates', { quiet: true });

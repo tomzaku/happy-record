@@ -1,9 +1,9 @@
-// Client for the `field-groups` resource. See CLAUDE.md.
-//
-// Quiet throughout — useFieldGroups.tsx's own in-memory state is the fallback.
+// Thin typed client for the `field-groups` edge function — one exported function per route.
+// Quiet throughout: a failure resolves to null, and useFieldGroups.tsx's own in-memory state is
+// the fallback.
 
 import { request } from '../../lib/api';
-import type { FieldGroup } from './useChecklistTemplates';
+import type { FieldGroup } from './fieldGroupTypes';
 
 /** `checklistTemplateId` omitted → every group across all of the caller's templates (see the
  * edge function's own comment on why that's needed at all). */

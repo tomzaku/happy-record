@@ -617,7 +617,17 @@ file imports it" bar as `tasks-page-ui`/`pomodoro-mobile`/`pregnant-page-ui` bef
   of letting every client race to write it (see the `fields` note above).
 - **A resource is a thing in the domain, not a table.** A single boolean or one-off field isn't
   a resource of its own.
-- **Comments explain why, not what.** Match the density of the file you're in.
+- **Comments explain why, not what.** One non-obvious reason, one to two lines. If a reader gets
+  the same information from the next few lines of code, delete the comment — don't narrate a
+  walkthrough of what the code already shows, and don't restate history that belongs in a commit
+  message instead.
+- **Keep every file under ~200 lines** — not just hooks, any file in `packages/*/src`. Once one
+  grows past that, split by concern into sibling files rather than letting it keep accreting
+  everything: type definitions and pure helpers that don't need a hook (`fieldGroupTypes.ts`-shaped),
+  a single-id detail hook used by one page, a mutations hook (writes) separate from the main
+  query/read hook. The main hook composes the others by calling them — a hook calling another hook
+  is normal, not a layering violation. Don't force an arbitrary split on an unavoidably large single
+  type definition; the target is the file's total line count, not a hard per-export cap.
 - **yarn**, not npm — this repo is a yarn workspaces + Lerna monorepo (voca's sibling project
   uses npm; don't carry that over).
 - Don't run `tsc` / build after every edit unless asked — the harness reports type errors from
