@@ -14,6 +14,23 @@ export { useChecklistTemplateDetail } from './useChecklistTemplateDetail';
 // Dedup for `getChecklistTemplate`'s own byId bypass fetch, below.
 const fetchedByIdScopes = new Set<string>();
 
+// Not scheduled once deleted, regardless of what its own repeat says. startedAt is when a
+// schedule takes effect — a day-of-week match before it is history, not a day it was ever
+// actually scheduled on; endedAt is the symmetric cutoff. The day-of-week itself is derived from
+// field-group schedules when there are any — never the template's own stored `repeat.dayOfWeek`,
+// which is only a display convenience and can be stale.
+function isTemplateScheduledOnDate(template: ChecklistTemplate | undefined, date: Date): boolean {
+  if (!template || template.deletedAt) return false;
+
+  const startedAt = template.repeat?.startedAt;
+  if (startedAt && date < startOfDay(new Date(startedAt))) return false;
+  const endedAt = template.repeat?.endedAt;
+  if (endedAt && date > endOfDay(new Date(endedAt))) return false;
+
+  const effectiveDayOfWeek = getEffectiveDayOfWeek(template);
+  return effectiveDayOfWeek?.split(',').includes(date.getDay().toString()) || effectiveDayOfWeek === '*';
+}
+
 /**
  * Composes the read side (useChecklistTemplatesQuery) and write side
  * (useChecklistTemplateMutations) into the one public hook every consumer actually calls, and
@@ -32,6 +49,8 @@ export const useChecklistTemplates = () => {
     templatesLoading,
     selectedChecklistTemplates,
     updateSelectedChecklistTemplate,
+    selectChecklistTemplate,
+    deselectChecklistTemplate,
     isOwnedTemplate,
     mergeTemplates,
     markTemplateIdKnown,
@@ -43,7 +62,8 @@ export const useChecklistTemplates = () => {
       allKey,
       checklistTemplate,
       markTemplateIdKnown,
-      updateSelectedChecklistTemplate,
+      selectChecklistTemplate,
+      deselectChecklistTemplate,
       mergeTemplates,
     });
 
@@ -63,27 +83,11 @@ export const useChecklistTemplates = () => {
   );
 
   const getChecklistTemplateIdsByGivingDate = React.useCallback(
-    ({ date }: { date: Date } = { date: new Date() }) => {
-      return selectedChecklistTemplates.filter(checklistTemplateId => {
-        const raw = checklistTemplate[checklistTemplateId];
-        const currentChecklistTemplate = raw && withFieldGroups(raw);
-        if (currentChecklistTemplate?.deletedAt) return false;
-
-        // startedAt is when a schedule takes effect — a day-of-week match before it is history,
-        // not a day it was ever actually scheduled on. endedAt is the symmetric cutoff.
-        const startedAt = currentChecklistTemplate?.repeat?.startedAt;
-        if (startedAt && date < startOfDay(new Date(startedAt))) return false;
-        const endedAt = currentChecklistTemplate?.repeat?.endedAt;
-        if (endedAt && date > endOfDay(new Date(endedAt))) return false;
-
-        // Derived from field-group schedules when there are any — never trust the template's
-        // stored `repeat.dayOfWeek`, which is only a display convenience and can be stale.
-        const effectiveDayOfWeek = getEffectiveDayOfWeek(currentChecklistTemplate ?? {});
-        return (
-          effectiveDayOfWeek?.split(',').includes(date.getDay().toString()) || effectiveDayOfWeek === '*'
-        );
-      });
-    },
+    ({ date }: { date: Date } = { date: new Date() }) =>
+      selectedChecklistTemplates.filter(id => {
+        const raw = checklistTemplate[id];
+        return isTemplateScheduledOnDate(raw && withFieldGroups(raw), date);
+      }),
     [selectedChecklistTemplates, checklistTemplate, withFieldGroups],
   );
 
@@ -127,6 +131,8 @@ export const useChecklistTemplates = () => {
     updateMyReminder,
     selectedChecklistTemplates,
     updateSelectedChecklistTemplate,
+    selectChecklistTemplate,
+    deselectChecklistTemplate,
     getRecommendChecklistTemplates,
     getChecklistTemplateIdsByGivingDate,
     isOwnedTemplate,

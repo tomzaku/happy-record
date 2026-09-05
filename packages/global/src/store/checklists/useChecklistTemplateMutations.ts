@@ -50,7 +50,8 @@ type Deps = {
   allKey: QueryKey;
   checklistTemplate: ChecklistTemplatesMap;
   markTemplateIdKnown: (id: string) => void;
-  updateSelectedChecklistTemplate: (update: string[] | ((prev: string[]) => string[])) => void;
+  selectChecklistTemplate: (id: string) => void;
+  deselectChecklistTemplate: (id: string) => void;
   mergeTemplates: (fetched: ChecklistTemplate[]) => void;
 };
 
@@ -62,7 +63,8 @@ export function useChecklistTemplateMutations({
   allKey,
   checklistTemplate,
   markTemplateIdKnown,
-  updateSelectedChecklistTemplate,
+  selectChecklistTemplate,
+  deselectChecklistTemplate,
   mergeTemplates,
 }: Deps) {
   const invalidateChecklistLogs = () => queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
@@ -135,7 +137,7 @@ export function useChecklistTemplateMutations({
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
-    updateSelectedChecklistTemplate(prev => [...prev, id]);
+    selectChecklistTemplate(id);
     // Optimistic — `saved` lets a rare caller (useJoinChallenge.tsx forking a template then
     // inserting a challenge_participants row with a real FK to it) await the write landing before
     // racing a dependent insert. Never rejects, same as every other quiet write here.
@@ -177,7 +179,7 @@ export function useChecklistTemplateMutations({
 
   const deleteChecklistTemplate = (id: string) => {
     removeTemplateMutation.mutate(id);
-    updateSelectedChecklistTemplate(prev => prev.filter(templateId => templateId !== id));
+    deselectChecklistTemplate(id);
   };
 
   /** Sets (or clears, `null`) the *caller's own* reminder — safe even for a template the caller

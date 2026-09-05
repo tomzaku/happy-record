@@ -12,7 +12,7 @@ import { useChallengeParticipants } from './useChallengeParticipants';
 export const useJoinChallenge = () => {
   const { userId } = useSession();
   const queryClient = useQueryClient();
-  const { updateSelectedChecklistTemplate } = useChecklistTemplates();
+  const { selectChecklistTemplate } = useChecklistTemplates();
   const { joinChallenge } = useChallengeParticipants();
 
   /**
@@ -39,9 +39,7 @@ export const useJoinChallenge = () => {
     avatarUrl?: string,
   ) => {
     await joinChallenge(challengeId, displayName, checklistTemplateId, avatarUrl);
-    updateSelectedChecklistTemplate(prev =>
-      prev.includes(checklistTemplateId) ? prev : [...prev, checklistTemplateId],
-    );
+    selectChecklistTemplate(checklistTemplateId);
     queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.all(userId) });
     return { id: checklistTemplateId };
   };

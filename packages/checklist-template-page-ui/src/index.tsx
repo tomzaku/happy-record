@@ -17,7 +17,8 @@ const ChecklistTemplatePageUi = () => {
   const {
     getRecommendChecklistTemplates,
     selectedChecklistTemplates,
-    updateSelectedChecklistTemplate,
+    selectChecklistTemplate,
+    deselectChecklistTemplate,
     deleteChecklistTemplate,
   } = useChecklistTemplates();
   const { getAllChecklistWithTemplate, deleteChecklist } = useChecklist();
@@ -128,19 +129,9 @@ const ChecklistTemplatePageUi = () => {
                   />
                   <Checkbox
                     checked={selectedChecklistTemplates.includes(id)}
-                    onChange={event => {
-                      const checked = event.target.checked;
-                      if (checked) {
-                        updateSelectedChecklistTemplate([
-                          ...selectedChecklistTemplates,
-                          id,
-                        ]);
-                      } else {
-                        updateSelectedChecklistTemplate(
-                          selectedChecklistTemplates.filter(i => i !== id),
-                        );
-                      }
-                    }}
+                    onChange={event =>
+                      event.target.checked ? selectChecklistTemplate(id) : deselectChecklistTemplate(id)
+                    }
                     className={styles.checkbox}
                   />
                 </div>

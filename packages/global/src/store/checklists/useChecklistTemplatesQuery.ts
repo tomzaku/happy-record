@@ -91,6 +91,14 @@ export function useChecklistTemplatesQuery() {
     });
   };
 
+  // The two actual operations every caller wants — "show this on my calendar" (a new template,
+  // a challenge just joined) / "stop showing this" (deleted, left) — instead of each call site
+  // hand-rolling its own add/remove-from-array logic against updateSelectedChecklistTemplate.
+  const selectChecklistTemplate = (id: string) =>
+    updateSelectedChecklistTemplate(prev => (prev.includes(id) ? prev : [...prev, id]));
+  const deselectChecklistTemplate = (id: string) =>
+    updateSelectedChecklistTemplate(prev => prev.filter(templateId => templateId !== id));
+
   // Seeds a template fetched some other way (useJoinChallenge.tsx's accept-a-shared-template
   // flow) so a later getChecklistTemplate/useChecklistTemplateDetail call doesn't need its own
   // fetch, and selects it if this device has never seen it before.
@@ -108,11 +116,11 @@ export function useChecklistTemplatesQuery() {
         }
         if (!existing) newIds.push(template.id);
       }
+      // Same dedup `updateSelectedChecklistTemplate` does, inlined against `setSelectedChecklist`
+      // directly rather than calling that (unmemoized) function — keeps this callback's own
+      // identity stable across renders, which callers rely on (see getChecklistTemplate's deps).
       if (newIds.length) {
-        setSelectedChecklist(prev => {
-          const additions = Array.from(new Set(newIds)).filter(id => !prev.includes(id));
-          return additions.length ? [...prev, ...additions] : prev;
-        });
+        setSelectedChecklist(prev => Array.from(new Set([...prev, ...newIds])));
       }
     },
     [queryClient, userId, allTemplates, setSelectedChecklist, markTemplateIdKnown],
@@ -132,6 +140,8 @@ export function useChecklistTemplatesQuery() {
     templatesLoading,
     selectedChecklistTemplates,
     updateSelectedChecklistTemplate,
+    selectChecklistTemplate,
+    deselectChecklistTemplate,
     isOwnedTemplate,
     mergeTemplates,
     markTemplateIdKnown,
