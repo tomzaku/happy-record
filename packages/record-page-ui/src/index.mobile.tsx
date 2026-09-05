@@ -56,7 +56,6 @@ const TaskListPage = () => {
       <AppHeader />
 
       <div className={styles.body}>
-        <WeeklyProgressCard />
         <div className={styles.viewSwitcherContainer}>
           <ViewSwitcher value={viewMode} onChange={setViewMode} />
         </div>
@@ -152,6 +151,8 @@ const TaskListPage = () => {
             <YearView currentDate={startDate} onDaySelect={goToDay} selectedTag={selectedTag} />
           </Card>
         )}
+
+        <WeeklyProgressCard />
       </div>
       {/* <MusicAudioPlayer className={styles.player} /> */}
     </div>
