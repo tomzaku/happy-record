@@ -192,11 +192,8 @@ export type ChecklistTemplate = {
 };
 
 type ChecklistTemplatesMap = Record<string, ChecklistTemplate>;
-// Scoped to the one template being written, not a whole-map snapshot — see useTags.tsx's own
-// comment (same fix, same resource shape) for why a global snapshot isn't safe under concurrent
-// writes. Rollback restores it into whichever cache(s) it came from — the bulk "all mine" query
-// (if loaded) and this template's own per-id query, mirroring useFieldGroups.tsx's own dual-write
-// shape.
+// Per-entity rollback, not a whole-map snapshot — see useTags.tsx. Covers both caches a write
+// touches (bulk "all mine" + this template's own per-id query).
 type RollbackContext = {
   previousFromAll: ChecklistTemplate | undefined;
   previousFromId: ChecklistTemplate | undefined;
@@ -206,32 +203,17 @@ type SaveTemplateArgs = {
   wire: { kind: 'create' } | { kind: 'patch'; changes: Record<string, unknown> } | { kind: 'none' };
 };
 
-// Whether "all mine" has been requested at all this session — shared across every
-// `useChecklistTemplates()` call (see useFieldGroups.tsx's own `useWantsAllFieldGroupsStore` for
-// why a plain per-component useState can't do this: this hook is called independently by many
-// components, and a local flag would leave, say, detail-task-page's own instance blind to the
-// home page already having requested the bulk fetch).
+// Whether "all mine" has been requested this session — shared across every
+// `useChecklistTemplates()` call (see createSharedState) so one component's own request is
+// visible to every other instance, not just its own.
 const useWantsAllTemplatesStore = createSharedState(false);
 
-// Every template id this device has ever resolved by id (own or joined), regardless of whether
-// it's currently in `selectedChecklistTemplates` — deliberately a separate, monotonically-growing
-// list rather than reusing `selectedChecklistTemplates` itself, and shared (not per-component
-// state) for the same reason `wantsAll` is. `selectedChecklistTemplates` is a genuine UI
-// preference that legitimately shrinks (deselecting a template, deleting one) — but shrinking it
-// would otherwise silently drop the `useQueries` observer this hook's own exposed `checklistTemplate`
-// map depends on for that id, making a value React Query still has cached (e.g. a delete's own
-// optimistic write, rolled back after a failure) invisible forever, with nothing left watching
-// that query key to reflect the rollback. The old shared-cache-entry design never had this
-// problem (one `useQuery` observed the *entire* map, so `selectedChecklistTemplates` and
-// `checklistTemplate`'s own reactivity were completely independent, same as this list restores).
+// Every template id ever resolved by id, kept even after `selectedChecklistTemplates` drops it
+// (deselect/delete) — otherwise `useQueries` below stops observing that id's cache entry, and a
+// rollback after a failed write has nothing left to notify. Shared for the same reason `wantsAll` is.
 const useKnownTemplateIdsStore = createSharedState<string[]>([]);
 
-// Dedup for `getChecklistTemplate`'s own byId bypass fetch — module-level (not per-render) since
-// there's no live query observer for an id outside the known-ids list (see above) to dedupe
-// against otherwise (see `getChecklistTemplate`'s own comment on why this can't just be
-// `queryClient.ensureQueryData`'s built-in dedup alone: populating the cache with no observer
-// watching that key doesn't trigger a re-render on its own — `mergeTemplates` adding the id to
-// the known-ids list is what actually gives it one, and that only needs to happen once).
+// Dedup for `getChecklistTemplate`'s own byId bypass fetch — see its own comment.
 const fetchedByIdScopes = new Set<string>();
 
 async function fetchOneTemplate(id: string): Promise<ChecklistTemplate | null> {
@@ -240,8 +222,6 @@ async function fetchOneTemplate(id: string): Promise<ChecklistTemplate | null> {
   return result.templates[0] ?? null;
 }
 
-// Writes unconditionally — creates the cache entry from nothing if it didn't exist yet. Used for
-// the per-id query most directly relevant to whoever's making a given write.
 function writeTemplate(
   queryClient: QueryClient,
   key: readonly unknown[],
@@ -250,8 +230,8 @@ function writeTemplate(
   queryClient.setQueryData(key, template);
 }
 
-// Writes only if the cache already holds real data — used for the bulk "all mine" query, which a
-// write shouldn't silently fabricate a "loaded" state for if it was never actually fetched.
+// Only writes if the bulk cache is actually loaded — a write shouldn't fabricate a "loaded" state
+// for it if it was never fetched.
 function writeTemplateIfPresent(
   queryClient: QueryClient,
   key: readonly unknown[],
@@ -292,13 +272,9 @@ function withSyncedRepeat(template: ChecklistTemplate): ChecklistTemplate {
 }
 
 /**
- * One template by its own id, as a real per-scope query — this is what a single-id consumer
- * (detail-task-page, tasks-shared-page-ui, challenge-dashboard-page-ui) should call directly, in
- * place of the old `useSyncedSelector(getChecklistTemplate, id)` pattern. Own template or
- * anyone's if `visibility: 'public'` (the shared/joined-challenge lookup — see
- * fetchChecklistTemplateById's own comment), same as the plain `getChecklistTemplate` callback
- * below; this is just the real-hook shape of the same read, mirroring
- * useFieldGroups.tsx's own `useFieldGroupsForTemplate`.
+ * One template by id, as a real query — for a single-id consumer (detail-task-page,
+ * tasks-shared-page-ui, challenge-dashboard-page-ui) in place of
+ * `useSyncedSelector(getChecklistTemplate, id)`. Own template or anyone's if `visibility: 'public'`.
  */
 export const useChecklistTemplateDetail = (id: string | undefined) => {
   const { userId, ready } = useSession();
@@ -327,20 +303,11 @@ export const useChecklistTemplates = () => {
   >(SELECTED_CHECKLISTS_TEMPLATE_KEY, []);
   const invalidateChecklistLogs = () => queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
 
-  // `field-groups` is its own resource now (see useFieldGroups.tsx) — a fetched template here
-  // never carries real `fieldGroups` from the server anymore. `getChecklistTemplate`/
-  // `getRecommendChecklistTemplates` below merge that store's own `getFieldGroups(id)` onto the
-  // object they return, always fresh (a real per-scope React Query read, not a copy synced by an
-  // effect) — a consumer that wants a template's current groups calls one of those, or
-  // `getFieldGroups`/`useFieldGroupsForTemplate` directly, rather than reading `.fieldGroups` off
-  // whatever's cached on the template object itself (which, unlike everything else on
-  // `ChecklistTemplate`, isn't actually a column on this row anymore).
+  // `field-groups` isn't a column on this row anymore — `getChecklistTemplate`/
+  // `getRecommendChecklistTemplates` merge `getFieldGroups(id)` onto the object they return.
   const { getFieldGroups, ensureAllFieldGroupsFetched } = useFieldGroups();
 
-  // "All mine" — lazy: stays disabled until `ensureAllTemplatesFetched` is actually called (the
-  // management screen, or the home page's own schedule-matching loop), same "don't fetch until
-  // actually needed" rule the old fetchedScopes Set enforced, now via `enabled` instead. Shared
-  // across every `useChecklistTemplates()` call — see `useWantsAllTemplatesStore`'s own comment.
+  // "All mine" — lazy, enabled only once `ensureAllTemplatesFetched` is called.
   const [wantsAll, setWantsAll] = useWantsAllTemplatesStore();
   const allKey = checklistTemplatesKeys.all(userId);
   const {
@@ -359,22 +326,12 @@ export const useChecklistTemplates = () => {
     staleTime: Infinity,
   });
 
-  /** Every template across every one of the caller's templates, unscoped — see
-   * getChecklistTemplateIdsByGivingDate's own need for this. */
   const ensureAllTemplatesFetched = React.useCallback(() => setWantsAll(true), [setWantsAll]);
 
-  // Starts `true` (before "all mine" has even been requested) and flips `false` only once it's
-  // both been requested *and* settled — a plain `allTemplatesLoading` alone would read `false`
-  // while `wantsAll` is still `false` (a disabled query looks "not loading" by React Query's own
-  // definition), flashing a misleading "no tasks" state for the one render before
-  // `ensureAllTemplatesFetched` (called synchronously during render, not from an effect) has had
-  // a chance to flip `wantsAll` to `true`.
+  // `!wantsAll` matters: a disabled query reads `isLoading: false`, which would flash a wrong
+  // "done loading" for the one render before `ensureAllTemplatesFetched` flips `wantsAll` true.
   const templatesLoading = !wantsAll || allTemplatesLoading;
 
-  // Every id `useQueries` below should keep observing — see `useKnownTemplateIdsStore`'s own
-  // comment for why this has to be a separate, only-grows list rather than `selectedChecklistTemplates`
-  // itself (which legitimately shrinks on deselect/delete, and shouldn't take this hook's own
-  // reactivity down with it).
   const [knownTemplateIds, setKnownTemplateIds] = useKnownTemplateIdsStore();
   const markTemplateIdKnown = React.useCallback(
     (id: string) => setKnownTemplateIds(prev => (prev.includes(id) ? prev : [...prev, id])),
@@ -385,16 +342,9 @@ export const useChecklistTemplates = () => {
     [selectedChecklistTemplates, knownTemplateIds],
   );
 
-  // One real per-id query per observed template — covers every template this device actually
-  // cares about (every owned one ends up here via `updateSelectedChecklistTemplate`/
-  // `markTemplateIdKnown`, and every joined-challenge one via `mergeTemplates`'s own tracking
-  // below), without violating rules of hooks the way calling `useChecklistTemplateDetail` in a
-  // loop would: `useQueries` is React Query's own primitive for exactly "a dynamically-sized
-  // array of keys, known from real state." Skipped once "all mine" already covers a given id (an
-  // owned template — the common case), so this only actually fires for a template "all mine"
-  // can't resolve: a joined challenge's owner-authored row, invisible to "all mine" (own
-  // templates only) no matter how long it's been fetched — the same bypass
-  // `getFieldGroupsByTemplateId` exists for one resource over.
+  // One real query per observed template — `useQueries` since the id list is dynamic (can't call
+  // useChecklistTemplateDetail in a loop). Skipped once "all mine" already covers an id; fires
+  // otherwise for a joined challenge's template, which "all mine" (own templates only) never has.
   const byIdResults = useQueries({
     queries: observedTemplateIds.map(id => ({
       queryKey: checklistTemplatesKeys.byId(id, userId),
@@ -404,12 +354,8 @@ export const useChecklistTemplates = () => {
     })),
   });
 
-  // The merged view every read below works from: "all mine" (every owned template) plus whatever
-  // the per-id queries above resolved (every joined-challenge template, plus any owned one not
-  // yet covered by "all mine"). Real react-query subscriptions underneath, so this stays correct
-  // without a manual sync effect — see useChecklistTemplates.tsx's own git history (pre-redesign)
-  // for the effect this replaces, and useFieldGroups.tsx's own comment on why that shape doesn't
-  // generalize to data with no equivalent "known list of ids" to key a `useQueries` call on.
+  // "All mine" plus whatever the per-id queries resolved — real subscriptions, so this stays
+  // correct without a manual sync effect.
   const checklistTemplate = React.useMemo(() => {
     const map: ChecklistTemplatesMap = { ...allTemplates };
     byIdResults.forEach((result, index) => {
@@ -437,22 +383,14 @@ export const useChecklistTemplates = () => {
         // its individual byId cache yet, matching the single shared map's own semantics before
         // this redesign (one map, so "known via any fetch path" was automatically one check).
         const existing = allTemplates?.[template.id] ?? queryClient.getQueryData<ChecklistTemplate | null>(key);
-        // Last-write-wins by `updatedAt` — this seeds a cache a real query for the same id could
-        // independently be populating at the same time (`>=`, not `>`, for the same "a repeat-only
-        // write doesn't bump this row's own updated_at" reason the old shared-map merge had — see
-        // git history).
+        // `>=`, not `>`: a repeat-only write (seeded at join time) doesn't bump `updatedAt`.
         if (!existing || new Date(template.updatedAt) >= new Date(existing.updatedAt)) {
           queryClient.setQueryData(key, template);
         }
         if (!existing) newIds.push(template.id);
       }
 
-      // `selectedChecklistTemplates` is local-only and never itself fetched from the backend — a
-      // template landing here for the first time on this device has never had a chance to be
-      // selected or deselected, so it defaults in the same way creating one locally already does
-      // (addChecklistTemplate). Without this, a merged template never actually shows up on the
-      // calendar: getChecklistTemplateIdsByGivingDate filters by this list, not by whatever's
-      // cached.
+      // A newly-known template needs to be selected too, or it won't show on the calendar.
       if (newIds.length) {
         setSelectedChecklist(prev => {
           const additions = Array.from(new Set(newIds)).filter(id => !prev.includes(id));
@@ -463,17 +401,8 @@ export const useChecklistTemplates = () => {
     [queryClient, userId, allTemplates, setSelectedChecklist, markTemplateIdKnown],
   );
 
-  // Canonical React Query optimistic-update shape (used by both `addChecklistTemplate` and
-  // `updateChecklistTemplate` below) — see useTags.tsx's own saveTagMutation for the full
-  // rationale (per-entity rollback, no onSettled refetch). Always called (even when there's
-  // nothing to send over the wire — `wire.kind === 'none'`) so the optimistic write always
-  // happens the same way regardless of branch, matching this hook's own previous behavior of
-  // writing the merged template locally unconditionally and only skipping the *network* call
-  // when nothing actually changed. Only a real create invalidates checklist-logs on success —
-  // matching this hook's own previous behavior, where an ordinary field patch never did. Writes
-  // to both the bulk "all mine" cache (if it's actually loaded) and this template's own per-id
-  // cache (unconditionally) — a write here is always the caller's own template (only the owner
-  // can create/update/delete one — a participant only ever writes via `updateMyReminder`), so
+  // Per-entity rollback (see useTags.tsx's saveTagMutation). Only a real create invalidates
+  // checklist-logs. Writes both caches — a write here is always the caller's own template, so
   // it's always safe to reflect in "all mine" too.
   const saveTemplateMutation = useMutation<{ ok: true }, Error, SaveTemplateArgs, RollbackContext>({
     mutationFn: async ({ template, wire }) => {
@@ -486,10 +415,6 @@ export const useChecklistTemplates = () => {
       return result;
     },
     onMutate: async ({ template }) => {
-      // Keeps this id observed via `useQueries` regardless of `selectedChecklistTemplates`
-      // membership — see `useKnownTemplateIdsStore`'s own comment. Matters most for
-      // `updateChecklistTemplate`'s own `!existing` branch, which writes here without going
-      // through `addChecklistTemplate`'s own `updateSelectedChecklistTemplate` call.
       markTemplateIdKnown(template.id);
       const idKey = checklistTemplatesKeys.byId(template.id, userId);
       await queryClient.cancelQueries({ queryKey: allKey });
@@ -712,10 +637,7 @@ export const useChecklistTemplates = () => {
    *
    * Unlike `updateChecklistTemplate`'s diff-against-local-copy shape, this always re-fetches
    * afterward instead of trusting the local store: clearing an override needs the server's own
-   * fallback-to-the-owner's-schedule value, which nothing on this device ever had a copy of to
-   * fall back to. Bypasses `getChecklistTemplate`'s own dedupe (`fetchedScopes`) on purpose —
-   * that scope was already marked fetched before this write, so a plain `getChecklistTemplate`
-   * call here would just hand back the pre-write copy.
+   * fallback-to-the-owner's-schedule value, which nothing on this device ever had a copy of.
    */
   const updateMyReminder = async (id: string, repeat: ChecklistTemplate['repeat'] | null) => {
     await patchChecklistTemplate(id, { repeat });
@@ -723,24 +645,10 @@ export const useChecklistTemplates = () => {
     if (result) mergeTemplates(result.templates);
   };
 
-  /** One template by id — own, or anyone's if `visibility: 'public'` (see fetchChecklistTemplateById's
-   * own comment). Prefers the bulk "all mine" query once that's covered this id (an owned
-   * template — no extra network call for the common case); falls back to a one-off fetch
-   * otherwise, which covers both "this device just hasn't fetched it yet" and the case "all mine"
-   * can never cover at all — a joined challenge's template, owned by someone else.
-   *
-   * Routed through `mergeTemplates` (not a bare cache write) specifically so the fetched
-   * template's id lands in `selectedChecklistTemplates` — that's what gives it a real
-   * `useQueries` observer from the next render on. Without that, a fetch for an id outside
-   * `selectedChecklistTemplates` would populate the cache with nothing subscribed to that key,
-   * so it would resolve without ever triggering a re-render: React Query only notifies *active*
-   * observers, and nothing here observes an arbitrary id ahead of time (the same reason
-   * `useFieldGroupsForTemplate`/`useChecklistTemplateDetail` exist as real hooks for a consumer
-   * that already knows its one id up front and wants that guarantee directly, rather than through
-   * this callback). Deduped via a plain module-level Set (mirroring this function's original
-   * shape) rather than `queryClient`'s own request-level dedup alone, since the gate needed here
-   * is "have I already scheduled `mergeTemplates` for this fetch's result," not just "is a
-   * network request already in flight." */
+  /** One template by id — own, or anyone's if public. Prefers "all mine" once that covers this
+   * id; falls back to a one-off fetch otherwise (not yet fetched, or a joined template "all mine"
+   * never covers). Routed through `mergeTemplates`, not a bare cache write, so the id gets a real
+   * `useQueries` observer — nothing else watches an arbitrary id ahead of time. */
   const getChecklistTemplate = React.useCallback(
     (id: string): ChecklistTemplate | undefined => {
       const scopeKey = `${userId}:${id}`;
