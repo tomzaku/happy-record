@@ -1,15 +1,18 @@
 import React from 'react';
 import { v4 } from 'uuid';
-import { useSessionStore } from '../../hook/useSessionStore';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import { normalizeFieldGroupFields, type FieldGroup, type FieldGroupField } from './useChecklistTemplates';
+import { fieldGroupsKeys } from './fieldGroupsKeys';
 
-// Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
-// a failure resolves to null and this hook's own in-memory state is the
-// fallback, unchanged.
+// Every backend call here is quiet: a failure resolves to null and this
+// hook's own in-memory state is the fallback, unchanged.
 import { fetchFieldGroups, patchFieldGroupRepeat, saveFieldGroup } from './fieldGroupsApi';
 
-const FIELD_GROUP_KEY = 'field_group';
+type FieldGroupsMap = Record<string, FieldGroup>;
+// Scoped to the one group being written, not a whole-map snapshot — see useTags.tsx's own comment
+// (same fix, same resource shape) for why a global snapshot isn't safe under concurrent writes.
+type RollbackContext = { previousGroup: FieldGroup | undefined };
 
 // Fetched by whatever scope is actually asked for — one template's own groups (detail-task-page,
 // which already knows the exact checklistTemplateId from the URL) or "all mine" (the home page's
@@ -28,11 +31,19 @@ const ALL_SCOPE = '__all__';
  * unchanged; only a write needs to reach for this hook directly.
  */
 export const useFieldGroups = () => {
-  const [fieldGroupList, setFieldGroupList] = useSessionStore<Record<string, FieldGroup>>(
-    FIELD_GROUP_KEY,
-    {},
-  );
   const { userId, ready } = useSession();
+  const queryClient = useQueryClient();
+  const queryKey = fieldGroupsKeys.map(userId);
+
+  // The shared field-groups cache, backed by React Query instead of useSessionStore — same "one
+  // cache entry, several imperative scoped fetches merging into it" shape as useNote.tsx's own
+  // notes cache. `enabled: false` since nothing auto-fetches this query itself.
+  const { data: fieldGroupList = {} } = useQuery<FieldGroupsMap>({
+    queryKey,
+    queryFn: () => queryClient.getQueryData<FieldGroupsMap>(queryKey) ?? {},
+    enabled: false,
+    staleTime: Infinity,
+  });
 
   // A row saved before FieldGroupField existed still has `fields` as plain id strings — see
   // normalizeFieldGroupFields' own comment. Every fetch path (one template, all mine) funnels
@@ -44,7 +55,7 @@ export const useFieldGroups = () => {
         ...group,
         fields: normalizeFieldGroupFields(group.fields as unknown as (string | FieldGroupField)[]),
       }));
-      setFieldGroupList(prev => {
+      queryClient.setQueryData<FieldGroupsMap>(queryKey, prev => {
         const merged = { ...prev };
         let changed = false;
         for (const group of normalized) {
@@ -65,7 +76,7 @@ export const useFieldGroups = () => {
         return changed ? merged : prev;
       });
     },
-    [setFieldGroupList],
+    [queryClient, queryKey],
   );
 
   /** One template's own groups (active + archived — callers filter via getActiveFieldGroups),
@@ -99,11 +110,10 @@ export const useFieldGroups = () => {
    * joined challenge's field groups are the *owner's* own rows, which "all mine"
    * (`listMyFieldGroups`, own templates only — see field-groups/api/list-field-groups-handler.ts)
    * never includes. Exactly the same "own + public only can't resolve a participant's template"
-   * gap CLAUDE.md documents for `fields`' own `getRecordFieldsByTemplateId` — detail-task-page
-   * calls this unconditionally for whatever template it's showing (a no-op re-fetch for the
-   * caller's own template, already covered by "all mine") instead of relying on `getFieldGroups`
-   * alone, which is what left a challenge participant seeing "No groups created" on the owner's
-   * real template.
+   * gap `fields`' own `getRecordFieldsByTemplateId` has — detail-task-page calls this
+   * unconditionally for whatever template it's showing (a no-op re-fetch for the caller's own
+   * template, already covered by "all mine") instead of relying on `getFieldGroups` alone, which
+   * is what left a challenge participant seeing "No groups created" on the owner's real template.
    */
   const getFieldGroupsByTemplateId = React.useCallback(
     (checklistTemplateId: string): FieldGroup[] => {
@@ -140,11 +150,71 @@ export const useFieldGroups = () => {
     });
   }, [userId, ready, mergeFieldGroups]);
 
+  // Canonical React Query optimistic-update shape (used by both `addFieldGroup` and
+  // `updateFieldGroup` below, since the wire call for either is the same upsert) — see
+  // useTags.tsx's own saveTagMutation for the full rationale (per-entity rollback, no onSettled
+  // refetch).
+  const saveFieldGroupMutation = useMutation<{ ok: true } | null, Error, FieldGroup, RollbackContext>({
+    mutationFn: async group => {
+      const result = await saveFieldGroup(group);
+      if (!result) throw new Error('Failed to save field group');
+      return result;
+    },
+    onMutate: async group => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousGroup = queryClient.getQueryData<FieldGroupsMap>(queryKey)?.[group.id];
+      queryClient.setQueryData<FieldGroupsMap>(queryKey, prev => ({ ...prev, [group.id]: group }));
+      return { previousGroup };
+    },
+    onError: (_error, group, context) => {
+      queryClient.setQueryData<FieldGroupsMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        if (context?.previousGroup) {
+          next[group.id] = context.previousGroup;
+        } else {
+          delete next[group.id];
+        }
+        return next;
+      });
+    },
+  });
+
+  const updateMyFieldGroupRepeatMutation = useMutation<
+    { ok: true } | null,
+    Error,
+    { fieldGroupId: string; repeat: FieldGroup['repeat'] | null },
+    RollbackContext
+  >({
+    mutationFn: async ({ fieldGroupId, repeat }) => {
+      const result = await patchFieldGroupRepeat(fieldGroupId, repeat);
+      if (!result) throw new Error('Failed to update field group repeat');
+      return result;
+    },
+    onMutate: async ({ fieldGroupId, repeat }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousGroup = queryClient.getQueryData<FieldGroupsMap>(queryKey)?.[fieldGroupId];
+      queryClient.setQueryData<FieldGroupsMap>(queryKey, prev => {
+        const existing = prev?.[fieldGroupId];
+        if (!existing) return prev;
+        return {
+          ...prev,
+          [fieldGroupId]: { ...existing, repeat: repeat ?? undefined, updatedAt: new Date().toISOString() },
+        };
+      });
+      return { previousGroup };
+    },
+    onError: (_error, { fieldGroupId }, context) => {
+      if (!context?.previousGroup) return;
+      const restored = context.previousGroup;
+      queryClient.setQueryData<FieldGroupsMap>(queryKey, prev => ({ ...prev, [fieldGroupId]: restored }));
+    },
+  });
+
   const addFieldGroup = (group: Omit<FieldGroup, 'id' | 'updatedAt'> & { id?: string }): FieldGroup => {
     const id = group.id ?? v4();
     const newGroup: FieldGroup = { ...group, id, updatedAt: new Date().toISOString() };
-    setFieldGroupList(prev => ({ ...prev, [id]: newGroup }));
-    saveFieldGroup(newGroup);
+    saveFieldGroupMutation.mutate(newGroup);
     return newGroup;
   };
 
@@ -152,8 +222,7 @@ export const useFieldGroups = () => {
    * (`ChecklistFieldGroup.tsx`'s own `updateFieldGroupAt`). */
   const updateFieldGroup = (group: FieldGroup): FieldGroup => {
     const updated: FieldGroup = { ...group, updatedAt: new Date().toISOString() };
-    setFieldGroupList(prev => ({ ...prev, [updated.id]: updated }));
-    saveFieldGroup(updated);
+    saveFieldGroupMutation.mutate(updated);
     return updated;
   };
 
@@ -166,15 +235,7 @@ export const useFieldGroups = () => {
    * following the owner's. Optimistic, same as every other write here: updates the local copy
    * immediately, fires the request, doesn't await it. */
   const updateMyFieldGroupRepeat = (fieldGroupId: string, repeat: FieldGroup['repeat'] | null) => {
-    setFieldGroupList(prev => {
-      const existing = prev[fieldGroupId];
-      if (!existing) return prev;
-      return {
-        ...prev,
-        [fieldGroupId]: { ...existing, repeat: repeat ?? undefined, updatedAt: new Date().toISOString() },
-      };
-    });
-    patchFieldGroupRepeat(fieldGroupId, repeat);
+    updateMyFieldGroupRepeatMutation.mutate({ fieldGroupId, repeat });
   };
 
   return {
