@@ -23,7 +23,9 @@ export type Tag = {
 };
 
 type TagsMap = Record<string, Tag>;
-type RollbackContext = { previous: TagsMap | undefined };
+// Scoped to the one tag being written, not a whole-map snapshot — see the comment above
+// `saveTagMutation` for why a global snapshot isn't safe here.
+type RollbackContext = { previousTag: Tag | undefined };
 
 export const useTags = () => {
   const { userId, ready } = useSession();
@@ -57,6 +59,13 @@ export const useTags = () => {
   // `onSettled` refetches regardless of outcome so the cache reconciles with the server's real
   // state. `saveTag` is "quiet" (resolves `null` instead of rejecting on failure) — `mutationFn`
   // turns that into a real rejection, since `onError` would otherwise never fire.
+  //
+  // The snapshot is scoped to just the one tag being written, not the whole map: this resource
+  // really can have more than one write in flight at once (useApplyAiChecklistTemplate.ts calls
+  // `addTag` in a tight `forEach` over every AI-proposed tag), and a whole-map snapshot taken
+  // before the first of several concurrent writes would, on that write's failure, roll back over
+  // every sibling write that had already landed — wiping out tags that actually saved fine.
+  // Restoring/deleting only this one key can't clobber a concurrent write to a different id.
   const saveTagMutation = useMutation<{ ok: true }, Error, Tag, RollbackContext>({
     mutationFn: async tag => {
       const result = await saveTag(tag);
@@ -65,12 +74,21 @@ export const useTags = () => {
     },
     onMutate: async tag => {
       await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<TagsMap>(queryKey);
+      const previousTag = queryClient.getQueryData<TagsMap>(queryKey)?.[tag.id];
       queryClient.setQueryData<TagsMap>(queryKey, prev => ({ ...prev, [tag.id]: tag }));
-      return { previous };
+      return { previousTag };
     },
-    onError: (_error, _tag, context) => {
-      queryClient.setQueryData(queryKey, context?.previous);
+    onError: (_error, tag, context) => {
+      queryClient.setQueryData<TagsMap>(queryKey, prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        if (context?.previousTag) {
+          next[tag.id] = context.previousTag;
+        } else {
+          delete next[tag.id];
+        }
+        return next;
+      });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });
@@ -85,17 +103,19 @@ export const useTags = () => {
     },
     onMutate: async id => {
       await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<TagsMap>(queryKey);
+      const previousTag = queryClient.getQueryData<TagsMap>(queryKey)?.[id];
       queryClient.setQueryData<TagsMap>(queryKey, prev => {
         if (!prev) return prev;
         const next = { ...prev };
         delete next[id];
         return next;
       });
-      return { previous };
+      return { previousTag };
     },
-    onError: (_error, _id, context) => {
-      queryClient.setQueryData(queryKey, context?.previous);
+    onError: (_error, id, context) => {
+      if (!context?.previousTag) return;
+      const restored = context.previousTag;
+      queryClient.setQueryData<TagsMap>(queryKey, prev => ({ ...prev, [id]: restored }));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });
