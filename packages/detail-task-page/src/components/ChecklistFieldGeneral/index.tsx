@@ -5,7 +5,7 @@ import {
 } from '@dreamer/global/src/store/checklist-record';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import { generateNote, type AiNoteOption } from '@dreamer/global/src/store/note/aiNoteApi';
-import { useIsPro } from '@dreamer/global/src/store/pro/useProStatus';
+import { useCurrentAccount } from '@dreamer/global/src/hook/useCurrentAccount';
 import { buildEditorJsBlocks, type EditorJsBlockInput } from '@dreamer/global/src/lib/editorJsNoteBlocks';
 import {
   dateInputValueToIso,
@@ -41,7 +41,7 @@ const ChecklistFieldGeneral = ({ record, fields, setRecord }: Props) => {
   // from here — there's no title input in this UI; the server derives one from the content
   // itself when none is given (see _shared/notes.ts's deriveTitle).
   const { updateChecklistRecord } = useChecklistRecord();
-  const { isPro } = useIsPro();
+  const { isPro } = useCurrentAccount();
   const field = fields.find(f => f.id === record.fieldId);
   if (!field) return;
   const [activeRecord, setActiveRecord] = React.useState<ChecklistRecord>();

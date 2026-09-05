@@ -6,6 +6,7 @@ export { useWakeLockPwa } from './useWakeLockPwa';
 export { useLongPress } from './useLongPress';
 export { useIsMobile } from './useIsMobile';
 export { useSession } from './useSession';
+export { useCurrentAccount } from './useCurrentAccount';
 export { useSyncedSelector } from './useSyncedSelector';
 export { useApplyAiChecklistTemplate } from './useApplyAiChecklistTemplate';
 export { useAiNoteGenerate } from './useAiNoteGenerate';

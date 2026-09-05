@@ -12,12 +12,12 @@
 // `noteId` param that makes it resolve context server-side from a position the client sends, not
 // client-sent text (see ai-note/index.ts's own comment for why).
 
-import { useIsPro } from '../store/pro/useProStatus';
+import { useCurrentAccount } from './useCurrentAccount';
 import { generateNote, type AiNoteOption } from '../store/note/aiNoteApi';
 import { buildEditorJsBlocks, type EditorJsBlockInput } from '../lib/editorJsNoteBlocks';
 
 export const useAiNoteGenerate = () => {
-  const { isPro } = useIsPro();
+  const { isPro } = useCurrentAccount();
 
   /** Throws `ApiError` on failure (rate limit, not Pro, provider error, offline) — there's no
    * local fallback for "the AI didn't run," so the composer's own try/catch is what surfaces

@@ -22,7 +22,7 @@
 
 import React from 'react';
 import { useNote, type Note, type NoteOrigin } from '../store/note/useNote';
-import { useIsPro } from '../store/pro/useProStatus';
+import { useCurrentAccount } from './useCurrentAccount';
 import { generateNote, type AiNoteOption } from '../store/note/aiNoteApi';
 import { buildEditorJsBlocks, type EditorJsBlockInput } from '../lib/editorJsNoteBlocks';
 
@@ -35,7 +35,7 @@ export const useFieldGroupNote = (
   onCreated: (newNoteId: string) => void,
 ) => {
   const { getNote, getOwnFieldGroupNote, createNote, updateNote } = useNote();
-  const { isPro } = useIsPro();
+  const { isPro } = useCurrentAccount();
 
   // My own note for this group — the owner's canonical one (always their own row), or a
   // participant's own fork of it once they've made one.

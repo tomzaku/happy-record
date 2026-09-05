@@ -9,8 +9,8 @@ import { useIntl } from '@dreamer/translation';
 import {
   ApiError,
   ChecklistTemplate,
+  useCurrentAccount,
   useIsMobile,
-  useIsPro,
   useRecordField,
   useApplyAiChecklistTemplate,
   generateChecklistTemplate,
@@ -47,7 +47,7 @@ const AiChecklistGenerate = ({
 }: AiChecklistGenerateProps) => {
   const intl = useIntl();
   const isMobile = useIsMobile();
-  const { isPro } = useIsPro();
+  const { isPro } = useCurrentAccount();
   const { getAllRecordFields } = useRecordField();
   const { applyAsNewTemplate, applyToExistingTemplate } = useApplyAiChecklistTemplate();
 

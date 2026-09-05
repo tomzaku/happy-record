@@ -9,7 +9,7 @@ import IconTheme from '@moon-ui/icon/IconTheme';
 import Button from '@moon-ui/button';
 
 // Enum
-import { Language, useSession, useIsPro } from '@dreamer/global';
+import { Language, useCurrentAccount } from '@dreamer/global';
 import { Theme } from '@dreamer/pomodoro-common';
 
 // Hooks
@@ -38,8 +38,8 @@ export default function SettingPage() {
   } = usePomodoroGlobalConfig();
   const navigate = useNavigate();
   const { language, changeLanguage, formatMessage } = useIntl();
-  const { isAnonymous, email, hasBackend, signInWithGoogle, signOut } = useSession();
-  const { isPro, isTrial, proExpiresAt } = useIsPro();
+  const { isAnonymous, email, hasBackend, signInWithGoogle, signOut, isPro, isTrial, proExpiresAt } =
+    useCurrentAccount();
   const handleGoogleSignIn = async () => {
     const error = await signInWithGoogle();
     if (error) console.warn('[dreamer] Google sign-in failed:', error);

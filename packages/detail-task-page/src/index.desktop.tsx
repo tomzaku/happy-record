@@ -6,10 +6,9 @@ import {
   useChallenge,
   useChecklist,
   useChecklistTemplates,
+  useCurrentAccount,
   useFieldGroups,
-  useIsPro,
   useLeaveChallenge,
-  useSession,
   useSyncedSelector,
 } from '@dreamer/global';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
@@ -43,8 +42,7 @@ const DetailTaskPageDesktop = () => {
   const { getFieldGroupsByTemplateId } = useFieldGroups();
   const { getChallengeForTemplate } = useChallenge();
   const { leaveTheChallenge } = useLeaveChallenge();
-  const { userId } = useSession();
-  const { isPro } = useIsPro();
+  const { userId, isPro } = useCurrentAccount();
   const intl = useIntl();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
