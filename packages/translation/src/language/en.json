@@ -106,6 +106,7 @@
   "DetailTaskPage.mini-challenge-menu-open": "Challenge options",
   "DetailTaskPage.mini-challenge-title": "Challenge",
   "DetailTaskPage.shortcuts-back": "Back",
+  "DetailTaskPage.template-deleted": "This challenge has been deleted. Please contact the owner to restore it.",
   "EditChecklistTemplate..delete-confirm-cancel": "Cancel",
   "EditChecklistTemplate..delete-confirm-ok": "Delete",
   "EditChecklistTemplate.delete-confirm-title": "Delete Checklist Template",
