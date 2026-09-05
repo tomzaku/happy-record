@@ -13,6 +13,7 @@ jest.mock('./challengesApi', () => ({
   fetchChallengeForTemplate: (...args: unknown[]) => mockFetchChallengeForTemplate(...args),
   fetchChallengeDashboard: jest.fn(),
   fetchMyChallenges: jest.fn(),
+  fetchPublicChallenges: jest.fn(),
   saveChallenge: (...args: unknown[]) => mockSaveChallenge(...args),
 }));
 
@@ -41,6 +42,8 @@ const baseOptions = {
   fieldTargets: {},
   theme: 'classic' as const,
   backgroundImageUrl: null,
+  startDate: '2026-01-01T00:00:00.000Z',
+  endDate: null,
 };
 
 beforeEach(() => {
@@ -60,6 +63,9 @@ describe('setChallengeOptions', () => {
       fieldTargets: {},
       theme: 'classic',
       backgroundImageUrl: null,
+      startDate: '2026-01-01T00:00:00.000Z',
+      endDate: null,
+      isPublicListing: false,
       createdAt: 'now',
       updatedAt: 'now',
     };
@@ -127,6 +133,7 @@ describe('setChallengeOptions', () => {
           checklistTemplateId: 'template-good',
           ownerId: 'user-challenge-test',
           ...baseOptions,
+          isPublicListing: false,
           createdAt: 'now',
           updatedAt: 'now',
         },
@@ -147,6 +154,9 @@ describe('getChallengeForTemplate', () => {
         fieldTargets: {},
         theme: 'classic',
         backgroundImageUrl: null,
+        startDate: '2026-01-01T00:00:00.000Z',
+        endDate: null,
+        isPublicListing: false,
         createdAt: 'now',
         updatedAt: 'now',
       },

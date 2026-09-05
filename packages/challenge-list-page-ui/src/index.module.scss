@@ -146,6 +146,49 @@
   color: var(--text-color-secondary, var(--text-color));
 }
 
+.buttonSpinner {
+  margin-right: $spacing-xs;
+  vertical-align: middle;
+}
+
+// ─── Discover (admin-curated public challenges) ───
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  margin-top: $spacing-sm;
+}
+
+.dateRange {
+  font-size: toRem(11px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.reactionRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.reactionButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: var(--input-background);
+  color: var(--text-color-secondary, var(--text-color));
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: toRem(12px);
+  cursor: pointer;
+
+  &[data-active='true'] {
+    color: #2a78d6;
+    background: rgba(42, 120, 214, 0.12);
+  }
+}
+
 // ─── Empty state ───
 
 .emptyCard {

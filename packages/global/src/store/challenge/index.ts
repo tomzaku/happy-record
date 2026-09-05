@@ -3,6 +3,7 @@ export * from './challengeThemes';
 export * from './challengeRanking';
 export * from './useChallengeParticipants';
 export * from './useChallengeComments';
+export * from './useChallengeReactions';
 export * from './useJoinChallenge';
 export * from './useLeaveChallenge';
 export * from './useResumePendingChallengeJoin';

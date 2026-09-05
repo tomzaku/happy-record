@@ -8,6 +8,7 @@ import Input from '@moon-ui/input';
 import Icon from '@moon-ui/icon/Icon';
 import List from '@moon-ui/list';
 import { Modal, BottomModal } from '@moon-ui/modal';
+import DatePicker from '@moon-ui/date-picker';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
@@ -18,6 +19,7 @@ import {
   ChecklistTemplate,
   getActiveFieldGroups,
   getSharedChecklistTemplateUrl,
+  localDateStringToISO,
   useChallenge,
   useChecklistTemplates,
   useIsMobile,
@@ -98,12 +100,21 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
   // already-hosted photo shown behind the shared page in place of the
   // theme's own background. Optional; empty string means "use the theme".
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
+  // Required — defaults to "now" for a brand-new challenge (nothing to hydrate from yet), same
+  // default useChallenge.tsx's own setChallengeOptions already gives createdAt. Once a challenge
+  // exists, its own startDate is the source of truth (hydrated below), so re-saving without
+  // touching this field carries the original date forward rather than resetting it to "now" again.
+  const [startDate, setStartDate] = useState(() => new Date().toISOString());
+  // Optional — empty string means "open-ended" (null on the wire, see generateShareUrl).
+  const [endDate, setEndDate] = useState('');
   React.useEffect(() => {
     if (challenge) {
       setCommentsEnabled(challenge.commentsEnabled);
       setFieldTargets(challenge.fieldTargets);
       setTheme(challenge.theme);
       setBackgroundImageUrl(challenge.backgroundImageUrl ?? '');
+      setStartDate(challenge.startDate);
+      setEndDate(challenge.endDate ?? '');
     }
   }, [challenge]);
   const [shareUrl, setShareUrl] = useState(
@@ -160,6 +171,8 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         fieldTargets,
         theme,
         backgroundImageUrl: backgroundImageUrl.trim() || null,
+        startDate,
+        endDate: endDate || null,
         ownerDisplayName: displayName,
         ownerAvatarUrl: avatarUrl,
       });
@@ -279,6 +292,26 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
             })}
             renderRightInput={() => <></>}
           />
+        </div>
+        <div className={styles.themePicker}>
+          <Typography.Text className={styles.themeLabel}>
+            {intl.formatMessage({ id: 'CardShare.start-date-label', defaultMessage: 'Start date' })}
+          </Typography.Text>
+          <DatePicker value={startDate} onChange={e => setStartDate(localDateStringToISO(e.target.value))} />
+        </div>
+        <div className={styles.themePicker}>
+          <Typography.Text className={styles.themeLabel}>
+            {intl.formatMessage({ id: 'CardShare.end-date-label', defaultMessage: 'End date (optional)' })}
+          </Typography.Text>
+          <DatePicker
+            value={endDate}
+            onChange={e => setEndDate(e.target.value ? localDateStringToISO(e.target.value) : '')}
+          />
+          {!!endDate && (
+            <Button type="ghost" size="sm" onClick={() => setEndDate('')} className={styles.secondaryButton}>
+              {intl.formatMessage({ id: 'CardShare.clear-end-date', defaultMessage: 'Clear end date' })}
+            </Button>
+          )}
         </div>
         {!!numberFields.length && (
           <div className={styles.targets}>

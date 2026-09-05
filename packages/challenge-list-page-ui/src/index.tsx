@@ -1,10 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
-import { MyChallengeRow, useChallenge } from '@dreamer/global';
+import {
+  MyChallengeRow,
+  PublicChallengeRow,
+  useChallenge,
+  useChallengeReactions,
+  useJoinChallenge,
+  usePendingChallengeJoin,
+  useSession,
+} from '@dreamer/global';
 import { AppShell } from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
+import Button from '@moon-ui/button';
 import { Icon } from '@moon-ui/icon/Icon';
 // Deep import, same precedent as ChecklistGenericInfo's own reach into
 // create-checklist-page-ui's helpers — a plain shimmering placeholder with no state of its own,
@@ -27,16 +36,52 @@ import styles from './index.module.scss';
 const ChallengeListPageUi = () => {
   const intl = useIntl();
   const navigate = useNavigate();
-  const { getMyChallenges } = useChallenge();
+  const { getMyChallenges, getPublicChallenges } = useChallenge();
+  const { reactions, loadReactionSummaries, setMyReaction } = useChallengeReactions();
+  const { acceptChallenge } = useJoinChallenge();
+  const { savePendingChallengeJoin } = usePendingChallengeJoin();
+  const { isAnonymous, signInWithGoogle, displayName, avatarUrl } = useSession();
 
   const [challenges, setChallenges] = React.useState<MyChallengeRow[] | null>(null);
   const [error, setError] = React.useState(false);
+  const [publicChallenges, setPublicChallenges] = React.useState<PublicChallengeRow[] | null>(null);
+  const [joiningId, setJoiningId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     getMyChallenges()
       .then(result => setChallenges(result.challenges))
       .catch(() => setError(true));
   }, [getMyChallenges]);
+
+  React.useEffect(() => {
+    // Quiet on purpose (unlike getMyChallenges above) — an empty "Discover" section reads fine
+    // either way, so a real failure here shouldn't blank out the page's main content.
+    getPublicChallenges()
+      .then(result => {
+        setPublicChallenges(result.challenges);
+        loadReactionSummaries(result.challenges.map(c => c.id));
+      })
+      .catch(() => setPublicChallenges([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getPublicChallenges]);
+
+  // Same anonymous → save pending → Google sign-in → resume flow
+  // checklist-template-shared-page-ui's own joinTheChallenge already implements — the app-root
+  // useResumePendingChallengeJoin picks this up once the redirect lands.
+  const handleJoin = async (row: PublicChallengeRow) => {
+    setJoiningId(row.id);
+    try {
+      if (isAnonymous) {
+        savePendingChallengeJoin({ challengeId: row.id, checklistTemplateId: row.checklistTemplateId });
+        await signInWithGoogle();
+        return;
+      }
+      const joined = await acceptChallenge(row.checklistTemplateId, row.id, displayName ?? '', avatarUrl);
+      if (joined) navigate(`/task/${joined.id}?currentDay=${new Date().toISOString()}`);
+    } finally {
+      setJoiningId(null);
+    }
+  };
 
   const renderStat = (value: number, label: string) => (
     <div className={styles.stat}>
@@ -165,6 +210,96 @@ const ChallengeListPageUi = () => {
           </div>
         </div>
         {body}
+
+        {/* Admin-curated only (Challenge.isPublicListing) — quietly renders nothing while loading
+            or empty, since there's nothing wrong with "nothing to discover right now" the way an
+            empty "My Challenges" gets its own explicit empty state above. */}
+        {!!publicChallenges?.length && (
+          <div className={styles.section}>
+            <Typography.Title level={4} noMargin className={styles.pageTitle}>
+              {intl.formatMessage({ id: 'ChallengeList.discover-title', defaultMessage: 'Discover' })}
+            </Typography.Title>
+            <div className={styles.grid}>
+              {publicChallenges.map(row => {
+                const summary = reactions[row.id];
+                return (
+                  <Card
+                    key={row.id}
+                    className={styles.card}
+                    onClick={() => navigate(`/challenge/${row.id}`)}
+                  >
+                    <div className={styles.cardHeader}>
+                      <div className={styles.cardIcon}>
+                        <Icon
+                          width={22}
+                          icon={row.avatar?.name || 'solar:checklist-minimalistic-linear'}
+                          color={row.avatar?.color || '#607d8b'}
+                        />
+                      </div>
+                      <div className={styles.cardTitleCol}>
+                        <Typography.Text className={styles.cardTitle}>
+                          {row.title ||
+                            intl.formatMessage({ id: 'ChallengeList.untitled', defaultMessage: 'Untitled task' })}
+                        </Typography.Text>
+                        <span className={styles.dateRange}>
+                          {new Date(row.startDate).toLocaleDateString()}
+                          {row.endDate ? ` – ${new Date(row.endDate).toLocaleDateString()}` : ''}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={styles.reactionRow}>
+                      <button
+                        type="button"
+                        className={styles.reactionButton}
+                        data-active={summary?.myReaction === 'like'}
+                        onClick={e => {
+                          e.stopPropagation();
+                          setMyReaction(row.id, 'like');
+                        }}
+                      >
+                        <Icon icon="solar:like-linear" width={16} />
+                        {summary?.likes ?? 0}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.reactionButton}
+                        data-active={summary?.myReaction === 'dislike'}
+                        onClick={e => {
+                          e.stopPropagation();
+                          setMyReaction(row.id, 'dislike');
+                        }}
+                      >
+                        <Icon icon="solar:dislike-linear" width={16} />
+                        {summary?.dislikes ?? 0}
+                      </button>
+                    </div>
+
+                    <div className={styles.cardFooter}>
+                      <span>
+                        {intl.formatMessage(
+                          { id: 'ChallengeDashboard.member-count', defaultMessage: '{{count}} joined' },
+                          { count: row.participantCount },
+                        )}
+                      </span>
+                      {/* A plain wrapping div takes the stopPropagation — Button's own onClick is
+                          `() => void`, no event to stop it with (see CardShare's identical
+                          buttons, which never need to). */}
+                      <div onClick={e => e.stopPropagation()}>
+                        <Button size="sm" disabled={joiningId === row.id} onClick={() => handleJoin(row)}>
+                          {joiningId === row.id && (
+                            <Icon icon="svg-spinners:180-ring-with-bg" width={14} className={styles.buttonSpinner} />
+                          )}
+                          {intl.formatMessage({ id: 'ChallengeList.join-button', defaultMessage: 'Join' })}
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </AppShell>
   );

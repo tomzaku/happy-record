@@ -15,8 +15,23 @@ import {
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { useGetChecklistTemplateApi } from '@dreamer/global/src/hook/checklist-template/useGetChecklistTemplateApi';
-import type { ChecklistTemplate } from '@dreamer/global';
+import type { ChallengeThemeId, ChecklistTemplate } from '@dreamer/global';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
+
+// The owner-editable subset of a Challenge row the config drawer writes — matches
+// useChallenge.tsx's own (unexported) SetChallengeOptionsArgs['options'] shape, the full payload
+// setChallengeOptions/POST /challenges expects (an upsert, not a patch).
+export type ChallengeConfigOptions = {
+  shareRecords: boolean;
+  commentsEnabled: boolean;
+  fieldTargets: Record<string, number>;
+  theme: ChallengeThemeId;
+  backgroundImageUrl: string | null;
+  startDate: string;
+  endDate: string | null;
+  ownerDisplayName?: string;
+  ownerAvatarUrl?: string;
+};
 
 export function useChecklistTemplateSharedPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,14 +43,41 @@ export function useChecklistTemplateSharedPage() {
   // — aliased since this file already has its own singular `checklistTemplate` state below (the
   // *shared* template being displayed, a completely different thing).
   const { addChecklistTemplate, checklistTemplate: myChecklistTemplates } = useChecklistTemplates();
-  const { getChallengeForTemplate } = useChallenge();
+  const { getChallengeForTemplate, setChallengeOptions } = useChallenge();
   const { acceptChallenge } = useJoinChallenge();
   const { savePendingChallengeJoin } = usePendingChallengeJoin();
-  const { isAnonymous, signInWithGoogle, displayName, avatarUrl } = useSession();
+  const { isAnonymous, signInWithGoogle, displayName, avatarUrl, userId } = useSession();
   // `id` here is the *owner's* template id (the challenge's canonical
   // checklist_template_id), not any local copy — exactly what
   // getChallengeForTemplate expects.
   const challenge = getChallengeForTemplate(id);
+  // Gates the config drawer's trigger icon — only the challenge's own owner can edit it, enforced
+  // again server-side by checkCanWriteChallenge regardless of what this renders.
+  const isOwner = !!userId && !!challenge && challenge.ownerId === userId;
+
+  // The config drawer's own open/closed state and unsaved draft, owned here (not in the drawer
+  // component itself) so the page's own rendering — useApplyChallengeTheme, TaskSharedCard's
+  // target/start-date display — can preview an in-progress edit live, before Save actually
+  // persists it. `null` means "no draft" — either never opened, or just cancelled/saved, so
+  // `previewChallenge` below falls back to the real, last-saved `challenge`.
+  const [configOpen, setConfigOpen] = React.useState(false);
+  const [draftChallengeOptions, setDraftChallengeOptions] = React.useState<ChallengeConfigOptions | null>(null);
+  const previewChallenge = challenge && draftChallengeOptions ? { ...challenge, ...draftChallengeOptions } : challenge;
+
+  const openChallengeConfig = () => setConfigOpen(true);
+  // Used for every non-save close (Cancel, the header's own close icon, a backdrop click) — always
+  // discards the draft, reverting the live preview back to whatever's actually saved.
+  const closeChallengeConfig = () => {
+    setConfigOpen(false);
+    setDraftChallengeOptions(null);
+  };
+  const updateChallengeConfigDraft = (options: ChallengeConfigOptions) => setDraftChallengeOptions(options);
+  const saveChallengeConfig = async (options: ChallengeConfigOptions) => {
+    if (!id) return;
+    await setChallengeOptions(id, options);
+    setConfigOpen(false);
+    setDraftChallengeOptions(null);
+  };
   // Greeting text: the link's own ?from= wins when the sharer typed one in
   // (the old tasks-shared-page-ui flow); CardShare's current share flow
   // never sets it, so this falls back to the challenge owner's own name
@@ -178,11 +220,24 @@ export function useChecklistTemplateSharedPage() {
     // Every challenge row (created the moment a link is generated — see
     // CardShare's generateShareUrl) carries a theme, defaulting to
     // 'classic'; a template shared before themes existed, or a share
-    // whose challenge row hasn't loaded yet, gets that same default.
-    themeId: challenge?.theme ?? 'classic',
+    // whose challenge row hasn't loaded yet, gets that same default. Reads off
+    // `previewChallenge`, not `challenge` — an owner mid-edit in the config drawer sees the theme
+    // change live, same as everyone else once it's actually saved.
+    themeId: previewChallenge?.theme ?? 'classic',
     // Owner-set in CardShare — see theme.ts's useApplyChallengeTheme. `null`
     // for any challenge that hasn't set one, same "not loaded yet" default.
-    backgroundImageUrl: challenge?.backgroundImageUrl ?? null,
+    backgroundImageUrl: previewChallenge?.backgroundImageUrl ?? null,
+    // The real, last-saved row — TaskSharedCard's read-only display uses `previewChallenge`
+    // instead (see below) so it also reflects an in-progress edit; the config drawer hydrates its
+    // form from this one (the actual saved values, what Cancel reverts back to).
+    challenge,
+    previewChallenge,
+    isOwner,
+    configOpen,
+    openChallengeConfig,
+    closeChallengeConfig,
+    updateChallengeConfigDraft,
+    saveChallengeConfig,
     submitting,
     handleSubmit,
     onClickLeaveIt,

@@ -4,6 +4,7 @@ import Drawer from '@moon-ui/drawer';
 import Icon from '@moon-ui/icon/Icon';
 import TaskSharedCard from './components/task-shared-card';
 import Timer from './components/timer';
+import ChallengeConfigDrawer from './components/challenge-config-drawer';
 import { useChecklistTemplateSharedPage } from './useChecklistTemplateSharedPage';
 import { useApplyChallengeTheme } from './theme';
 import styles from './index.desktop.module.scss';
@@ -20,11 +21,20 @@ const ChecklistTemplateSharedPageDesktop = () => {
     setDialogRejectOpen,
     themeId,
     backgroundImageUrl,
+    challenge,
+    previewChallenge,
+    isOwner,
+    configOpen,
+    openChallengeConfig,
+    closeChallengeConfig,
+    updateChallengeConfigDraft,
+    saveChallengeConfig,
     submitting,
     handleSubmit,
     onClickLeaveIt,
     confirmTakeIt,
   } = useChecklistTemplateSharedPage();
+  const numberFields = fields.filter(f => f.type === 'number');
 
   useApplyChallengeTheme(themeId, backgroundImageUrl);
 
@@ -45,7 +55,19 @@ const ChecklistTemplateSharedPageDesktop = () => {
     <div className={styles.page}>
       <div className={styles.sheet}>
         <div className={styles.headerClip}>
-          <BackHeader renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>} />
+          <BackHeader
+            renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>}
+            renderRightComponent={() =>
+              isOwner && challenge ? (
+                <Icon
+                  width={22}
+                  icon="solar:settings-line-duotone"
+                  className={styles.configIcon}
+                  onClick={openChallengeConfig}
+                />
+              ) : null
+            }
+          />
         </div>
 
         <div className={styles.hero}>
@@ -77,10 +99,26 @@ const ChecklistTemplateSharedPageDesktop = () => {
           </div>
 
           <div className={styles.cardColumn}>
-            <TaskSharedCard checklistTemplate={checklistTemplate} fields={fields} fieldsLoading={fieldsLoading} />
+            <TaskSharedCard
+              checklistTemplate={checklistTemplate}
+              fields={fields}
+              fieldsLoading={fieldsLoading}
+              challenge={previewChallenge}
+            />
           </div>
         </div>
       </div>
+
+      {isOwner && challenge && (
+        <ChallengeConfigDrawer
+          visible={configOpen}
+          onDismiss={closeChallengeConfig}
+          challenge={challenge}
+          numberFields={numberFields}
+          onSave={saveChallengeConfig}
+          onChange={updateChallengeConfigDraft}
+        />
+      )}
 
       <Drawer
         visible={dialogRejectOpen}

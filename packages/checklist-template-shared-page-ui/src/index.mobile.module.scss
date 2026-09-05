@@ -18,6 +18,11 @@
   margin-left: $spacing-xs;
 }
 
+.configIcon {
+  cursor: pointer;
+  color: var(--ct-nav-text);
+}
+
 .body {
   padding: $spacing-lg;
 }
@@ -74,7 +79,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--ct-card-bg);
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 -8px 24px rgba(20, 30, 45, 0.1);
   padding: $spacing-md $spacing-lg calc($spacing-lg + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;

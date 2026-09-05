@@ -1,0 +1,58 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+// Desktop shell — same right-side slide-in panel as focus-zone-modal-ui's
+// MusicDrawerDesktop.module.scss.
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 99999;
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background: var(--drawer-background);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.2);
+  z-index: 99999;
+}
+
+.header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid var(--division-color);
+}
+
+.closeIcon {
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: 50%;
+  color: var(--text-description-color);
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    background-color: var(--surface-secondary);
+    color: var(--text-color);
+  }
+}
+
+// Mobile shell — the page's own @moon-ui/drawer bottom sheet; its `.container` is full-viewport
+// width with no built-in max-height, so this caps it and lets the form's own `.body` scroll.
+.mobileDrawerContainer {
+  z-index: 99999;
+}
+
+.mobilePanel {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}

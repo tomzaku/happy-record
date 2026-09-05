@@ -1,9 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import { uniqueId } from '../../util';
-import { fetchChallengeDashboard, fetchChallengeForTemplate, fetchMyChallenges, saveChallenge } from './challengesApi';
+import {
+  fetchChallengeDashboard,
+  fetchChallengeForTemplate,
+  fetchMyChallenges,
+  fetchPublicChallenges,
+  saveChallenge,
+} from './challengesApi';
 import { challengesKeys } from './challengesKeys';
-export type { MyChallengeRow } from './challengesApi';
+export type { MyChallengeRow, PublicChallengeRow } from './challengesApi';
 
 /**
  * The 3 fixed visual directions the shared "take the challenge" page
@@ -50,6 +56,14 @@ export type Challenge = {
    * one — see 20260828000000_challenge_background_image.sql.
    */
   backgroundImageUrl: string | null;
+  /** Required — when this challenge actually starts, for score calculation (not implemented
+   * yet). Owner-picked in CardShare, defaulting to "now" for a brand-new challenge. */
+  startDate: string;
+  /** Optional — `null` for an open-ended challenge. Owner-picked in CardShare. */
+  endDate: string | null;
+  /** Read-only — admin-curated (see 20260905010000_challenges_public_listing.sql), never settable
+   * through `setChallengeOptions`/`POST /challenges`. */
+  isPublicListing: boolean;
   createdAt: string;
   updatedAt: string;
   /**
@@ -79,6 +93,8 @@ type SetChallengeOptionsArgs = {
     fieldTargets: Record<string, number>;
     theme: ChallengeThemeId;
     backgroundImageUrl: string | null;
+    startDate: string;
+    endDate: string | null;
     ownerDisplayName?: string;
     ownerAvatarUrl?: string;
   };
@@ -177,6 +193,9 @@ export const useChallenge = () => {
       fieldTargets: options.fieldTargets,
       theme: options.theme,
       backgroundImageUrl: options.backgroundImageUrl,
+      startDate: options.startDate,
+      endDate: options.endDate,
+      isPublicListing: existing?.isPublicListing ?? false,
     };
 
     try {
@@ -202,5 +221,8 @@ export const useChallenge = () => {
     // query the way useChecklistTemplates.tsx's own bulk fetch is — nothing else in the app needs
     // this list outside that one page today.
     getMyChallenges: fetchMyChallenges,
+    // Same imperative, not-cached shape as getMyChallenges above — challenge-list-page-ui's own
+    // "Discover" section wants its own one-shot load, nothing else in the app needs this list.
+    getPublicChallenges: fetchPublicChallenges,
   };
 };

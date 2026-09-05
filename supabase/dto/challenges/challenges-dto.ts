@@ -23,6 +23,13 @@ export function toChallenge(r: Record<string, unknown>) {
     // challenge that hasn't set one, same as most rows never having a theme
     // override.
     backgroundImageUrl: (r.background_image_url as string | null) ?? null,
+    // See 20260905020000_challenges_dates.sql — startDate is required client-side (fromChallenge
+    // below throws if it's missing on write), endDate stays null for an open-ended challenge.
+    startDate: r.start_date as string,
+    endDate: (r.end_date as string | null) ?? null,
+    // Admin-curated only — see 20260905010000_challenges_public_listing.sql and fromChallenge's
+    // own comment on why this is never read from client input.
+    isPublicListing: !!r.is_public_listing,
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
   };
@@ -62,6 +69,19 @@ export function fromChallenge(e: Record<string, unknown>) {
       ? backgroundImageUrlRaw
       : null;
 
+  // Required — the client always has a value to send (CardShare defaults it to "now" for a
+  // brand-new challenge, then hydrates from the existing row on every re-save, same as theme/
+  // backgroundImageUrl above), so a missing/invalid one here means a real client bug, not a
+  // typo to gracefully fall back from.
+  if (typeof e.startDate !== 'string' || !e.startDate || Number.isNaN(Date.parse(e.startDate))) {
+    throw new Error('Missing startDate.');
+  }
+
+  // Optional — same "typo shouldn't block saving the rest" fallback as theme/backgroundImageUrl:
+  // anything that isn't a parseable date just clears it rather than 400ing the whole save.
+  const endDate =
+    typeof e.endDate === 'string' && e.endDate && !Number.isNaN(Date.parse(e.endDate)) ? e.endDate : null;
+
   return {
     id: e.id,
     checklist_template_id: e.checklistTemplateId,
@@ -70,6 +90,12 @@ export function fromChallenge(e: Record<string, unknown>) {
     field_targets: fieldTargets,
     theme,
     background_image_url: backgroundImageUrl,
+    start_date: e.startDate,
+    end_date: endDate,
+    // Deliberately never read from `e` here — see 20260905010000_challenges_public_listing.sql.
+    // Omitting the key means an upsert leaves an existing row's value untouched and a fresh row
+    // gets the column's own `false` default; there is no way to set this to `true` through this
+    // function.
     // Postgres only fills the default on insert, not update — an upsert
     // has to set this explicitly every time.
     updated_at: new Date().toISOString(),

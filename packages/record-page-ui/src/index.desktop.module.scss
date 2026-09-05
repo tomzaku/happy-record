@@ -70,10 +70,12 @@
   gap: $spacing-sm;
   padding-top: $spacing-lg;
 
-  // Fills whatever's left below the switcher — Calendar and History share
-  // this one card, only the content inside switches (see index.desktop.tsx).
+  // Calendar and History share this one card, only the content inside
+  // switches (see index.desktop.tsx) — sized to its own content, not
+  // stretched to fill `.rightCalendar`. The Recent tab's own RecentHistory
+  // therefore has no bounded ancestor to scroll within here, so it grows
+  // this card (and the page) instead of scrolling internally.
   .calendarCard {
-    flex: 1;
     min-height: 0;
     overflow: auto;
     display: flex;
@@ -104,61 +106,18 @@
   gap: $spacing-md;
 }
 
-.thisDaySection {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-xs;
-  padding-top: $spacing-sm;
-  border-top: 1px solid var(--almanac-divider);
-}
-
-.thisDayLabel {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--almanac-muted);
-}
-
-.thisDayChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 100px;
-  border: 1.5px solid var(--almanac-card-border);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--almanac-ink-soft);
-  background: var(--almanac-surface);
-}
-
-.chipDone {
-  color: var(--almanac-muted);
-  text-decoration: line-through;
-}
-
-.chipMore {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  font-size: 12px;
-  color: var(--almanac-muted);
-}
-
 .recentHistorySection {
   display: flex;
   flex-direction: column;
   gap: $spacing-xs;
   padding-top: $spacing-sm;
   border-top: 1px solid var(--almanac-divider);
+  // Bounded so RecentHistory's own `.container` (flex: 1; min-height: 0;
+  // overflow-y: auto) actually scrolls within this teaser instead of
+  // growing the whole calendar panel — needed for its infinite-scroll
+  // sentinel to sit inside a real scroll container.
+  max-height: 240px;
+  min-height: 0;
 }
 
 .recentHistoryLabel {

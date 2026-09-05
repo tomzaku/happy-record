@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
 import Icon from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
-import { ChecklistTemplate, getActiveFieldGroups } from '@dreamer/global';
+import { Challenge, ChecklistTemplate, getActiveFieldGroups } from '@dreamer/global';
 import { getDaysFromRepeat } from '@pregnant/create-checklist-page-ui/src/getDayFromRepeat';
 import { Day } from '@dreamer/tasks-page-common';
 import cx from 'classnames';
@@ -16,6 +17,9 @@ type Props = {
    * useChecklistTemplateSharedPage.ts) — told apart from "loaded, genuinely no fields" so this
    * doesn't render as a bare empty section while the real list is still in flight. */
   fieldsLoading?: boolean;
+  /** Undefined while the challenge row is still loading (same "not there yet" gap as everywhere
+   * else this page reads it) — `startDate`/`fieldTargets` just don't render until it lands. */
+  challenge?: Challenge;
 };
 const allDays = [
   { label: 'M', value: Day.Mon },
@@ -37,7 +41,7 @@ const allDays = [
 // `.intro` comment).
 const COLLAPSED_FIELD_COUNT = 2;
 
-const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading }: Props) => {
+const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading, challenge }: Props) => {
   const days = getDaysFromRepeat(checklistTemplate?.repeat);
   const [showAllFields, setShowAllFields] = useState(false);
   if (!checklistTemplate) return null;
@@ -65,6 +69,13 @@ const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading }: Props
         ))}
       </div>
 
+      {challenge?.startDate && (
+        <div className={styles.startDate}>
+          <Icon width={14} icon="solar:calendar-line-duotone" />
+          Starts {format(new Date(challenge.startDate), 'MMM d, yyyy')}
+        </div>
+      )}
+
       <div className={styles.divider} />
 
       <div className={styles.fields}>
@@ -80,6 +91,12 @@ const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading }: Props
                 <div>
                   <div className={styles.fieldTitle}>{f.title}</div>
                   {f.description && <div className={styles.fieldDescription}>{f.description}</div>}
+                  {!!challenge?.fieldTargets[f.id] && (
+                    <div className={styles.fieldTarget}>
+                      Goal: {challenge.fieldTargets[f.id]}
+                      {f.unit ? ` ${f.unit}` : ''}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

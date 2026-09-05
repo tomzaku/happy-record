@@ -52,6 +52,15 @@
   color: #fff;
 }
 
+.startDate {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: toRem(13px);
+  color: var(--ct-muted-text);
+  margin-bottom: $spacing-lg;
+}
+
 .divider {
   border-top: var(--ct-divider);
   margin-bottom: $spacing-lg;
@@ -122,5 +131,12 @@
 .fieldDescription {
   font-size: toRem(13px);
   color: var(--ct-muted-text);
+  margin-top: 2px;
+}
+
+.fieldTarget {
+  font-size: toRem(13px);
+  font-weight: 600;
+  color: var(--ct-accent);
   margin-top: 2px;
 }

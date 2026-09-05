@@ -1,0 +1,142 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+// Same theme swatch / target row shell as CardShare's own modal
+// (packages/detail-task-page/src/components/CardShare/index.module.scss) — see that file's own
+// comments for why each shape looks the way it does.
+
+.form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+}
+
+.label {
+  font-size: toRem(11px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+  text-transform: uppercase;
+}
+
+.themeSwatches {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.themeSwatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--card-shadow);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.themeSwatchSelected {
+  border-color: var(--text-color);
+}
+
+.targetsCard {
+  border: 1px solid var(--division-color);
+  border-radius: 8px;
+  background: var(--background);
+}
+
+.targetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  border-bottom: 1px solid var(--division-color);
+}
+
+.targetRowLast {
+  border-bottom: none;
+}
+
+.targetItemMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.targetIconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--card-group-background);
+  color: var(--text-description-color);
+}
+
+.targetInput {
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.targetInputField {
+  padding: $spacing-sm $spacing-md;
+  font-size: toRem(15px);
+  min-height: 40px;
+}
+
+.footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+  border-top: 1px solid var(--division-color);
+}
+
+.secondaryButton {
+  padding: $spacing-sm $spacing-lg;
+}
+
+.gradientButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: $spacing-sm $spacing-lg;
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 50%, #0b7dc2 100%);
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(37, 99, 235, 0.45);
+    filter: brightness(1.06);
+  }
+}
+
+.buttonSpinner {
+  margin-right: $spacing-xs;
+  vertical-align: middle;
+}

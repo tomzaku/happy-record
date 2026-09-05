@@ -100,6 +100,20 @@ export async function fetchChallengesByIds(db: SupabaseClient, ids: string[], li
   return (data ?? []) as Record<string, unknown>[];
 }
 
+/** Admin-curated only (see 20260905010000_challenges_public_listing.sql) — `excludeIds` drops
+ * whatever the caller already owns or has joined, so "Discover" never duplicates "My Challenges". */
+export async function fetchPublicChallenges(
+  db: SupabaseClient,
+  excludeIds: string[],
+  limit: number,
+): Promise<Record<string, unknown>[]> {
+  let query = db.from('challenges').select('*').eq('is_public_listing', true);
+  if (excludeIds.length) query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+  const { data, error } = await query.order('created_at', { ascending: false }).limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Record<string, unknown>[];
+}
+
 export async function fetchTemplateVisibilities(db: SupabaseClient, ids: string[]): Promise<{ id: string; visibility: string }[]> {
   if (!ids.length) return [];
   const { data, error } = await db.from('checklist_templates').select('id, visibility').in('id', ids);

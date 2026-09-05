@@ -37,6 +37,28 @@ export function fetchMyChallenges(): Promise<{ challenges: MyChallengeRow[] }> {
   return request.get('/challenges');
 }
 
+/** One row of the admin-curated "Discover" listing — no per-user checkins/streak the way
+ * `MyChallengeRow` has (meaningless before joining), just enough to render a browse card. */
+export type PublicChallengeRow = {
+  id: string;
+  checklistTemplateId: string;
+  title: string;
+  avatar: { type: string; name: string; color?: string };
+  participantCount: number;
+  startDate: string;
+  endDate: string | null;
+  createdAt: string;
+};
+
+/**
+ * Admin-curated challenges (`Challenge.isPublicListing`, only ever set by hand) the caller hasn't
+ * already owned/joined — see the edge function's own `listPublicChallenges` doc comment. Same
+ * "not quiet" reasoning as `fetchMyChallenges` above.
+ */
+export function fetchPublicChallenges(): Promise<{ challenges: PublicChallengeRow[] }> {
+  return request.get('/challenges', { params: { listing: 'public' } });
+}
+
 /**
  * The dashboard read — a one-shot imperative fetch (the page wants the real
  * data on load, not a value that fills in over a later render), so it's not
@@ -89,6 +111,8 @@ export function saveChallenge(challenge: {
   fieldTargets: Record<string, number>;
   theme: Challenge['theme'];
   backgroundImageUrl: Challenge['backgroundImageUrl'];
+  startDate: string;
+  endDate: string | null;
   /** Neither is a `challenges` column — see the edge function; always used now that every save enrolls the owner as a participant. */
   ownerDisplayName?: string;
   ownerAvatarUrl?: string;

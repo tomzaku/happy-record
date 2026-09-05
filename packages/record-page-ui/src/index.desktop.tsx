@@ -1,5 +1,4 @@
 import React from 'react';
-import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 
 import ChecklistTodayDesktop from './components/checklist-today/ChecklistToday.desktop';
 import MiniMonthCalendar from './components/mini-month-calendar';
@@ -16,58 +15,10 @@ import styles from './index.desktop.module.scss';
 import Card from '@moon-ui/card';
 import cx from 'classnames';
 import Typography from '@moon-ui/typography';
-import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
 import { useSelectedDate } from './hooks/useSelectedDate';
 
 type RightPanelMode = 'calendar' | 'history';
-
-// The right panel's "This Day" row — a quick-glance strip of the selected
-// day's items (title + done state), capped so it never grows the panel
-// taller than the calendar above it; the rest is a "+N more" count rather
-// than a scrollable list (Day view, right below, is already that list).
-const THIS_DAY_VISIBLE_LIMIT = 4;
-
-const ThisDayChips = ({ date, selectedTag }: { date: Date; selectedTag?: string }) => {
-  const { getChecklistByGivingDate } = useChecklist();
-  const { checklistTemplate } = useChecklistTemplates();
-
-  const { checklist, checklistIds } = React.useMemo(
-    () => getChecklistByGivingDate({ date, selectedTag }),
-    [getChecklistByGivingDate, date, selectedTag],
-  );
-
-  if (checklistIds.length === 0) return null;
-
-  const visibleIds = checklistIds.slice(0, THIS_DAY_VISIBLE_LIMIT);
-  const overflowCount = checklistIds.length - visibleIds.length;
-
-  return (
-    <div className={styles.thisDaySection}>
-      <Typography.Text className={styles.thisDayLabel}>This day</Typography.Text>
-      <div className={styles.thisDayChips}>
-        {visibleIds.map(id => {
-          const item = checklist[id];
-          const template = checklistTemplate[item?.checklistTemplateId];
-          const completed = Boolean(item?.completedAt);
-          return (
-            <span
-              key={id}
-              className={cx(styles.chip, completed && styles.chipDone)}
-              style={{ borderColor: template?.avatar.color || 'var(--almanac-card-border)' }}
-            >
-              {completed && <Icon icon="solar:check-circle-bold" width={12} />}
-              {item?.title || template?.title}
-            </span>
-          );
-        })}
-        {overflowCount > 0 && (
-          <span className={styles.chipMore}>+{overflowCount} more</span>
-        )}
-      </div>
-    </div>
-  );
-};
 
 const TaskListPage = () => {
   const intl = useIntl();
@@ -144,12 +95,11 @@ const TaskListPage = () => {
                     onDateChange={setStartDate}
                     selectedTag={selectedTag}
                   />
-                  <ThisDayChips date={startDate} selectedTag={selectedTag} />
                   <div className={styles.recentHistorySection}>
                     <Typography.Text className={styles.recentHistoryLabel}>
                       {intl.formatMessage({ id: 'recent-history.title', defaultMessage: 'Recent history' })}
                     </Typography.Text>
-                    <RecentHistory limit={3} />
+                    <RecentHistory />
                   </div>
                 </div>
               ) : (

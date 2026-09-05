@@ -21,6 +21,7 @@ import {
   fetchParticipantChallengeIds,
   fetchParticipantDisplay,
   fetchParticipantsForChallenge,
+  fetchPublicChallenges,
   fetchSubmissionsForUsersInRange,
   fetchTemplateVisibilities,
   fetchTemplatesMeta,
@@ -203,6 +204,53 @@ export async function listMyChallenges({ db, userId }: Ctx) {
   challenges.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   return challenges;
+}
+
+const MAX_PUBLIC_CHALLENGES = 100;
+
+/**
+ * Admin-curated challenges (`is_public_listing` — see 20260905010000_challenges_public_listing.sql,
+ * only ever flipped by hand) the caller hasn't already owned/joined, for the "Discover" section of
+ * challenge-list-page-ui — a lighter shape than `listMyChallenges`' own rows: no per-user
+ * checkins/streak (meaningless before joining), just enough to render a browse card and let the
+ * caller decide whether to join.
+ */
+export async function listPublicChallenges({ db, userId }: Ctx) {
+  const [ownedRows, participantRows] = await Promise.all([
+    fetchOwnedChallenges(db, userId, MAX_MY_CHALLENGES),
+    fetchMyParticipantRows(db, userId, MAX_MY_CHALLENGES),
+  ]);
+  const excludeIds = [...new Set([...ownedRows.map(r => r.id as string), ...participantRows.map(r => r.challenge_id)])];
+
+  const rows = await fetchPublicChallenges(db, excludeIds, MAX_PUBLIC_CHALLENGES);
+  if (!rows.length) return [];
+
+  const templateIds = [...new Set(rows.map(r => r.checklist_template_id as string))];
+  const [templateRows, rosterRows] = await Promise.all([
+    fetchTemplatesMeta(db, templateIds),
+    fetchParticipantChallengeIds(db, rows.map(r => r.id as string), MAX_ROWS),
+  ]);
+
+  const templateById = new Map(templateRows.map(r => [r.id as string, r]));
+  const participantCountByChallenge = new Map<string, number>();
+  for (const row of rosterRows) {
+    participantCountByChallenge.set(row.challenge_id, (participantCountByChallenge.get(row.challenge_id) ?? 0) + 1);
+  }
+
+  return rows.map(row => {
+    const challenge = toChallenge(row);
+    const template = templateById.get(challenge.checklistTemplateId) as Record<string, unknown> | undefined;
+    return {
+      id: challenge.id,
+      checklistTemplateId: challenge.checklistTemplateId,
+      title: (template?.title as string) ?? '',
+      avatar: (template?.avatar as Record<string, unknown>) ?? {},
+      participantCount: participantCountByChallenge.get(challenge.id) ?? 0,
+      startDate: challenge.startDate,
+      endDate: challenge.endDate,
+      createdAt: challenge.createdAt,
+    };
+  });
 }
 
 /** The challenge is visible to its owner unconditionally, or to anyone at all once the template

@@ -12,15 +12,18 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 // over them — see useChecklists.test.tsx's own comment on this convention.
 let mockChallenge: {
   id: string;
+  ownerId?: string;
   shareRecords: boolean;
   commentsEnabled: boolean;
   theme: string;
   backgroundImageUrl: string | null;
 } | null = null;
 let mockIsAnonymous = false;
+let mockUserId: string | undefined = 'user-1';
 const mockNavigate = jest.fn();
 const mockAcceptChallenge = jest.fn().mockResolvedValue({ id: 'joined-template-1' });
 const mockAddChecklistTemplate = jest.fn();
+const mockSetChallengeOptions = jest.fn();
 let mockMyChecklistTemplates: Record<string, unknown> = {};
 const mockSavePendingChallengeJoin = jest.fn();
 const mockSignInWithGoogle = jest.fn().mockResolvedValue(undefined);
@@ -38,7 +41,7 @@ jest.mock('react-router-dom', () => ({
 }));
 
 jest.mock('@dreamer/global', () => ({
-  useChallenge: () => ({ getChallengeForTemplate: () => mockChallenge }),
+  useChallenge: () => ({ getChallengeForTemplate: () => mockChallenge, setChallengeOptions: mockSetChallengeOptions }),
   useChecklistTemplates: () => ({
     addChecklistTemplate: mockAddChecklistTemplate,
     checklistTemplate: mockMyChecklistTemplates,
@@ -50,6 +53,7 @@ jest.mock('@dreamer/global', () => ({
     signInWithGoogle: mockSignInWithGoogle,
     displayName: 'Tri',
     avatarUrl: undefined,
+    userId: mockUserId,
   }),
 }));
 
@@ -72,15 +76,54 @@ import { useChecklistTemplateSharedPage } from './useChecklistTemplateSharedPage
 beforeEach(() => {
   mockChallenge = null;
   mockIsAnonymous = false;
+  mockUserId = 'user-1';
   mockNavigate.mockClear();
   mockAcceptChallenge.mockClear();
   mockAddChecklistTemplate.mockClear();
+  mockSetChallengeOptions.mockClear();
   mockMyChecklistTemplates = {};
   mockSavePendingChallengeJoin.mockClear();
   mockSignInWithGoogle.mockClear();
   mockGetRecordFieldsByIds.mockClear();
   mockGetChecklistTemplateOnly.mockClear();
   mockGetFieldsAndGroups.mockClear();
+});
+
+describe('isOwner', () => {
+  it('is true when the signed-in user is the challenge owner', () => {
+    mockChallenge = {
+      id: 'challenge-1',
+      ownerId: 'user-1',
+      shareRecords: true,
+      commentsEnabled: false,
+      theme: 'classic',
+      backgroundImageUrl: null,
+    };
+
+    const { result } = renderHook(() => useChecklistTemplateSharedPage());
+    expect(result.current.isOwner).toBe(true);
+  });
+
+  it('is false for a signed-in visitor who is not the owner', () => {
+    mockChallenge = {
+      id: 'challenge-1',
+      ownerId: 'someone-else',
+      shareRecords: true,
+      commentsEnabled: false,
+      theme: 'classic',
+      backgroundImageUrl: null,
+    };
+
+    const { result } = renderHook(() => useChecklistTemplateSharedPage());
+    expect(result.current.isOwner).toBe(false);
+  });
+
+  it('is false when there is no challenge row at all', () => {
+    mockChallenge = null;
+
+    const { result } = renderHook(() => useChecklistTemplateSharedPage());
+    expect(result.current.isOwner).toBe(false);
+  });
 });
 
 describe('confirmTakeIt — challenge join vs. plain fork', () => {

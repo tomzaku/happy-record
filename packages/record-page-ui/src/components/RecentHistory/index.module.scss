@@ -26,19 +26,54 @@
 .list {
   display: flex;
   flex-direction: column;
+  gap: $spacing-md;
+}
+
+// One calendar day's worth of entries — see RecentHistory.tsx's own
+// `dateGroups`. Rows inside share the tighter `$spacing-sm` `.row` used to
+// use for the whole list; `.list`'s own (wider) gap is what now separates
+// one day from the next.
+.group {
+  display: flex;
+  flex-direction: column;
   gap: $spacing-sm;
+}
+
+.groupLabel {
+  margin: 0;
+  padding: 0 $spacing-sm;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-description-color);
 }
 
 .row {
   display: flex;
-  flex-direction: column;
-  gap: $spacing-xs;
+  align-items: flex-start;
+  gap: $spacing-sm;
   padding: $spacing-sm;
   border-radius: 8px;
 
   &:hover {
     background: var(--surface-secondary);
   }
+}
+
+// The task's own avatar icon (ChecklistTemplate['avatar']) — same visual
+// identity ChecklistToday's rows use, so scanning a mix of recorded/
+// completed/uncompleted entries still reads "this task" at a glance instead
+// of every row looking identical.
+.rowIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rowBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
 }
 
 .rowMain {
@@ -73,9 +108,57 @@
   color: var(--text-description-color);
 }
 
-.rowCompleted {
+// One of three kinds (see EntryKind) — a fieldless completion/uncompletion
+// log, or a recorded submission with nothing detailsFor could show (an
+// all-note-fields submission). Icon + label share one color per kind so the
+// three read as visually distinct activity types, not one generic line.
+.rowStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rowStatusText {
   margin: 0;
   font-size: 12px;
-  color: var(--checkbox-accent-color);
   font-weight: 500;
+}
+
+.rowStatusDone {
+  color: var(--icon-success, #22c55e);
+}
+
+.rowStatusUndone {
+  color: var(--text-description-color);
+}
+
+.rowStatusRecorded {
+  color: var(--checkbox-accent-color);
+}
+
+// Shown above the existing rows while some other write on the page (marking
+// a task done, submitting a record) has invalidated checklist_logs and it's
+// refetching the same window — new activity lands above what's already
+// shown, so the indicator sits at the top with it, not the bottom.
+.loadingTop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 $spacing-sm;
+}
+
+// Shown while a scroll-triggered page grow is in flight — sits above the
+// (invisible) sentinel, below the rows already rendered.
+.loadingMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm 0;
+}
+
+// Invisible trigger the IntersectionObserver watches — sits after the last
+// rendered row so it enters the viewport (well before, given rootMargin)
+// right as the user nears the bottom of the scrolling `.container`.
+.sentinel {
+  height: 1px;
 }

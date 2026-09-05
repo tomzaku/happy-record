@@ -193,6 +193,7 @@
         "packageJson": {
           "dependencies": [
             "npm:@supabase/supabase-js@2.50.0",
+            "npm:@tanstack/react-query@5",
             "npm:@types/react-motion@^0.0.40",
             "npm:@types/uuid@10",
             "npm:use-long-press@2",
@@ -302,10 +303,13 @@
             "npm:@editorjs/editorjs@^2.31.0",
             "npm:@editorjs/embed@~2.7.7",
             "npm:@editorjs/header@^2.8.8",
+            "npm:@editorjs/inline-code@^1.5.2",
             "npm:@editorjs/list@^2.0.8",
+            "npm:@editorjs/marker@^1.4.0",
             "npm:@editorjs/quote@^2.7.6",
             "npm:@editorjs/simple-image@^1.6.0",
             "npm:@editorjs/table@^2.4.5",
+            "npm:@editorjs/underline@^1.2.1",
             "npm:@lexical/code@0.34",
             "npm:@lexical/file@0.34",
             "npm:@lexical/history@0.34",
@@ -343,7 +347,9 @@
             "npm:@yoopta/paragraph@^4.9.9",
             "npm:@yoopta/table@^4.9.9",
             "npm:@yoopta/toolbar@^4.9.9",
-            "npm:@yoopta/video@^4.9.9"
+            "npm:@yoopta/video@^4.9.9",
+            "npm:editorjs-drag-drop@^1.1.16",
+            "npm:editorjs-undo@^2.0.28"
           ]
         }
       },
@@ -530,6 +536,7 @@
             "npm:@dreamer/music-controller-mobile@1",
             "npm:@dreamer/translation@1",
             "npm:@playwright/test@^1.54.2",
+            "npm:@tanstack/react-query@5",
             "npm:@types/react-dom@^18.2.0",
             "npm:@types/react-motion@^0.0.33",
             "npm:@types/react-router-dom@5.3.3",

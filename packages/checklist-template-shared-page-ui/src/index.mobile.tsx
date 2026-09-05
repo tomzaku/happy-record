@@ -4,6 +4,7 @@ import Drawer from '@moon-ui/drawer';
 import Icon from '@moon-ui/icon/Icon';
 import TaskSharedCard from './components/task-shared-card';
 import Timer from './components/timer';
+import ChallengeConfigDrawer from './components/challenge-config-drawer';
 import { useChecklistTemplateSharedPage } from './useChecklistTemplateSharedPage';
 import { useApplyChallengeTheme } from './theme';
 import styles from './index.mobile.module.scss';
@@ -20,11 +21,20 @@ const ChecklistTemplateSharedPageMobile = () => {
     setDialogRejectOpen,
     themeId,
     backgroundImageUrl,
+    challenge,
+    previewChallenge,
+    isOwner,
+    configOpen,
+    openChallengeConfig,
+    closeChallengeConfig,
+    updateChallengeConfigDraft,
+    saveChallengeConfig,
     submitting,
     handleSubmit,
     onClickLeaveIt,
     confirmTakeIt,
   } = useChecklistTemplateSharedPage();
+  const numberFields = fields.filter(f => f.type === 'number');
 
   // Mobile renders backgroundImageUrl as a real <img> below TaskSharedCard
   // (see below), not through the CSS var useApplyChallengeTheme's second
@@ -47,7 +57,19 @@ const ChecklistTemplateSharedPageMobile = () => {
 
   return (
     <div className={styles.page}>
-      <BackHeader renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>} />
+      <BackHeader
+        renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>}
+        renderRightComponent={() =>
+          isOwner && challenge ? (
+            <Icon
+              width={22}
+              icon="solar:settings-line-duotone"
+              className={styles.configIcon}
+              onClick={openChallengeConfig}
+            />
+          ) : null
+        }
+      />
 
       <div className={styles.body}>
         <div className={styles.chip}>Challenge</div>
@@ -68,11 +90,27 @@ const ChecklistTemplateSharedPageMobile = () => {
           Complete this checklist together and see who keeps the streak alive.
         </Typography.Text>
 
-        <TaskSharedCard checklistTemplate={checklistTemplate} fields={fields} fieldsLoading={fieldsLoading} />
+        <TaskSharedCard
+          checklistTemplate={checklistTemplate}
+          fields={fields}
+          fieldsLoading={fieldsLoading}
+          challenge={previewChallenge}
+        />
         {/* Owner's optional CardShare photo — see theme.ts's useApplyChallengeTheme
             for why desktop instead paints this as a .hero background. */}
         {backgroundImageUrl && <img src={backgroundImageUrl} alt="" className={styles.heroImage} />}
       </div>
+
+      {isOwner && challenge && (
+        <ChallengeConfigDrawer
+          visible={configOpen}
+          onDismiss={closeChallengeConfig}
+          challenge={challenge}
+          numberFields={numberFields}
+          onSave={saveChallengeConfig}
+          onChange={updateChallengeConfigDraft}
+        />
+      )}
 
       {/* Pinned to the bottom of the viewport instead of at the end of the
           scroll — the old layout buried "Take it"/"Leave it" wherever the
