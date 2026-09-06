@@ -80,3 +80,34 @@ export async function ensureSession(): Promise<Session | null> {
 export function resetSessionCache() {
   anonSignInPromise = null;
 }
+
+/**
+ * Force-removes the locally-stored Supabase session token directly —
+ * bypassing `supabase.auth.signOut()` entirely — for when the server has
+ * already told us the session behind it doesn't exist server-side anymore
+ * (revoked, or expired by an inactivity timeout). `supabase.auth.signOut()`
+ * itself can't be trusted to do this: a dead session makes it 403
+ * `session_not_found`, which auth-js classifies as `AuthSessionMissingError`
+ * rather than `AuthApiError`, so its own 401/403/404-tolerant path never
+ * matches and it returns the error *without* clearing its stored session —
+ * leaving a token that looks locally valid (so `getSession()` keeps handing
+ * it out, showing the UI as signed in) but 401s every real request.
+ * `sb-*-auth-token` is supabase-js's own default storage key shape
+ * (`sb-<project-ref>-auth-token`) — matched generically here rather than
+ * re-deriving the exact key from `VITE_SUPABASE_URL`, so this keeps working
+ * if that derivation ever changes.
+ */
+export function clearInvalidSession() {
+  resetSessionCache();
+  if (typeof window === 'undefined') return;
+  try {
+    for (let i = window.localStorage.length - 1; i >= 0; i--) {
+      const key = window.localStorage.key(i);
+      if (key?.startsWith('sb-') && key.endsWith('-auth-token')) {
+        window.localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // Storage disabled/unavailable — nothing to clear either way.
+  }
+}

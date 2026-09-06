@@ -22,7 +22,7 @@
 // is a fact about that call, not about the client. This app is offline-first
 // — almost every call should be quiet, with the local store as the fallback.
 
-import { ensureSession, supabase } from './supabase';
+import { clearInvalidSession, ensureSession, supabase } from './supabase';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -115,6 +115,20 @@ async function send<T>(method: Method, path: string, body: unknown, opts: Option
   const data = await response.json().catch(() => null);
   if (!response.ok) {
     const message = (data as { error?: string } | null)?.error;
+    if (response.status === 401 && session) {
+      // Every route here accepts even an anonymous session (`requireUser`),
+      // so a 401 despite actually sending one is unambiguous: the session
+      // itself is dead server-side, not just this route being picky.
+      // `getSession()` doesn't validate against the server, so left alone
+      // this token keeps looking locally valid forever — every request
+      // silently 401ing while the UI (session-derived state like
+      // `useSession().email`) keeps showing the account as signed in.
+      // Clearing it and re-establishing a session now is what lets the
+      // *next* call (and any `onAuthStateChange` listener, e.g. the
+      // settings page) reflect reality instead of staying stuck.
+      clearInvalidSession();
+      void ensureSession();
+    }
     throw new ApiError(response.status, message || `Request failed (${response.status}).`);
   }
   return data as T;

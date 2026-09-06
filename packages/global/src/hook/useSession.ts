@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ensureSession, resetSessionCache, supabase } from '../lib/supabase';
+import { clearInvalidSession, ensureSession, supabase } from '../lib/supabase';
 
 /**
  * Every genuinely local-only `useLocalStorage` key — never backend-mirrored,
@@ -260,20 +260,16 @@ export const useSession = () => {
    * back into the account that owned this device, instead of trying (and
    * failing) to link Google onto the fresh anonymous identity this creates.
    *
-   * Also force-clears the actual Supabase session token (`sb-*-auth-token`)
-   * ourselves rather than trusting `supabase.auth.signOut()` to have done
-   * it: when the server-side session is already gone (revoked, or expired
-   * by an inactivity timeout) it 403s `session_not_found`, which auth-js
-   * classifies as `AuthSessionMissingError` rather than `AuthApiError` —
-   * so its own 401/403/404-tolerant path in `_signOut` never matches and it
-   * returns the error *without* clearing its locally-stored session. Left
-   * alone, that stale-but-still-present token is exactly what `ensureSession()`
-   * reads back on the reload below, so the account never actually signs out.
+   * `clearInvalidSession()` force-clears the actual Supabase session token
+   * (`sb-*-auth-token`) ourselves rather than trusting `supabase.auth.signOut()`
+   * to have done it — see its own comment in `lib/supabase.ts` for why that
+   * call alone can't be trusted whenever the server-side session is already
+   * gone (revoked, or expired by an inactivity timeout).
    */
   const signOut = async (): Promise<string | null> => {
     if (!supabase) return 'Not connected.';
     const { error } = await supabase.auth.signOut();
-    resetSessionCache();
+    clearInvalidSession();
     if (typeof window !== 'undefined') {
       for (const key of SYNCED_DATA_KEYS) {
         try {
@@ -281,16 +277,6 @@ export const useSession = () => {
         } catch {
           // Storage disabled/unavailable — nothing to clear either way.
         }
-      }
-      try {
-        for (let i = window.localStorage.length - 1; i >= 0; i--) {
-          const key = window.localStorage.key(i);
-          if (key?.startsWith('sb-') && key.endsWith('-auth-token')) {
-            window.localStorage.removeItem(key);
-          }
-        }
-      } catch {
-        // Storage disabled/unavailable — nothing to clear either way.
       }
       window.location.reload();
     }
