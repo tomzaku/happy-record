@@ -115,10 +115,13 @@ const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading, challen
           what they're signing up for before taking the challenge. Gated on `fieldsLoading` too:
           `checklistTemplate.fieldGroups` comes from the same parallel fetch as `fields` (see
           useChecklistTemplateSharedPage.ts), and is just an empty stub until that resolves. */}
-      {!fieldsLoading &&
-        getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).map(fieldGroup => (
-          <FieldGroupNotePreview key={fieldGroup.id} fieldGroup={fieldGroup} />
-        ))}
+      {!fieldsLoading && (
+        <div className={styles.notesList}>
+          {getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).map(fieldGroup => (
+            <FieldGroupNotePreview key={fieldGroup.id} fieldGroup={fieldGroup} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

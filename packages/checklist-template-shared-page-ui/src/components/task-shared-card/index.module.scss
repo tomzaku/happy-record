@@ -73,6 +73,11 @@
   color: var(--ct-body-text);
 }
 
+.notesList {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
 .fieldRow {
   display: flex;
   align-items: flex-start;
