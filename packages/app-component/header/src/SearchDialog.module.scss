@@ -10,6 +10,32 @@
   max-height: 70vh;
 }
 
+.modeSwitch {
+  background: var(--surface-secondary);
+  border-radius: 8px;
+  display: flex;
+  gap: 2px;
+  margin-bottom: $spacing-sm;
+  padding: 2px;
+}
+
+.modeButton {
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-description-color);
+  cursor: pointer;
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  padding: $spacing-xs 0;
+}
+
+.modeButtonActive {
+  background: var(--surface-primary);
+  color: var(--text-color);
+}
+
 .inputRow {
   align-items: center;
   border-bottom: 1px solid var(--division-color);

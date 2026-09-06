@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
-import { useFieldGroups } from './useFieldGroups';
+import { useFieldGroups, useFieldGroupsForTemplate } from './useFieldGroups';
 import { checklistTemplatesKeys } from './checklistTemplatesKeys';
 import { fetchOneTemplate } from './checklistTemplateFetch';
 
@@ -12,7 +12,7 @@ import { fetchOneTemplate } from './checklistTemplateFetch';
  */
 export const useChecklistTemplateDetail = (id: string | undefined) => {
   const { userId, ready } = useSession();
-  const { getFieldGroups } = useFieldGroups();
+  const { getFieldGroups, allGroupsSettled } = useFieldGroups();
   const { data, isLoading } = useQuery({
     queryKey: checklistTemplatesKeys.byId(id, userId),
     queryFn: () => fetchOneTemplate(id as string),
@@ -20,10 +20,22 @@ export const useChecklistTemplateDetail = (id: string | undefined) => {
     staleTime: Infinity,
   });
 
-  const template = React.useMemo(
-    () => (data ? { ...data, fieldGroups: getFieldGroups(data.id) } : undefined),
-    [data, getFieldGroups],
+  // `isOwned: true` keeps getFieldGroups from firing its own unsubscribed fallback fetch (fine
+  // for a loop over many templates, but nothing re-renders here once it resolves) — a joined
+  // challenge's own groups never show up in "all mine" either way, so once that's settled and
+  // still empty, useFieldGroupsForTemplate's real subscribed query is what actually fetches them
+  // and re-renders when it lands, instead of leaving the section empty until a reload.
+  const ownFieldGroups = data ? getFieldGroups(data.id, true) : [];
+  const needsFallbackFetch = !!data && allGroupsSettled && ownFieldGroups.length === 0;
+  const { fieldGroups: fetchedFieldGroups } = useFieldGroupsForTemplate(
+    needsFallbackFetch ? data?.id : undefined,
   );
+
+  const template = React.useMemo(() => {
+    if (!data) return undefined;
+    const fieldGroups = ownFieldGroups.length > 0 ? ownFieldGroups : fetchedFieldGroups;
+    return { ...data, fieldGroups };
+  }, [data, ownFieldGroups, fetchedFieldGroups]);
 
   return { template, isLoading };
 };

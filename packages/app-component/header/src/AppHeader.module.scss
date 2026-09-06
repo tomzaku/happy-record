@@ -41,6 +41,27 @@
   margin-right: $spacing-sm;
 }
 
+// AppHeader's own nav: D | Notes | Challenges | Dashboard | Search | Profile as equal-width
+// columns spanning the full header, so the icons stop bunching up on the right.
+.navItem {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.navLogo {
+  cursor: pointer;
+  height: 28px;
+  width: 28px;
+}
+
+.navIcon {
+  cursor: pointer;
+  fill: var(--icon-color-inactive-invert);
+}
+
 // .menu {
 //   align-items: center;
 //   color: var(--text-color);

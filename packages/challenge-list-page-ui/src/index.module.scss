@@ -6,7 +6,6 @@
 // single column here (no side rail to split into, unlike that page's Comments column), just
 // capped so a card grid doesn't stretch into unreadably wide rows on a real desktop viewport.
 .page {
-  width: 100%;
   max-width: 880px;
   margin: 0 auto;
   padding: $spacing-lg $spacing-md $spacing-xl;

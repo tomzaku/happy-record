@@ -103,6 +103,7 @@ export const useFieldGroups = () => {
   return {
     getFieldGroups,
     getFieldGroupsByTemplateId,
+    allGroupsSettled,
     addFieldGroup,
     updateFieldGroup,
     archiveFieldGroup,
