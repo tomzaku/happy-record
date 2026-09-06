@@ -22,6 +22,7 @@ const ChecklistTemplateSharedPageMobile = () => {
     defaultGreetingText,
     greetingWidgetLayout,
     buttonWidgetLayout,
+    pageBackgroundImageUrl,
     dialogRejectOpen,
     setDialogRejectOpen,
     themeId,
@@ -41,17 +42,19 @@ const ChecklistTemplateSharedPageMobile = () => {
   } = useChecklistTemplateSharedPage();
   const numberFields = fields.filter(f => f.type === 'number');
 
-  // Mobile renders backgroundImageUrl as a real <img> below TaskSharedCard
-  // (see below), not through the CSS var useApplyChallengeTheme's second
-  // arg sets — that's desktop's .hero-background mechanism only, see theme.ts.
-  useApplyChallengeTheme(themeId);
+  // Mobile renders backgroundImageUrl (the corner accent) as a real <img> below TaskSharedCard
+  // (see below), not through the CSS var useApplyChallengeTheme's second arg sets — that's
+  // desktop's .hero-background mechanism only, see theme.ts. pageBackgroundImageUrl (the
+  // whole-page photo) is a separate mechanism this page's own `.page` reads directly, so it's
+  // still passed through here as the 3rd arg.
+  useApplyChallengeTheme(themeId, undefined, pageBackgroundImageUrl);
 
   // Only the template itself gates the page rendering at all — fields/fieldGroups load in behind
   // it (see useChecklistTemplateSharedPage.ts), TaskSharedCard shows its own small spinner for
   // those meanwhile.
   if (!checklistTemplate) {
     return (
-      <div className={styles.page}>
+      <div className={styles.page} data-challenge-theme={themeId}>
         <BackHeader renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>} />
         <div className={styles.loadingState}>
           <Icon width={36} icon="svg-spinners:180-ring" />
@@ -61,7 +64,7 @@ const ChecklistTemplateSharedPageMobile = () => {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-challenge-theme={themeId}>
       <BackHeader
         renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>}
         renderRightComponent={() =>

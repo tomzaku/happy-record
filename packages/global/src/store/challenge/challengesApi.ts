@@ -117,6 +117,9 @@ export function saveChallenge(challenge: {
   targetsWidgetLayout: Challenge['targetsWidgetLayout'];
   buttonWidgetLayout: Challenge['buttonWidgetLayout'];
   titleWidgetLayout: Challenge['titleWidgetLayout'];
+  pageBackgroundLayout: Challenge['pageBackgroundLayout'];
+  pageBackgroundImageUrl: Challenge['pageBackgroundImageUrl'];
+  glassOpacity: Challenge['glassOpacity'];
   startDate: string;
   endDate: string | null;
   /** Neither is a `challenges` column — see the edge function; always used now that every save enrolls the owner as a participant. */

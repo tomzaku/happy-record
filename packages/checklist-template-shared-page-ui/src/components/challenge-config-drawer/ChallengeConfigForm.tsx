@@ -13,6 +13,7 @@ import Input from '@moon-ui/input';
 import Icon from '@moon-ui/icon/Icon';
 import List from '@moon-ui/list';
 import DatePicker from '@moon-ui/date-picker';
+import Slider from '@moon-ui/slider';
 import {
   BUTTON_WIDGET_LAYOUTS,
   ButtonWidgetLayout,
@@ -22,6 +23,8 @@ import {
   ChallengeThemeId,
   GREETING_WIDGET_LAYOUTS,
   GreetingWidgetLayout,
+  PAGE_BACKGROUND_LAYOUTS,
+  PageBackgroundLayout,
   START_WIDGET_LAYOUTS,
   StartWidgetLayout,
   TARGETS_WIDGET_LAYOUTS,
@@ -69,6 +72,11 @@ const TITLE_LAYOUT_LABELS: Record<TitleWidgetLayout, string> = {
   row: 'Row',
   stacked: 'Stacked',
   minimal: 'Minimal',
+};
+
+const PAGE_BACKGROUND_LAYOUT_LABELS: Record<PageBackgroundLayout, string> = {
+  solid: 'Solid',
+  glass: 'Glass',
 };
 
 // One row of small buttons — reused by all 3 widgets below, just with a different option set/
@@ -146,6 +154,11 @@ const ChallengeConfigForm = ({
     challenge.buttonWidgetLayout,
   );
   const [titleWidgetLayout, setTitleWidgetLayout] = React.useState<TitleWidgetLayout>(challenge.titleWidgetLayout);
+  const [pageBackgroundLayout, setPageBackgroundLayout] = React.useState<PageBackgroundLayout>(
+    challenge.pageBackgroundLayout,
+  );
+  const [pageBackgroundImageUrl, setPageBackgroundImageUrl] = React.useState(challenge.pageBackgroundImageUrl ?? '');
+  const [glassOpacity, setGlassOpacity] = React.useState(challenge.glassOpacity);
   // Which fields show a target row at all — not the same as "has a positive number in
   // fieldTargets": a field just added via "+ Add target" shows an empty row before the owner has
   // typed a number for it, so this needs its own state rather than being derived from
@@ -171,6 +184,9 @@ const ChallengeConfigForm = ({
     setTargetsWidgetLayout(challenge.targetsWidgetLayout);
     setButtonWidgetLayout(challenge.buttonWidgetLayout);
     setTitleWidgetLayout(challenge.titleWidgetLayout);
+    setPageBackgroundLayout(challenge.pageBackgroundLayout);
+    setPageBackgroundImageUrl(challenge.pageBackgroundImageUrl ?? '');
+    setGlassOpacity(challenge.glassOpacity);
     setVisibleTargetFieldIds(Object.keys(challenge.fieldTargets));
     setAddingTarget(false);
   }, [challenge]);
@@ -192,6 +208,9 @@ const ChallengeConfigForm = ({
     targetsWidgetLayout,
     buttonWidgetLayout,
     titleWidgetLayout,
+    pageBackgroundLayout,
+    pageBackgroundImageUrl: pageBackgroundImageUrl.trim() || null,
+    glassOpacity,
     startDate,
     fieldTargets,
   });
@@ -212,6 +231,9 @@ const ChallengeConfigForm = ({
     targetsWidgetLayout,
     buttonWidgetLayout,
     titleWidgetLayout,
+    pageBackgroundLayout,
+    pageBackgroundImageUrl,
+    glassOpacity,
     startDate,
     fieldTargets,
   ]);
@@ -427,11 +449,58 @@ const ChallengeConfigForm = ({
           </div>
 
           <div className={styles.section}>
-            <Typography.Text className={styles.label}>Background photo (optional)</Typography.Text>
+            <Typography.Text className={styles.label}>Page background</Typography.Text>
+            <LayoutPicker
+              options={PAGE_BACKGROUND_LAYOUTS}
+              labels={PAGE_BACKGROUND_LAYOUT_LABELS}
+              value={pageBackgroundLayout}
+              onChange={setPageBackgroundLayout}
+            />
+            {pageBackgroundLayout === 'glass' && (
+              <div className={styles.glassOpacityRow}>
+                <span className={styles.glassOpacityLabel}>Transparency</span>
+                <Slider
+                  className={styles.glassOpacitySlider}
+                  value={glassOpacity}
+                  onChange={value => setGlassOpacity(Array.isArray(value) ? value[0] : value)}
+                  min={0}
+                  max={100}
+                  step={1}
+                />
+                <span className={styles.glassOpacityValue}>{glassOpacity}%</span>
+              </div>
+            )}
+            {/* A small illustrative demo, not the real page — 'solid' shows an opaque card,
+                'glass' shows a translucent, blurred panel at the chosen transparency, both over
+                the same sample backdrop, so the difference is obvious without needing the whole
+                page behind it. */}
+            <div className={styles.pageBackgroundDemo}>
+              <div
+                className={cx(
+                  styles.pageBackgroundPanel,
+                  pageBackgroundLayout === 'glass' && styles.pageBackgroundPanelGlass,
+                )}
+                style={pageBackgroundLayout === 'glass' ? { background: `rgba(255, 255, 255, ${glassOpacity / 100})` } : undefined}
+              />
+            </div>
+          </div>
+
+          <div className={styles.section}>
+            <Typography.Text className={styles.label}>Corner background photo (optional)</Typography.Text>
             <Input
               value={backgroundImageUrl}
               onChange={e => setBackgroundImageUrl(e.target.value)}
-              placeholder="Paste an image URL — shown behind the theme"
+              placeholder="Paste an image URL — shown as a small accent in the corner, not the full page"
+              renderRightInput={() => <></>}
+            />
+          </div>
+
+          <div className={styles.section}>
+            <Typography.Text className={styles.label}>Full page background photo (optional)</Typography.Text>
+            <Input
+              value={pageBackgroundImageUrl}
+              onChange={e => setPageBackgroundImageUrl(e.target.value)}
+              placeholder="Paste an image URL — covers the whole invitation page, most visible with Glass above"
               renderRightInput={() => <></>}
             />
           </div>

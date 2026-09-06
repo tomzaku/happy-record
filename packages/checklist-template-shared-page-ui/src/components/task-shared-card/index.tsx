@@ -37,7 +37,7 @@ const allDays = [
 // dashed divider, and the fields the owner shared. Every color/radius here
 // comes from the `--ct-*` custom properties theme.ts sets at the document
 // root (see useApplyChallengeTheme), so this one markup renders correctly
-// under all 3 CHALLENGE_THEMES without a per-theme fork.
+// under all 4 CHALLENGE_THEMES without a per-theme fork.
 // How many fields show before "Show more" — enough to give a sense of the template without the
 // list itself being what drags this column past the CTA on the left (see index.desktop.tsx's own
 // `.intro` comment).

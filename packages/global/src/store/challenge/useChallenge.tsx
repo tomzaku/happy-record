@@ -12,14 +12,16 @@ import { challengesKeys } from './challengesKeys';
 export type { MyChallengeRow, PublicChallengeRow } from './challengesApi';
 
 /**
- * The 3 fixed visual directions the shared "take the challenge" page
+ * The 4 fixed visual directions the shared "take the challenge" page
  * (checklist-template-shared-page-ui) can render as — see the theme.ts
  * module in that package for what each one actually looks like. Mirrors
  * CHALLENGE_THEMES in supabase/functions/_shared/challenges.ts; the DB's
- * own CHECK constraint (20260825010000_challenge_theme.sql) is the real
- * guard, this is just so the client isn't typing it as a bare `string`.
+ * own CHECK constraint (20260825010000_challenge_theme.sql,
+ * 20260906080000_challenge_theme_dark.sql) is the real guard, this is just
+ * so the client isn't typing it as a bare `string`. 'dark' is designed to sit on top of the
+ * owner's own dark pageBackgroundImageUrl.
  */
-export const CHALLENGE_THEMES = ['classic', 'ignite', 'playful'] as const;
+export const CHALLENGE_THEMES = ['classic', 'ignite', 'playful', 'dark'] as const;
 export type ChallengeThemeId = (typeof CHALLENGE_THEMES)[number];
 
 /**
@@ -46,6 +48,12 @@ export type ButtonWidgetLayout = (typeof BUTTON_WIDGET_LAYOUTS)[number];
  * 20260906040000_challenge_title_widget_layout.sql. */
 export const TITLE_WIDGET_LAYOUTS = ['row', 'stacked', 'minimal'] as const;
 export type TitleWidgetLayout = (typeof TITLE_WIDGET_LAYOUTS)[number];
+
+/** 6th independent layout choice — the shared page's own card/hero background style (solid card
+ * + optional corner photo, or a translucent glass look). See
+ * 20260906050000_challenge_page_background_layout.sql. */
+export const PAGE_BACKGROUND_LAYOUTS = ['solid', 'glass'] as const;
+export type PageBackgroundLayout = (typeof PAGE_BACKGROUND_LAYOUTS)[number];
 
 /**
  * Turns a shared checklist template into something joinable. Every challenge shows the peer
@@ -76,9 +84,10 @@ export type Challenge = {
   theme: ChallengeThemeId;
   /**
    * Owner-set in CardShare, a plain http(s) URL (not an upload — this app
-   * has no file-storage pipeline) shown behind the shared page in place of
-   * the theme's own background. `null` for every challenge that hasn't set
-   * one — see 20260828000000_challenge_background_image.sql.
+   * has no file-storage pipeline) shown as a small decorative corner accent on the shared page
+   * (never the full page background — see checklist-template-shared-page-ui's own `.hero`).
+   * `null` for every challenge that hasn't set one — see
+   * 20260828000000_challenge_background_image.sql.
    */
   backgroundImageUrl: string | null;
   /**
@@ -100,6 +109,21 @@ export type Challenge = {
   buttonWidgetLayout: ButtonWidgetLayout;
   /** Same independence as startWidgetLayout — defaults to 'row'. */
   titleWidgetLayout: TitleWidgetLayout;
+  /** Same independence as startWidgetLayout — defaults to 'solid'. */
+  pageBackgroundLayout: PageBackgroundLayout;
+  /**
+   * A plain http(s) URL covering the *whole* shared page — distinct from backgroundImageUrl's
+   * own small corner accent. Most visible through a 'glass' pageBackgroundLayout, but not
+   * exclusive to it. `null` for every challenge that hasn't set one — see
+   * 20260906060000_challenge_page_background_image_url.sql.
+   */
+  pageBackgroundImageUrl: string | null;
+  /**
+   * How opaque the 'glass' pageBackgroundLayout's panel is, 0 (fully transparent) to 100 (fully
+   * opaque white) — meaningless for 'solid', but stored either way so switching back doesn't lose
+   * it. Defaults to 12. See 20260906070000_challenge_glass_opacity.sql.
+   */
+  glassOpacity: number;
   /** Required — when this challenge actually starts, for score calculation (not implemented
    * yet). Owner-picked in CardShare, defaulting to "now" for a brand-new challenge. */
   startDate: string;
@@ -143,6 +167,9 @@ type SetChallengeOptionsArgs = {
     targetsWidgetLayout: TargetsWidgetLayout;
     buttonWidgetLayout: ButtonWidgetLayout;
     titleWidgetLayout: TitleWidgetLayout;
+    pageBackgroundLayout: PageBackgroundLayout;
+    pageBackgroundImageUrl: string | null;
+    glassOpacity: number;
     startDate: string;
     endDate: string | null;
     ownerDisplayName?: string;
@@ -249,6 +276,9 @@ export const useChallenge = () => {
       targetsWidgetLayout: options.targetsWidgetLayout,
       buttonWidgetLayout: options.buttonWidgetLayout,
       titleWidgetLayout: options.titleWidgetLayout,
+      pageBackgroundLayout: options.pageBackgroundLayout,
+      pageBackgroundImageUrl: options.pageBackgroundImageUrl,
+      glassOpacity: options.glassOpacity,
       startDate: options.startDate,
       endDate: options.endDate,
       isPublicListing: existing?.isPublicListing ?? false,

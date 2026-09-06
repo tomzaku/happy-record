@@ -3,9 +3,36 @@
 
 .page {
   min-height: 100vh;
-  background: var(--ct-page-bg);
+  // Owner-set whole-page photo (Challenge.pageBackgroundImageUrl, see theme.ts's own comment)
+  // replaces the theme's own background entirely when set; `var(--ct-page-bg)` — a color for
+  // 'classic', a gradient for 'ignite'/'playful' — is itself a valid value in the "image" slot of
+  // this shorthand either way, so this renders exactly as before when no photo is set.
+  background: var(--ct-page-full-bg-image, var(--ct-page-bg)) center / cover no-repeat;
   padding: $spacing-xl;
   box-sizing: border-box;
+}
+
+// BackHeader (@dreamer/header) and NoteEditor (@moon-ui/note-editor, via TaskSharedCard's field
+// group note previews) are generic, shared components rendered inside .page but not themed by it
+// — they read the app's own global light/dark tokens directly (--card-background,
+// --header-logo-text, --icon-color-inactive-invert, --text-color, --text-title-primary-color,
+// --text-description-color, --icon-primary), not this page's own --ct-* system (theme.ts). Those
+// tokens are declared on web/src/App.tsx's own `.container[data-theme]`, an ANCESTOR of .page —
+// setting them any higher (e.g. on <html>, which useApplyChallengeTheme's --ct-* vars do) can
+// never win, since .container's own declaration always shadows an inherited one for everything
+// below it. Overriding here instead, on .page itself (a descendant of .container), is what
+// actually reaches BackHeader/NoteEditor — same technique focus-zone-modal-ui uses for its own
+// theming (see useFocusZoneTheme.ts). Scoped to 'dark' only: the other 3 themes are light and
+// already read fine against the app's own default light-mode values for these same tokens.
+.page[data-challenge-theme='dark'] {
+  --card-background: rgba(255, 255, 255, .06);
+  --card-shadow: rgba(0, 0, 0, .5);
+  --header-logo-text: #f5f7fa;
+  --icon-color-inactive-invert: #e2e8f0;
+  --text-color: rgba(255, 255, 255, .85);
+  --text-title-primary-color: #f5f7fa;
+  --text-description-color: rgba(255, 255, 255, .6);
+  --icon-primary: #7dd3fc;
 }
 
 .sheet {
@@ -21,6 +48,22 @@
   // `.headerClip` below carries the corner-clipping this used to do instead, scoped to just the
   // one child (BackHeader's full-width background) that actually needs it — `.hero`'s own
   // content sits well inside its padding, nowhere near the rounded edges.
+}
+
+// 'glass' page background layout — a translucent, frosted panel instead of the opaque
+// --ct-card-bg surface, letting .page's own theme background (and the corner photo, if set —
+// see .hero's own background) show through blurred. Same frosted look as index.mobile's own
+// .stickyBar. Declared after .sheet so its background/border/box-shadow win when both classes
+// are applied together (same specificity, source order decides — see index.desktop.tsx's own cx()).
+// `background` itself is set inline (index.desktop.tsx), combining --ct-glass-tint-rgb with the
+// owner's own opacity slider value — border/shadow stay here, reusing the same --ct-card-border/
+// --ct-card-shadow the solid look uses (not their own fixed rgba values, which stayed the same
+// pale-on-white look regardless of theme — dark's own much stronger shadow and near-invisible
+// border never showed up here).
+.sheetGlass {
+  backdrop-filter: blur(20px);
+  border: var(--ct-card-border);
+  box-shadow: var(--ct-card-shadow);
 }
 
 .headerClip {

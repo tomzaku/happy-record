@@ -1,4 +1,4 @@
-// The 3 visual directions a challenge owner can pick in CardShare
+// The 4 visual directions a challenge owner can pick in CardShare
 // (CHALLENGE_THEMES / ChallengeThemeId in @dreamer/global) — this is the
 // other half: what each one actually looks like on this page. Nothing
 // outside this package renders the shared page, so unlike
@@ -31,6 +31,11 @@ export type ChallengeThemeVars = {
   '--ct-avatar-bg': string;
   '--ct-avatar-radius': string;
   '--ct-nav-text': string;
+  // Comma-separated "R, G, B" triplet (no rgba() wrapper) — the "glass" page-background layout's
+  // tint, combined with the owner's own opacity slider value at the call site (index.desktop.tsx's
+  // `rgba(var(--ct-glass-tint-rgb), <opacity>)`) rather than baked into a single fixed color, since
+  // the opacity itself is a per-challenge number, not one of a theme's fixed values.
+  '--ct-glass-tint-rgb': string;
 };
 
 // Classic Trust: the app's own primary blue and card conventions — see
@@ -61,6 +66,7 @@ const classic: ChallengeThemeVars = {
   '--ct-avatar-bg': '#0b7dc2',
   '--ct-avatar-radius': '14px',
   '--ct-nav-text': '#334d6e',
+  '--ct-glass-tint-rgb': '255, 255, 255',
 };
 
 // Ignite: the warm gradient already used on the old "Take it" button,
@@ -90,6 +96,7 @@ const ignite: ChallengeThemeVars = {
   '--ct-avatar-bg': 'linear-gradient(135deg,#ff7e5f,#feb47b)',
   '--ct-avatar-radius': '16px',
   '--ct-nav-text': '#5c3a2a',
+  '--ct-glass-tint-rgb': '255, 255, 255',
 };
 
 // Playful: green + purple, dashed borders throughout (matches the dashed
@@ -119,9 +126,49 @@ const playful: ChallengeThemeVars = {
   '--ct-avatar-bg': 'linear-gradient(135deg,#219653,#6d5bd0)',
   '--ct-avatar-radius': '999px',
   '--ct-nav-text': '#4a3f6b',
+  '--ct-glass-tint-rgb': '255, 255, 255',
 };
 
-export const CHALLENGE_PAGE_THEMES: Record<ChallengeThemeId, ChallengeThemeVars> = { classic, ignite, playful };
+// Dark: the odd one out of the 4 — designed to sit on top of the owner's own dark
+// pageBackgroundImageUrl (see useApplyChallengeTheme's own comment and
+// 20260906060000_challenge_page_background_image_url.sql), not to look good on its own flat
+// `--ct-page-bg` the way classic/ignite/playful do. Translucent white card/inner surfaces (not an
+// opaque white box, which would look jarring floating over a dark photo) and light text
+// throughout, a cool accent that still reads clearly against dark.
+const dark: ChallengeThemeVars = {
+  '--ct-page-bg': 'linear-gradient(160deg,#0b0c10 0%,#15171d 55%,#1c1f27 100%)',
+  '--ct-card-bg': 'rgba(255,255,255,.06)',
+  '--ct-card-border': '1px solid rgba(255,255,255,.1)',
+  '--ct-card-shadow': '0 24px 60px rgba(0,0,0,.5)',
+  '--ct-card-radius': '20px',
+  '--ct-inner-bg': 'rgba(255,255,255,.04)',
+  '--ct-inner-border': '1px solid rgba(255,255,255,.08)',
+  '--ct-accent': '#7dd3fc',
+  '--ct-button-bg': 'linear-gradient(to right,#38bdf8,#818cf8)',
+  '--ct-button-radius': '14px',
+  '--ct-button-shadow': '0 10px 24px rgba(56,189,248,.35)',
+  '--ct-chip-bg': 'rgba(125,211,252,.15)',
+  '--ct-chip-text': '#7dd3fc',
+  '--ct-divider': '2px dashed rgba(255,255,255,.12)',
+  '--ct-pill-active-bg': 'linear-gradient(135deg,#38bdf8,#818cf8)',
+  '--ct-pill-inactive-border': '1px solid rgba(255,255,255,.15)',
+  '--ct-pill-inactive-text': 'rgba(255,255,255,.35)',
+  '--ct-heading-color': '#f5f7fa',
+  '--ct-body-text': 'rgba(255,255,255,.7)',
+  '--ct-muted-text': 'rgba(255,255,255,.5)',
+  '--ct-avatar-bg': 'linear-gradient(135deg,#38bdf8,#818cf8)',
+  '--ct-avatar-radius': '14px',
+  '--ct-nav-text': '#e2e8f0',
+  // A white tint here (the other 3 themes' own choice, and --ct-card-bg's own solid-mode tint at
+  // its low fixed 6% opacity) only reads as a subtle brighten at low opacity — but the "glass"
+  // layout's opacity is a slider the owner can push well past that (the reported case was 57%),
+  // where a white fill dominates and looks like a light box floating on a dark page, not a dark
+  // frosted pane. Dark, near-#15171d (the page gradient's own middle stop) instead, so raising the
+  // slider deepens the panel into the page rather than lightening it.
+  '--ct-glass-tint-rgb': '21, 23, 29',
+};
+
+export const CHALLENGE_PAGE_THEMES: Record<ChallengeThemeId, ChallengeThemeVars> = { classic, ignite, playful, dark };
 
 /**
  * Applies a theme's CSS custom properties at the document root, not just
@@ -149,8 +196,18 @@ export const CHALLENGE_PAGE_THEMES: Record<ChallengeThemeId, ChallengeThemeVars>
  * below TaskSharedCard (`.heroImage`, index.mobile.module.scss) — a
  * single-column layout has no "corner" for a background accent to anchor
  * to, so it reads better as its own block in the flow than as a backdrop.
+ *
+ * `pageBackgroundImageUrl` is a *separate* photo (Challenge.pageBackgroundImageUrl, not
+ * backgroundImageUrl) covering the whole page rather than a corner — used by both desktop and
+ * mobile's own `.page` (`background: var(--ct-page-full-bg-image, var(--ct-page-bg)) center /
+ * cover no-repeat`), replacing the theme's own background entirely when set, same "none means
+ * unchanged" fallback as the corner image.
  */
-export function useApplyChallengeTheme(themeId: ChallengeThemeId, backgroundImageUrl?: string | null) {
+export function useApplyChallengeTheme(
+  themeId: ChallengeThemeId,
+  backgroundImageUrl?: string | null,
+  pageBackgroundImageUrl?: string | null,
+) {
   React.useEffect(() => {
     const vars = CHALLENGE_PAGE_THEMES[themeId] ?? CHALLENGE_PAGE_THEMES.classic;
     const root = document.documentElement;
@@ -159,9 +216,13 @@ export function useApplyChallengeTheme(themeId: ChallengeThemeId, backgroundImag
     if (backgroundImageUrl) {
       root.style.setProperty('--ct-page-bg-image', `url("${backgroundImageUrl}")`);
     }
+    if (pageBackgroundImageUrl) {
+      root.style.setProperty('--ct-page-full-bg-image', `url("${pageBackgroundImageUrl}")`);
+    }
     return () => {
       entries.forEach(([key]) => root.style.removeProperty(key));
       root.style.removeProperty('--ct-page-bg-image');
+      root.style.removeProperty('--ct-page-full-bg-image');
     };
-  }, [themeId, backgroundImageUrl]);
+  }, [themeId, backgroundImageUrl, pageBackgroundImageUrl]);
 }

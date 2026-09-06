@@ -50,6 +50,12 @@ const THEME_COPY: Record<ChallengeThemeId, { labelId: string; label: string; des
     descriptionId: 'CardShare.theme-playful-description',
     description: 'Fun and low-pressure',
   },
+  dark: {
+    labelId: 'CardShare.theme-dark',
+    label: 'Dark',
+    descriptionId: 'CardShare.theme-dark-description',
+    description: 'Sits on a dark background photo',
+  },
 };
 
 type CardShareProps = {
@@ -108,12 +114,15 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
   // set on the invite page.
   const [greetingText, setGreetingText] = useState<string | null>(null);
   // Same "no UI here, just carry it through unchanged" passthrough as greetingText above, for
-  // each of the 5 independent widget layouts.
+  // each of the 6 independent widget layouts.
   const [startWidgetLayout, setStartWidgetLayout] = useState<Challenge['startWidgetLayout']>('countdown');
   const [greetingWidgetLayout, setGreetingWidgetLayout] = useState<Challenge['greetingWidgetLayout']>('heading');
   const [targetsWidgetLayout, setTargetsWidgetLayout] = useState<Challenge['targetsWidgetLayout']>('list');
   const [buttonWidgetLayout, setButtonWidgetLayout] = useState<Challenge['buttonWidgetLayout']>('plain');
   const [titleWidgetLayout, setTitleWidgetLayout] = useState<Challenge['titleWidgetLayout']>('row');
+  const [pageBackgroundLayout, setPageBackgroundLayout] = useState<Challenge['pageBackgroundLayout']>('solid');
+  const [pageBackgroundImageUrl, setPageBackgroundImageUrl] = useState<Challenge['pageBackgroundImageUrl']>(null);
+  const [glassOpacity, setGlassOpacity] = useState<Challenge['glassOpacity']>(12);
   // Required — defaults to "now" for a brand-new challenge (nothing to hydrate from yet), same
   // default useChallenge.tsx's own setChallengeOptions already gives createdAt. Once a challenge
   // exists, its own startDate is the source of truth (hydrated below), so re-saving without
@@ -133,6 +142,9 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
       setTargetsWidgetLayout(challenge.targetsWidgetLayout);
       setButtonWidgetLayout(challenge.buttonWidgetLayout);
       setTitleWidgetLayout(challenge.titleWidgetLayout);
+      setPageBackgroundLayout(challenge.pageBackgroundLayout);
+      setPageBackgroundImageUrl(challenge.pageBackgroundImageUrl);
+      setGlassOpacity(challenge.glassOpacity);
       setStartDate(challenge.startDate);
       setEndDate(challenge.endDate ?? '');
     }
@@ -197,6 +209,9 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         targetsWidgetLayout,
         buttonWidgetLayout,
         titleWidgetLayout,
+        pageBackgroundLayout,
+        pageBackgroundImageUrl,
+        glassOpacity,
         startDate,
         endDate: endDate || null,
         ownerDisplayName: displayName,
@@ -306,7 +321,7 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
           <Typography.Text className={styles.themeLabel}>
             {intl.formatMessage({
               id: 'CardShare.background-image-label',
-              defaultMessage: 'Background photo (optional)',
+              defaultMessage: 'Corner background photo (optional)',
             })}
           </Typography.Text>
           <Input
@@ -314,7 +329,7 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
             onChange={e => setBackgroundImageUrl(e.target.value)}
             placeholder={intl.formatMessage({
               id: 'CardShare.background-image-placeholder',
-              defaultMessage: 'Paste an image URL — shown behind the theme',
+              defaultMessage: 'Paste an image URL — shown as a small accent in the corner, not the full page',
             })}
             renderRightInput={() => <></>}
           />

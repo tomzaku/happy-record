@@ -3,12 +3,29 @@
 
 .page {
   min-height: 100vh;
-  background: var(--ct-page-bg);
+  // Same "owner photo replaces the theme's own background entirely" shape as index.desktop's own
+  // .page — see theme.ts's own comment.
+  background: var(--ct-page-full-bg-image, var(--ct-page-bg)) center / cover no-repeat;
   display: flex;
   flex-direction: column;
   // Room for the sticky CTA bar so the last field row isn't hidden behind it.
   padding-bottom: 100px;
   box-sizing: border-box;
+}
+
+// See index.desktop.module.scss's own comment on this same selector — BackHeader/NoteEditor read
+// the app's global tokens directly, declared on an ANCESTOR (.container[data-theme] in
+// web/src/App.tsx), so overriding them here on .page (a descendant of that container) is what
+// actually reaches those components. Scoped to 'dark' only.
+.page[data-challenge-theme='dark'] {
+  --card-background: rgba(255, 255, 255, .06);
+  --card-shadow: rgba(0, 0, 0, .5);
+  --header-logo-text: #f5f7fa;
+  --icon-color-inactive-invert: #e2e8f0;
+  --text-color: rgba(255, 255, 255, .85);
+  --text-title-primary-color: #f5f7fa;
+  --text-description-color: rgba(255, 255, 255, .6);
+  --icon-primary: #7dd3fc;
 }
 
 .navText {

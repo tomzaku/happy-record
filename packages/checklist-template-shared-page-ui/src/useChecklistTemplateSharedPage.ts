@@ -20,6 +20,7 @@ import type {
   ChallengeThemeId,
   ChecklistTemplate,
   GreetingWidgetLayout,
+  PageBackgroundLayout,
   StartWidgetLayout,
   TargetsWidgetLayout,
   TitleWidgetLayout,
@@ -41,6 +42,9 @@ export type ChallengeConfigOptions = {
   targetsWidgetLayout: TargetsWidgetLayout;
   buttonWidgetLayout: ButtonWidgetLayout;
   titleWidgetLayout: TitleWidgetLayout;
+  pageBackgroundLayout: PageBackgroundLayout;
+  pageBackgroundImageUrl: string | null;
+  glassOpacity: number;
   startDate: string;
   endDate: string | null;
   ownerDisplayName?: string;
@@ -112,6 +116,15 @@ export function useChecklistTemplateSharedPage() {
   // Independent of the other 3 widget layouts — the CTA button's own visual style. Reads off
   // `previewChallenge` for the same live-preview reason as the others.
   const buttonWidgetLayout = previewChallenge?.buttonWidgetLayout ?? 'plain';
+  // Independent of the other 4 widget layouts — the shared page's own card/hero background
+  // style (opaque card + optional corner photo, or translucent glass). Reads off
+  // `previewChallenge` for the same live-preview reason as the others.
+  const pageBackgroundLayout = previewChallenge?.pageBackgroundLayout ?? 'solid';
+  // The whole-page photo (distinct from the corner backgroundImageUrl) — same live-preview
+  // reasoning as the others.
+  const pageBackgroundImageUrl = previewChallenge?.pageBackgroundImageUrl ?? null;
+  // How opaque the 'glass' pageBackgroundLayout's panel is — same live-preview reasoning.
+  const glassOpacity = previewChallenge?.glassOpacity ?? 12;
   // Every challenge shares everyone's check-ins now — there's no
   // private-roster mode left to gate on (see CardShare), so any link with a
   // challenge row at all is joinable.
@@ -245,6 +258,9 @@ export function useChecklistTemplateSharedPage() {
     defaultGreetingText,
     greetingWidgetLayout,
     buttonWidgetLayout,
+    pageBackgroundLayout,
+    pageBackgroundImageUrl,
+    glassOpacity,
     dialogRejectOpen,
     setDialogRejectOpen,
     isChallenge,

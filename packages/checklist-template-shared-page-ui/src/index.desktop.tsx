@@ -1,3 +1,4 @@
+import cx from 'classnames';
 import { BackHeader } from '@dreamer/header';
 import Typography from '@moon-ui/typography';
 import Drawer from '@moon-ui/drawer';
@@ -22,6 +23,9 @@ const ChecklistTemplateSharedPageDesktop = () => {
     defaultGreetingText,
     greetingWidgetLayout,
     buttonWidgetLayout,
+    pageBackgroundLayout,
+    pageBackgroundImageUrl,
+    glassOpacity,
     dialogRejectOpen,
     setDialogRejectOpen,
     themeId,
@@ -41,7 +45,7 @@ const ChecklistTemplateSharedPageDesktop = () => {
   } = useChecklistTemplateSharedPage();
   const numberFields = fields.filter(f => f.type === 'number');
 
-  useApplyChallengeTheme(themeId, backgroundImageUrl);
+  useApplyChallengeTheme(themeId, backgroundImageUrl, pageBackgroundImageUrl);
 
   // Only the template itself gates the page rendering at all — fields/fieldGroups load in behind
   // it (see useChecklistTemplateSharedPage.ts), TaskSharedCard shows its own small spinner for
@@ -57,8 +61,20 @@ const ChecklistTemplateSharedPageDesktop = () => {
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.sheet}>
+    <div className={styles.page} data-challenge-theme={themeId}>
+      {/* Owner-customizable via the config widget's own "Page background" layout picker
+          (solid/glass) + transparency slider — see useChecklistTemplateSharedPage.ts's
+          pageBackgroundLayout/glassOpacity. Opacity set via inline style (always wins over the
+          stylesheet, regardless of class order) since it's a per-challenge numeric value, not one
+          of a fixed set of classes the way every other widget layout here is. */}
+      <div
+        className={cx(styles.sheet, pageBackgroundLayout === 'glass' && styles.sheetGlass)}
+        style={
+          pageBackgroundLayout === 'glass'
+            ? { background: `rgba(var(--ct-glass-tint-rgb), ${glassOpacity / 100})` }
+            : undefined
+        }
+      >
         <div className={styles.headerClip}>
           <BackHeader
             renderLeftComponent={() => <span className={styles.navText}>Dreamer</span>}

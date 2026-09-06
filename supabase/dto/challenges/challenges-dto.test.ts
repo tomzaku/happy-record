@@ -7,6 +7,12 @@ const validEntry = {
   startDate: '2026-01-01T00:00:00.000Z',
 };
 
+Deno.test('fromChallenge: theme falls back to classic when absent or invalid, accepts the 4th "dark" value', () => {
+  assertEquals(fromChallenge(validEntry).theme, 'classic');
+  assertEquals(fromChallenge({ ...validEntry, theme: 'not-a-theme' }).theme, 'classic');
+  assertEquals(fromChallenge({ ...validEntry, theme: 'dark' }).theme, 'dark');
+});
+
 Deno.test('fromChallenge: throws when startDate is missing', () => {
   const { startDate: _omit, ...entry } = validEntry;
   assertThrows(() => fromChallenge(entry), Error, 'Missing startDate.');
@@ -49,6 +55,7 @@ Deno.test('fromChallenge: each widget layout falls back to its own default when 
   assertEquals(row.targets_widget_layout, 'list');
   assertEquals(row.button_widget_layout, 'plain');
   assertEquals(row.title_widget_layout, 'row');
+  assertEquals(row.page_background_layout, 'solid');
 
   const invalid = fromChallenge({
     ...validEntry,
@@ -57,15 +64,17 @@ Deno.test('fromChallenge: each widget layout falls back to its own default when 
     targetsWidgetLayout: 'nope',
     buttonWidgetLayout: 'nope',
     titleWidgetLayout: 'nope',
+    pageBackgroundLayout: 'nope',
   });
   assertEquals(invalid.start_widget_layout, 'countdown');
   assertEquals(invalid.greeting_widget_layout, 'heading');
   assertEquals(invalid.targets_widget_layout, 'list');
   assertEquals(invalid.button_widget_layout, 'plain');
   assertEquals(invalid.title_widget_layout, 'row');
+  assertEquals(invalid.page_background_layout, 'solid');
 });
 
-Deno.test('fromChallenge: carries a valid widget layout through for each of the 5 independently', () => {
+Deno.test('fromChallenge: carries a valid widget layout through for each of the 6 independently', () => {
   const row = fromChallenge({
     ...validEntry,
     startWidgetLayout: 'both',
@@ -73,12 +82,31 @@ Deno.test('fromChallenge: carries a valid widget layout through for each of the 
     targetsWidgetLayout: 'tiles',
     buttonWidgetLayout: 'fire',
     titleWidgetLayout: 'stacked',
+    pageBackgroundLayout: 'glass',
   });
   assertEquals(row.start_widget_layout, 'both');
   assertEquals(row.greeting_widget_layout, 'banner');
   assertEquals(row.targets_widget_layout, 'tiles');
   assertEquals(row.button_widget_layout, 'fire');
   assertEquals(row.title_widget_layout, 'stacked');
+  assertEquals(row.page_background_layout, 'glass');
+});
+
+Deno.test('fromChallenge: pageBackgroundImageUrl falls back to null when absent or not a plausible http(s) URL', () => {
+  assertEquals(fromChallenge(validEntry).page_background_image_url, null);
+  assertEquals(fromChallenge({ ...validEntry, pageBackgroundImageUrl: 'not-a-url' }).page_background_image_url, null);
+});
+
+Deno.test('fromChallenge: carries a valid pageBackgroundImageUrl through trimmed', () => {
+  const row = fromChallenge({ ...validEntry, pageBackgroundImageUrl: '  https://example.com/bg.jpg  ' });
+  assertEquals(row.page_background_image_url, 'https://example.com/bg.jpg');
+});
+
+Deno.test('fromChallenge: glassOpacity falls back to 12 when absent, and clamps to 0-100 rather than rejecting', () => {
+  assertEquals(fromChallenge(validEntry).glass_opacity, 12);
+  assertEquals(fromChallenge({ ...validEntry, glassOpacity: -5 }).glass_opacity, 0);
+  assertEquals(fromChallenge({ ...validEntry, glassOpacity: 500 }).glass_opacity, 100);
+  assertEquals(fromChallenge({ ...validEntry, glassOpacity: 40 }).glass_opacity, 40);
 });
 
 Deno.test('fromChallenge: never maps isPublicListing from client input — admin-only, set by hand in the DB', () => {
@@ -103,6 +131,9 @@ Deno.test('toChallenge: maps start_date/end_date/is_public_listing onto the clie
     targets_widget_layout: 'tiles',
     button_widget_layout: 'water',
     title_widget_layout: 'minimal',
+    page_background_layout: 'glass',
+    page_background_image_url: 'https://example.com/bg.jpg',
+    glass_opacity: 30,
     start_date: '2026-01-01T00:00:00.000Z',
     end_date: null,
     is_public_listing: true,
@@ -118,6 +149,9 @@ Deno.test('toChallenge: maps start_date/end_date/is_public_listing onto the clie
   assertEquals(challenge.targetsWidgetLayout, 'tiles');
   assertEquals(challenge.buttonWidgetLayout, 'water');
   assertEquals(challenge.titleWidgetLayout, 'minimal');
+  assertEquals(challenge.pageBackgroundLayout, 'glass');
+  assertEquals(challenge.pageBackgroundImageUrl, 'https://example.com/bg.jpg');
+  assertEquals(challenge.glassOpacity, 30);
 });
 
 Deno.test('toChallenge: is_public_listing defaults to false when absent', () => {

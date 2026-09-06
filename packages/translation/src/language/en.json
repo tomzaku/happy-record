@@ -1,7 +1,7 @@
 {
   "AddNoteDrawer.title": "Add Note",
-  "CardShare.background-image-label": "Background photo (optional)",
-  "CardShare.background-image-placeholder": "Paste an image URL — shown behind the theme",
+  "CardShare.background-image-label": "Corner background photo (optional)",
+  "CardShare.background-image-placeholder": "Paste an image URL — shown as a small accent in the corner, not the full page",
   "CardShare.clear-end-date": "Clear end date",
   "CardShare.end-date-label": "End date (optional)",
   "CardShare.no-target": "No target",

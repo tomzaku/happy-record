@@ -11,4 +11,5 @@ export const CHALLENGE_THEME_SWATCH: Record<ChallengeThemeId, string> = {
   classic: 'linear-gradient(135deg, #0b7dc2, #075a8c)',
   ignite: 'linear-gradient(135deg, #ff7e5f, #feb47b)',
   playful: 'linear-gradient(135deg, #219653, #6d5bd0)',
+  dark: 'linear-gradient(135deg, #38bdf8, #818cf8)',
 };

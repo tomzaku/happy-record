@@ -74,6 +74,60 @@
   color: #0b7dc2;
 }
 
+.glassOpacityRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-top: $spacing-xs;
+}
+
+.glassOpacityLabel {
+  font-size: toRem(12px);
+  color: var(--text-description-color);
+  flex-shrink: 0;
+}
+
+.glassOpacitySlider {
+  flex: 1;
+}
+
+.glassOpacityValue {
+  font-size: toRem(12px);
+  font-weight: 600;
+  color: var(--text-color);
+  flex-shrink: 0;
+  width: 34px;
+  text-align: right;
+}
+
+// Page background demo — a colorful sample backdrop with a small panel on top of it, styled
+// 'solid' or 'glass' to match .sheet/.sheetGlass on the real page (index.desktop.module.scss),
+// so the difference is obvious without needing the actual page behind it.
+.pageBackgroundDemo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72px;
+  border-radius: 12px;
+  margin-top: $spacing-xs;
+  background: linear-gradient(135deg, #6a82fb, #fc5c7d);
+}
+
+.pageBackgroundPanel {
+  width: 70%;
+  height: 44px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.pageBackgroundPanelGlass {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
 // Wraps the real ChallengeWidget preview — a plain surface, not the drawer's own background,
 // since the widget draws its own --ct-inner-bg card and reads oddly floating with nothing
 // grounding it against the drawer's --drawer-background otherwise.
