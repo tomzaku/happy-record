@@ -236,6 +236,7 @@ export async function fetchChecklistRecordTotals(
   db: SupabaseClient,
   fieldIds: string[],
   visibleUserIds: string[],
+  since: string,
   limit: number,
 ): Promise<{ field_id: string; user_id: string; value_number: number | null }[]> {
   if (!fieldIds.length || !visibleUserIds.length) return [];
@@ -244,6 +245,7 @@ export async function fetchChecklistRecordTotals(
     .select('field_id, user_id, value_number')
     .in('field_id', fieldIds)
     .in('user_id', visibleUserIds)
+    .gte('created_at', since)
     .limit(limit);
   if (error) throw new Error(error.message);
   return (data ?? []) as { field_id: string; user_id: string; value_number: number | null }[];

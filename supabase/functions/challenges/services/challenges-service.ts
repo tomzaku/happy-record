@@ -298,9 +298,15 @@ type Target = {
 };
 
 /**
- * A shared goal per number field, with a per-person breakdown — all-time, not scoped to the
- * dashboard's date range (a collective goal accumulates over the challenge's whole life, not just
- * the visible window). Only fields with a target ever get their real values read here, via what
+ * A shared goal per number field, with a per-person breakdown — since the challenge's own
+ * `startDate`, not scoped to the dashboard's from/to range (a collective goal accumulates over
+ * the challenge's whole life, not just the visible window). Contributions recorded before
+ * `startDate` never count, even if they're on the exact same field the challenge now targets —
+ * a participant who was already tracking that field solo shouldn't get a head start. Re-anchors
+ * automatically if the owner edits `startDate` later (see `ChallengeConfigForm.tsx`): every
+ * dashboard read recomputes this from the row's current value, nothing is cached or denormalized
+ * per-participant that a start-date change would leave stale. Only fields with a target ever get
+ * their real values read here, via what
  * used to be the peer-read policies the 20260825000000_challenge_targets.sql migration added — an
  * untargeted field (a personal note, a number field with no goal set) is never touched.
  *
@@ -349,7 +355,7 @@ async function getTargets(
   }
 
   const resolvedFieldIds = [...new Set([...targetFieldIds, ...resolveFieldId.keys()])];
-  const recordRows = await fetchChecklistRecordTotals(db, resolvedFieldIds, visibleUserIds, MAX_ROWS);
+  const recordRows = await fetchChecklistRecordTotals(db, resolvedFieldIds, visibleUserIds, challenge.startDate, MAX_ROWS);
 
   const totals = new Map<string, number>(); // `${targetFieldId}:${userId}` -> sum
   for (const row of recordRows) {
@@ -465,7 +471,14 @@ export async function buildDashboard({ url, db, userId }: Ctx, challengeRow: Rec
 
   const now = new Date();
   const to = url.searchParams.get('to') || now.toISOString();
-  const from = url.searchParams.get('from') || new Date(now.getTime() - DEFAULT_RANGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const requestedFrom =
+    url.searchParams.get('from') || new Date(now.getTime() - DEFAULT_RANGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  // Never rank/streak on activity from before the challenge existed — a participant who was
+  // already tracking this template solo shouldn't get credit predating the challenge, and this
+  // stays correct if the owner pushes startDate later (ChallengeConfigForm.tsx): every read
+  // re-clamps against the row's current value rather than something decided at creation time.
+  const from =
+    new Date(requestedFrom).getTime() > new Date(challenge.startDate).getTime() ? requestedFrom : challenge.startDate;
 
   const userIds = [...new Set(participants.map(p => p.userId))];
   // The peer-data gate — used to be `share_records = true` inside four separate RLS policies

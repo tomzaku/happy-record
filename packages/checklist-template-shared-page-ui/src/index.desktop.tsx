@@ -1,10 +1,8 @@
 import cx from 'classnames';
 import { BackHeader } from '@dreamer/header';
 import Typography from '@moon-ui/typography';
-import Drawer from '@moon-ui/drawer';
 import Icon from '@moon-ui/icon/Icon';
 import TaskSharedCard from './components/task-shared-card';
-import Timer from './components/timer';
 import ChallengeConfigDrawer from './components/challenge-config-drawer';
 import GreetingWidget from './components/challenge-widgets/GreetingWidget';
 import ButtonWidget from './components/challenge-widgets/ButtonWidget';
@@ -18,7 +16,6 @@ const ChecklistTemplateSharedPageDesktop = () => {
     fields,
     fieldsLoading,
     ready,
-    targetName,
     greetingHeadline,
     defaultGreetingText,
     greetingWidgetLayout,
@@ -26,8 +23,6 @@ const ChecklistTemplateSharedPageDesktop = () => {
     pageBackgroundLayout,
     pageBackgroundImageUrl,
     glassOpacity,
-    dialogRejectOpen,
-    setDialogRejectOpen,
     themeId,
     backgroundImageUrl,
     challenge,
@@ -41,7 +36,6 @@ const ChecklistTemplateSharedPageDesktop = () => {
     submitting,
     handleSubmit,
     onClickLeaveIt,
-    confirmTakeIt,
   } = useChecklistTemplateSharedPage();
   const numberFields = fields.filter(f => f.type === 'number');
 
@@ -152,26 +146,6 @@ const ChecklistTemplateSharedPageDesktop = () => {
           onChange={updateChallengeConfigDraft}
         />
       )}
-
-      <Drawer
-        visible={dialogRejectOpen}
-        className={styles.drawerContainer}
-        onBlur={() => setDialogRejectOpen(false)}
-      >
-        <div>
-          <div className={styles.drawerHeader}>
-            <Typography.Title noMargin level={2}>
-              Are you sure? Or just a misclick
-            </Typography.Title>
-            <Icon width={32} icon="material-symbols:close-rounded" onClick={() => setDialogRejectOpen(false)} />
-          </div>
-          <Typography.Title level={3}>{`Don't worry, ${targetName}`}</Typography.Title>
-          <Typography.Text>
-            I know you’re not scared of this challenge, so I’ll take it for you in 10 seconds.
-          </Typography.Text>
-          <Timer duration={10000} onFinish={() => confirmTakeIt()} autoStart />
-        </div>
-      </Drawer>
     </div>
   );
 };

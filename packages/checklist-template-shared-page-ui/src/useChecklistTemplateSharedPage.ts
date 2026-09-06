@@ -56,7 +56,6 @@ export function useChecklistTemplateSharedPage() {
   const [searchParams] = useSearchParams();
   const targetName = searchParams.get('to') || 'you';
   const { getRecordFieldsByIds, mergeRecordFields } = useRecordField();
-  const [dialogRejectOpen, setDialogRejectOpen] = React.useState(false);
   // `checklistTemplate` here (own + joined map) is the same map every "all mine" consumer reads
   // — aliased since this file already has its own singular `checklistTemplate` state below (the
   // *shared* template being displayed, a completely different thing).
@@ -223,7 +222,7 @@ export function useChecklistTemplateSharedPage() {
   };
 
   const onClickLeaveIt = () => {
-    setDialogRejectOpen(true);
+    navigate('/');
   };
 
   React.useEffect(() => {
@@ -261,8 +260,6 @@ export function useChecklistTemplateSharedPage() {
     pageBackgroundLayout,
     pageBackgroundImageUrl,
     glassOpacity,
-    dialogRejectOpen,
-    setDialogRejectOpen,
     isChallenge,
     // Every challenge row (created the moment a link is generated — see
     // CardShare's generateShareUrl) carries a theme, defaulting to
@@ -288,6 +285,5 @@ export function useChecklistTemplateSharedPage() {
     submitting,
     handleSubmit,
     onClickLeaveIt,
-    confirmTakeIt,
   };
 }
