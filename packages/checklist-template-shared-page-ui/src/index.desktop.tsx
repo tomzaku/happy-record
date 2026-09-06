@@ -1,6 +1,7 @@
 import cx from 'classnames';
 import { BackHeader } from '@dreamer/header';
 import Typography from '@moon-ui/typography';
+import Drawer from '@moon-ui/drawer';
 import Icon from '@moon-ui/icon/Icon';
 import TaskSharedCard from './components/task-shared-card';
 import ChallengeConfigDrawer from './components/challenge-config-drawer';
@@ -36,6 +37,9 @@ const ChecklistTemplateSharedPageDesktop = () => {
     submitting,
     handleSubmit,
     onClickLeaveIt,
+    alreadyTakenOpen,
+    closeAlreadyTaken,
+    goToExistingChecklist,
   } = useChecklistTemplateSharedPage();
   const numberFields = fields.filter(f => f.type === 'number');
 
@@ -146,6 +150,21 @@ const ChecklistTemplateSharedPageDesktop = () => {
           onChange={updateChallengeConfigDraft}
         />
       )}
+
+      <Drawer visible={alreadyTakenOpen} className={styles.drawerContainer} onBlur={closeAlreadyTaken}>
+        <div>
+          <div className={styles.drawerHeader}>
+            <Typography.Title noMargin level={2}>
+              You’ve already taken this challenge
+            </Typography.Title>
+            <Icon width={32} icon="material-symbols:close-rounded" onClick={closeAlreadyTaken} />
+          </div>
+          <Typography.Text>Head back to your checklist to keep going.</Typography.Text>
+          <ButtonWidget layout={buttonWidgetLayout} onClick={goToExistingChecklist} className={styles.primaryButton}>
+            View Checklist
+          </ButtonWidget>
+        </div>
+      </Drawer>
     </div>
   );
 };

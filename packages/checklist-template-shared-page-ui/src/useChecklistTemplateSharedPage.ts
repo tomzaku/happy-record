@@ -205,13 +205,22 @@ export function useChecklistTemplateSharedPage() {
 
   const confirmTakeIt = () => (isChallenge ? joinTheChallenge() : takeItPlain());
 
+  const [alreadyTakenOpen, setAlreadyTakenOpen] = React.useState(false);
+  const closeAlreadyTaken = () => setAlreadyTakenOpen(false);
+  // Same route joinTheChallenge itself lands on right after joining — the id is reused as-is
+  // (see the comment below), so this device's existing copy lives at the exact same path.
+  const goToExistingChecklist = () => {
+    if (!checklistTemplate) return;
+    navigate(`/task/${checklistTemplate.id}?currentDay=${new Date().toISOString()}`);
+  };
+
   const handleSubmit = () => {
     if (!checklistTemplate || fieldsLoading || submitting) return;
     // A challenge id is reused as-is on join (never forked — see useJoinChallenge.tsx), so
     // already having it here means this device already joined; a plain "take it" always forks a
     // new id (addChecklistTemplate's own default), so this never true-positives for that path.
     if (myChecklistTemplates[checklistTemplate.id]) {
-      alert("You've have this task!!!");
+      setAlreadyTakenOpen(true);
       return;
     }
     // No name-entry dialog in between: a signed-in user just sees the
@@ -285,5 +294,8 @@ export function useChecklistTemplateSharedPage() {
     submitting,
     handleSubmit,
     onClickLeaveIt,
+    alreadyTakenOpen,
+    closeAlreadyTaken,
+    goToExistingChecklist,
   };
 }
