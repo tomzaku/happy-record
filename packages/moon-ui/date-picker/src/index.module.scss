@@ -1,7 +1,19 @@
 @use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
 
+// Sizing that used to live redundantly in every consumer's own scss (ChecklistGenericInfo's
+// .dateInput, StartDaySelector's .input, SchedulingGroup's ScheduleModalContent — all 3 the exact
+// same padding/font-size, because a bare `<input type="date">` renders at the browser's tiny
+// native size otherwise) — moved here so a new consumer gets a properly-sized date input by
+// default instead of needing to rediscover and redeclare the same fix. border-radius is new
+// (no consumer set one before), matching Input's own 8px so a DatePicker doesn't look like the
+// one un-rounded control on a page otherwise built from Input/Button.
 .input {
   background: var(--input-background);
   color: var(--text-color);
   border: 1px dashed var(--input-border);
+  border-radius: 8px;
+  padding: $spacing-xs $spacing-md;
+  font-size: toRem(16px);
 }

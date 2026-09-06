@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { format } from 'date-fns';
 import Icon from '@moon-ui/icon/Icon';
-import Typography from '@moon-ui/typography';
 import { Challenge, ChecklistTemplate, getActiveFieldGroups } from '@dreamer/global';
 import { getDaysFromRepeat } from '@pregnant/create-checklist-page-ui/src/getDayFromRepeat';
 import { Day } from '@dreamer/tasks-page-common';
@@ -9,6 +7,10 @@ import cx from 'classnames';
 import styles from './index.module.scss';
 import { RecordField } from '@dreamer/global/src/store/record-field';
 import FieldGroupNotePreview from './FieldGroupNotePreview';
+import { useChallengeStartCountdown } from '../../useChallengeStartCountdown';
+import StartDateWidget from '../challenge-widgets/StartDateWidget';
+import TargetsWidget from '../challenge-widgets/TargetsWidget';
+import TitleWidget from '../challenge-widgets/TitleWidget';
 
 type Props = {
   checklistTemplate: ChecklistTemplate;
@@ -44,19 +46,22 @@ const COLLAPSED_FIELD_COUNT = 2;
 const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading, challenge }: Props) => {
   const days = getDaysFromRepeat(checklistTemplate?.repeat);
   const [showAllFields, setShowAllFields] = useState(false);
+  // "Starts in 2d 6h" while upcoming, "Started Sep 10, 2026" once it's passed — ticks live, see
+  // useChallengeStartCountdown's own comment for why this needs a hook rather than a one-shot format().
+  const startCountdown = useChallengeStartCountdown(challenge?.startDate);
   if (!checklistTemplate) return null;
   const visibleFields = showAllFields ? fields : fields.slice(0, COLLAPSED_FIELD_COUNT);
   const hiddenFieldCount = fields.length - visibleFields.length;
+  const widgetTargets = fields
+    .filter(f => !!challenge?.fieldTargets[f.id])
+    .map(f => ({ fieldId: f.id, icon: f.icon, title: f.title, target: challenge!.fieldTargets[f.id], unit: f.unit }));
   return (
     <div className={styles.container}>
-      <div className={styles.headerRow}>
-        <div className={styles.avatar}>
-          <Icon width={24} icon={checklistTemplate.avatar?.name} color="#fff" />
-        </div>
-        <Typography.Title level={3} noMargin style={{ color: 'var(--ct-heading-color)' }}>
-          {checklistTemplate.title}
-        </Typography.Title>
-      </div>
+      <TitleWidget
+        layout={challenge?.titleWidgetLayout ?? 'row'}
+        icon={checklistTemplate.avatar?.name}
+        title={checklistTemplate.title}
+      />
 
       <div className={styles.dayContainer}>
         {allDays.map((d, i) => (
@@ -69,12 +74,9 @@ const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading, challen
         ))}
       </div>
 
-      {challenge?.startDate && (
-        <div className={styles.startDate}>
-          <Icon width={14} icon="solar:calendar-line-duotone" />
-          Starts {format(new Date(challenge.startDate), 'MMM d, yyyy')}
-        </div>
-      )}
+      <StartDateWidget layout={challenge?.startWidgetLayout ?? 'countdown'} countdown={startCountdown} />
+
+      <TargetsWidget layout={challenge?.targetsWidgetLayout ?? 'list'} targets={widgetTargets} />
 
       <div className={styles.divider} />
 
@@ -91,12 +93,6 @@ const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading, challen
                 <div>
                   <div className={styles.fieldTitle}>{f.title}</div>
                   {f.description && <div className={styles.fieldDescription}>{f.description}</div>}
-                  {!!challenge?.fieldTargets[f.id] && (
-                    <div className={styles.fieldTarget}>
-                      Goal: {challenge.fieldTargets[f.id]}
-                      {f.unit ? ` ${f.unit}` : ''}
-                    </div>
-                  )}
                 </div>
               </div>
             ))}

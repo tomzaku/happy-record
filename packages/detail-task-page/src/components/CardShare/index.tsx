@@ -15,6 +15,7 @@ import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-t
 import {
   CHALLENGE_THEMES,
   CHALLENGE_THEME_SWATCH,
+  Challenge,
   ChallengeThemeId,
   ChecklistTemplate,
   getActiveFieldGroups,
@@ -100,6 +101,19 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
   // already-hosted photo shown behind the shared page in place of the
   // theme's own background. Optional; empty string means "use the theme".
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
+  // No UI here for this — it's set from the shared invite page's own config widget
+  // (checklist-template-shared-page-ui) — but generateShareUrl's setChallengeOptions call below is
+  // a full upsert, so this still has to be hydrated and carried through unchanged on every save
+  // from here, or a re-share/re-save from this modal would silently null out whatever the owner
+  // set on the invite page.
+  const [greetingText, setGreetingText] = useState<string | null>(null);
+  // Same "no UI here, just carry it through unchanged" passthrough as greetingText above, for
+  // each of the 5 independent widget layouts.
+  const [startWidgetLayout, setStartWidgetLayout] = useState<Challenge['startWidgetLayout']>('countdown');
+  const [greetingWidgetLayout, setGreetingWidgetLayout] = useState<Challenge['greetingWidgetLayout']>('heading');
+  const [targetsWidgetLayout, setTargetsWidgetLayout] = useState<Challenge['targetsWidgetLayout']>('list');
+  const [buttonWidgetLayout, setButtonWidgetLayout] = useState<Challenge['buttonWidgetLayout']>('plain');
+  const [titleWidgetLayout, setTitleWidgetLayout] = useState<Challenge['titleWidgetLayout']>('row');
   // Required — defaults to "now" for a brand-new challenge (nothing to hydrate from yet), same
   // default useChallenge.tsx's own setChallengeOptions already gives createdAt. Once a challenge
   // exists, its own startDate is the source of truth (hydrated below), so re-saving without
@@ -113,6 +127,12 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
       setFieldTargets(challenge.fieldTargets);
       setTheme(challenge.theme);
       setBackgroundImageUrl(challenge.backgroundImageUrl ?? '');
+      setGreetingText(challenge.greetingText);
+      setStartWidgetLayout(challenge.startWidgetLayout);
+      setGreetingWidgetLayout(challenge.greetingWidgetLayout);
+      setTargetsWidgetLayout(challenge.targetsWidgetLayout);
+      setButtonWidgetLayout(challenge.buttonWidgetLayout);
+      setTitleWidgetLayout(challenge.titleWidgetLayout);
       setStartDate(challenge.startDate);
       setEndDate(challenge.endDate ?? '');
     }
@@ -171,6 +191,12 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         fieldTargets,
         theme,
         backgroundImageUrl: backgroundImageUrl.trim() || null,
+        greetingText,
+        startWidgetLayout,
+        greetingWidgetLayout,
+        targetsWidgetLayout,
+        buttonWidgetLayout,
+        titleWidgetLayout,
         startDate,
         endDate: endDate || null,
         ownerDisplayName: displayName,

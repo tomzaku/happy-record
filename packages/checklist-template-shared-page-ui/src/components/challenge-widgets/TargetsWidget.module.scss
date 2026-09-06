@@ -1,0 +1,108 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+// Wraps .goalLabel + whichever layout's own content — the label is what actually makes the
+// numbers below it read as "the collective goal," not just an arbitrary count; every layout gets
+// it, positioned identically above its own content.
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin: $spacing-lg 0;
+}
+
+.goalLabel {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: toRem(11px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--ct-accent);
+}
+
+// 'tiles' layout — a small card per target, wrapping onto a new line once it runs out of room.
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.tile {
+  flex: 1 1 100px;
+  min-width: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $spacing-md;
+  background: var(--ct-inner-bg);
+  border: var(--ct-inner-border);
+  border-radius: 16px;
+}
+
+.tileIcon {
+  color: var(--ct-accent);
+  margin-bottom: 2px;
+}
+
+.tileValue {
+  font-size: toRem(16px);
+  font-weight: 700;
+  color: var(--ct-heading-color);
+  line-height: 1.2;
+}
+
+.tileCaption {
+  font-size: toRem(11px);
+  color: var(--ct-muted-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 'combined' layout — one card, every target listed as its own row.
+.combined {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding: $spacing-md $spacing-lg;
+  background: var(--ct-inner-bg);
+  border: var(--ct-inner-border);
+  border-radius: 16px;
+}
+
+.combinedRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: toRem(13px);
+  color: var(--ct-body-text);
+}
+
+// 'list' layout — icon + title + "Goal: N" stacked per target, no card shell (same weight as the
+// plain field rows above it in TaskSharedCard).
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.listRow {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+}
+
+.listTitle {
+  font-size: toRem(14px);
+  font-weight: 600;
+  color: var(--ct-heading-color);
+}
+
+.listGoal {
+  font-size: toRem(13px);
+  font-weight: 600;
+  color: var(--ct-accent);
+  margin-top: 2px;
+}

@@ -1,0 +1,279 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+// Positions the fire/water particle effects relative to the button itself, popping out above it
+// via `bottom: 100%` rather than being clipped by it — see ButtonWidget.tsx's own comment.
+.wrapper {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+// Base chrome every layout shares — desktop/mobile each add their own padding/font-size via
+// their own className (see index.desktop.module.scss/index.mobile.module.scss's own
+// .primaryButton, now sizing-only). Background/radius/shadow come from whichever
+// .plain/.fire/.water/.colorful class below is applied alongside this one.
+.button {
+  position: relative;
+  z-index: 1;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  color: #fff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+// 'plain' — exactly the theme-driven look every challenge had before this widget existed.
+.plain {
+  background: var(--ct-button-bg);
+  border-radius: var(--ct-button-radius);
+  box-shadow: var(--ct-button-shadow);
+}
+
+// 'fire' — the button's own surface stays a static, readable gradient; the goo/particle motion
+// lives entirely in .fireLayer, sitting behind it (see ButtonWidget.tsx's own comment) so it
+// never blurs the actual button text.
+.fire {
+  background: linear-gradient(160deg, #ff7a3d, #ff5f2e);
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(255, 95, 46, 0.4);
+}
+
+// 'water' — same "static button, the animation lives in the particles above" as fire.
+.water {
+  background: linear-gradient(160deg, #38bdf8, #0ea5e9);
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(14, 165, 233, 0.4);
+}
+
+// 'colorful' — no external particles for this one; the button's own background is the effect, a
+// full rainbow cycling continuously in one direction.
+.colorful {
+  background: linear-gradient(120deg, #ff5f6d, #ffc371, #47e0c2, #6a82fb, #d66efd, #ff5f6d);
+  background-size: 400% 100%;
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(106, 130, 251, 0.35);
+  animation: colorfulCycle 5s linear infinite;
+}
+
+@keyframes colorfulCycle {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+// Defs-only SVG for the 'fire' goo filter — no visual footprint of its own.
+.filterDefs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+// Sits exactly behind the real button (`inset: 0` inside the same `.wrapper`, matching its size
+// via normal flow — see ButtonWidget.tsx's own comment), carrying the SVG goo filter. Its own
+// content — .fireBase + the rising .fireParticle spans — is what the filter blurs and
+// high-contrasts back into one blobby mass; the real `.button` on top of it stays crisp.
+.fireLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+// Same shape/color as `.fire` (the visible button) — invisible in the resting state since the
+// real button sits exactly on top of it, but it's what the rising particles goo-merge into at
+// the base rather than appearing to sprout from nothing.
+.fireBase {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #ff7a3d, #ff5f2e);
+}
+
+.fireParticle {
+  position: absolute;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3b0 0%, #ffb703 45%, #ff5f2e 100%);
+  animation-duration: 1.1s;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+}
+
+// 6 rise variants — each drifts sideways a little differently and shrinks to nothing by the end,
+// same shape as the codepen reference's own riseN keyframes, scaled for this button's size.
+@keyframes fireRise1 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-2px, -22px) scale(1);
+  }
+  to {
+    transform: translate(-6px, -44px) scale(0);
+  }
+}
+
+@keyframes fireRise2 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(3px, -28px) scale(1);
+  }
+  to {
+    transform: translate(-4px, -56px) scale(0);
+  }
+}
+
+@keyframes fireRise3 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-2px, -16px) scale(1);
+  }
+  to {
+    transform: translate(-3px, -32px) scale(0);
+  }
+}
+
+@keyframes fireRise4 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(1px, -18px) scale(1);
+  }
+  to {
+    transform: translate(-1px, -36px) scale(0);
+  }
+}
+
+@keyframes fireRise5 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(3px, -26px) scale(1);
+  }
+  to {
+    transform: translate(-5px, -52px) scale(0);
+  }
+}
+
+@keyframes fireRise6 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(3px, -20px) scale(1);
+  }
+  to {
+    transform: translate(-3px, -40px) scale(0);
+  }
+}
+
+.fireRise1 {
+  animation-name: fireRise1;
+}
+.fireRise2 {
+  animation-name: fireRise2;
+}
+.fireRise3 {
+  animation-name: fireRise3;
+}
+.fireRise4 {
+  animation-name: fireRise4;
+}
+.fireRise5 {
+  animation-name: fireRise5;
+}
+.fireRise6 {
+  animation-name: fireRise6;
+}
+
+// 4 bubbles rising and fading above the button, staggered so they read as a continuous stream
+// rather than everything popping at once.
+.waterEffect {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  height: 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bubble {
+  position: absolute;
+  bottom: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #f0fbff 0%, #7dd3fc 45%, #0ea5e9 100%);
+  opacity: 0;
+  animation: bubbleRise 1.8s ease-in infinite;
+}
+
+.bubble1 {
+  left: 30%;
+  width: 8px;
+  height: 8px;
+  animation-delay: 0s;
+}
+
+.bubble2 {
+  left: 46%;
+  width: 12px;
+  height: 12px;
+  animation-delay: 0.5s;
+}
+
+.bubble3 {
+  left: 60%;
+  width: 6px;
+  height: 6px;
+  animation-delay: 1s;
+}
+
+.bubble4 {
+  left: 72%;
+  width: 10px;
+  height: 10px;
+  animation-delay: 1.4s;
+}
+
+@keyframes bubbleRise {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-38px) scale(1);
+    opacity: 0;
+  }
+}

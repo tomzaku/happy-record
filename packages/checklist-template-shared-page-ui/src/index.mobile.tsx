@@ -5,6 +5,8 @@ import Icon from '@moon-ui/icon/Icon';
 import TaskSharedCard from './components/task-shared-card';
 import Timer from './components/timer';
 import ChallengeConfigDrawer from './components/challenge-config-drawer';
+import GreetingWidget from './components/challenge-widgets/GreetingWidget';
+import ButtonWidget from './components/challenge-widgets/ButtonWidget';
 import { useChecklistTemplateSharedPage } from './useChecklistTemplateSharedPage';
 import { useApplyChallengeTheme } from './theme';
 import styles from './index.mobile.module.scss';
@@ -15,8 +17,11 @@ const ChecklistTemplateSharedPageMobile = () => {
     fields,
     fieldsLoading,
     ready,
-    userName,
     targetName,
+    greetingHeadline,
+    defaultGreetingText,
+    greetingWidgetLayout,
+    buttonWidgetLayout,
     dialogRejectOpen,
     setDialogRejectOpen,
     themeId,
@@ -73,19 +78,13 @@ const ChecklistTemplateSharedPageMobile = () => {
 
       <div className={styles.body}>
         <div className={styles.chip}>Challenge</div>
-        <Typography.Title
-          level={3}
-          noMargin
-          className={styles.headline}
-          style={{ color: 'var(--ct-heading-color)' }}
-        >
-          {/* No hardcoded "you" here — targetName already defaults to 'you'
-              (see useChecklistTemplateSharedPage), so a literal "you" plus
-              targetName duplicated into "challenged you, you!" whenever the
-              link's own ?to= was left blank, which is every link CardShare
-              generates today (it never collects a target name). */}
-          {`${userName} just challenged ${targetName}!`}
-        </Typography.Title>
+        {/* Owner-customizable via the config widget's own "Invitation message" text + its
+            independent layout picker (heading/banner/minimal) — greetingHeadline falls back to
+            the same auto-generated sentence as before (userName/targetName) when the owner hasn't
+            set one. See useChecklistTemplateSharedPage.ts's greetingHeadline/defaultGreetingText/
+            greetingWidgetLayout. No font-size override needed here the way desktop's .headline
+            has one — mobile's .headline is spacing-only, safe to apply for every layout. */}
+        <GreetingWidget layout={greetingWidgetLayout} text={greetingHeadline} titleLevel={3} className={styles.headline} />
         <Typography.Text className={styles.subtext} style={{ color: 'var(--ct-body-text)' }}>
           Complete this checklist together and see who keeps the streak alive.
         </Typography.Text>
@@ -107,6 +106,9 @@ const ChecklistTemplateSharedPageMobile = () => {
           onDismiss={closeChallengeConfig}
           challenge={challenge}
           numberFields={numberFields}
+          defaultGreeting={defaultGreetingText}
+          templateTitle={checklistTemplate.title}
+          templateIcon={checklistTemplate.avatar?.name}
           onSave={saveChallengeConfig}
           onChange={updateChallengeConfigDraft}
         />
@@ -117,10 +119,17 @@ const ChecklistTemplateSharedPageMobile = () => {
           card's own content happened to end, off-screen behind however many
           fields the template has. */}
       <div className={styles.stickyBar}>
-        <button className={styles.primaryButton} onClick={handleSubmit} disabled={!ready || submitting}>
+        {/* Owner-customizable via the config widget's own "Take Challenge Button" layout picker
+            (plain/fire/water/colorful) — see useChecklistTemplateSharedPage.ts's buttonWidgetLayout. */}
+        <ButtonWidget
+          layout={buttonWidgetLayout}
+          onClick={handleSubmit}
+          disabled={!ready || submitting}
+          className={styles.primaryButton}
+        >
           {(submitting || !ready) && <Icon icon="svg-spinners:180-ring-with-bg" width={16} />}
           Take the Challenge
-        </button>
+        </ButtonWidget>
         <button className={styles.textLink} onClick={onClickLeaveIt} disabled={submitting}>
           Maybe later
         </button>

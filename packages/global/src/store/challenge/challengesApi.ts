@@ -111,6 +111,12 @@ export function saveChallenge(challenge: {
   fieldTargets: Record<string, number>;
   theme: Challenge['theme'];
   backgroundImageUrl: Challenge['backgroundImageUrl'];
+  greetingText: Challenge['greetingText'];
+  startWidgetLayout: Challenge['startWidgetLayout'];
+  greetingWidgetLayout: Challenge['greetingWidgetLayout'];
+  targetsWidgetLayout: Challenge['targetsWidgetLayout'];
+  buttonWidgetLayout: Challenge['buttonWidgetLayout'];
+  titleWidgetLayout: Challenge['titleWidgetLayout'];
   startDate: string;
   endDate: string | null;
   /** Neither is a `challenges` column — see the edge function; always used now that every save enrolls the owner as a participant. */

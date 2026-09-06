@@ -8,24 +8,6 @@
   padding: $spacing-lg;
 }
 
-.headerRow {
-  display: flex;
-  align-items: center;
-  gap: $spacing-md;
-  margin-bottom: $spacing-lg;
-}
-
-.avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--ct-avatar-radius);
-  background: var(--ct-avatar-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
 .dayContainer {
   display: flex;
   gap: $spacing-sm;
@@ -50,15 +32,6 @@
   background: var(--ct-pill-active-bg);
   border-color: transparent;
   color: #fff;
-}
-
-.startDate {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  font-size: toRem(13px);
-  color: var(--ct-muted-text);
-  margin-bottom: $spacing-lg;
 }
 
 .divider {
@@ -131,12 +104,5 @@
 .fieldDescription {
   font-size: toRem(13px);
   color: var(--ct-muted-text);
-  margin-top: 2px;
-}
-
-.fieldTarget {
-  font-size: toRem(13px);
-  font-weight: 600;
-  color: var(--ct-accent);
   margin-top: 2px;
 }

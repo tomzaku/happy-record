@@ -23,6 +23,31 @@ export const CHALLENGE_THEMES = ['classic', 'ignite', 'playful'] as const;
 export type ChallengeThemeId = (typeof CHALLENGE_THEMES)[number];
 
 /**
+ * 3 independent layout choices, one per widget on the shared page — the owner picks each
+ * separately (invite page's own config drawer), same "fixed set, DB CHECK is the real guard"
+ * shape as CHALLENGE_THEMES above (20260906020000_challenge_widget_layouts.sql). See
+ * checklist-template-shared-page-ui's own components/challenge-widgets/ for what each looks like.
+ */
+export const START_WIDGET_LAYOUTS = ['countdown', 'date', 'both'] as const;
+export type StartWidgetLayout = (typeof START_WIDGET_LAYOUTS)[number];
+
+export const GREETING_WIDGET_LAYOUTS = ['heading', 'banner', 'minimal'] as const;
+export type GreetingWidgetLayout = (typeof GREETING_WIDGET_LAYOUTS)[number];
+
+export const TARGETS_WIDGET_LAYOUTS = ['list', 'tiles', 'combined'] as const;
+export type TargetsWidgetLayout = (typeof TARGETS_WIDGET_LAYOUTS)[number];
+
+/** 4th independent widget layout — the "Take the Challenge" CTA button's own visual style. See
+ * 20260906030000_challenge_button_widget_layout.sql. */
+export const BUTTON_WIDGET_LAYOUTS = ['plain', 'fire', 'water', 'colorful'] as const;
+export type ButtonWidgetLayout = (typeof BUTTON_WIDGET_LAYOUTS)[number];
+
+/** 5th independent widget layout — the challenge card's own title/icon header. See
+ * 20260906040000_challenge_title_widget_layout.sql. */
+export const TITLE_WIDGET_LAYOUTS = ['row', 'stacked', 'minimal'] as const;
+export type TitleWidgetLayout = (typeof TITLE_WIDGET_LAYOUTS)[number];
+
+/**
  * Turns a shared checklist template into something joinable. Every challenge shows the peer
  * completion grid (packages/global/src/store/challenge/useChallengeParticipants) to everyone who
  * joins; `commentsEnabled` separately gates the flat thread
@@ -56,6 +81,25 @@ export type Challenge = {
    * one — see 20260828000000_challenge_background_image.sql.
    */
   backgroundImageUrl: string | null;
+  /**
+   * Owner-written headline (≤200 chars, see 20260906010000_challenge_greeting_text.sql), shown on
+   * the shared page in place of its own auto-generated "X just challenged Y!" sentence. `null`
+   * means "no override" — the shared page computes its own default in that case (see
+   * useChecklistTemplateSharedPage.ts's `greetingHeadline`).
+   */
+  greetingText: string | null;
+  /** Owner-picked in the invite page's own config drawer, independently of the other 2 widget
+   * layouts below — defaults to 'countdown' for every challenge saved before this existed. See
+   * 20260906020000_challenge_widget_layouts.sql. */
+  startWidgetLayout: StartWidgetLayout;
+  /** Same independence as startWidgetLayout — defaults to 'heading'. */
+  greetingWidgetLayout: GreetingWidgetLayout;
+  /** Same independence as startWidgetLayout — defaults to 'list'. */
+  targetsWidgetLayout: TargetsWidgetLayout;
+  /** Same independence as startWidgetLayout — defaults to 'plain'. */
+  buttonWidgetLayout: ButtonWidgetLayout;
+  /** Same independence as startWidgetLayout — defaults to 'row'. */
+  titleWidgetLayout: TitleWidgetLayout;
   /** Required — when this challenge actually starts, for score calculation (not implemented
    * yet). Owner-picked in CardShare, defaulting to "now" for a brand-new challenge. */
   startDate: string;
@@ -93,6 +137,12 @@ type SetChallengeOptionsArgs = {
     fieldTargets: Record<string, number>;
     theme: ChallengeThemeId;
     backgroundImageUrl: string | null;
+    greetingText: string | null;
+    startWidgetLayout: StartWidgetLayout;
+    greetingWidgetLayout: GreetingWidgetLayout;
+    targetsWidgetLayout: TargetsWidgetLayout;
+    buttonWidgetLayout: ButtonWidgetLayout;
+    titleWidgetLayout: TitleWidgetLayout;
     startDate: string;
     endDate: string | null;
     ownerDisplayName?: string;
@@ -193,6 +243,12 @@ export const useChallenge = () => {
       fieldTargets: options.fieldTargets,
       theme: options.theme,
       backgroundImageUrl: options.backgroundImageUrl,
+      greetingText: options.greetingText,
+      startWidgetLayout: options.startWidgetLayout,
+      greetingWidgetLayout: options.greetingWidgetLayout,
+      targetsWidgetLayout: options.targetsWidgetLayout,
+      buttonWidgetLayout: options.buttonWidgetLayout,
+      titleWidgetLayout: options.titleWidgetLayout,
       startDate: options.startDate,
       endDate: options.endDate,
       isPublicListing: existing?.isPublicListing ?? false,

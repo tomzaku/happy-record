@@ -1,0 +1,36 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+// 'row' — the original layout (icon badge beside the title), unchanged from before this widget
+// existed.
+.row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+// 'stacked' — icon badge centered above the title, both centered.
+.stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+  text-align: center;
+}
+
+// 'minimal' — no icon badge at all, just the title text.
+.minimalTitle {
+  margin-bottom: $spacing-lg !important;
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--ct-avatar-radius);
+  background: var(--ct-avatar-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

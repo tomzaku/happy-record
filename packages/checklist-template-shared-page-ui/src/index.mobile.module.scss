@@ -92,27 +92,11 @@
   align-items: center;
 }
 
+// Sizing only — see index.desktop.module.scss's own .primaryButton comment: everything else now
+// comes from ButtonWidget's own base + per-layout classes.
 .primaryButton {
-  background: var(--ct-button-bg);
-  color: #fff;
-  border: 0;
-  border-radius: var(--ct-button-radius);
   padding: 15px;
   font-size: toRem(15px);
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: $spacing-sm;
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
 }
 
 .textLink {

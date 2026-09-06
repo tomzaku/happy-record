@@ -5,6 +5,26 @@
 export const CHALLENGE_THEMES = ['classic', 'ignite', 'playful'] as const;
 export type ChallengeTheme = (typeof CHALLENGE_THEMES)[number];
 
+// Three independent layout choices, one per widget — see 20260906020000_challenge_widget_layouts.sql.
+export const START_WIDGET_LAYOUTS = ['countdown', 'date', 'both'] as const;
+export type StartWidgetLayout = (typeof START_WIDGET_LAYOUTS)[number];
+
+export const GREETING_WIDGET_LAYOUTS = ['heading', 'banner', 'minimal'] as const;
+export type GreetingWidgetLayout = (typeof GREETING_WIDGET_LAYOUTS)[number];
+
+export const TARGETS_WIDGET_LAYOUTS = ['list', 'tiles', 'combined'] as const;
+export type TargetsWidgetLayout = (typeof TARGETS_WIDGET_LAYOUTS)[number];
+
+// 4th independent widget layout — the "Take the Challenge" CTA button's own visual style. See
+// 20260906030000_challenge_button_widget_layout.sql.
+export const BUTTON_WIDGET_LAYOUTS = ['plain', 'fire', 'water', 'colorful'] as const;
+export type ButtonWidgetLayout = (typeof BUTTON_WIDGET_LAYOUTS)[number];
+
+// 5th independent widget layout — the challenge card's own title/icon header. See
+// 20260906040000_challenge_title_widget_layout.sql.
+export const TITLE_WIDGET_LAYOUTS = ['row', 'stacked', 'minimal'] as const;
+export type TitleWidgetLayout = (typeof TITLE_WIDGET_LAYOUTS)[number];
+
 export function toChallenge(r: Record<string, unknown>) {
   return {
     id: r.id as string,
@@ -23,6 +43,19 @@ export function toChallenge(r: Record<string, unknown>) {
     // challenge that hasn't set one, same as most rows never having a theme
     // override.
     backgroundImageUrl: (r.background_image_url as string | null) ?? null,
+    // See 20260906010000_challenge_greeting_text.sql — null for every challenge that hasn't
+    // customized it; the shared page falls back to its own auto-generated greeting in that case.
+    greetingText: (r.greeting_text as string | null) ?? null,
+    // See 20260906020000_challenge_widget_layouts.sql — same "DB CHECK is the real guard" cast as
+    // theme above; each defaults to the layout that matches how this page rendered before any of
+    // this existed, so an old row reads identically to before.
+    startWidgetLayout: (r.start_widget_layout as StartWidgetLayout) ?? 'countdown',
+    greetingWidgetLayout: (r.greeting_widget_layout as GreetingWidgetLayout) ?? 'heading',
+    targetsWidgetLayout: (r.targets_widget_layout as TargetsWidgetLayout) ?? 'list',
+    // See 20260906030000_challenge_button_widget_layout.sql.
+    buttonWidgetLayout: (r.button_widget_layout as ButtonWidgetLayout) ?? 'plain',
+    // See 20260906040000_challenge_title_widget_layout.sql.
+    titleWidgetLayout: (r.title_widget_layout as TitleWidgetLayout) ?? 'row',
     // See 20260905020000_challenges_dates.sql — startDate is required client-side (fromChallenge
     // below throws if it's missing on write), endDate stays null for an open-ended challenge.
     startDate: r.start_date as string,
@@ -69,6 +102,30 @@ export function fromChallenge(e: Record<string, unknown>) {
       ? backgroundImageUrlRaw
       : null;
 
+  // Same "fall back rather than throw" treatment, just a length cap instead of a format check —
+  // see 20260906010000_challenge_greeting_text.sql. Empty/missing means "no override," not "clear
+  // the default" (there's nothing to clear — the shared page computes its own default when this
+  // is null), so an empty string collapses to null rather than being stored as-is.
+  const greetingTextRaw = typeof e.greetingText === 'string' ? e.greetingText.trim() : '';
+  const greetingText = greetingTextRaw && greetingTextRaw.length <= 200 ? greetingTextRaw : null;
+
+  // Same "fall back rather than throw" treatment as theme — see 20260906020000_challenge_widget_layouts.sql.
+  const startWidgetLayout = START_WIDGET_LAYOUTS.includes(e.startWidgetLayout as StartWidgetLayout)
+    ? (e.startWidgetLayout as StartWidgetLayout)
+    : 'countdown';
+  const greetingWidgetLayout = GREETING_WIDGET_LAYOUTS.includes(e.greetingWidgetLayout as GreetingWidgetLayout)
+    ? (e.greetingWidgetLayout as GreetingWidgetLayout)
+    : 'heading';
+  const targetsWidgetLayout = TARGETS_WIDGET_LAYOUTS.includes(e.targetsWidgetLayout as TargetsWidgetLayout)
+    ? (e.targetsWidgetLayout as TargetsWidgetLayout)
+    : 'list';
+  const buttonWidgetLayout = BUTTON_WIDGET_LAYOUTS.includes(e.buttonWidgetLayout as ButtonWidgetLayout)
+    ? (e.buttonWidgetLayout as ButtonWidgetLayout)
+    : 'plain';
+  const titleWidgetLayout = TITLE_WIDGET_LAYOUTS.includes(e.titleWidgetLayout as TitleWidgetLayout)
+    ? (e.titleWidgetLayout as TitleWidgetLayout)
+    : 'row';
+
   // Required — the client always has a value to send (CardShare defaults it to "now" for a
   // brand-new challenge, then hydrates from the existing row on every re-save, same as theme/
   // backgroundImageUrl above), so a missing/invalid one here means a real client bug, not a
@@ -90,6 +147,12 @@ export function fromChallenge(e: Record<string, unknown>) {
     field_targets: fieldTargets,
     theme,
     background_image_url: backgroundImageUrl,
+    greeting_text: greetingText,
+    start_widget_layout: startWidgetLayout,
+    greeting_widget_layout: greetingWidgetLayout,
+    targets_widget_layout: targetsWidgetLayout,
+    button_widget_layout: buttonWidgetLayout,
+    title_widget_layout: titleWidgetLayout,
     start_date: e.startDate,
     end_date: endDate,
     // Deliberately never read from `e` here — see 20260905010000_challenges_public_listing.sql.

@@ -15,7 +15,15 @@ import {
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { useGetChecklistTemplateApi } from '@dreamer/global/src/hook/checklist-template/useGetChecklistTemplateApi';
-import type { ChallengeThemeId, ChecklistTemplate } from '@dreamer/global';
+import type {
+  ButtonWidgetLayout,
+  ChallengeThemeId,
+  ChecklistTemplate,
+  GreetingWidgetLayout,
+  StartWidgetLayout,
+  TargetsWidgetLayout,
+  TitleWidgetLayout,
+} from '@dreamer/global';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
 
 // The owner-editable subset of a Challenge row the config drawer writes — matches
@@ -27,6 +35,12 @@ export type ChallengeConfigOptions = {
   fieldTargets: Record<string, number>;
   theme: ChallengeThemeId;
   backgroundImageUrl: string | null;
+  greetingText: string | null;
+  startWidgetLayout: StartWidgetLayout;
+  greetingWidgetLayout: GreetingWidgetLayout;
+  targetsWidgetLayout: TargetsWidgetLayout;
+  buttonWidgetLayout: ButtonWidgetLayout;
+  titleWidgetLayout: TitleWidgetLayout;
   startDate: string;
   endDate: string | null;
   ownerDisplayName?: string;
@@ -85,6 +99,19 @@ export function useChecklistTemplateSharedPage() {
   // 20260828010000_challenge_owner_name_public.sql) once that's loaded, and
   // only to the generic "Someone" before/without either.
   const userName = searchParams.get('from') || challenge?.ownerDisplayName || 'Someone';
+  // What the headline says with no owner override — also doubles as the config widget's own
+  // placeholder text, so the owner sees exactly what visitors get if they leave it blank.
+  const defaultGreetingText = `${userName} just challenged ${targetName}!`;
+  // The owner's own headline (Challenge.greetingText, ≤200 chars — see
+  // 20260906010000_challenge_greeting_text.sql) wins when set; reads off `previewChallenge`, not
+  // `challenge`, so an edit in the config widget previews live, same as theme/backgroundImageUrl.
+  const greetingHeadline = previewChallenge?.greetingText?.trim() || defaultGreetingText;
+  // Independent of the other 2 widget layouts — see GreetingWidget's own comment for what each
+  // value looks like. Reads off `previewChallenge` for the same live-preview reason as themeId.
+  const greetingWidgetLayout = previewChallenge?.greetingWidgetLayout ?? 'heading';
+  // Independent of the other 3 widget layouts — the CTA button's own visual style. Reads off
+  // `previewChallenge` for the same live-preview reason as the others.
+  const buttonWidgetLayout = previewChallenge?.buttonWidgetLayout ?? 'plain';
   // Every challenge shares everyone's check-ins now — there's no
   // private-roster mode left to gate on (see CardShare), so any link with a
   // challenge row at all is joinable.
@@ -214,6 +241,10 @@ export function useChecklistTemplateSharedPage() {
     ready,
     userName,
     targetName,
+    greetingHeadline,
+    defaultGreetingText,
+    greetingWidgetLayout,
+    buttonWidgetLayout,
     dialogRejectOpen,
     setDialogRejectOpen,
     isChallenge,

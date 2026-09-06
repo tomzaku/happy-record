@@ -1,0 +1,19 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+.banner {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: var(--ct-chip-bg);
+  color: var(--ct-chip-text);
+  font-weight: 700;
+  font-size: toRem(15px);
+}
+
+.minimal {
+  display: block;
+  font-size: toRem(14px);
+  font-weight: 500;
+}

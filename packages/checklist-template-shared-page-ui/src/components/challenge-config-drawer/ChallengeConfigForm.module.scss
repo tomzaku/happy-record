@@ -27,6 +27,72 @@
   gap: $spacing-xxs;
 }
 
+// One group ("Target / Goal", "Start date", "UI Changes") — a title followed by whatever that
+// group needs (data inputs, its own layout picker, its own preview). .groupDivider between
+// groups is a plain rule; .body's own flex gap already provides the surrounding spacing.
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.groupTitle {
+  font-size: toRem(14px) !important;
+  font-weight: 700 !important;
+}
+
+.groupDivider {
+  border-top: 1px solid var(--division-color);
+}
+
+.layoutOptions {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-xs;
+}
+
+.layoutOption {
+  flex: 1;
+  padding: $spacing-sm;
+  border: 1px solid var(--division-color);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--text-color);
+  font-size: toRem(13px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--text-color);
+  }
+}
+
+.layoutOptionSelected {
+  border-color: #0b7dc2;
+  background: rgba(11, 125, 194, 0.08);
+  color: #0b7dc2;
+}
+
+// Wraps the real ChallengeWidget preview — a plain surface, not the drawer's own background,
+// since the widget draws its own --ct-inner-bg card and reads oddly floating with nothing
+// grounding it against the drawer's --drawer-background otherwise.
+.widgetPreview {
+  padding: $spacing-md;
+  border-radius: 12px;
+  background: var(--ct-page-bg, var(--background));
+  margin-top: $spacing-xs;
+}
+
+// ButtonWidget's own size, inside its preview box — same padding/font-size as the real page's
+// button (see index.desktop.module.scss's own .primaryButton), just not full-width so it doesn't
+// stretch to the drawer's edges the way the real CTA stretches to the page's.
+.buttonPreview {
+  width: auto;
+  padding: 14px 24px;
+  font-size: toRem(15px);
+}
+
 .label {
   font-size: toRem(11px);
   font-weight: 600;
@@ -103,6 +169,81 @@
   padding: $spacing-sm $spacing-md;
   font-size: toRem(15px);
   min-height: 40px;
+}
+
+.removeTargetIcon {
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--text-description-color);
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--text-color);
+  }
+}
+
+.addTargetButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm;
+  border: 1px dashed var(--division-color);
+  border-radius: 8px;
+  background: none;
+  color: var(--text-color-secondary, var(--text-color));
+  font-size: toRem(13px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    border-color: #0b7dc2;
+    color: #0b7dc2;
+  }
+}
+
+.addTargetList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+  padding: $spacing-sm;
+  border: 1px solid var(--division-color);
+  border-radius: 8px;
+  background: var(--background);
+}
+
+.addTargetOption {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-color);
+  font-size: toRem(13px);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+}
+
+.addTargetCancel {
+  padding: $spacing-xs $spacing-sm;
+  border: 0;
+  background: none;
+  color: var(--text-description-color);
+  font-size: toRem(12px);
+  cursor: pointer;
+  align-self: flex-start;
+
+  &:hover {
+    color: var(--text-color);
+  }
 }
 
 .footer {

@@ -6,7 +6,19 @@
 // CHALLENGE_THEMES (dto/challenges/challenges-dto.ts), falls back to 'classic' if omitted/invalid.
 // `challenge.backgroundImageUrl` is a plain http(s) URL (an already-hosted photo, not an upload)
 // shown behind the shared page instead of/over the theme's own background; anything that isn't a
-// plausible http(s) URL clears it to null rather than failing the save.
+// plausible http(s) URL clears it to null rather than failing the save. `challenge.greetingText`
+// is an optional owner-written headline (≤200 chars) shown in place of the shared page's own
+// auto-generated "X just challenged Y!" sentence; blank/oversized clears it to null rather than
+// failing the save, same as backgroundImageUrl. 5 independent layout choices, one per widget
+// (dto/challenges/challenges-dto.ts): `challenge.startWidgetLayout` is one of
+// START_WIDGET_LAYOUTS ('countdown' | 'date' | 'both', falls back to 'countdown'),
+// `challenge.greetingWidgetLayout` is one of GREETING_WIDGET_LAYOUTS ('heading' | 'banner' |
+// 'minimal', falls back to 'heading'), `challenge.targetsWidgetLayout` is one of
+// TARGETS_WIDGET_LAYOUTS ('list' | 'tiles' | 'combined', falls back to 'list'),
+// `challenge.buttonWidgetLayout` is one of BUTTON_WIDGET_LAYOUTS ('plain' | 'fire' | 'water' |
+// 'colorful', falls back to 'plain'), `challenge.titleWidgetLayout` is one of
+// TITLE_WIDGET_LAYOUTS ('row' | 'stacked' | 'minimal', falls back to 'row') — each independently,
+// since the 5 widgets are unrelated pieces of content.
 //
 // `compose(checkCanWriteChallenge, core)` — see services/challenges-access-service.ts's own
 // comment for why the write-side check has to be explicit now.

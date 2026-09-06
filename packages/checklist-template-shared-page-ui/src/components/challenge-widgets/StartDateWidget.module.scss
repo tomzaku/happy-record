@@ -1,0 +1,63 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+// 'date' — the original small plain line, unchanged.
+.line {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: toRem(13px);
+  color: var(--ct-muted-text);
+  margin-bottom: $spacing-lg;
+}
+
+// 'both' — a plain date line with an accent-colored, slightly larger countdown next to it, more
+// prominent than 'date' alone but not as loud as 'countdown''s own hero stat.
+.bothRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.bothIcon {
+  color: var(--ct-muted-text);
+  flex-shrink: 0;
+}
+
+.bothDate {
+  font-size: toRem(13px);
+  color: var(--ct-muted-text);
+}
+
+.bothCountdown {
+  font-size: toRem(15px);
+  font-weight: 700;
+  color: var(--ct-accent);
+}
+
+// 'countdown' — a big hero stat, the most visually prominent of the 3 (this is the flashiest
+// option, so it earns the most weight): icon + a large bold value + a small caption underneath.
+.bigStat {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.bigIcon {
+  color: var(--ct-accent);
+  flex-shrink: 0;
+}
+
+.bigValue {
+  font-size: toRem(26px);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--ct-heading-color);
+}
+
+.bigCaption {
+  font-size: toRem(12px);
+  color: var(--ct-muted-text);
+}

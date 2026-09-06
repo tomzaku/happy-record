@@ -22,6 +22,13 @@ type Props = {
   onDismiss: () => void;
   challenge: Challenge;
   numberFields: RecordField[];
+  // What the invite page's headline says with no greetingText override — see
+  // useChecklistTemplateSharedPage.ts's defaultGreetingText.
+  defaultGreeting: string;
+  // The checklist template's own title/icon — the title widget has no text of its own to edit
+  // (it's always the template's real title), so these are only for the widget's live preview.
+  templateTitle: string;
+  templateIcon: string;
   // Persists via setChallengeOptions/POST /challenges and closes on success — see
   // useChecklistTemplateSharedPage.ts's saveChallengeConfig.
   onSave: (options: ChallengeConfigOptions) => Promise<void>;
@@ -30,7 +37,17 @@ type Props = {
   onChange: (options: ChallengeConfigOptions) => void;
 };
 
-const ChallengeConfigDrawer = ({ visible, onDismiss, challenge, numberFields, onSave, onChange }: Props) => {
+const ChallengeConfigDrawer = ({
+  visible,
+  onDismiss,
+  challenge,
+  numberFields,
+  defaultGreeting,
+  templateTitle,
+  templateIcon,
+  onSave,
+  onChange,
+}: Props) => {
   const isMobile = useIsMobile();
   const [saving, setSaving] = React.useState(false);
 
@@ -60,6 +77,9 @@ const ChallengeConfigDrawer = ({ visible, onDismiss, challenge, numberFields, on
           <ChallengeConfigForm
             challenge={challenge}
             numberFields={numberFields}
+            defaultGreeting={defaultGreeting}
+            templateTitle={templateTitle}
+            templateIcon={templateIcon}
             onSave={handleSave}
             onChange={onChange}
             onCancel={onDismiss}
@@ -96,6 +116,9 @@ const ChallengeConfigDrawer = ({ visible, onDismiss, challenge, numberFields, on
             <ChallengeConfigForm
               challenge={challenge}
               numberFields={numberFields}
+              defaultGreeting={defaultGreeting}
+              templateTitle={templateTitle}
+              templateIcon={templateIcon}
               onSave={handleSave}
               onChange={onChange}
               onCancel={onDismiss}
