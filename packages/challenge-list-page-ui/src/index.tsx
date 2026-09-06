@@ -15,10 +15,7 @@ import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button';
 import { Icon } from '@moon-ui/icon/Icon';
-// Deep import, same precedent as ChecklistGenericInfo's own reach into
-// create-checklist-page-ui's helpers — a plain shimmering placeholder with no state of its own,
-// not worth a second copy just because it lives in a sibling page package.
-import Skeleton from '@happy-record/challenge-dashboard-page-ui/src/components/Skeleton';
+import Skeleton from '@moon-ui/skeleton';
 import styles from './index.module.scss';
 
 /**

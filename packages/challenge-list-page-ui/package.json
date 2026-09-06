@@ -4,6 +4,6 @@
   "private": true,
   "main": "src/index.tsx",
   "dependencies": {
-    "@happy-record/challenge-dashboard-page-ui": "^1.0.0"
+    "@moon-ui/skeleton": "^1.0.0"
   }
 }
