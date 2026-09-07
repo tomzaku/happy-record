@@ -159,18 +159,6 @@ export default function SettingPageDesktop() {
 
             <div className={styles.settingsSection}>
               <Typography.Title level={4} className={styles.sectionTitle}>
-                Task Management
-              </Typography.Title>
-              <List.ItemMeta
-                onClick={() => navigate('/checklist-template')}
-                logo={<Icon width={24} icon="proicons:task-list" />}
-                title={'Task Management'}
-                description={'Select/ Deselect Tasks'}
-              />
-            </div>
-
-            <div className={styles.settingsSection}>
-              <Typography.Title level={4} className={styles.sectionTitle}>
                 Pomodoro Timer
               </Typography.Title>
               <List.ItemMeta

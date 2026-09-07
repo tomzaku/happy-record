@@ -14,6 +14,8 @@ interface FocusZoneFABProps {
   isPomodoroRunning: boolean;
   onToggleStopwatch: () => void;
   onTogglePomodoro: () => void;
+  onResetStopwatch: () => void;
+  onResetPomodoro: () => void;
   onOpenModal: () => void;
 }
 
@@ -25,6 +27,8 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
   isPomodoroRunning,
   onToggleStopwatch,
   onTogglePomodoro,
+  onResetStopwatch,
+  onResetPomodoro,
   onOpenModal,
 }) => {
   const [isMusicDropdownVisible, setIsMusicDropdownVisible] = useState(false);
@@ -75,6 +79,14 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
 
   const handleMusicToggle = () => {
     setIsMusicDropdownVisible(!isMusicDropdownVisible);
+  };
+
+  const handleReset = () => {
+    if (timerMode === 'stopwatch') {
+      onResetStopwatch();
+    } else {
+      onResetPomodoro();
+    }
   };
 
   const handleMuteToggle = () => {
@@ -140,6 +152,26 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
             height={24}
           />
         </motion.button>
+
+        {/* Reset Button - shown while a timer is running */}
+        {isAnyTimerRunning() && (
+          <motion.button
+            className={styles.fabPlayPauseButton}
+            onClick={handleReset}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            style={{
+              width: '32px',
+              height: '32px'
+            }}
+          >
+            <Icon
+              icon="material-symbols:refresh"
+              width={22}
+              height={22}
+            />
+          </motion.button>
+        )}
 
         {/* Music Control Group */}
         {isAnySoundActive() && (

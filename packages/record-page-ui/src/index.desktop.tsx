@@ -4,11 +4,9 @@ import ChecklistTodayDesktop from './components/checklist-today/ChecklistToday.d
 import MiniMonthCalendar from './components/mini-month-calendar';
 import RecentHistory from './components/RecentHistory';
 import WeeklyProgressCard from './components/WeeklyProgressCard';
-import ViewSwitcher, { ViewMode } from './components/view-switcher';
+import HomeViewSwitcher, { HomeViewMode } from './components/home-view-switcher';
 import switcherStyles from './components/view-switcher/index.module.scss';
-import WeekView from './components/week-view';
-import MonthView from './components/month-view';
-import YearView from './components/year-view';
+import HomeCalendar from './components/home-calendar';
 // import MusicAudioPlayer from '@pregnant/music-audio-player';
 import { DesktopDrawer } from '@dreamer/header';
 import styles from './index.desktop.module.scss';
@@ -29,15 +27,10 @@ const TaskListPage = () => {
   // this stays fixed at 'all' rather than threading a picker through, same
   // "no filter" behavior every view already had by default.
   const selectedTag = 'all';
-  const [viewMode, setViewMode] = React.useState<ViewMode>('day');
+  const [viewMode, setViewMode] = React.useState<HomeViewMode>('list');
   // The right column's own Calendar/History toggle — defaults to Calendar,
   // matching what this column always showed before History existed.
   const [rightPanelMode, setRightPanelMode] = React.useState<RightPanelMode>('calendar');
-
-  const goToDay = (date: Date) => {
-    setStartDate(date);
-    setViewMode('day');
-  };
 
   // Update key and trigger flip when date changes
   React.useEffect(() => {
@@ -59,7 +52,7 @@ const TaskListPage = () => {
             single-day fetch runs; effects fire in JSX order for sibling
             components, and this fetch is the one that should win the race
             for "today" — see useChecklists.tsx's `ensureChecklistsFetched`. */}
-        {viewMode === 'day' && (
+        {viewMode === 'list' && (
           <div className={styles.rightCalendar}>
             <WeeklyProgressCard />
             <div className={styles.rightPanelHeader}>
@@ -110,12 +103,12 @@ const TaskListPage = () => {
         )}
 
         {/* Center Content - Always Shows Tasks */}
-        <div className={cx(styles.centerContent, viewMode !== 'day' && styles.centerContentFull)}>
+        <div className={cx(styles.centerContent, viewMode !== 'list' && styles.centerContentFull)}>
           <div className={styles.taskListContainer}>
             <div className={styles.taskHeader}>
-              <ViewSwitcher value={viewMode} onChange={setViewMode} />
+              <HomeViewSwitcher value={viewMode} onChange={setViewMode} />
             </div>
-            {viewMode === 'day' && (
+            {viewMode === 'list' && (
               <div
                 style={{
                   transform: flipping ? 'perspective(1000px) rotateX(-180deg)' : 'perspective(1000px) rotateX(0deg)',
@@ -134,14 +127,8 @@ const TaskListPage = () => {
                 </div>
               </div>
             )}
-            {viewMode === 'week' && (
-              <WeekView currentDate={startDate} onDateChange={setStartDate} selectedTag={selectedTag} />
-            )}
-            {viewMode === 'month' && (
-              <MonthView currentDate={startDate} onDaySelect={goToDay} selectedTag={selectedTag} />
-            )}
-            {viewMode === 'year' && (
-              <YearView currentDate={startDate} onDaySelect={goToDay} selectedTag={selectedTag} />
+            {viewMode === 'calendar' && (
+              <HomeCalendar currentDate={startDate} onDateChange={setStartDate} selectedTag={selectedTag} />
             )}
           </div>
         </div>

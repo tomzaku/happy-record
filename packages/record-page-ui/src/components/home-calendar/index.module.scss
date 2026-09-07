@@ -1,0 +1,74 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  // FullCalendar renders its own DOM tree outside this module's scoping, so
+  // its theme hookup has to reach in via `:global` — mapping FullCalendar's
+  // own CSS custom properties onto this app's semantic tokens (see
+  // MonthView.module.scss for the same tokens used un-global'd) is what keeps
+  // it in sync with light/dark instead of hardcoding colors twice.
+  :global {
+    .fc {
+      --fc-border-color: var(--division-color);
+      --fc-page-bg-color: transparent;
+      --fc-neutral-bg-color: var(--surface-secondary);
+      --fc-list-event-hover-bg-color: var(--surface-secondary);
+      --fc-today-bg-color: var(--button-action-background);
+      --fc-event-text-color: #fff;
+      --fc-now-indicator-color: var(--button-action-color);
+      font-family: inherit;
+      color: var(--text-color);
+    }
+
+    .fc .fc-toolbar-title {
+      color: var(--text-color);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .fc .fc-button {
+      background: var(--surface-secondary);
+      border: 1px solid var(--card-border);
+      color: var(--text-color);
+      box-shadow: none;
+      text-transform: capitalize;
+    }
+
+    .fc .fc-button:hover {
+      background: var(--card-background);
+    }
+
+    .fc .fc-button:disabled {
+      opacity: 0.5;
+    }
+
+    .fc .fc-button-primary:not(:disabled).fc-button-active {
+      background: var(--button-action-color);
+      border-color: var(--button-action-color);
+      color: #fff;
+    }
+
+    .fc .fc-daygrid-day-number,
+    .fc .fc-col-header-cell-cushion,
+    .fc .fc-timegrid-slot-label-cushion,
+    .fc .fc-list-day-text,
+    .fc .fc-multimonth-title {
+      color: var(--text-color);
+    }
+
+    .fc .fc-day-other .fc-daygrid-day-number {
+      color: var(--text-description-color);
+    }
+
+    .fc-event.home-calendar-event-done {
+      opacity: 0.55;
+      text-decoration: line-through;
+    }
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: flex-start;
+}

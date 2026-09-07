@@ -146,12 +146,6 @@ export default function SettingPage() {
             />
           }
         />
-        <List.ItemMeta
-          onClick={() => navigate('/checklist-template')}
-          logo={<Icon width={24} icon="proicons:task-list" />}
-          title={'Task Management'}
-          description={'Select/ Deselect Tasks'}
-        />
       </div>
       <div className={styles.footer}>
         <Typography.Text

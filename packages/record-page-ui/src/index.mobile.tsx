@@ -5,11 +5,9 @@ import ChecklistToday from './components/checklist-today';
 import WeeklyCalendar from './components/weekly-calendar';
 import RecentHistory from './components/RecentHistory';
 import WeeklyProgressCard from './components/WeeklyProgressCard';
-import ViewSwitcher, { ViewMode } from './components/view-switcher';
+import HomeViewSwitcher, { HomeViewMode } from './components/home-view-switcher';
 import switcherStyles from './components/view-switcher/index.module.scss';
-import WeekView from './components/week-view';
-import MonthView from './components/month-view';
-import YearView from './components/year-view';
+import HomeCalendar from './components/home-calendar';
 // import MusicAudioPlayer from '@pregnant/music-audio-player';
 import styles from './index.mobile.module.scss';
 import AppHeader from '@dreamer/header';
@@ -30,16 +28,11 @@ const TaskListPage = () => {
   // this stays fixed at 'all' rather than threading a picker through, same
   // "no filter" behavior every view already had by default.
   const selectedTag = 'all';
-  const [viewMode, setViewMode] = React.useState<ViewMode>('day');
+  const [viewMode, setViewMode] = React.useState<HomeViewMode>('list');
   // Same Calendar/History toggle as index.desktop.tsx's right column — mobile
   // has no separate right column, so it sits directly above the same Card
   // the calendar strip already used, swapping only that card's content.
   const [rightPanelMode, setRightPanelMode] = React.useState<RightPanelMode>('calendar');
-
-  const goToDay = (date: Date) => {
-    setStartDate(date);
-    setViewMode('day');
-  };
 
   // Update key and trigger flip when date changes
   React.useEffect(() => {
@@ -57,9 +50,9 @@ const TaskListPage = () => {
 
       <div className={styles.body}>
         <div className={styles.viewSwitcherContainer}>
-          <ViewSwitcher value={viewMode} onChange={setViewMode} />
+          <HomeViewSwitcher value={viewMode} onChange={setViewMode} />
         </div>
-        {viewMode === 'day' && (
+        {viewMode === 'list' && (
           <>
             <div className={cx(switcherStyles.container, styles.rightPanelSwitcher)}>
               <button
@@ -136,19 +129,9 @@ const TaskListPage = () => {
           </>
         )}
 
-        {viewMode === 'week' && (
+        {viewMode === 'calendar' && (
           <Card className={styles.plainCard}>
-            <WeekView currentDate={startDate} onDateChange={setStartDate} selectedTag={selectedTag} />
-          </Card>
-        )}
-        {viewMode === 'month' && (
-          <Card className={styles.plainCard}>
-            <MonthView currentDate={startDate} onDaySelect={goToDay} selectedTag={selectedTag} />
-          </Card>
-        )}
-        {viewMode === 'year' && (
-          <Card className={styles.plainCard}>
-            <YearView currentDate={startDate} onDaySelect={goToDay} selectedTag={selectedTag} />
+            <HomeCalendar currentDate={startDate} onDateChange={setStartDate} selectedTag={selectedTag} />
           </Card>
         )}
 
