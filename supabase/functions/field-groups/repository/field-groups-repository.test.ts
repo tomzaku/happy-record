@@ -27,11 +27,10 @@ Deno.test('withRepeats: a participant sees their own patched schedule, not the o
         {
           field_group_id: FIELD_GROUP_ID,
           user_id: 'owner-id',
-          hour: '06',
-          minute: '00',
-          day_of_month: null,
-          month: null,
-          day_of_week: '1,3,5',
+          byhour: 6,
+          byminute: 0,
+          freq: 'WEEKLY',
+          byday: 'MO,WE,FR',
           started_at: null,
         },
         // The participant's own PATCH /field-groups/:id { repeat } — same shape saveRepeat
@@ -40,11 +39,10 @@ Deno.test('withRepeats: a participant sees their own patched schedule, not the o
         {
           field_group_id: FIELD_GROUP_ID,
           user_id: 'participant-id',
-          hour: '08',
-          minute: '00',
-          day_of_month: null,
-          month: null,
-          day_of_week: '1,0',
+          byhour: 8,
+          byminute: 0,
+          freq: 'WEEKLY',
+          byday: 'MO,SU',
           started_at: null,
         },
       ],
@@ -55,12 +53,11 @@ Deno.test('withRepeats: a participant sees their own patched schedule, not the o
   const [result] = await withRepeats(db, 'participant-id', [fieldGroupRow], /* isPublicTemplate */ true);
 
   assertEquals(result.repeat, {
-    minute: '00',
-    hour: '08',
-    dayOfMonth: null,
-    month: null,
-    dayOfWeek: '1,0',
+    byminute: '0',
+    byhour: '8',
+    byday: 'MO,SU',
     startedAt: null,
+    freq: 'WEEKLY',
   });
 });
 
@@ -80,21 +77,19 @@ Deno.test('withRepeats: the owner still sees their own schedule when a participa
         {
           field_group_id: FIELD_GROUP_ID,
           user_id: 'owner-id',
-          hour: '06',
-          minute: '00',
-          day_of_month: null,
-          month: null,
-          day_of_week: '1,3,5',
+          byhour: 6,
+          byminute: 0,
+          freq: 'WEEKLY',
+          byday: 'MO,WE,FR',
           started_at: null,
         },
         {
           field_group_id: FIELD_GROUP_ID,
           user_id: 'participant-id',
-          hour: '08',
-          minute: '00',
-          day_of_month: null,
-          month: null,
-          day_of_week: '1,0',
+          byhour: 8,
+          byminute: 0,
+          freq: 'WEEKLY',
+          byday: 'MO,SU',
           started_at: null,
         },
       ],
@@ -103,7 +98,7 @@ Deno.test('withRepeats: the owner still sees their own schedule when a participa
   });
 
   const [result] = await withRepeats(db, 'owner-id', [fieldGroupRow], false);
-  assertEquals(result.repeat?.dayOfWeek, '1,3,5');
+  assertEquals(result.repeat?.byday, 'MO,WE,FR');
 });
 
 Deno.test('withRepeats: a participant with no override yet falls back to the owner\'s schedule', async () => {
@@ -121,11 +116,10 @@ Deno.test('withRepeats: a participant with no override yet falls back to the own
       data: [{
         field_group_id: FIELD_GROUP_ID,
         user_id: 'owner-id',
-        hour: '06',
-        minute: '00',
-        day_of_month: null,
-        month: null,
-        day_of_week: '1,3,5',
+        byhour: 6,
+        byminute: 0,
+        freq: 'WEEKLY',
+        byday: 'MO,WE,FR',
         started_at: null,
       }],
       error: null,
@@ -133,5 +127,5 @@ Deno.test('withRepeats: a participant with no override yet falls back to the own
   });
 
   const [result] = await withRepeats(db, 'brand-new-participant', [fieldGroupRow], true);
-  assertEquals(result.repeat?.dayOfWeek, '1,3,5');
+  assertEquals(result.repeat?.byday, 'MO,WE,FR');
 });

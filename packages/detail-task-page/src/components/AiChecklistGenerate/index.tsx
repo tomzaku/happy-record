@@ -282,7 +282,7 @@ const AiChecklistGenerate = ({
                   <Checkbox checked={includedGroups.has(index)} onChange={() => toggleGroup(index)} />
                   <Typography.Text className={styles.groupTitle}>{group.title}</Typography.Text>
                   <Typography.Text className={styles.groupSchedule}>
-                    {group.repeat ? formatDayOfWeek(group.repeat.dayOfWeek) : intl.formatMessage({ id: 'ai-checklist-generate.every-day', defaultMessage: 'Every day' })}
+                    {group.repeat ? formatDayOfWeek(group.repeat.byday) : intl.formatMessage({ id: 'ai-checklist-generate.every-day', defaultMessage: 'Every day' })}
                   </Typography.Text>
                 </div>
                 {group.note.length > 0 && (
@@ -407,12 +407,14 @@ const AiChecklistGenerate = ({
 };
 
 const DAY_NAMES: Record<string, string> = {
-  '0': 'Sun', '1': 'Mon', '2': 'Tue', '3': 'Wed', '4': 'Thu', '5': 'Fri', '6': 'Sat',
+  SU: 'Sun', MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat',
 };
 
-function formatDayOfWeek(dayOfWeek: string): string {
-  if (!dayOfWeek || dayOfWeek === '*') return 'Every day';
-  return dayOfWeek.split(',').map(d => DAY_NAMES[d.trim()] ?? d).join(', ');
+function formatDayOfWeek(byday: string): string {
+  if (!byday) return 'Every day';
+  const codes = byday.split(',').map(d => d.trim());
+  if (codes.length === 7) return 'Every day';
+  return codes.map(d => DAY_NAMES[d] ?? d).join(', ');
 }
 
 /**

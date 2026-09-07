@@ -17,5 +17,5 @@ export const buildFieldGroupRepeat = (days: Day[], time?: string): FieldGroup['r
   const full = calculateRepeat({ weeklyHobbies: days, selectedTime: time });
   return days.length === 0 || days.length === 7 || !full
     ? undefined
-    : { hour: full.hour, minute: full.minute, dayOfWeek: full.dayOfWeek };
+    : { byhour: full.byhour, byminute: full.byminute, byday: full.byday };
 };

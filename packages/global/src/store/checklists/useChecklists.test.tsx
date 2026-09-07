@@ -214,7 +214,8 @@ describe('getChecklistByGivingDate — scheduled vs. non-scheduled agreement', (
   it("doesn't double-count a field-group-scheduled template that has no template-level repeat", () => {
     const userId = freshUserId();
     const date = new Date(2026, 7, 24); // any fixed day is fine — schedule is derived from it below
-    const dayOfWeek = date.getDay().toString();
+    const ICAL_DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+    const byday = ICAL_DAYS[date.getDay()];
 
     const { result } = renderHook(() => ({
       templates: useChecklistTemplates(),
@@ -231,7 +232,7 @@ describe('getChecklistByGivingDate — scheduled vs. non-scheduled agreement', (
               title: 'Push',
               fields: [],
               note: null,
-              repeat: { hour: '8', minute: '0', dayOfWeek },
+              repeat: { byhour: '8', byminute: '0', byday },
             },
           ],
           // Deliberately no `repeat` at all — the template-level schedule

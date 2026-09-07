@@ -27,8 +27,12 @@ const mockGetFieldGroups = jest.fn((_checklistTemplateId: string, _isOwned?: boo
 jest.mock('./useFieldGroups', () => ({
   useFieldGroups: () => ({
     getFieldGroups: mockGetFieldGroups,
+    allGroupsSettled: true,
     fieldGroupList: {},
   }),
+  // useChecklistTemplateDetail's own subscribed fallback fetch (see useChecklistTemplateDetail.tsx)
+  // — stubbed to "nothing fetched," same as every other network call in this test file.
+  useFieldGroupsForTemplate: () => ({ fieldGroups: [], isLoading: false }),
 }));
 
 // No real network — every call resolves to "nothing fetched," so tests
@@ -282,11 +286,9 @@ describe('updateMyReminder', () => {
           createdAt: 'now',
           updatedAt: '2024-02-01T00:00:00.000Z',
           repeat: {
-            minute: '0',
-            hour: '8',
-            dayOfMonth: '',
-            month: '',
-            dayOfWeek: '1',
+            byminute: '0',
+            byhour: '8',
+            byday: 'MO',
             startedAt: '2024-01-01T00:00:00.000Z',
           },
         },
@@ -296,7 +298,7 @@ describe('updateMyReminder', () => {
     const { result: templates } = renderHook(() => useChecklistTemplates(), { wrapper });
     const { result: detail } = renderHook(() => useChecklistTemplateDetail('template-reminder-1'), { wrapper });
 
-    await waitFor(() => expect(detail.current.template?.repeat?.hour).toBe('8'));
+    await waitFor(() => expect(detail.current.template?.repeat?.byhour).toBe('8'));
 
     // A different repeat than the initial fetch — clearing (`null`) resolves to the owner's own
     // fallback schedule server-side, which this device never had a copy of, so the only way this
@@ -308,11 +310,9 @@ describe('updateMyReminder', () => {
           createdAt: 'now',
           updatedAt: '2024-02-02T00:00:00.000Z',
           repeat: {
-            minute: '30',
-            hour: '20',
-            dayOfMonth: '',
-            month: '',
-            dayOfWeek: '3',
+            byminute: '30',
+            byhour: '20',
+            byday: 'WE',
             startedAt: '2024-01-01T00:00:00.000Z',
           },
         },
@@ -325,7 +325,7 @@ describe('updateMyReminder', () => {
 
     expect(mockPatchChecklistTemplate).toHaveBeenCalledWith('template-reminder-1', { repeat: null });
     // The invalidated query re-fetches on its own — no direct fetch-and-merge call needed here.
-    await waitFor(() => expect(detail.current.template?.repeat?.hour).toBe('20'));
+    await waitFor(() => expect(detail.current.template?.repeat?.byhour).toBe('20'));
   });
 });
 

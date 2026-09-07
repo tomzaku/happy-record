@@ -58,11 +58,12 @@ export async function withRepeats(
   }));
   const repeats = await fetchRepeats(db, 'fieldGroupId', owners, userId);
   // `pickRepeat` returns the raw `repeats` row (snake_case columns) — `toFieldGroup` expects the
-  // client-shape object `toRepeat` produces (`dayOfWeek`/`startedAt`/...), same as
+  // client-shape object `toRepeat` produces (`byday`/`startedAt`/...), same as
   // checklist-templates' own `resolveTemplate` → `toChecklistTemplate` does for the template-level
-  // schedule. Missing this call is exactly the bug that shipped here: `hour`/`minute` happen to be
-  // spelled the same in both shapes, so those looked fine, but `dayOfWeek` was always `undefined`
-  // on the raw row (really `day_of_week`) — GroupScheduleList's own `group.repeat?.dayOfWeek`
-  // check then always fell through to "every day," regardless of what was actually saved.
+  // schedule. Missing this call is exactly the bug that shipped here: `byhour`/`byminute` happen to
+  // be spelled the same in both shapes, so those looked fine, but `byday` was always `undefined`
+  // on the raw row (really `day_of_week`, back when this predated the rrule-named columns) —
+  // GroupScheduleList's own `group.repeat?.byday` check then always fell through to "every day,"
+  // regardless of what was actually saved.
   return rows.map(r => toFieldGroup(r, toRepeat(pickRepeat(repeats[r.id as string], userId, r.user_id as string))));
 }

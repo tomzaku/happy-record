@@ -47,10 +47,14 @@ export type GeneratedNoteBlock =
   | { type: 'quote'; text: string; caption: string }
   | { type: 'video'; videoId: string; caption: string };
 
+// Every 7 codes, in iCal weekday order — the "every day" shorthand no client/server pairing in
+// this app writes a '*' sentinel for any more (see supabase/shared/repeats.ts).
+const ALL_ICAL_DAYS = 'SU,MO,TU,WE,TH,FR,SA';
+
 export interface GeneratedGroup {
   title: string;
   note: GeneratedNoteBlock[];
-  repeat: { hour: string; minute: string; dayOfWeek: string } | null;
+  repeat: { byhour: string; byminute: string; byday: string } | null;
   fields: GeneratedField[];
 }
 
@@ -126,10 +130,10 @@ export function validate(parsed: unknown): GeneratedTemplate {
     let repeat: GeneratedGroup['repeat'] = null;
     if (g.repeat && typeof g.repeat === 'object') {
       const r = g.repeat as Record<string, unknown>;
-      const dayOfWeek = typeof r.dayOfWeek === 'string' && r.dayOfWeek.trim() ? r.dayOfWeek.trim() : '*';
-      const hour = typeof r.hour === 'string' && r.hour.trim() ? r.hour.trim() : '8';
-      const minute = typeof r.minute === 'string' && r.minute.trim() ? r.minute.trim() : '0';
-      repeat = { hour, minute, dayOfWeek };
+      const byday = typeof r.byday === 'string' && r.byday.trim() ? r.byday.trim() : ALL_ICAL_DAYS;
+      const byhour = typeof r.byhour === 'string' && r.byhour.trim() ? r.byhour.trim() : '8';
+      const byminute = typeof r.byminute === 'string' && r.byminute.trim() ? r.byminute.trim() : '0';
+      repeat = { byhour, byminute, byday };
     }
 
     const fields: GeneratedField[] = Array.isArray(g.fields)

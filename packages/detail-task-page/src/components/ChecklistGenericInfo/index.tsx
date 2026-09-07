@@ -11,6 +11,7 @@ import {
   mergeEditedFieldGroups,
   localDateStringToISO,
   getClientTimezone,
+  ALL_ICAL_DAYS,
 } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
@@ -80,19 +81,19 @@ enum EditModal {
 
 // Fallback shape for `repeat` when a Start/End Date edit is the very first schedule-shaped write
 // this template ever gets — a hasFieldGroups template can genuinely have no top-level `repeat` at
-// all (see formatDisplayStartDate's own comment) but `startedAt`/`endedAt` still need *some* base
+// all (see formatDisplayStartDate's own comment) but `startedAt`/`until` still need *some* base
 // object to sit on, since `repeat`'s other fields aren't optional. Every other field here already
-// reads as "unset" (`dayOfWeek: '*'` — every day — is exactly what getEffectiveDayOfWeek falls
+// reads as "unset" (`byday: ALL_ICAL_DAYS` — every day — is exactly what getEffectiveDayOfWeek falls
 // back to on its own, and this template already isn't gated by it if it has field groups).
-const DEFAULT_REPEAT_BASE = { hour: '8', minute: '0', dayOfMonth: '*', month: '*', dayOfWeek: '*' };
+const DEFAULT_REPEAT_BASE = { byhour: '8', byminute: '0', byday: ALL_ICAL_DAYS, freq: 'WEEKLY' };
 
 // Fallback shape for `repeat` when calculateRepeat itself returns `undefined` — empty-string
 // "not scheduled" sentinels, matching createTaskUtil.ts's own non-recurring branch (and
-// getEffectiveDayOfWeek/getChecklistTemplateIdsByGivingDate's own reading of `dayOfWeek: ''`),
+// getEffectiveDayOfWeek/getChecklistTemplateIdsByGivingDate's own reading of `byday: ''`),
 // not DEFAULT_REPEAT_BASE above — that reads as "every day at 8am," which would turn a template
 // with genuinely no template-level schedule into one the moment its Start Date/timezone gets
 // touched.
-const NO_SCHEDULE_REPEAT_BASE = { hour: '', minute: '', dayOfMonth: '', month: '', dayOfWeek: '' };
+const NO_SCHEDULE_REPEAT_BASE = { byhour: '', byminute: '', byday: '' };
 
 const ChecklistGenericInfo = ({
   checklistTemplate,
@@ -125,11 +126,11 @@ const ChecklistGenericInfo = ({
     checklistTemplate.repeat?.startedAt || startOfDay(new Date()).toISOString(),
   );
   const [tempTime, setTempTime] = React.useState(
-    checklistTemplate.repeat?.hour && checklistTemplate.repeat?.minute
-      ? `${checklistTemplate.repeat.hour.padStart(2, '0')}:${checklistTemplate.repeat.minute.padStart(2, '0')}`
+    checklistTemplate.repeat?.byhour && checklistTemplate.repeat?.byminute
+      ? `${checklistTemplate.repeat.byhour.padStart(2, '0')}:${checklistTemplate.repeat.byminute.padStart(2, '0')}`
       : '',
   );
-  const [tempEndDay, setTempEndDay] = React.useState(checklistTemplate.repeat?.endedAt || '');
+  const [tempEndDay, setTempEndDay] = React.useState(checklistTemplate.repeat?.until || '');
   const [tempWeeklyHobbies, setTempWeeklyHobbies] = React.useState<Day[]>(
     getDaysFromRepeat(checklistTemplate.repeat),
   );
@@ -141,8 +142,8 @@ const ChecklistGenericInfo = ({
   );
 
   const formatDisplayTime = () => {
-    if (checklistTemplate.repeat?.hour && checklistTemplate.repeat?.minute) {
-      return `${checklistTemplate.repeat.hour.padStart(2, '0')}:${checklistTemplate.repeat.minute.padStart(2, '0')}`;
+    if (checklistTemplate.repeat?.byhour && checklistTemplate.repeat?.byminute) {
+      return `${checklistTemplate.repeat.byhour.padStart(2, '0')}:${checklistTemplate.repeat.byminute.padStart(2, '0')}`;
     }
     return 'Not set';
   };
@@ -157,7 +158,7 @@ const ChecklistGenericInfo = ({
 
   const formatDisplayDays = () => {
     if (hasFieldGroups) {
-      return formatDaysOfWeek(getEffectiveDayOfWeek(checklistTemplate) ?? '*');
+      return formatDaysOfWeek(getEffectiveDayOfWeek(checklistTemplate) ?? ALL_ICAL_DAYS);
     }
 
     const days = getDaysFromRepeat(checklistTemplate.repeat);
@@ -190,8 +191,8 @@ const ChecklistGenericInfo = ({
   };
 
   const formatDisplayEndDate = () => {
-    if (checklistTemplate.repeat?.endedAt) {
-      return new Date(checklistTemplate.repeat.endedAt).toLocaleDateString();
+    if (checklistTemplate.repeat?.until) {
+      return new Date(checklistTemplate.repeat.until).toLocaleDateString();
     }
     return 'No end date';
   };
@@ -216,8 +217,8 @@ const ChecklistGenericInfo = ({
   };
 
   // Start/End Date are their own top-level rows now (see the enum's own comment), each staged
-  // independently and writing only the one field into `repeat` — everything else on it (hour/
-  // minute/dayOfWeek/...) carries through unchanged from whatever's already there, same as
+  // independently and writing only the one field into `repeat` — everything else on it (byhour/
+  // byminute/byday/...) carries through unchanged from whatever's already there, same as
   // handleSaveSchedule leaves startedAt untouched now that ScheduleModalContent no longer shows
   // it (see the `hideStartDate` prop passed to both dialogs below).
   const handleSaveStartDate = () => {
@@ -237,7 +238,7 @@ const ChecklistGenericInfo = ({
       ...checklistTemplate,
       repeat: {
         ...(checklistTemplate.repeat ?? { ...DEFAULT_REPEAT_BASE, startedAt: new Date().toISOString() }),
-        endedAt: tempEndDay || undefined,
+        until: tempEndDay || undefined,
         timezone: getClientTimezone(),
       },
     });
@@ -349,11 +350,11 @@ const ChecklistGenericInfo = ({
     setTempColor(checklistTemplate.avatar?.color || '#607d8b');
     setTempStartDay(checklistTemplate.repeat?.startedAt || startOfDay(new Date()).toISOString());
     setTempTime(
-      checklistTemplate.repeat?.hour && checklistTemplate.repeat?.minute
-        ? `${checklistTemplate.repeat.hour.padStart(2, '0')}:${checklistTemplate.repeat.minute.padStart(2, '0')}`
+      checklistTemplate.repeat?.byhour && checklistTemplate.repeat?.byminute
+        ? `${checklistTemplate.repeat.byhour.padStart(2, '0')}:${checklistTemplate.repeat.byminute.padStart(2, '0')}`
         : '',
     );
-    setTempEndDay(checklistTemplate.repeat?.endedAt || '');
+    setTempEndDay(checklistTemplate.repeat?.until || '');
     setTempWeeklyHobbies(getDaysFromRepeat(checklistTemplate.repeat));
     setTempTags(checklistTemplate.tags || []);
     setTempFieldGroups(checklistTemplate.fieldGroups);
@@ -505,7 +506,7 @@ const ChecklistGenericInfo = ({
                 hasFieldGroups ? (
                   <WeekDaysPills
                     activeDays={getDaysFromRepeat({
-                      dayOfWeek: getEffectiveDayOfWeek(checklistTemplate) ?? '*',
+                      byday: getEffectiveDayOfWeek(checklistTemplate) ?? ALL_ICAL_DAYS,
                     })}
                   />
                 ) : (

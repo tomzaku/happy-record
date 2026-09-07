@@ -111,10 +111,17 @@
           ]
         }
       },
+      "packages/challenge-dashboard-page-ui": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@moon-ui/skeleton@1"
+          ]
+        }
+      },
       "packages/challenge-list-page-ui": {
         "packageJson": {
           "dependencies": [
-            "npm:@happy-record/challenge-dashboard-page-ui@1"
+            "npm:@moon-ui/skeleton@1"
           ]
         }
       },
@@ -196,6 +203,7 @@
             "npm:@tanstack/react-query@5",
             "npm:@types/react-motion@^0.0.40",
             "npm:@types/uuid@10",
+            "npm:rrule@^2.8.1",
             "npm:use-long-press@2",
             "npm:zustand@^5.0.4"
           ]

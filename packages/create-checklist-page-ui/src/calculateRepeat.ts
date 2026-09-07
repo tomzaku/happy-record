@@ -1,5 +1,5 @@
 import { Day } from '@dreamer/tasks-page-common';
-import { getClientTimezone } from '@dreamer/global';
+import { getClientTimezone, ICAL_WEEKDAY_ORDER, dayToIcal } from '@dreamer/global';
 
 export const calculateRepeat = ({
   weeklyHobbies,
@@ -23,42 +23,15 @@ export const calculateRepeat = ({
   const startedAtISO = startedAt ?? new Date().toISOString();
   const timezone = getClientTimezone();
 
-  if (weeklyHobbies.length === 7)
-    return {
-      startedAt: startedAtISO,
-      dayOfWeek: '*',
-      minute,
-      hour,
-      dayOfMonth: '*',
-      month: '*',
-      timezone,
-    };
   return {
     startedAt: startedAtISO,
-    minute,
-    hour,
-    dayOfMonth: '*',
-    month: '*',
+    byminute: minute,
+    byhour: hour,
+    freq: 'WEEKLY',
     timezone,
-    dayOfWeek: weeklyHobbies
-      .map(day => {
-        switch (day) {
-          case Day.Mon:
-            return '1';
-          case Day.Tue:
-            return '2';
-          case Day.Wed:
-            return '3';
-          case Day.Thu:
-            return '4';
-          case Day.Fri:
-            return '5';
-          case Day.Sat:
-            return '6';
-          case Day.Sun:
-            return '0';
-        }
-      })
-      .join(','),
+    byday:
+      weeklyHobbies.length === 7
+        ? ICAL_WEEKDAY_ORDER.join(',')
+        : weeklyHobbies.map(dayToIcal).join(','),
   };
 };

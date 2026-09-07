@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { startOfDay, endOfDay } from 'date-fns';
 import {
   Checklist,
   checklistInstanceId,
@@ -111,8 +112,8 @@ const DetailTaskPageMobile = () => {
       id: deterministicId,
       title: checklistTemplate.title,
       checklistTemplateId: id,
-      startedAt: new Date(currentDay).toISOString(),
-      endedAt: new Date(currentDay).toISOString(),
+      startedAt: startOfDay(new Date()).toISOString(),
+      endedAt: endOfDay(new Date()).toISOString(),
     });
     setSearchParams({
       ...Object.fromEntries(search),

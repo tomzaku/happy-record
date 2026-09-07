@@ -29,14 +29,16 @@ export type FieldGroup = {
   activeTabs?: number[];
   collapseDefault?: boolean;
   /** Which day(s)/time this group is due — e.g. Push Mon/Thu, Pull Tue/Fri on the same template.
-   * Absent, or `dayOfWeek: '*'`, means every day (scheduleUtils.ts's `isFieldGroupActiveOnDay`).
-   * The template's own `repeat.dayOfWeek` is *derived* from the union of every group's own
-   * `dayOfWeek` (getEffectiveDayOfWeek), never edited independently — otherwise a group could end
-   * up scheduled for a day the template never generates an instance on. */
+   * Absent, or a `byday` covering every day, means every day (scheduleUtils.ts's
+   * `isFieldGroupActiveOnDay`). The template's own `repeat.byday` is *derived* from the union of
+   * every group's own `byday` (getEffectiveDayOfWeek), never edited independently — otherwise a
+   * group could end up scheduled for a day the template never generates an instance on. */
   repeat?: {
-    hour: string;
-    minute: string;
-    dayOfWeek: string;
+    byhour: string;
+    byminute: string;
+    /** Comma-separated iCal weekday codes (SU/MO/TU/WE/TH/FR/SA) — see
+     * ChecklistTemplate['repeat'].byday for why this matches the DB column shape directly. */
+    byday: string;
   };
   /** Soft delete, set by "Delete Group" — there's no undo elsewhere in this app, so this is what
    * makes a group recoverable at all. Every consumer that renders or counts a template's groups

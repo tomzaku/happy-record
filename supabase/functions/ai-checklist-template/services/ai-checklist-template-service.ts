@@ -135,7 +135,7 @@ Return ONLY this JSON, no markdown, no extra text:
     {
       "title": "group title",
       "note": [ { "type": "heading" | "paragraph" | "quote" | "video", "text": "...", "caption": "...", "url": "..." } ],
-      "repeat": { "hour": "8", "minute": "0", "dayOfWeek": "1,4" } | null,
+      "repeat": { "byhour": "8", "byminute": "0", "byday": "MO,TH" } | null,
       "fields": [
         { "title": "field title", "icon": "iconify-icon-id", "type": "number" | "note" | "text" | "date" | "datetime" | "select" | "multiselect", "unit": "reps/minutes/etc, empty string except for \\"number\\"", "defaultValue": "a number, only for \\"number\\" fields with a sensible default — omit this key entirely otherwise", "options": "an array of 2-8 short strings, only for \\"select\\"/\\"multiselect\\" — omit this key entirely otherwise", "description": "one short sentence" }
       ]
@@ -143,7 +143,7 @@ Return ONLY this JSON, no markdown, no extra text:
   ]
 }
 
-"dayOfWeek" is a comma-separated list of day numbers, Sunday=0 through Saturday=6 (e.g. Mon+Thu = "1,4"), or "*" for every day.${
+"byday" is a comma-separated list of iCal weekday codes — SU, MO, TU, WE, TH, FR, SA (e.g. Mon+Thu = "MO,TH"), or all seven codes for every day.${
     existing ? ' Omit "title", "avatar" from consideration for renaming the existing template — still fill them in your JSON (they may be reused optionally by the caller) but do not assume they will replace the existing ones.' : ''
   }`;
 

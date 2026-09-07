@@ -134,8 +134,8 @@ const EditChecklistForm = () => {
           weeklyHobbies: getDaysFromRepeat(template.repeat),
           startedAt: template?.repeat?.startedAt || startOfDay(new Date()).toISOString(),
           selectedTime:
-            template?.repeat?.hour && template?.repeat?.minute
-              ? `${template.repeat.hour.padStart(2, '0')}:${template.repeat.minute.padStart(2, '0')}`
+            template?.repeat?.byhour && template?.repeat?.byminute
+              ? `${template.repeat.byhour.padStart(2, '0')}:${template.repeat.byminute.padStart(2, '0')}`
               : '',
           selectedIcon: template?.avatar?.name,
           selectedColor: template?.avatar?.color || '#607d8b',

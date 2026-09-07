@@ -61,7 +61,7 @@ export type AiGeneratedField = {
 export type AiGeneratedGroup = {
   title: string;
   note: AiGeneratedNoteBlock[];
-  repeat: { hour: string; minute: string; dayOfWeek: string } | null;
+  repeat: { byhour: string; byminute: string; byday: string } | null;
   fields: AiGeneratedField[];
 };
 

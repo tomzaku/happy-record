@@ -4,19 +4,28 @@ export type ChecklistTemplate = {
   id: string;
   title: string;
   repeat?: {
-    minute: string;
-    hour: string;
-    dayOfMonth: string;
-    month: string;
-    dayOfWeek: string;
+    byminute: string;
+    byhour: string;
+    /** Comma-separated iCal weekday codes (SU/MO/TU/WE/TH/FR/SA) — the exact `repeats.byday`
+     * column shape, no translation at the edge function boundary (see supabase/shared/repeats.ts). */
+    byday: string;
     startedAt: string;
     /** IANA zone of whichever device last wrote this schedule (getClientTimezone) — keeps
-     * `startedAt`/`endedAt` interpretable as the calendar days the writer actually picked. */
+     * `startedAt`/`until` interpretable as the calendar days the writer actually picked. */
     timezone?: string;
     completedAt?: string;
     /** Last day this schedule generates an instance on, symmetric with `startedAt`. Absent means
-     * no end date. */
-    endedAt?: string;
+     * no end date. Server-side this is the `repeats` row's own `until` column (rrule's own UNTIL). */
+    until?: string;
+    /** Always `'WEEKLY'` today — nothing in this app produces anything else yet (see
+     * rruleUtils.ts's `buildRule`). Sent explicitly now rather than left for the server to derive. */
+    freq?: string;
+    /** "Every N weeks" — absent/1 means every week, matching every schedule this app produced
+     * before rrule adoption. No UI sets this yet; it exists so the data model doesn't need a new
+     * migration once one does (see rruleUtils.ts's `buildRule`). */
+    interval?: number;
+    /** Stop generating after N occurrences. No UI sets this yet — see `interval`'s own comment. */
+    count?: number;
     /** Set only for a challenge participant's own row, distinct from the owner's default
      * (_shared/repeats.ts's `pickRepeat`) — seeded from the owner's schedule at join time
      * (challenge-participants-service.ts's `seedReminderFromOwner`), so it reads "personal"

@@ -36,10 +36,10 @@ const GroupScheduleList = ({
   return (
     <div className={styles.groupScheduleList}>
       {fieldGroups.map((group, index) => {
-        const days = group.repeat?.dayOfWeek ? getDaysFromRepeat(group.repeat) : ALL_DAYS;
+        const days = group.repeat?.byday ? getDaysFromRepeat(group.repeat) : ALL_DAYS;
         const time =
-          group.repeat?.hour && group.repeat?.minute
-            ? `${group.repeat.hour.padStart(2, '0')}:${group.repeat.minute.padStart(2, '0')}`
+          group.repeat?.byhour && group.repeat?.byminute
+            ? `${group.repeat.byhour.padStart(2, '0')}:${group.repeat.byminute.padStart(2, '0')}`
             : '';
         return (
           <div key={group.id} className={styles.groupScheduleRow}>

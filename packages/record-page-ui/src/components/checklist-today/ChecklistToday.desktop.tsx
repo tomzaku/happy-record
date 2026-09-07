@@ -7,6 +7,7 @@ import {
   getEffectiveDayOfWeek,
   formatDaysOfWeek,
   getActiveFieldGroups,
+  ALL_ICAL_DAYS,
 } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
@@ -39,22 +40,22 @@ const formatTemplateSchedule = (template?: ChecklistTemplate): string => {
   if (!template) return 'No schedule';
 
   if (getActiveFieldGroups(template.fieldGroups ?? []).length > 0) {
-    return formatDaysOfWeek(getEffectiveDayOfWeek(template) ?? '*');
+    return formatDaysOfWeek(getEffectiveDayOfWeek(template) ?? ALL_ICAL_DAYS);
   }
 
-  if (!template.repeat?.dayOfWeek) return 'No schedule';
-  const time = `${template.repeat.hour.padStart(2, '0')}:${template.repeat.minute.padStart(2, '0')}`;
-  return `${time} • ${formatDaysOfWeek(template.repeat.dayOfWeek)}`;
+  if (!template.repeat?.byday) return 'No schedule';
+  const time = `${template.repeat.byhour.padStart(2, '0')}:${template.repeat.byminute.padStart(2, '0')}`;
+  return `${time} • ${formatDaysOfWeek(template.repeat.byday)}`;
 };
 
 // The row's own right-aligned time — only meaningful for a template with no
 // field groups (see formatTemplateSchedule's own comment on why a merged
 // per-group schedule has no single time to show).
 const getScheduledTimeLabel = (template?: ChecklistTemplate): string | undefined => {
-  if (!template?.repeat?.hour || getActiveFieldGroups(template.fieldGroups ?? []).length > 0) {
+  if (!template?.repeat?.byhour || getActiveFieldGroups(template.fieldGroups ?? []).length > 0) {
     return undefined;
   }
-  return format(new Date(0, 0, 0, Number(template.repeat.hour), Number(template.repeat.minute)), 'h:mm');
+  return format(new Date(0, 0, 0, Number(template.repeat.byhour), Number(template.repeat.byminute)), 'h:mm');
 };
 
 const ChecklistTodayDesktop = ({
@@ -116,9 +117,9 @@ const ChecklistTodayDesktop = ({
   );
 
   // Grouped by completion, not schedule time — a field group's own `repeat`
-  // does carry an `hour`/`minute` (see fieldGroupRepeat.ts), but nothing in
+  // does carry a `byhour`/`byminute` (see fieldGroupRepeat.ts), but nothing in
   // this app gates on it today (`isFieldGroupActiveOnDay` only ever reads
-  // `dayOfWeek`), so most templates would land in a real "Morning" bucket by
+  // `byday`), so most templates would land in a real "Morning" bucket by
   // accident of an unset default rather than a schedule anyone actually set.
   // completedAt is real, always-present data every task already carries.
   // Computed above the loading/empty early returns (rather than alongside

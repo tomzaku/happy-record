@@ -16,7 +16,7 @@ Deno.test('toFieldGroup: omits `repeat` entirely when none resolved', () => {
 });
 
 Deno.test('toFieldGroup: carries through an already-mapped (camelCase) repeat unchanged', () => {
-  const repeat = { minute: '00', hour: '08', dayOfMonth: null, month: null, dayOfWeek: '1,0', startedAt: null };
+  const repeat = { byminute: '00', byhour: '08', byday: 'MO,SU', startedAt: null };
   const group = toFieldGroup(BASE_ROW, repeat);
   assertEquals(group.repeat, repeat);
 });

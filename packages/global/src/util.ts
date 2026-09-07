@@ -42,7 +42,7 @@ export function getSharedChecklistTemplateUrl(checklistTemplateId: string, from 
  * there's no string-parsing timezone quirk to rely on.
  *
  * Call this exactly once, right at that `onChange` — every date this app stores or passes around
- * afterward (`FormState.startedAt`, `ChecklistTemplate['repeat'].startedAt`/`endedAt`, ...) is a
+ * afterward (`FormState.startedAt`, `ChecklistTemplate['repeat'].startedAt`/`until`, ...) is a
  * full ISO instant, never a bare date string. `DatePicker`'s own `value` prop already accepts an
  * ISO string directly (it runs `new Date(value)` and reads *local* Y/M/D back off it for display —
  * see its own `dateToInputValue`), so there's no matching "convert back" step needed on the way in.

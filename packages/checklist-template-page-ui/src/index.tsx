@@ -29,10 +29,11 @@ const ChecklistTemplatePageUi = () => {
     null,
   );
 
-  const getRepeatText = (repeat?: { dayOfWeek: string }) => {
+  const getRepeatText = (repeat?: { byday: string }) => {
     const text = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const days = repeat?.dayOfWeek?.split(',') || [];
-    if (days.includes('*')) {
+    const codes = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+    const days = repeat?.byday?.split(',').map(d => d.trim()) || [];
+    if (days.length === 7) {
       return [
         {
           enabled: true,
@@ -46,7 +47,7 @@ const ChecklistTemplatePageUi = () => {
     return [0, 1, 2, 3, 4, 5, 6].map(i => {
       return {
         day: i,
-        enabled: days.includes(i.toString()) || days.includes('*'),
+        enabled: days.includes(codes[i]),
         text: intl.formatMessage({
           id: `PregnantIntro.repeat.${i}`,
           defaultMessage: text[i],

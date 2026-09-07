@@ -34,13 +34,13 @@ function writeTemplateIfPresent(queryClient: QueryClient, key: QueryKey, id: str
   });
 }
 
-// Keeps `repeat.dayOfWeek` in sync with field-group schedules, for display-only consumers (share
+// Keeps `repeat.byday` in sync with field-group schedules, for display-only consumers (share
 // cards, ChecklistToday's label) — real gating always derives it fresh, never trusts this.
 function withSyncedRepeat(template: ChecklistTemplate): ChecklistTemplate {
   if (!template.repeat || !template.fieldGroups?.length) return template;
-  const dayOfWeek = getEffectiveDayOfWeek(template);
-  if (dayOfWeek === undefined || dayOfWeek === template.repeat.dayOfWeek) return template;
-  return { ...template, repeat: { ...template.repeat, dayOfWeek } };
+  const byday = getEffectiveDayOfWeek(template);
+  if (byday === undefined || byday === template.repeat.byday) return template;
+  return { ...template, repeat: { ...template.repeat, byday } };
 }
 
 type Deps = {

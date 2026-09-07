@@ -14,6 +14,30 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 type Row = Record<string, unknown>;
 type Owner = { userId: string; checklistTemplateId?: string; fieldGroupId?: string };
 
+/** DEBUG ONLY — a human-checkable summary of the structured columns below, so a row is readable
+ * at a glance in the DB (Supabase studio / psql) instead of cross-referencing six separate
+ * columns. No app code, client or server, ever parses this back — it is not the source of truth,
+ * just written fresh on every save. */
+function buildDebugRRuleString(parts: {
+  freq: string | null;
+  interval: number | null;
+  byday: string | null;
+  byhour: number | null;
+  byminute: number | null;
+  count: number | null;
+  until: string | null;
+}): string | null {
+  if (!parts.byday) return null;
+  const segments = [`FREQ=${parts.freq ?? 'WEEKLY'}`];
+  if (parts.interval && parts.interval !== 1) segments.push(`INTERVAL=${parts.interval}`);
+  segments.push(`BYDAY=${parts.byday}`);
+  if (parts.byhour != null) segments.push(`BYHOUR=${parts.byhour}`);
+  if (parts.byminute != null) segments.push(`BYMINUTE=${parts.byminute}`);
+  if (parts.count != null) segments.push(`COUNT=${parts.count}`);
+  if (parts.until) segments.push(`UNTIL=${parts.until.replace(/[-:]/g, '').split('.')[0]}Z`);
+  return `RRULE:${segments.join(';')}`;
+}
+
 const OwnerColumn = {
   checklistTemplateId: 'checklist_template_id',
   fieldGroupId: 'field_group_id',
@@ -35,22 +59,28 @@ function rowId(owner: Owner): string {
 }
 
 /** Client-shape `repeat` object from a `repeats` row, or `undefined` for "no schedule" — same
- * convention as when this lived in columns/jsonb directly on the owner's own row. */
+ * convention as when this lived in columns/jsonb directly on the owner's own row. The client
+ * shape now matches the row's own rrule-named columns directly (byday/byhour/byminute/until/
+ * freq) — no translation at this boundary any more, see CLAUDE.md's "server schema can differ
+ * from client shape" for when that's still worth doing (it wasn't here: both sides already meant
+ * the same rrule concepts, just under different names). `rrule` (the debug-only column) is
+ * deliberately never returned here. */
 export function toRepeat(row: Row | undefined): Record<string, unknown> | undefined {
-  const hasAny = !!row && [row.minute, row.hour, row.day_of_month, row.month, row.day_of_week, row.started_at]
+  const hasAny = !!row && [row.byday, row.byhour, row.byminute, row.started_at]
     .some(v => v !== null && v !== undefined);
   if (!hasAny) return undefined;
 
   return {
-    minute: row!.minute as string,
-    hour: row!.hour as string,
-    dayOfMonth: row!.day_of_month as string,
-    month: row!.month as string,
-    dayOfWeek: row!.day_of_week as string,
+    byminute: row!.byminute != null ? String(row!.byminute) : '',
+    byhour: row!.byhour != null ? String(row!.byhour) : '',
+    byday: (row!.byday as string) ?? '',
     startedAt: row!.started_at as string,
     ...(row!.completed_at ? { completedAt: row!.completed_at as string } : {}),
-    ...(row!.ended_at ? { endedAt: row!.ended_at as string } : {}),
+    ...(row!.until ? { until: row!.until as string } : {}),
     ...(row!.timezone ? { timezone: row!.timezone as string } : {}),
+    ...(row!.interval != null && (row!.interval as number) !== 1 ? { interval: row!.interval as number } : {}),
+    ...(row!.count != null ? { count: row!.count as number } : {}),
+    ...(row!.freq ? { freq: row!.freq as string } : {}),
   };
 }
 
@@ -72,19 +102,34 @@ export function fromRepeat(repeat: unknown, owner: Owner): Row {
     ? (str(e.startedAt) ?? new Date().toISOString())
     : str(e.startedAt);
 
+  const byday = typeof e.byday === 'string' && e.byday !== '' ? e.byday : null;
+  const byhour = typeof e.byhour === 'string' && e.byhour !== '' ? Number(e.byhour) : null;
+  const byminute = typeof e.byminute === 'string' && e.byminute !== '' ? Number(e.byminute) : null;
+  const interval = typeof e.interval === 'number' ? e.interval : null;
+  const count = typeof e.count === 'number' ? e.count : null;
+  const until = str(e.until);
+  // The client is expected to send `freq` explicitly now (always `'WEEKLY'` today — see
+  // ChecklistTemplate['repeat'].freq's own comment), but a missing/invalid value still falls back
+  // to the same derivation this used to do unconditionally, so an older client build (or a
+  // `repeat` with a `byday` but no `freq`) doesn't silently write a null `freq` next to a real
+  // schedule.
+  const freq = typeof e.freq === 'string' && e.freq ? e.freq : (byday ? 'WEEKLY' : null);
+
   return {
     id: rowId(owner),
     user_id: owner.userId,
     checklist_template_id: owner.checklistTemplateId ?? null,
     field_group_id: owner.fieldGroupId ?? null,
-    minute: str(e.minute),
-    hour: str(e.hour),
-    day_of_month: str(e.dayOfMonth),
-    month: str(e.month),
-    day_of_week: str(e.dayOfWeek),
+    freq,
+    interval,
+    byday,
+    byhour,
+    byminute,
+    count,
+    until,
+    rrule: buildDebugRRuleString({ freq, interval, byday, byhour, byminute, count, until }),
     started_at: startedAt,
     completed_at: str(e.completedAt),
-    ended_at: str(e.endedAt),
     timezone: str(e.timezone),
     updated_at: new Date().toISOString(),
   };

@@ -45,18 +45,16 @@ export const createTask = async (
   // Every new template gets a `repeats` row from the moment it's created now, even a forever one
   // — otherwise `checklist-templates` never saw a `startedAt` at all for that shape, only the
   // one-off `checklists` row below did (see ChecklistGenericInfo's own Start Date row, which
-  // reads this same field). `dayOfWeek: ''` here reads as "not scheduled" everywhere that already
+  // reads this same field). `byday: ''` here reads as "not scheduled" everywhere that already
   // checks it (getEffectiveDayOfWeek/getChecklistTemplateIdsByGivingDate), same as `repeat` being
   // `undefined` used to — so this still never counts as a recurring schedule.
   const repeat = isRecurring
     ? calculateRepeat({ weeklyHobbies, selectedTime, startedAt: effectiveStartedAt })
     : {
         startedAt: effectiveStartedAt,
-        hour: '',
-        minute: '',
-        dayOfMonth: '',
-        month: '',
-        dayOfWeek: '',
+        byhour: '',
+        byminute: '',
+        byday: '',
         timezone: getClientTimezone(),
       };
 

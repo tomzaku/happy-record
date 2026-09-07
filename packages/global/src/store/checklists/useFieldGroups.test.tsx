@@ -254,7 +254,7 @@ describe('getFieldGroups isOwned', () => {
 describe('updateMyFieldGroupRepeat', () => {
   it('rolls back to the previous repeat if the patch fails', async () => {
     mockFetchFieldGroups.mockResolvedValueOnce({
-      fieldGroups: [baseGroup({ id: 'group-repeat-1', checklistTemplateId: 'template-repeat-rollback', repeat: { hour: '8', minute: '0', dayOfWeek: '*' } })],
+      fieldGroups: [baseGroup({ id: 'group-repeat-1', checklistTemplateId: 'template-repeat-rollback', repeat: { byhour: '8', byminute: '0', byday: 'SU,MO,TU,WE,TH,FR,SA' } })],
     });
     mockPatchFieldGroupRepeat.mockResolvedValue(null);
 
@@ -268,16 +268,16 @@ describe('updateMyFieldGroupRepeat', () => {
 
     act(() => {
       result.current.updateMyFieldGroupRepeat('group-repeat-1', 'template-repeat-rollback', {
-        hour: '20',
-        minute: '30',
-        dayOfWeek: '1',
+        byhour: '20',
+        byminute: '30',
+        byday: 'MO',
       });
     });
 
     await waitFor(() =>
       expect(
         result.current.getFieldGroups('template-repeat-rollback').find(g => g.id === 'group-repeat-1')?.repeat,
-      ).toEqual({ hour: '8', minute: '0', dayOfWeek: '*' }),
+      ).toEqual({ byhour: '8', byminute: '0', byday: 'SU,MO,TU,WE,TH,FR,SA' }),
     );
   });
 
@@ -285,10 +285,10 @@ describe('updateMyFieldGroupRepeat', () => {
     const { result } = renderHook(() => useFieldGroups(), { wrapper: createWrapper() });
 
     act(() => {
-      result.current.updateMyFieldGroupRepeat('missing-id', 'template-missing', { hour: '8', minute: '0', dayOfWeek: '*' });
+      result.current.updateMyFieldGroupRepeat('missing-id', 'template-missing', { byhour: '8', byminute: '0', byday: 'SU,MO,TU,WE,TH,FR,SA' });
     });
 
-    await waitFor(() => expect(mockPatchFieldGroupRepeat).toHaveBeenCalledWith('missing-id', { hour: '8', minute: '0', dayOfWeek: '*' }));
+    await waitFor(() => expect(mockPatchFieldGroupRepeat).toHaveBeenCalledWith('missing-id', { byhour: '8', byminute: '0', byday: 'SU,MO,TU,WE,TH,FR,SA' }));
     expect(result.current.getFieldGroups('template-missing').find(g => g.id === 'missing-id')).toBeUndefined();
   });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
-import { endOfDay, startOfDay } from 'date-fns';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
+import { occursOnDate } from '../../utils/rruleUtils';
 import { useFieldGroups } from './useFieldGroups';
 import { useChecklistTemplatesQuery } from './useChecklistTemplatesQuery';
 import { useChecklistTemplateMutations } from './useChecklistTemplateMutations';
@@ -10,21 +10,17 @@ export type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTempla
 export * from './fieldGroupTypes';
 export { useChecklistTemplateDetail } from './useChecklistTemplateDetail';
 
-// Not scheduled once deleted, regardless of what its own repeat says. startedAt is when a
-// schedule takes effect — a day-of-week match before it is history, not a day it was ever
-// actually scheduled on; endedAt is the symmetric cutoff. The day-of-week itself is derived from
-// field-group schedules when there are any — never the template's own stored `repeat.dayOfWeek`,
-// which is only a display convenience and can be stale.
+// Not scheduled once deleted, regardless of what its own repeat says. The day-of-week itself is
+// derived from field-group schedules when there are any — never the template's own stored
+// `repeat.byday`, which is only a display convenience and can be stale — combined with the
+// template's own `startedAt`/`until`/`interval`/`count` (groups don't carry those, so the
+// template's own is the only sensible source). `occursOnDate` already respects `startedAt`
+// (DTSTART) and `until` (UNTIL) natively, so there's no separate window pre-check needed here
+// anymore.
 function isTemplateScheduledOnDate(template: ChecklistTemplate | undefined, date: Date): boolean {
   if (!template || template.deletedAt) return false;
-
-  const startedAt = template.repeat?.startedAt;
-  if (startedAt && date < startOfDay(new Date(startedAt))) return false;
-  const endedAt = template.repeat?.endedAt;
-  if (endedAt && date > endOfDay(new Date(endedAt))) return false;
-
-  const effectiveDayOfWeek = getEffectiveDayOfWeek(template);
-  return effectiveDayOfWeek?.split(',').includes(date.getDay().toString()) || effectiveDayOfWeek === '*';
+  const effectiveByday = getEffectiveDayOfWeek(template);
+  return occursOnDate({ ...template.repeat, byday: effectiveByday }, date);
 }
 
 /**
