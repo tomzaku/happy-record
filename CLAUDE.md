@@ -608,6 +608,17 @@ file imports it" bar as `tasks-page-ui`/`pomodoro-mobile`/`pregnant-page-ui` bef
 - **A column that should only ever hold one of two values gets a CHECK saying so**, not just a
   row-mapping function that happens to only ever set one — see `checklist_records`' `value_number`
   / `value_text`. A mapping bug should fail the write, not corrupt a chart three reads later.
+- **Avoid jsonb — prefer real, typed columns whenever the shape is actually known.** A blob can't
+  be indexed or constrained the way a real column can (see the CHECK rule above — a jsonb field
+  can't get one), and it hides a schema change from every tool that would otherwise catch it (a
+  migration diff, a `not null`, a type). Reach for jsonb only for the genuinely-unshaped case this
+  app already carves out — config that's read whole and never filtered on, no consumer caring about
+  one field in isolation (see "The server schema can differ from the client shape" below for that
+  exception). "The shape isn't decided yet" is not that case: add the specific nullable columns a
+  future feature will need instead, same as `schedules.interval`/`count` or
+  `schedule_exceptions.override_started_at` (added before any caller
+  reads or writes them, still real columns with a CHECK constraining when they may be set) —
+  not a blob to sort out later.
 - **A client-generated id must be unique per its own scope, not assumed unique because one
   device's `localStorage` looked that way.** `fields.id` shipped broken the first time — three
   well-known ids (`'duration'`, `'push-ups'`, `'note'`) hardcoded identically on every device,

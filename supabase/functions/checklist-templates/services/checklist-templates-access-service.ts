@@ -2,7 +2,7 @@
 // CLAUDE.md's "Authorization: app layer, not RLS" and `shared/authorize.ts`'s own header for why
 // this moved.
 
-import { pickRepeat, type RepeatOwner } from '../../../shared/repeats.ts';
+import { pickRepeat, type RepeatOwner } from '../../../shared/schedules.ts';
 import { toChecklistTemplate } from '../../../dto/checklist-templates/checklist-templates-dto.ts';
 import { fetchTemplateRow } from '../repository/checklist-templates-repository.ts';
 import type { Ctx } from '../api/checklist-templates-context.ts';

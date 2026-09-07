@@ -2,7 +2,7 @@
 // `field-groups-access-service.ts` for those. Thin pass-through to
 // `repository/field-groups-repository.ts`; `api/` never reaches in there directly.
 
-import { saveRepeat } from '../../../shared/repeats.ts';
+import { saveRepeat } from '../../../shared/schedules.ts';
 import {
   fetchFieldGroupsByTemplate,
   fetchFieldGroupsByUser,
@@ -23,7 +23,7 @@ export async function listMyFieldGroups({ db, userId }: Ctx) {
 
 export async function saveFieldGroup({ db, userId }: Ctx, row: Record<string, unknown>, repeat: unknown): Promise<void> {
   await upsertFieldGroup(db, userId, row);
-  // After the group row exists — repeats.field_group_id is a real FK, so the parent has to be
+  // After the group row exists — schedules.field_group_id is a real FK, so the parent has to be
   // there first.
   await saveRepeat(db, repeat, { userId, fieldGroupId: row.id as string });
 }

@@ -3,7 +3,7 @@
 // fields — see `fields/index.ts`'s own `?templateId=` route); promoted here once `challenges` also
 // needed it (for the dashboard's own attachments section — see
 // `challenges/services/challenges-service.ts`'s `getAttachments`), same "genuinely shared across
-// more than one resource's own services layer" threshold `shared/repeats.ts` crossed for the same
+// more than one resource's own services layer" threshold `shared/schedules.ts` crossed for the same
 // reason (see CLAUDE.md).
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';

@@ -2,7 +2,7 @@
 // `challenge-participants-access-service.ts` for those. Thin pass-through to
 // `repository/challenge-participants-repository.ts`; `api/` never reaches in there directly.
 
-import { fetchRepeatRow, saveRepeat, toRepeat } from '../../../shared/repeats.ts';
+import { fetchRepeatRow, saveRepeat, toRepeat } from '../../../shared/schedules.ts';
 import {
   fetchFieldGroupIds,
   fetchRoster,
@@ -41,7 +41,7 @@ async function seedOneRepeat(
 }
 
 /** Seeds a first-time joiner's own reminder schedule(s) from the template owner's current
- * ones — real, independent `repeats` rows of their own (not just falling back to reading the
+ * ones — real, independent `schedules` rows of their own (not just falling back to reading the
  * owner's live one forever, the way `pickRepeat` resolves it when a participant has no row at
  * all) so they stay put at whatever they were when the participant joined even if the owner
  * changes theirs later, exactly like any other "notify me at a different time" edit

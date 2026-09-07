@@ -1,7 +1,7 @@
 // The write path for `checklist_logs` — genuinely shared across multiple resources' own
 // `services/` layers (checklist-templates, checklists, checklist-records, notes), doing real I/O
 // (an insert), so this belongs in `shared/` rather than one resource's own service, same category
-// as `repeats.ts`. `checklist-logs`'s own `services/checklist-logs-service.ts` only ever reads
+// as `schedules.ts`. `checklist-logs`'s own `services/checklist-logs-service.ts` only ever reads
 // (its `GET /` route) — it never calls this.
 //
 // Never throws: a logging failure must not break the primary user action it's attached to (the

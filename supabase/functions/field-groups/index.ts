@@ -16,12 +16,12 @@
 //     the convention this replaced). Owner-only — see save-field-group-handler.ts.
 //   PATCH  /field-groups/:id { repeat }            → { ok }   a challenge participant's own
 //     override of this one group's schedule — never gated by ownership, always writes to the
-//     caller's own `repeats` row, same shape checklist-templates' own PATCH `{ repeat }` carve-out
+//     caller's own `schedules` row, same shape checklist-templates' own PATCH `{ repeat }` carve-out
 //     uses for the template-level schedule. See update-field-group-repeat-handler.ts.
 //
 // Supabase requires this exact file as the deploy target (`supabase functions deploy
 // field-groups`), so it stays a thin entrypoint: CORS, identity, dispatch, error shape. Route
-// handlers live in `api/`, row mapping in `supabase/dto/`, the real permission check + repeats-attaching
+// handlers live in `api/`, row mapping in `supabase/dto/`, the real permission check + schedules-attaching
 // helper in `services/` — see `notes/index.ts` for the fuller version of this shape, and
 // CLAUDE.md's "Authorization: app layer, not RLS" for the rationale.
 //

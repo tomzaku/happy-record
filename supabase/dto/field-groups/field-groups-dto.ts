@@ -6,10 +6,10 @@
 // `fields` (the group's own field-ids-plus-overrides list) and `activeTabs` round-trip as given —
 // config the server never filters on, not relational data (see the migration's own comment on why
 // only identity/note/ordering are real columns). `repeat` moved out the same way `fieldGroups`
-// itself did, one migration later — see `repeats` (20260830000000_repeats_table.sql) — except
-// it's still embedded in this row on the wire: `toFieldGroup`'s caller (field-groups/services and api)
-// fetches the matching `repeats` row itself and passes it in, so the client-facing shape never
-// changed.
+// itself did, one migration later — see `schedules` (20260830000000_repeats_table.sql, renamed by
+// 20260907000000_repeats_rename_to_schedules.sql) — except it's still embedded in this row on the
+// wire: `toFieldGroup`'s caller (field-groups/services and api) fetches the matching `schedules`
+// row itself and passes it in, so the client-facing shape never changed.
 
 export function toFieldGroup(r: Record<string, unknown>, repeat: Record<string, unknown> | undefined) {
   return {
@@ -48,8 +48,8 @@ export function fromFieldGroup(e: Record<string, unknown>) {
     active_tabs: Array.isArray(e.activeTabs) ? e.activeTabs : null,
     collapse_default: typeof e.collapseDefault === 'boolean' ? e.collapseDefault : null,
     // `repeat` isn't a column here anymore — the caller (field-groups/services and api) writes it to
-    // `repeats` itself via saveRepeat(), after this row exists (the FK needs a parent to point
-    // at) — see 20260830000000_repeats_table.sql.
+    // `schedules` itself via saveRepeat(), after this row exists (the FK needs a parent to point
+    // at) — see 20260830000000_repeats_table.sql, table renamed by 20260907000000_repeats_rename_to_schedules.sql.
     // `null` (not `undefined`) restores an archived group — see FieldGroup.archivedAt's own
     // comment client-side (useFieldGroups.tsx) for why that distinction matters.
     archived_at: typeof e.archivedAt === 'string' ? e.archivedAt : null,

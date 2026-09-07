@@ -4,7 +4,7 @@
 // fresh read, since that's exactly what was reported broken.
 
 import { assertEquals, assertNotEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { fetchRepeats, fromRepeat, pickRepeat, toRepeat } from './repeats.ts';
+import { fetchRepeats, fromRepeat, pickRepeat, toRepeat } from './schedules.ts';
 import { fakeSupabase } from './testSupport/fakeSupabase.ts';
 
 Deno.test('pickRepeat: the viewer\'s own row wins over the owner\'s', () => {
@@ -164,7 +164,7 @@ Deno.test('fromRepeat: a client-sent freq is kept as-is', () => {
 
 Deno.test('fetchRepeats: the caller\'s own row is always visible, even on a non-public owner', async () => {
   const db = fakeSupabase({
-    repeats: [{
+    schedules: [{
       data: [
         { field_group_id: 'fg1', user_id: 'participant', byhour: '08', byminute: '00' },
         { field_group_id: 'fg1', user_id: 'owner', byhour: '20', byminute: '00' },
@@ -185,7 +185,7 @@ Deno.test('fetchRepeats: the caller\'s own row is always visible, even on a non-
 
 Deno.test('fetchRepeats: the owner\'s row is visible to anyone once the owner is public', async () => {
   const db = fakeSupabase({
-    repeats: [{ data: [{ field_group_id: 'fg1', user_id: 'owner', byhour: '08', byminute: '00' }], error: null }],
+    schedules: [{ data: [{ field_group_id: 'fg1', user_id: 'owner', byhour: '08', byminute: '00' }], error: null }],
   });
   const result = await fetchRepeats(
     db,
@@ -198,7 +198,7 @@ Deno.test('fetchRepeats: the owner\'s row is visible to anyone once the owner is
 
 Deno.test('fetchRepeats: the owner\'s row is hidden when the owner is not public', async () => {
   const db = fakeSupabase({
-    repeats: [{ data: [{ field_group_id: 'fg1', user_id: 'owner', byhour: '08', byminute: '00' }], error: null }],
+    schedules: [{ data: [{ field_group_id: 'fg1', user_id: 'owner', byhour: '08', byminute: '00' }], error: null }],
   });
   const result = await fetchRepeats(
     db,
@@ -211,7 +211,7 @@ Deno.test('fetchRepeats: the owner\'s row is hidden when the owner is not public
 
 Deno.test('fetchRepeats: another participant\'s override never leaks, even on a public owner', async () => {
   const db = fakeSupabase({
-    repeats: [{
+    schedules: [{
       data: [
         { field_group_id: 'fg1', user_id: 'owner', byhour: '08', byminute: '00' },
         { field_group_id: 'fg1', user_id: 'other-participant', byhour: '20', byminute: '00' },
@@ -232,7 +232,7 @@ Deno.test('fetchRepeats: another participant\'s override never leaks, even on a 
 
 Deno.test('fetchRepeats: a row for an owner id not in the batch is dropped defensively', async () => {
   const db = fakeSupabase({
-    repeats: [{ data: [{ field_group_id: 'unrelated-fg', user_id: 'owner', byhour: '08', byminute: '00' }], error: null }],
+    schedules: [{ data: [{ field_group_id: 'unrelated-fg', user_id: 'owner', byhour: '08', byminute: '00' }], error: null }],
   });
   const result = await fetchRepeats(
     db,

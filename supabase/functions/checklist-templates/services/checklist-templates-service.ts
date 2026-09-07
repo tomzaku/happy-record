@@ -4,7 +4,7 @@
 // composition on top of `repository/checklist-templates-repository.ts`; `api/` never reaches in
 // there directly.
 
-import { fetchRepeats, saveRepeat } from '../../../shared/repeats.ts';
+import { fetchRepeats, saveRepeat } from '../../../shared/schedules.ts';
 import { recordChecklistLog } from '../../../shared/checklistLogs.ts';
 import {
   fetchJoinedTemplateIds,
@@ -36,7 +36,7 @@ export async function listOwnedAndJoinedTemplates({ db, userId }: Ctx) {
   const rows = [...ownedRows, ...visibleJoinedRows];
   const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(repeatOwnerOf), userId);
   // resolveTemplate's viewer/owner resolution actually matters here now: a joined row's `user_id`
-  // is the sharer, not the caller, so a personal reminder override (`repeats.user_id === userId`)
+  // is the sharer, not the caller, so a personal reminder override (`schedules.user_id === userId`)
   // has to win over the owner's own schedule.
   return rows.map(r => resolveTemplate(r, repeats, userId));
 }
@@ -53,7 +53,7 @@ export async function saveTemplate({ db, userId }: Ctx, row: Record<string, unkn
   // exist yet actually is one.
   const existing = await fetchTemplateRow(db, row.id as string);
   await upsertTemplate(db, userId, row);
-  // After the template row exists — repeats.checklist_template_id is a real FK, so the parent has
+  // After the template row exists — schedules.checklist_template_id is a real FK, so the parent has
   // to be there first.
   await saveRepeat(db, repeat, { userId, checklistTemplateId: row.id as string });
   if (!existing) {

@@ -6,7 +6,7 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import type { ReactionType } from '../../../dto/challenge-reactions/challenge-reactions-dto.ts';
 
 /** Deterministic, server-computed — a reaction's identity is entirely `(challengeId, userId)`,
- * same shape `shared/repeats.ts`'s own `rowId` uses for its one-row-per-(owner,user) table. */
+ * same shape `shared/schedules.ts`'s own `rowId` uses for its one-row-per-(owner,user) table. */
 function rowId(challengeId: string, userId: string): string {
   return `${challengeId}:${userId}`;
 }

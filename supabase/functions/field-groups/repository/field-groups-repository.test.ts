@@ -22,7 +22,7 @@ Deno.test('withRepeats: a participant sees their own patched schedule, not the o
     updated_at: '2026-08-01T00:00:00.000Z',
   };
   const db = fakeSupabase({
-    repeats: [{
+    schedules: [{
       data: [
         {
           field_group_id: FIELD_GROUP_ID,
@@ -72,7 +72,7 @@ Deno.test('withRepeats: the owner still sees their own schedule when a participa
     updated_at: '2026-08-01T00:00:00.000Z',
   };
   const db = fakeSupabase({
-    repeats: [{
+    schedules: [{
       data: [
         {
           field_group_id: FIELD_GROUP_ID,
@@ -112,7 +112,7 @@ Deno.test('withRepeats: a participant with no override yet falls back to the own
     updated_at: '2026-08-01T00:00:00.000Z',
   };
   const db = fakeSupabase({
-    repeats: [{
+    schedules: [{
       data: [{
         field_group_id: FIELD_GROUP_ID,
         user_id: 'owner-id',

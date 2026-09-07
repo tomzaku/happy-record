@@ -25,7 +25,7 @@ function countingDb(responses: Record<string, FakeResponse[]>) {
 Deno.test('saveTemplate: logs a create when no row existed yet', async () => {
   const { db, calls } = countingDb({
     checklist_templates: [{ data: null, error: null }, { data: null, error: null }],
-    repeats: [{ data: null, error: null }],
+    schedules: [{ data: null, error: null }],
     checklist_logs: [{ data: null, error: null }],
   });
   await saveTemplate({ db, userId: 'u1' } as never, { id: 't1' }, undefined);
@@ -35,7 +35,7 @@ Deno.test('saveTemplate: logs a create when no row existed yet', async () => {
 Deno.test('saveTemplate: does not log when the row already existed (the edit fallback)', async () => {
   const { db, calls } = countingDb({
     checklist_templates: [{ data: { id: 't1', user_id: 'u1' }, error: null }, { data: null, error: null }],
-    repeats: [{ data: null, error: null }],
+    schedules: [{ data: null, error: null }],
   });
   await saveTemplate({ db, userId: 'u1' } as never, { id: 't1' }, undefined);
   assertEquals(calls.checklist_logs ?? 0, 0);

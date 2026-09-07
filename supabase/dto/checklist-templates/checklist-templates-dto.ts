@@ -11,9 +11,10 @@
 // handled here at all anymore — it's the `field-groups` resource now (see
 // 20260829010000_notes_note_id_ownership.sql), fetched separately and merged onto the client
 // object by useChecklistTemplates.tsx, not embedded in this row. `repeat` moved the same way, one
-// migration later — see 20260830000000_repeats_table.sql — except it's still embedded in this
+// migration later — see 20260830000000_repeats_table.sql, table renamed to `schedules` by
+// 20260907000000_repeats_rename_to_schedules.sql — except it's still embedded in this
 // row on the wire: `toChecklistTemplate`'s caller (checklist-templates/services and api) fetches the
-// matching `repeats` row itself and passes it in, so the client-facing shape never changed.
+// matching `schedules` row itself and passes it in, so the client-facing shape never changed.
 // `isPersonalOverride` is the one addition: true when the caller (checklist-templates/services and api)
 // determined the resolved `repeatRow` is a challenge participant's own row, not the owner's —
 // annotated onto `repeat.isPersonal` (see ChecklistTemplate['repeat'] in
@@ -24,7 +25,7 @@
 // resolves the template — flagged, so their client can show "this was deleted" instead of it
 // just vanishing.
 
-import { toRepeat } from '../../shared/repeats.ts';
+import { toRepeat } from '../../shared/schedules.ts';
 
 export function toChecklistTemplate(
   r: Record<string, unknown>,
@@ -66,7 +67,7 @@ export function patchChecklistTemplate(e: Record<string, unknown>): Record<strin
     patch.avatar = e.avatar && typeof e.avatar === 'object' ? e.avatar : {};
   }
   // `repeat` isn't a column on this row anymore — the PATCH route (checklist-templates/services and api)
-  // writes it to `repeats` itself via saveRepeat() when `'repeat' in params`, same as it does for
+  // writes it to `schedules` itself via saveRepeat() when `'repeat' in params`, same as it does for
   // the full-row save() path.
   if ('tags' in e) {
     patch.tags = Array.isArray(e.tags) ? e.tags.filter((t): t is string => typeof t === 'string') : [];
@@ -98,8 +99,8 @@ export function fromChecklistTemplate(e: Record<string, unknown>) {
     title: e.title,
     avatar: e.avatar && typeof e.avatar === 'object' ? e.avatar : {},
     // `repeat` isn't a column here anymore — the caller (checklist-templates/services and api) writes it
-    // to `repeats` itself via saveRepeat(), after this row exists (the FK needs a parent to point
-    // at) — see 20260830000000_repeats_table.sql.
+    // to `schedules` itself via saveRepeat(), after this row exists (the FK needs a parent to point
+    // at) — see 20260830000000_repeats_table.sql, table renamed by 20260907000000_repeats_rename_to_schedules.sql.
     tags: Array.isArray(e.tags) ? e.tags.filter((t): t is string => typeof t === 'string') : [],
     visibility: e.visibility === 'public' ? 'public' : 'private',
     flag_id: str(e.flagId),

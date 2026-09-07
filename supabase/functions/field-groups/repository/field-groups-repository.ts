@@ -2,7 +2,7 @@
 // `field-groups-access-service.ts` builds on. See `notes/repository/notes-repository.ts` for the
 // reference shape.
 
-import { fetchRepeats, pickRepeat, toRepeat, type RepeatOwner } from '../../../shared/repeats.ts';
+import { fetchRepeats, pickRepeat, toRepeat, type RepeatOwner } from '../../../shared/schedules.ts';
 import { toFieldGroup } from '../../../dto/field-groups/field-groups-dto.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
@@ -57,7 +57,7 @@ export async function withRepeats(
     isPublic: isPublicTemplate,
   }));
   const repeats = await fetchRepeats(db, 'fieldGroupId', owners, userId);
-  // `pickRepeat` returns the raw `repeats` row (snake_case columns) — `toFieldGroup` expects the
+  // `pickRepeat` returns the raw `schedules` row (snake_case columns) — `toFieldGroup` expects the
   // client-shape object `toRepeat` produces (`byday`/`startedAt`/...), same as
   // checklist-templates' own `resolveTemplate` → `toChecklistTemplate` does for the template-level
   // schedule. Missing this call is exactly the bug that shipped here: `byhour`/`byminute` happen to

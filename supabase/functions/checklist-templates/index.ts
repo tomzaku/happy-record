@@ -15,8 +15,9 @@
 //
 // field_groups isn't part of this resource anymore — see `field-groups`
 // (20260829010000_notes_note_id_ownership.sql). `repeat` isn't a column on this row anymore
-// either (see `repeats` — 20260830000000_repeats_table.sql), but it stays part of `template` on
-// the wire: every route below fetches/writes the matching `repeats` row alongside its own.
+// either (see `schedules` — 20260830000000_repeats_table.sql, renamed by
+// 20260907000000_repeats_rename_to_schedules.sql), but it stays part of `template` on the wire:
+// every route below fetches/writes the matching `schedules` row alongside its own.
 //
 // PATCH is also how a challenge participant sets their own reminder time, distinct from the
 // owner's — see the update handler's own comment. Everything else here (title, avatar, tags,

@@ -48,7 +48,7 @@ export type GeneratedNoteBlock =
   | { type: 'video'; videoId: string; caption: string };
 
 // Every 7 codes, in iCal weekday order — the "every day" shorthand no client/server pairing in
-// this app writes a '*' sentinel for any more (see supabase/shared/repeats.ts).
+// this app writes a '*' sentinel for any more (see supabase/shared/schedules.ts).
 const ALL_ICAL_DAYS = 'SU,MO,TU,WE,TH,FR,SA';
 
 export interface GeneratedGroup {
