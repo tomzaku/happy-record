@@ -13,6 +13,7 @@
     "@moon-ui/button": "^1.0.0",
     "@moon-ui/card": "^1.0.0",
     "@moon-ui/icon": "^1.0.0",
+    "@moon-ui/provider": "^1.0.0",
     "@moon-ui/typography": "^1.0.0",
     "react": "^18.2.0",
     "classnames": "^2.3.2",

@@ -81,14 +81,17 @@
 }
 
 .optionsList {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  // Wide enough to never be narrower than the trigger, but free to grow past it — a long label
-  // ("Date & Time") used to force-wrap onto two lines because the panel was pinned to exactly
-  // the trigger's own width (`right: 0` alongside `left: 0`); `width: max-content` (capped by
-  // max-width below) lets it size to its own content instead.
-  min-width: 100%;
+  // Portaled to a body-level root now (see index.tsx's getSelectPortalRoot) so an ancestor's
+  // `overflow: hidden` — a Dialog's own `.modalShell`, deliberately clipped for its rounded
+  // corners — can't clip this any more; `left`/`top`/`bottom`/`min-width` all come from the
+  // trigger's own measured `getBoundingClientRect()`, set inline per open rather than resolved
+  // against a positioned ancestor the way `top: 100%`/`min-width: 100%` could when this was still
+  // an in-flow child of `.selectElement`.
+  position: fixed;
+  // Wide enough to never be narrower than the trigger (inline `min-width`), but free to grow past
+  // it — a long label ("Date & Time") used to force-wrap onto two lines because the panel was
+  // pinned to exactly the trigger's own width; `width: max-content` (capped by max-width below)
+  // lets it size to its own content instead.
   width: max-content;
   max-width: 260px;
   margin-top: 4px;
@@ -98,12 +101,16 @@
   border: 1px solid var(--card-border);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  z-index: 1000;
+  // Above $modal-z-index (10000, @moon-ui/app-scss/metric.scss) — portaled to a body-level
+  // sibling of Modal's own portal root now instead of a normal in-flow descendant, so it needs to
+  // out-rank a Dialog's own stacking explicitly to still paint above one, the same way it always
+  // visually sat above whatever was inside its own dialog before. This package intentionally has
+  // no dependency on @moon-ui/modal just to import its actual z-index constant, so this is the
+  // literal value, not a shared variable.
+  z-index: 10001;
   padding: 4px;
 
   &.optionsListAbove {
-    top: auto;
-    bottom: 100%;
     margin-top: 0;
     margin-bottom: 4px;
   }

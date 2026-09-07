@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom';
 import Drawer from '@moon-ui/drawer';
 import Typography from '@moon-ui/typography';
 import Icon from '@moon-ui/icon/Icon';
-import { getModalRoot } from '@moon-ui/modal/src/modalRoot';
+import { getMoonPortalRoot } from '@moon-ui/provider';
 import { Challenge, useIsMobile } from '@dreamer/global';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
 import type { ChallengeConfigOptions } from '../../useChecklistTemplateSharedPage';
@@ -90,8 +90,8 @@ const ChallengeConfigDrawer = ({
     );
   }
 
-  // Portaled into getModalRoot() rather than document.body — see MusicDrawerDesktop's own
-  // comment: that's the node inside App.tsx's data-theme-carrying `.container`, which is where
+  // Portaled into getMoonPortalRoot() rather than document.body — see MusicDrawerDesktop's own
+  // comment: that's the node inside MoonProvider's data-theme-carrying container, which is where
   // every --card-background/--text-color/... token this panel reads is actually defined.
   return createPortal(
     <AnimatePresence>
@@ -128,7 +128,7 @@ const ChallengeConfigDrawer = ({
         </>
       )}
     </AnimatePresence>,
-    getModalRoot(),
+    getMoonPortalRoot(),
   );
 };
 

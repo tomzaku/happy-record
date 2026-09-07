@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
-import { getModalRoot } from '@moon-ui/modal/src/modalRoot';
+import { getMoonPortalRoot } from '@moon-ui/provider';
 import { useIntl } from '@dreamer/translation';
 import { MusicSoundPicker } from '@dreamer/music-controller-mobile';
 import styles from './MusicDrawerDesktop.module.scss';
@@ -14,12 +14,12 @@ import styles from './MusicDrawerDesktop.module.scss';
  * full-viewport-width sheet with no horizontal variant — see @moon-ui/drawer). Reuses the same
  * `MusicSoundPicker` content both share, just wrapped in a slide-from-the-right shell here.
  *
- * Portals into `getModalRoot()` (`#modal-global-root`), not `document.body` directly — that node
- * sits inside `web/src/App.tsx`'s own `data-theme`-carrying `.container`, which is where every
+ * Portals into `getMoonPortalRoot()` (`#moon-ui-portal-root`), not `document.body` directly — that
+ * node sits inside `MoonProvider`'s own `data-theme`-carrying container, which is where every
  * `--card-background`/`--drawer-background`/... token this panel reads is actually defined (see
  * `almanac-scope`/theme light-dark.scss). A plain `document.body` portal is a sibling of that
- * `.container`, outside its DOM subtree — every one of those CSS variables comes back unset
- * there, which is why the panel rendered fully transparent before this.
+ * container, outside its DOM subtree — every one of those CSS variables comes back unset there,
+ * which is why the panel rendered fully transparent before this.
  */
 const MusicDrawerDesktop = ({
   visible,
@@ -68,7 +68,7 @@ const MusicDrawerDesktop = ({
         </>
       )}
     </AnimatePresence>,
-    getModalRoot(),
+    getMoonPortalRoot(),
   );
 };
 

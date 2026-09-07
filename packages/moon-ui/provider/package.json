@@ -1,5 +1,5 @@
 {
-  "name": "@moon-ui/select",
+  "name": "@moon-ui/provider",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.tsx",
@@ -8,8 +8,5 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@moon-ui/provider": "^1.0.0"
-  }
+  "dependencies": {}
 }
-

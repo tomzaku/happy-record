@@ -1,34 +1,40 @@
 @use '@moon-ui/app-scss/color' as *;
 @use '@moon-ui/app-scss/metric' as *;
 
-// Sized by this element, not by @moon-ui/modal's own .container (which only sets a
-// min-width/min-height) — see TaskSearch.tsx's comment on reusing Modal as-is.
 .dialog {
   display: flex;
   flex-direction: column;
-  width: min(520px, 80vw);
   max-height: 70vh;
+}
+
+// BottomModal's own .sheet brings no padding/max-height of its own (unlike Modal's .container) —
+// applied alongside .dialog on mobile, and declared after it so this wins over .dialog's own
+// desktop-sized max-height.
+.mobileDialog {
+  max-height: 85vh;
+  padding: $spacing-md;
 }
 
 .modeSwitch {
   background: var(--surface-secondary);
   border-radius: 8px;
   display: flex;
+  flex-shrink: 0;
   gap: 2px;
-  margin-bottom: $spacing-sm;
   padding: 2px;
 }
 
 .modeButton {
+  align-items: center;
   background: none;
   border: 0;
   border-radius: 6px;
   color: var(--text-description-color);
   cursor: pointer;
-  flex: 1;
-  font-size: 13px;
-  font-weight: 500;
-  padding: $spacing-xs 0;
+  display: flex;
+  justify-content: center;
+  padding: 5px 7px;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .modeButtonActive {

@@ -1,9 +1,9 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import cx from 'classnames';
-import { Modal } from '@moon-ui/modal';
+import { Modal, BottomModal } from '@moon-ui/modal';
 import Icon from '@moon-ui/icon/Icon';
-import { useChecklistTemplates } from '@dreamer/global';
+import { useChecklistTemplates, useIsMobile } from '@dreamer/global';
 import { useNote, type Note } from '@dreamer/global/src/store/note/useNote';
 import styles from './SearchDialog.module.scss';
 
@@ -34,6 +34,7 @@ type ResultItem = {
 const SearchDialog = ({ visible, onDismiss }: Props) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const { getRecommendChecklistTemplates } = useChecklistTemplates();
   const { getAllNotes, searchNotes } = useNote();
   const [mode, setMode] = React.useState<SearchMode>('task');
@@ -173,68 +174,70 @@ const SearchDialog = ({ visible, onDismiss }: Props) => {
   const isSearchingNotes = mode === 'note' && noteSearchLoading && query.trim() !== '';
   const emptyLabel = mode === 'task' ? 'tasks' : 'notes';
 
-  return (
-    <Modal
-      visible={visible}
-      onDismiss={onDismiss}
-      content={
-        <div className={styles.dialog}>
-          <div className={styles.modeSwitch}>
-            <button
-              type="button"
-              className={cx(styles.modeButton, mode === 'task' && styles.modeButtonActive)}
-              onClick={() => switchMode('task')}
-            >
-              Task
-            </button>
-            <button
-              type="button"
-              className={cx(styles.modeButton, mode === 'note' && styles.modeButtonActive)}
-              onClick={() => switchMode('note')}
-            >
-              Note
-            </button>
-          </div>
-          <div className={styles.inputRow}>
-            <Icon width={20} icon="solar:magnifer-linear" className={styles.inputIcon} />
-            <input
-              ref={inputRef}
-              className={styles.input}
-              placeholder={mode === 'task' ? 'Search your tasks…' : 'Search your notes…'}
-              value={query}
-              onChange={event => setQuery(event.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-          </div>
-          <div className={styles.results}>
-            {isSearchingNotes ? (
-              <div className={styles.emptyState}>Searching…</div>
-            ) : results.length === 0 ? (
-              <div className={styles.emptyState}>
-                {query.trim() === '' ? (
-                  <>No {emptyLabel} yet</>
-                ) : (
-                  <>No {emptyLabel} match &ldquo;{query}&rdquo;</>
-                )}
-              </div>
+  const content = (
+    <div className={cx(styles.dialog, isMobile && styles.mobileDialog)}>
+      <div className={styles.inputRow}>
+        <Icon width={20} icon="solar:magnifer-linear" className={styles.inputIcon} />
+        <input
+          ref={inputRef}
+          className={styles.input}
+          placeholder={mode === 'task' ? 'Search your tasks…' : 'Search your notes…'}
+          value={query}
+          onChange={event => setQuery(event.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <div className={styles.modeSwitch}>
+          <button
+            type="button"
+            aria-label="Task"
+            className={cx(styles.modeButton, mode === 'task' && styles.modeButtonActive)}
+            onClick={() => switchMode('task')}
+          >
+            <Icon width={16} icon="material-symbols:checklist" />
+          </button>
+          <button
+            type="button"
+            aria-label="Note"
+            className={cx(styles.modeButton, mode === 'note' && styles.modeButtonActive)}
+            onClick={() => switchMode('note')}
+          >
+            <Icon width={16} icon="solar:notes-line-duotone" />
+          </button>
+        </div>
+      </div>
+      <div className={styles.results}>
+        {isSearchingNotes ? (
+          <div className={styles.emptyState}>Searching…</div>
+        ) : results.length === 0 ? (
+          <div className={styles.emptyState}>
+            {query.trim() === '' ? (
+              <>No {emptyLabel} yet</>
             ) : (
-              results.map((item, index) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={cx(styles.resultRow, index === activeIndex && styles.activeResultRow)}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onClick={() => goToResult(item)}
-                >
-                  <Icon width={20} icon={item.icon} color={item.iconColor} />
-                  <span className={styles.resultTitle}>{item.title}</span>
-                </button>
-              ))
+              <>No {emptyLabel} match &ldquo;{query}&rdquo;</>
             )}
           </div>
-        </div>
-      }
-    />
+        ) : (
+          results.map((item, index) => (
+            <button
+              key={item.id}
+              type="button"
+              className={cx(styles.resultRow, index === activeIndex && styles.activeResultRow)}
+              onMouseEnter={() => setActiveIndex(index)}
+              onClick={() => goToResult(item)}
+            >
+              <Icon width={20} icon={item.icon} color={item.iconColor} />
+              <span className={styles.resultTitle}>{item.title}</span>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
+  return isMobile ? (
+    <BottomModal visible={visible} onDismiss={onDismiss} content={content} />
+  ) : (
+    <Modal visible={visible} onDismiss={onDismiss} content={content} />
   );
 };
 

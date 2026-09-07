@@ -41,25 +41,32 @@
   margin-right: $spacing-sm;
 }
 
-// AppHeader's own nav: D | Notes | Challenges | Dashboard | Search | Profile as equal-width
+// AppHeader's own nav: Task | Notes | Challenges | Dashboard | Search | Profile as equal-width
 // columns spanning the full header, so the icons stop bunching up on the right.
 .navItem {
   align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
   display: flex;
   flex: 1;
   justify-content: center;
+  margin: $spacing-xs;
   min-width: 0;
+  padding: $spacing-xs 0;
 }
 
-.navLogo {
-  cursor: pointer;
-  height: 28px;
-  width: 28px;
+.activeNavItem {
+  background: var(--card-selected-background);
 }
 
 .navIcon {
   cursor: pointer;
   fill: var(--icon-color-inactive-invert);
+}
+
+.activeNavIcon {
+  color: var(--icon-primary) !important;
+  fill: var(--icon-primary) !important;
 }
 
 // .menu {

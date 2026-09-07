@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@moon-ui/note-editor": "^1.0.0"
+    "@moon-ui/note-editor": "^1.0.0",
+    "@moon-ui/provider": "^1.0.0"
   }
 }

@@ -173,10 +173,11 @@ export const CHALLENGE_PAGE_THEMES: Record<ChallengeThemeId, ChallengeThemeVars>
 /**
  * Applies a theme's CSS custom properties at the document root, not just
  * this component's own subtree — Drawer (@moon-ui/drawer) portals its
- * content to `#drawer-global-root`, a sibling of the app root, so vars set
- * on a wrapper div here would never reach the Join/Leave drawers. Root-level
- * custom properties cascade to both. Cleans up on unmount so another page
- * mounted right after doesn't inherit a stale theme.
+ * content to `#moon-ui-portal-root` (@moon-ui/provider), a sibling of the
+ * app root, so vars set on a wrapper div here would never reach the
+ * Join/Leave drawers. Root-level custom properties cascade to both. Cleans
+ * up on unmount so another page mounted right after doesn't inherit a stale
+ * theme.
  *
  * `backgroundImageUrl` is optional — the owner's CardShare photo (a plain
  * http(s) URL — see 20260828000000_challenge_background_image.sql) — and is

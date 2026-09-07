@@ -7,7 +7,7 @@ import { useDrag } from '@use-gesture/react';
 // Utils
 import cx from 'classnames';
 import { a, useSpring, config } from '@react-spring/web';
-import { getModalRoot } from './modalRoot';
+import { getMoonPortalRoot } from '@moon-ui/provider';
 
 import styles from './BottomModal.module.scss';
 
@@ -88,7 +88,7 @@ export default function BottomModal({ visible, content, onDismiss, closeOnOverla
       close();
     }
   }, [visible]);
-  // Portaled to a body-level node — see modalRoot.ts's own comment. This component always
+  // Portaled to a body-level node — see @moon-ui/provider's own portalRoot.ts comment. This component always
   // renders (even while closed, it's just `display: none` via the spring above, since it needs
   // to be mounted to animate the *close*), so the portal target has to be resolved unconditionally
   // here too, not only when `visible`.
@@ -110,6 +110,6 @@ export default function BottomModal({ visible, content, onDismiss, closeOnOverla
         {content}
       </a.div>
     </>,
-    getModalRoot(),
+    getMoonPortalRoot(),
   );
 }

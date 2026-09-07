@@ -1,7 +1,7 @@
 @use '@moon-ui/app-scss/color' as *;
 @use 'include-media/dist/include-media' as media;
-@use '../../packages/moon-ui/app-scss/theme/light.scss' as *;
-@use '../../packages/moon-ui/app-scss/theme/dark.scss' as *;
+@use '@moon-ui/app-scss/theme/light.scss' as *;
+@use '@moon-ui/app-scss/theme/dark.scss' as *;
 
 .container {
   align-items: center;

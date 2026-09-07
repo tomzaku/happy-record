@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 
 import Button from '@moon-ui/button';
 import IconWarning from '@moon-ui/icon/IconWarning';
-import { getModalRoot } from './modalRoot';
+import { getMoonPortalRoot } from '@moon-ui/provider';
 
 import styles from './WarningModal.module.scss';
 import Typography from '@moon-ui/typography';
@@ -65,6 +65,6 @@ export default function WarningModal({
         </div>
       </div>
     </div>,
-    getModalRoot(),
+    getMoonPortalRoot(),
   );
 }

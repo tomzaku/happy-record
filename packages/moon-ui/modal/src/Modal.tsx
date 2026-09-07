@@ -4,7 +4,7 @@ import cx from 'classnames';
 
 import Division from '@moon-ui/division';
 import Typography from '@moon-ui/typography';
-import { getModalRoot } from './modalRoot';
+import { getMoonPortalRoot } from '@moon-ui/provider';
 
 import styles from './Modal.module.scss';
 
@@ -52,6 +52,6 @@ export default function Modal({ visible, content, onDismiss, title, className, c
         {content}
       </div>
     </div>,
-    getModalRoot(),
+    getMoonPortalRoot(),
   );
 }

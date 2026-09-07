@@ -2,7 +2,6 @@
 @use 'include-media/dist/include-media' as media;
 
 .page {
-  width: 100%;
   max-width: 720px;
   margin: 0 auto;
   padding: $spacing-lg $spacing-md $spacing-xl;

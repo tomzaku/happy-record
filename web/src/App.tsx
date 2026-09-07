@@ -2,6 +2,7 @@
 import AppRouter from '@dreamer/route';
 import PwaInstallation from '@dreamer/pwa';
 import { QueryClientProvider } from '@tanstack/react-query';
+import MoonProvider from '@moon-ui/provider';
 
 // Hooks
 import {
@@ -16,7 +17,6 @@ import { withTranslation } from '@dreamer/translation';
 import React from 'react';
 
 import './normalize.css';
-import styles from './App.module.scss';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -59,14 +59,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
-        <div className={styles.container} data-theme={theme}>
-          <div className={styles.body}>
-            <AppRouter />
-            <PwaInstallation />
-          </div>
-          <div id="drawer-global-root" />
-          <div id="modal-global-root" />
-        </div>
+        <MoonProvider theme={theme}>
+          <AppRouter />
+          <PwaInstallation />
+        </MoonProvider>
       </ErrorBoundary>
     </QueryClientProvider>
   );

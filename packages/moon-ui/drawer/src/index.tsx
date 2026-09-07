@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import cx from 'classnames';
 import { useSpring, animated } from '@react-spring/web';
 import { createPortal } from 'react-dom';
+import { getMoonPortalRoot } from '@moon-ui/provider';
 
 import styles from './index.module.scss';
 
@@ -62,6 +63,6 @@ export default function Drawer({
         {children}
       </animated.div>
     </animated.div>,
-    document.getElementById('drawer-global-root'),
+    getMoonPortalRoot(),
   );
 }
