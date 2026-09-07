@@ -14,6 +14,26 @@
   font-size: toRem(16px);
 }
 
+.rightControls {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.endDateTrigger {
+  border-radius: 8px;
+  padding: $spacing-xxs $spacing-xs;
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.endDateTriggerLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: toRem(12px);
+  white-space: nowrap;
+}
+
 .submitButton {
   min-width: 80px;
   height: 36px;

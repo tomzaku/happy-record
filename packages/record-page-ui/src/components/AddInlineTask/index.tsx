@@ -2,6 +2,8 @@ import React from 'react';
 import { useChecklist, useChecklistTemplates, uniqueId } from '@dreamer/global';
 import Button from '@moon-ui/button';
 import Input from '@moon-ui/input';
+import Dropdown from '@moon-ui/dropdown';
+import { Icon } from '@moon-ui/icon/Icon';
 import { createTask } from '@pregnant/create-checklist-page-ui/src/createTaskUtil';
 import { FormState } from '@pregnant/create-checklist-page-ui/src/CoreChecklistForm';
 import { startOfDay } from 'date-fns';
@@ -45,6 +47,9 @@ const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(
   const { addChecklistTemplate } = useChecklistTemplates();
   const { addChecklist } = useChecklist();
   const [taskName, setTaskName] = React.useState('');
+  // Just the two options for now — "Single day" (false, the default) or "No end date" (true),
+  // picked from the Dropdown next to Submit below.
+  const [noEndDate, setNoEndDate] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [inputKey, setInputKey] = React.useState(0);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -69,20 +74,23 @@ const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(
     const pendingId = uniqueId();
     onTaskCreateStart?.({ id: pendingId, title });
 
+    const noEndDateAtSubmit = noEndDate;
+
     // Reset the form right away — the pending row above stands in for this
     // task while it saves in the background, so there's no reason to make
     // the user wait before typing the next one.
     setTaskName('');
+    setNoEndDate(false);
     // Force re-render of Input component to clear its internal state
     setInputKey(prev => prev + 1);
     isSubmittingRef.current = false;
     setIsSubmitting(false);
 
-    // Create a simple forever task with default values
+    // Create a simple one-off task with default values
     const formData: FormState = {
       selectedRecords: [],
       checklistText: title,
-      weeklyHobbies: [], // No schedule = forever task
+      weeklyHobbies: [], // No schedule = one-off task
       // `startOfDay` truncates in *local* time, not `.toISOString().split('T')[0]`'s UTC — that
       // silently rolls back to the previous day for anyone east of UTC (a local midnight like
       // 2026-08-20T00:00 in UTC+7 is 2026-08-19T17:00Z, so the UTC date is still the 19th).
@@ -92,6 +100,7 @@ const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(
       selectedColor: '#607d8b',
       fieldGroups: [],
       tags: [],
+      noEndDate: noEndDateAtSubmit,
     };
 
     createTask(formData, addChecklistTemplate, addChecklist)
@@ -127,16 +136,36 @@ const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(
         renderRightInput={() => {
           if (taskName.trim()) {
             return (
-              <Button
-                type="primary"
-                size="sm"
-                onClick={submitTask}
-                disabled={isSubmitting}
-                className={styles.submitButton}
-                aria-label="Add task"
-              >
-                Submit
-              </Button>
+              <div className={styles.rightControls}>
+                <Dropdown
+                  trigger={
+                    <span className={styles.endDateTriggerLabel}>
+                      <Icon width={14} icon="solar:calendar-mark-line-duotone" />
+                      {noEndDate ? 'No end date' : 'Single day'}
+                    </span>
+                  }
+                  triggerClassName={styles.endDateTrigger}
+                  triggerAriaLabel="Choose end date"
+                  items={[
+                    // "Single day" not "Ends today" — `date` is whatever day the user is
+                    // currently viewing (the home calendar's selected day), not necessarily
+                    // today, so a fixed "today" label would misdescribe a task added for another
+                    // day.
+                    { key: 'end-of-day', label: 'Single day', onClick: () => setNoEndDate(false) },
+                    { key: 'no-end-date', label: 'No end date', onClick: () => setNoEndDate(true) },
+                  ]}
+                />
+                <Button
+                  type="primary"
+                  size="sm"
+                  onClick={submitTask}
+                  disabled={isSubmitting}
+                  className={styles.submitButton}
+                  aria-label="Add task"
+                >
+                  Submit
+                </Button>
+              </div>
             );
           }
           return <></>;

@@ -7,6 +7,7 @@ import {
   getEffectiveDayOfWeek,
   formatDaysOfWeek,
   getActiveFieldGroups,
+  isRecurringSchedule,
   ALL_ICAL_DAYS,
 } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
@@ -21,6 +22,7 @@ import { format, isToday } from 'date-fns';
 import AddInlineTask, { AddInlineTaskHandle, PendingInlineTask } from '../AddInlineTask';
 import { getLunarDate, getLunarPhraseId } from '../../utils/lunarDate';
 import EmptyChecklistIllustration from './EmptyChecklistIllustration';
+import DeleteTaskModal from './DeleteTaskModal';
 
 const isEditableTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -65,8 +67,9 @@ const ChecklistTodayDesktop = ({
   date: Date;
   selectedTag?: string;
 }) => {
-  const { getChecklistByGivingDate, updateChecklist, checklistsLoading } = useChecklist();
-  const { checklistTemplate, templatesLoading, isOwnedTemplate } = useChecklistTemplates();
+  const { getChecklistByGivingDate, updateChecklist, deleteChecklist, getAllChecklistWithTemplate, checklistsLoading } =
+    useChecklist();
+  const { checklistTemplate, templatesLoading, isOwnedTemplate, deleteChecklistTemplate } = useChecklistTemplates();
   const { getFieldGroups } = useFieldGroups();
   const navigate = useNavigate();
   const intl = useIntl();
@@ -172,6 +175,34 @@ const ChecklistTodayDesktop = ({
       updateChecklist({ ...currentChecklist, title: trimmed });
     }
     setEditingTaskId(null);
+  };
+
+  // The row's own hover-revealed delete icon — mirrors the edit-title state shape above (the
+  // Checklist instance's own id, not the template's). `deletingTaskId` gates which task the
+  // confirm modal (DeleteTaskModal) is currently open for.
+  const [deletingTaskId, setDeletingTaskId] = React.useState<string | null>(null);
+
+  const cancelDeleteTask = () => setDeletingTaskId(null);
+
+  const handleDeleteToday = () => {
+    if (!deletingTaskId) return;
+    deleteChecklist(deletingTaskId);
+    setDeletingTaskId(null);
+  };
+
+  // Deleting the template alone doesn't remove instances already materialized into real rows
+  // (server-side `checklist-templates` delete doesn't cascade — see EditChecklistForm.tsx's own
+  // two-call delete, which this mirrors exactly): the template itself, then every instance it
+  // already has, fetched fresh rather than trusting whatever's in the store for other dates.
+  const handleDeleteAll = async () => {
+    if (!deletingTaskId) return;
+    const currentChecklist = checklist[deletingTaskId];
+    setDeletingTaskId(null);
+    if (!currentChecklist) return;
+    const { checklistTemplateId } = currentChecklist;
+    deleteChecklistTemplate(checklistTemplateId);
+    const instances = await getAllChecklistWithTemplate(checklistTemplateId);
+    instances.forEach(instance => deleteChecklist(instance.id));
   };
 
   // Optimistic placeholders for tasks that are still saving — see
@@ -444,6 +475,20 @@ const ChecklistTodayDesktop = ({
                 >
                   <Icon width={14} icon="solar:pen-2-line-duotone" />
                 </button>
+                <button
+                  type="button"
+                  className={styles.rowDeleteButton}
+                  onClick={event => {
+                    event.stopPropagation();
+                    setDeletingTaskId(id);
+                  }}
+                  aria-label={intl.formatMessage({
+                    id: 'ChecklistToday.delete-task-label',
+                    defaultMessage: 'Delete task',
+                  })}
+                >
+                  <Icon width={14} icon="solar:trash-bin-minimalistic-2-line-duotone" />
+                </button>
                 {currentChecklistTemplate?.visibility === 'public' && (
                   <span className={styles.publicBadge}>
                     {intl.formatMessage({
@@ -465,6 +510,10 @@ const ChecklistTodayDesktop = ({
       </div>
     );
   };
+
+  const deletingChecklist = deletingTaskId ? checklist[deletingTaskId] : undefined;
+  const deletingTemplate = deletingChecklist && checklistTemplate[deletingChecklist.checklistTemplateId];
+  const deletingTaskTitle = deletingChecklist?.title || deletingTemplate?.title || '';
 
   return (
     <div className={styles.container}>
@@ -568,6 +617,15 @@ const ChecklistTodayDesktop = ({
           {intl.formatMessage({ id: 'ChecklistToday.shortcuts-clear', defaultMessage: 'Clear focus' })}
         </span>
       </div>
+
+      <DeleteTaskModal
+        visible={!!deletingTaskId}
+        taskTitle={deletingTaskTitle}
+        isRecurring={isRecurringSchedule(deletingTemplate?.repeat)}
+        onCancel={cancelDeleteTask}
+        onDeleteToday={handleDeleteToday}
+        onDeleteAll={handleDeleteAll}
+      />
     </div>
   );
 };

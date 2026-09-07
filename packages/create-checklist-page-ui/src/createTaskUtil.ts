@@ -1,6 +1,7 @@
 import { useChecklist, useChecklistTemplates, getClientTimezone } from '@dreamer/global';
 import { calculateRepeat } from './calculateRepeat';
 import { FormState } from './CoreChecklistForm';
+import { endOfDay } from 'date-fns';
 
 /**
  * Utility function to handle task creation logic
@@ -21,6 +22,7 @@ export const createTask = async (
     weeklyHobbies,
     fieldGroups,
     tags,
+    noEndDate,
   } = formData;
 
   // CreateChecklistForm's own initialValues already defaults this to today, but a cleared date
@@ -56,6 +58,10 @@ export const createTask = async (
         byminute: '',
         byday: '',
         timezone: getClientTimezone(),
+        // Explicit, not just implied by the empty `byday` above — a forever/one-off task is
+        // exactly the "one-time arrangement" case `recurring` exists for (see
+        // rruleUtils.ts's `occursInRange`), not the default `true` an absent value would read as.
+        recurring: false,
       };
 
   const { id, saved } = addChecklistTemplate({
@@ -82,7 +88,13 @@ export const createTask = async (
       title: checklistText,
       checklistTemplateId: id,
       startedAt: effectiveStartedAt,
-      endedAt: new Date('2099-12-31T23:59:59.999Z').toISOString(), // Far future date for forever tasks
+      // `noEndDate` is a real three-way signal, not a plain boolean default: `false` (a caller
+      // that offers the choice and defaults it to "Single day," e.g. AddInlineTask) means end of
+      // this task's own start day — whatever day that is, not necessarily today (see
+      // AddInlineTask's own `date` prop); `undefined` (every caller that doesn't offer this
+      // choice yet — CreateChecklistForm, create-task-modal) keeps the old behavior of no defined
+      // end at all, same as `true` (explicitly "no end date").
+      endedAt: noEndDate === false ? endOfDay(new Date(effectiveStartedAt)).toISOString() : undefined,
     });
   }
 

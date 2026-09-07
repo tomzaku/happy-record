@@ -85,3 +85,10 @@
   color: var(--modal-button-secondary);
   border: 2px solid var(--modal-button-secondary);
 }
+
+.tertiaryButton {
+  flex: 1;
+  background: transparent;
+  color: var(--modal-button-primary);
+  border: 2px solid var(--modal-button-primary);
+}

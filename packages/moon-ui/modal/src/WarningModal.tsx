@@ -14,6 +14,11 @@ type Props = {
   primaryButtonOnClick: () => void;
   secondaryButtonText: string;
   secondaryButtonClick: () => void;
+  /** A third, optional middle action — e.g. "Delete today" sitting between "Cancel" and a more
+   * drastic "Delete all" — rendered only when both are provided. Outlined rather than filled, so
+   * it doesn't compete with the primary button's own emphasis. */
+  tertiaryButtonText?: string;
+  tertiaryButtonOnClick?: () => void;
   title: string;
   content?: React.ReactNode;
 };
@@ -24,6 +29,8 @@ export default function WarningModal({
   secondaryButtonText,
   primaryButtonOnClick,
   secondaryButtonClick,
+  tertiaryButtonText,
+  tertiaryButtonOnClick,
   content,
   title,
 }: Props) {
@@ -55,6 +62,16 @@ export default function WarningModal({
           >
             {secondaryButtonText}
           </Button>
+          {tertiaryButtonText && tertiaryButtonOnClick && (
+            <Button
+              size="md"
+              type="ghost"
+              className={styles.tertiaryButton}
+              onClick={tertiaryButtonOnClick}
+            >
+              {tertiaryButtonText}
+            </Button>
+          )}
           <Button
             onClick={primaryButtonOnClick}
             size="md"

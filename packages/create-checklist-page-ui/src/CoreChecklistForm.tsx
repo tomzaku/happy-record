@@ -27,6 +27,11 @@ export type FormState = {
   selectedColor: string;
   fieldGroups?: FieldGroup[];
   tags: string[];
+  /** Only consulted for a one-off (non-recurring) task — see createTaskUtil.ts. A real three-way
+   * signal: `false` means "single day" (end of `startedAt`'s own day, whatever day that is —
+   * not necessarily today); `true` or `undefined` (every caller that doesn't offer this choice
+   * yet) means no defined end. */
+  noEndDate?: boolean;
 };
 const CoreChecklistForm = ({
   initialValues,

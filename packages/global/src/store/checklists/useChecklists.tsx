@@ -21,7 +21,11 @@ export type Checklist = {
   checklistTemplateId: string;
   completedAt?: string;
   startedAt: string;
-  endedAt: string;
+  /** Absent means no defined end — a "forever" one-off task (see createTaskUtil.ts's own
+   * non-recurring branch). Every scheduled-day instance still gets a real end-of-day value (see
+   * this file's own virtual-checklist construction below); this is genuinely unset only for that
+   * one case, not a 2099 sentinel any more (see the `checklists_ended_at_nullable` migration). */
+  endedAt?: string;
   clientOnly?: boolean;
   updatedAt: string;
 };
@@ -229,14 +233,18 @@ export const useChecklist = () => {
         const hasSchedule = !!effectiveDayOfWeek && effectiveDayOfWeek.trim() !== '';
         if(hasSchedule) return false;
 
-        // A one-off (unscheduled) checklist belongs to exactly the day it
-        // was started, not a range from there onward — and completedAt
-        // being set shouldn't make it appear on every day back to the
-        // beginning of time either. `completedAt` doesn't factor into
-        // which day this shows on at all; it's just whether it's checked
-        // off when it does.
+        // A one-off (unscheduled) checklist shows from the day it was
+        // started through its own `endedAt` (inclusive) — a single day when
+        // `endedAt` is that same day's end (the "Single day" choice in
+        // AddInlineTask/CoreChecklistForm), every day onward with no upper
+        // bound when `endedAt` is unset ("No end date" — see
+        // createTaskUtil.ts). `completedAt` doesn't factor into which day
+        // this shows on at all; it's just whether it's checked off when it
+        // does, so it never extends or shortens this range on its own.
         const startedAtDate = new Date(existingChecklist.startedAt);
-        return startedAtDate >= startOfDay(date) && startedAtDate <= endOfDay(date);
+        if (startedAtDate > endOfDay(date)) return false;
+        if (!existingChecklist.endedAt) return true;
+        return new Date(existingChecklist.endedAt) >= startOfDay(date);
         },
       );
       // Combine scheduled, non-scheduled, and forever checklists. Deduped by

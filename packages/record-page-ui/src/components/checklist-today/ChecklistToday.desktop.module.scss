@@ -212,6 +212,32 @@
   opacity: 1;
 }
 
+.rowDeleteButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-description-color);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: rgba(235, 87, 87, 0.12);
+    color: #eb5757;
+  }
+}
+
+.taskRow:hover .rowDeleteButton {
+  opacity: 1;
+}
+
 .rowTitleInput {
   flex: 1;
   min-width: 0;

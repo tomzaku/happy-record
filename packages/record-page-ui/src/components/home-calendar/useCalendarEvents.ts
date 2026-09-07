@@ -113,15 +113,21 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
         // onto this one shade.
         const color = avatarColor && avatarColor !== UNCHOSEN_AVATAR_COLOR ? avatarColor : hashColor(task.checklistTemplateId);
         const title = template?.title ?? task.title;
+        const hasActiveFieldGroups = getActiveFieldGroups(template?.fieldGroups ?? []).length > 0;
 
-        if (template?.repeat?.recurring === false) {
+        // A field-group-driven template's real schedule lives on each active group's own
+        // `repeat`, not the template's top-level one — a top-level `recurring: false` there (e.g.
+        // left over from before groups existed, or set by the Start/End Date dialog for its own
+        // unrelated reason) must not merge every day into one spanning bar; each group can be
+        // active on different days, which a single bar can't represent. Same guard as
+        // `isTemplateScheduledOnDate`'s own.
+        if (!hasActiveFieldGroups && template?.repeat?.recurring === false) {
           const entry = spanningDaysByTemplate.get(task.checklistTemplateId) ?? { title, color, days: [] };
           entry.days.push(day);
           spanningDaysByTemplate.set(task.checklistTemplateId, entry);
           return;
         }
 
-        const hasActiveFieldGroups = getActiveFieldGroups(template?.fieldGroups ?? []).length > 0;
         const base = {
           id: task.id,
           title,

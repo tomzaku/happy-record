@@ -13,7 +13,7 @@ export function toChecklist(r: Record<string, unknown>) {
     title: r.title as string,
     checklistTemplateId: r.checklist_template_id as string,
     startedAt: r.started_at as string,
-    endedAt: r.ended_at as string,
+    ...(r.ended_at ? { endedAt: r.ended_at as string } : {}),
     ...(r.completed_at ? { completedAt: r.completed_at as string } : {}),
     updatedAt: r.updated_at as string,
   };
@@ -26,14 +26,15 @@ export function fromChecklist(e: Record<string, unknown>) {
   }
   if (typeof e.title !== 'string' || !e.title) throw new Error('Missing title.');
   if (typeof e.startedAt !== 'string' || !e.startedAt) throw new Error('Missing startedAt.');
-  if (typeof e.endedAt !== 'string' || !e.endedAt) throw new Error('Missing endedAt.');
 
   return {
     id: e.id,
     checklist_template_id: e.checklistTemplateId,
     title: e.title,
     started_at: e.startedAt,
-    ended_at: e.endedAt,
+    // No defined end (a "forever" one-off task) is a real null now, not a 2099 sentinel — nothing
+    // client-side ever reads this back (see the migration's own comment).
+    ended_at: typeof e.endedAt === 'string' && e.endedAt ? e.endedAt : null,
     completed_at: typeof e.completedAt === 'string' ? e.completedAt : null,
     // Postgres only fills the default on insert, not update — an upsert
     // has to set this explicitly every time.

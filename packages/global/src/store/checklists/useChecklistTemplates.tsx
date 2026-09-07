@@ -5,6 +5,7 @@ import { useFieldGroups } from './useFieldGroups';
 import { useChecklistTemplatesQuery } from './useChecklistTemplatesQuery';
 import { useChecklistTemplateMutations } from './useChecklistTemplateMutations';
 import type { ChecklistTemplate } from './checklistTemplateTypes';
+import { getActiveFieldGroups } from './fieldGroupTypes';
 
 export type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTemplateTypes';
 export * from './fieldGroupTypes';
@@ -20,7 +21,21 @@ export { useChecklistTemplateDetail } from './useChecklistTemplateDetail';
 function isTemplateScheduledOnDate(template: ChecklistTemplate | undefined, date: Date): boolean {
   if (!template || template.deletedAt) return false;
   const effectiveByday = getEffectiveDayOfWeek(template);
-  return occursOnDate({ ...template.repeat, byday: effectiveByday }, date);
+  const hasActiveFieldGroups = getActiveFieldGroups(template.fieldGroups ?? []).length > 0;
+  return occursOnDate(
+    {
+      ...template.repeat,
+      byday: effectiveByday,
+      // A field-group-driven template's real schedule lives on each active group's own `repeat`
+      // (that's exactly what `effectiveByday` already merges in above) — a top-level
+      // `repeat.recurring: false` (e.g. left over from before groups existed, or set by the
+      // Start/End Date dialog for its own, unrelated reason — see that dialog's own comment) must
+      // not short-circuit this into "every day in the date range" instead of respecting each
+      // group's actual days.
+      ...(hasActiveFieldGroups ? { recurring: true } : {}),
+    },
+    date,
+  );
 }
 
 /**
