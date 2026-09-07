@@ -11,6 +11,7 @@ import { FieldGroup, getActiveFieldGroups } from '@dreamer/global';
 import styles from './index.module.scss';
 import cx from 'classnames';
 import ScheduleModalContent from './ScheduleModalContent';
+import { todayDay } from './recurrenceConfig';
 
 export const SchedulingGroup = ({
   weeklyHobbies,
@@ -251,7 +252,13 @@ export const SchedulingGroup = ({
                 checked={weeklyHobbies ? weeklyHobbies.length !== 0 : false}
                 onChange={checked => {
                   if (checked) {
-                    setWeeklyHobbies([Day.Mon]);
+                    // Today's own weekday — not a hardcoded Monday — so a task
+                    // created (and this toggled on) any other day of the week
+                    // actually gets scheduled on a day it occurs, without
+                    // requiring the user to also notice and open the gear-icon
+                    // config modal to fix it. Matches `recurrenceConfig.ts`'s
+                    // own `setFrequency` default for the same reason.
+                    setWeeklyHobbies([todayDay()]);
                   } else {
                     setWeeklyHobbies([]);
                   }

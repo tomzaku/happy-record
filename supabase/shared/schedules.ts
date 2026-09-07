@@ -88,6 +88,10 @@ export function toRepeat(row: Row | undefined): Record<string, unknown> | undefi
     ...(row!.interval != null && (row!.interval as number) !== 1 ? { interval: row!.interval as number } : {}),
     ...(row!.count != null ? { count: row!.count as number } : {}),
     ...(row!.freq ? { freq: row!.freq as string } : {}),
+    // Not-null with a `default true` at the column level (see the migration), so this always has
+    // a real value — spelled as `!== false` (not `?? true`) so an explicit `false` on the row
+    // survives even if some future caller ever passes a nullish placeholder through by mistake.
+    recurring: row!.recurring !== false,
   };
 }
 
@@ -121,6 +125,11 @@ export function fromRepeat(repeat: unknown, owner: Owner): Row {
   // `repeat` with a `byday` but no `freq`) doesn't silently write a null `freq` next to a real
   // schedule.
   const freq = typeof e.freq === 'string' && e.freq ? e.freq : (byday ? 'WEEKLY' : null);
+  // Defaults true (see the migration) rather than being left to the column default on every
+  // write, since this is a full-row upsert (see saveRepeat's own doc comment) — an older client
+  // build that never sends `recurring` at all must still write `true`, not silently fall through
+  // to whatever null would coerce to.
+  const recurring = typeof e.recurring === 'boolean' ? e.recurring : true;
 
   return {
     id: rowId(owner),
@@ -134,6 +143,7 @@ export function fromRepeat(repeat: unknown, owner: Owner): Row {
     byminute,
     count,
     until,
+    recurring,
     rrule: buildDebugRRuleString({ freq, interval, byday, byhour, byminute, count, until }),
     started_at: startedAt,
     completed_at: str(e.completedAt),

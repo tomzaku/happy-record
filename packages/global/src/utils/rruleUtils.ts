@@ -31,6 +31,12 @@ export type RepeatLike = {
   count?: number;
   startedAt?: string;
   until?: string;
+  /** `false` means a one-time arrangement — every calendar day from `startedAt` through `until`
+   * (plain date-range containment, no weekday pattern at all — see `occursOnDate`'s own branch for
+   * this). Absent/`true` keeps the normal weekly `byday` recurrence below. See
+   * `ChecklistTemplate['repeat'].recurring`'s own comment for why this exists as a separate
+   * question from "does it eventually stop" (`until`/`count`, unaffected either way). */
+  recurring?: boolean;
 };
 
 /**
@@ -60,6 +66,22 @@ export function buildRule(repeat: RepeatLike | undefined, anchorDate: Date): RRu
 }
 
 /**
+ * A one-time arrangement (`recurring: false`) occurring on every calendar day from `startedAt`
+ * through `until` inclusive — a plain date-range containment check, deliberately bypassing
+ * `buildRule`/rrule entirely, since "which weekdays" doesn't apply to something that isn't a
+ * weekly pattern at all. No `until` means open-ended (occurs on `startedAt` and every day after).
+ * `false` when `startedAt` itself is missing — nothing to anchor a range to.
+ */
+function occursInRange(repeat: RepeatLike, date: Date): boolean {
+  if (!repeat.startedAt) return false;
+  const day = toUTCMidnight(date).getTime();
+  const start = toUTCMidnight(new Date(repeat.startedAt)).getTime();
+  if (day < start) return false;
+  if (repeat.until && day > toUTCMidnight(new Date(repeat.until)).getTime()) return false;
+  return true;
+}
+
+/**
  * Does this schedule recur on the given calendar day? The one real occurrence-matching function,
  * replacing every hand-rolled weekday-set membership check in this app. Calendar-day comparison
  * only (no real timezone math — matching code never used the `timezone` field for this check
@@ -67,6 +89,8 @@ export function buildRule(repeat: RepeatLike | undefined, anchorDate: Date): RRu
  * whatever local calendar day `date` represents.
  */
 export function occursOnDate(repeat: RepeatLike | undefined, date: Date): boolean {
+  if (!repeat) return false;
+  if (repeat.recurring === false) return occursInRange(repeat, date);
   const rule = buildRule(repeat, date);
   if (!rule) return false;
   return rule.between(toUTCMidnight(date), toUTCEndOfDay(date), true).length > 0;
@@ -80,9 +104,17 @@ const SHORT_DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
  * no further occurrence left (an exhausted `count`/`until`).
  */
 export function nextOccurrenceLabel(repeat: RepeatLike | undefined, fromDate: Date): string | undefined {
+  const from = toUTCMidnight(fromDate);
+  if (repeat?.recurring === false) {
+    if (!repeat.startedAt) return undefined;
+    const start = toUTCMidnight(new Date(repeat.startedAt));
+    const next = start.getTime() > from.getTime() ? start : new Date(from.getTime() + 24 * 60 * 60 * 1000);
+    if (!occursInRange(repeat, next)) return undefined;
+    const offsetDays = Math.round((next.getTime() - from.getTime()) / (24 * 60 * 60 * 1000));
+    return offsetDays === 1 ? 'Tomorrow' : SHORT_DAY_NAMES[next.getUTCDay()];
+  }
   const rule = buildRule(repeat, fromDate);
   if (!rule) return undefined;
-  const from = toUTCMidnight(fromDate);
   const next = rule.after(from, false);
   if (!next) return undefined;
   const offsetDays = Math.round((toUTCMidnight(next).getTime() - from.getTime()) / (24 * 60 * 60 * 1000));

@@ -298,6 +298,7 @@
   "recurrence-picker.freq-weekly": "Weekly",
   "recurrence-picker.interval-label": "Repeat every",
   "recurrence-picker.interval-unit": "week(s)",
+  "recurrence-picker.recurring-label": "Repeats past this window (vs. a one-time arrangement)",
   "right-panel-switcher.calendar": "Calendar",
   "right-panel-switcher.history": "History",
   "right-panel-switcher.title": "History",

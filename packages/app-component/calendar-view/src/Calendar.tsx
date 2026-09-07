@@ -158,6 +158,12 @@ const Calendar = ({
     [events],
   );
 
+  // Week/day's all-day row (see `allDayText=""` below) is otherwise always
+  // there even with nothing in it — `allDaySlot` is the option that removes
+  // the row entirely, so this only shows it once there's a real all-day
+  // event for the visible range.
+  const hasAllDayEvents = events.some(event => event.allDay);
+
   return (
     <div className={cx(styles.container, className)}>
       <div className={styles.toolbar}>
@@ -204,6 +210,7 @@ const Calendar = ({
           fixedWeekCount={false}
           height={view === 'week' || view === 'day' ? 700 : 'auto'}
           dayMaxEvents={3}
+          allDaySlot={hasAllDayEvents}
           allDayText=""
           displayEventEnd={false}
           nowIndicator

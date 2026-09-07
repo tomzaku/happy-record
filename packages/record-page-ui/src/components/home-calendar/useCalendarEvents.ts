@@ -86,6 +86,14 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
     if (!range) return [];
 
     const events: CalendarEvent[] = [];
+    // A `recurring: false` template (see rruleUtils.ts's `occursInRange`) is a one-time
+    // arrangement, not a weekly pattern — it still gets one real Checklist instance per day (each
+    // independently completable, same as any other task), but visually it should read as the one
+    // bar it actually is, Bryntum-style, not one chip per day. Collected here instead of pushed
+    // immediately; turned into a single spanning event per template after the day loop, covering
+    // exactly the days actually found to have an instance in this range (not re-derived from
+    // `startedAt`/`until` — those may extend beyond what's actually been fetched/confirmed).
+    const spanningDaysByTemplate = new Map<string, { title: string; color: string; days: Date[] }>();
 
     eachDayOfInterval({ start: range.from, end: range.to }).forEach(day => {
       const { checklist } = getChecklistForDateWithoutFetching({
@@ -104,11 +112,19 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
         // land on a distinct one, instead of every quickly-added task piling
         // onto this one shade.
         const color = avatarColor && avatarColor !== UNCHOSEN_AVATAR_COLOR ? avatarColor : hashColor(task.checklistTemplateId);
-        const hasActiveFieldGroups = getActiveFieldGroups(template?.fieldGroups ?? []).length > 0;
+        const title = template?.title ?? task.title;
 
+        if (template?.repeat?.recurring === false) {
+          const entry = spanningDaysByTemplate.get(task.checklistTemplateId) ?? { title, color, days: [] };
+          entry.days.push(day);
+          spanningDaysByTemplate.set(task.checklistTemplateId, entry);
+          return;
+        }
+
+        const hasActiveFieldGroups = getActiveFieldGroups(template?.fieldGroups ?? []).length > 0;
         const base = {
           id: task.id,
-          title: template?.title ?? task.title,
+          title,
           color,
           done: Boolean(task.completedAt),
           data: {
@@ -125,6 +141,24 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
         } else {
           events.push({ ...base, start: day, allDay: true });
         }
+      });
+    });
+
+    spanningDaysByTemplate.forEach(({ title, color, days }, checklistTemplateId) => {
+      const sortedDays = [...days].sort((a, b) => a.getTime() - b.getTime());
+      const start = sortedDays[0];
+      const lastDay = sortedDays[sortedDays.length - 1];
+      // FullCalendar's own `end` is exclusive for an all-day span, so the last actual day needs
+      // +1 to be included in the rendered bar.
+      const end = new Date(lastDay.getFullYear(), lastDay.getMonth(), lastDay.getDate() + 1);
+      events.push({
+        id: `range:${checklistTemplateId}`,
+        title,
+        color,
+        start,
+        end,
+        allDay: true,
+        data: { checklistTemplateId, date: start } satisfies CalendarEventData,
       });
     });
 

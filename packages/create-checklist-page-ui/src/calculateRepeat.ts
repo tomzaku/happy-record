@@ -9,6 +9,7 @@ export const calculateRepeat = ({
   until,
   count,
   allDay,
+  recurring,
 }: {
   weeklyHobbies: Day[];
   selectedTime?: string;
@@ -30,6 +31,9 @@ export const calculateRepeat = ({
    * distinct "no time at all" state instead, which byhour/byminute already represent end to end
    * (see supabase/shared/schedules.ts's `fromRepeat`). */
   allDay?: boolean;
+  /** Ongoing weekly pattern vs. a one-time arrangement (see `ChecklistTemplate['repeat'].recurring`'s
+   * own comment) — defaults `true`, same as every caller that predates this field. */
+  recurring?: boolean;
 }) => {
   if (!weeklyHobbies || weeklyHobbies.length === 0) return undefined;
 
@@ -55,5 +59,6 @@ export const calculateRepeat = ({
     ...(interval && interval !== 1 ? { interval } : {}),
     ...(until ? { until } : {}),
     ...(count != null ? { count } : {}),
+    ...(recurring === false ? { recurring: false } : {}),
   };
 };

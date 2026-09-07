@@ -316,15 +316,23 @@ const ChecklistGenericInfo = ({
   // stage into this same shared temp* state, so neither Save clobbers what the other one owns).
   const handleSaveStartEndDate = () => {
     const [hour = '', minute = ''] = tempAllDay || !tempTime ? ['', ''] : tempTime.split(':');
+    const base = checklistTemplate.repeat ?? DEFAULT_REPEAT_BASE;
     onUpdate({
       ...checklistTemplate,
       repeat: {
-        ...(checklistTemplate.repeat ?? DEFAULT_REPEAT_BASE),
+        ...base,
         startedAt: tempStartDay,
         until: tempEndDay || undefined,
         byhour: hour,
         byminute: minute,
         timezone: getClientTimezone(),
+        // This dialog never sets a weekday pattern (that's the separate Schedule dialog) — a
+        // template with none defined isn't a weekly recurrence at all, it's a one-time arrangement
+        // bounded by the dates just set here, so it needs `recurring: false` to actually occur on
+        // every day in that range (see rruleUtils.ts's `occursInRange`) rather than nowhere at all.
+        // Left untouched when a real `byday` already exists — that's still a genuine weekly
+        // pattern, whatever `recurring` it already had.
+        ...(!base.byday ? { recurring: false } : {}),
       },
     });
     setActiveModal(EditModal.None);

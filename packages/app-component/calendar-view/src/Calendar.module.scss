@@ -190,6 +190,27 @@
     color: var(--text-description-color);
   }
 
+  // The "+N more" popover's own background is `var(--fc-page-bg-color)` by
+  // FullCalendar's default theme — we set that to `transparent` above so a
+  // day cell's background stays the surface behind it, but that same
+  // transparency leaks into the popover too, showing the month grid through
+  // it. It needs its own real, opaque surface.
+  .fc .fc-popover {
+    background: var(--card-background) !important;
+    border-color: var(--card-border) !important;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px var(--card-shadow);
+  }
+
+  .fc .fc-popover-header {
+    background: var(--surface-secondary);
+    color: var(--text-color);
+  }
+
+  .fc .fc-popover-title {
+    font-weight: 600;
+  }
+
   .fc .fc-daygrid-event-harness {
     margin: 1px 0 !important;
   }

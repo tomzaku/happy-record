@@ -26,6 +26,14 @@ export type ChecklistTemplate = {
     interval?: number;
     /** Stop generating after N occurrences. No UI sets this yet — see `interval`'s own comment. */
     count?: number;
+    /** Whether this is meant as an ongoing weekly pattern vs. a one-time arrangement bounded by
+     * `startedAt`/`until` (e.g. "Mon–Sun this week only") — a separate question from whether it
+     * *will* stop (that's `until`/`count`); this is about user intent, for schedule-summary text
+     * and an `isRecurring` check, not occurrence matching (`occursOnDate` reads `byday`/`until`/
+     * `count` exactly as before, regardless of this flag). Absent means `true` — every schedule
+     * before this field existed was created as an open-ended weekly pattern with no way to mark
+     * otherwise. */
+    recurring?: boolean;
     /** Set only for a challenge participant's own row, distinct from the owner's default
      * (_shared/repeats.ts's `pickRepeat`) — seeded from the owner's schedule at join time
      * (challenge-participants-service.ts's `seedReminderFromOwner`), so it reads "personal"

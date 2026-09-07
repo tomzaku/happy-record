@@ -1,6 +1,7 @@
 import React from 'react';
 import Select from '@moon-ui/select';
 import Radio from '@moon-ui/radio';
+import Checkbox from '@moon-ui/checkbox';
 import Input from '@moon-ui/input';
 import DatePicker from '@moon-ui/date-picker';
 import MultiSelectButton from '@moon-ui/button/src/MultiSelectButton';
@@ -78,6 +79,18 @@ const RecurrencePicker = ({ value, onChange, allowNoRepeat, showOnDateEnd = true
           setValues={days => onChange({ ...value, days })}
           options={WEEK_DAYS}
         />
+      )}
+
+      {showEnds && (
+        <label className={styles.recurringToggle}>
+          <Checkbox checked={value.recurring} onChange={e => onChange({ ...value, recurring: e.target.checked })} />
+          <span>
+            {intl.formatMessage({
+              defaultMessage: 'Repeats past this window (vs. a one-time arrangement)',
+              id: 'recurrence-picker.recurring-label',
+            })}
+          </span>
+        </label>
       )}
 
       {showInterval && (

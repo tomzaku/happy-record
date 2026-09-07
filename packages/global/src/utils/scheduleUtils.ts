@@ -11,6 +11,13 @@ export interface RepeatSchedule {
   completedAt?: string;
 }
 
+/** Whether a schedule is an ongoing weekly pattern vs. a one-time arrangement bounded by its own
+ * `startedAt`/`until` (see `ChecklistTemplate['repeat'].recurring`'s own comment for why this is a
+ * separate question from "does it eventually stop", which `until`/`count` already answer).
+ * Defaults `true` for a schedule that never set this — every schedule before this field existed
+ * was an open-ended weekly pattern with no way to mark otherwise. */
+export const isRecurringSchedule = (repeat?: { recurring?: boolean }): boolean => repeat?.recurring !== false;
+
 const ICAL_TO_DAY: Record<string, Day> = {
   SU: Day.Sun,
   MO: Day.Mon,
