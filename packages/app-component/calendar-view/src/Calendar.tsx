@@ -60,6 +60,7 @@ const Calendar = ({
 }: Props) => {
   const calendarRef = React.useRef<FullCalendar>(null);
   const [title, setTitle] = React.useState('');
+  const isGridView = view === 'month' || view === 'year';
 
   React.useEffect(() => {
     calendarRef.current?.getApi().changeView(FC_VIEW_NAME[view]);
@@ -97,11 +98,18 @@ const Calendar = ({
     return (
       <div
         className={cx(styles.eventBlock, source.done && styles.eventBlockDone)}
-        style={{
-          background: `color-mix(in srgb, ${color} 18%, var(--card-background))`,
-          borderLeftColor: color,
-          color: `color-mix(in srgb, ${color} 70%, var(--cv-event-contrast))`,
-        }}
+        style={
+          {
+            // Resting/hover backgrounds are both `color-mix()`s off this one
+            // custom property (see Calendar.module.scss) rather than a
+            // background set here directly — a `:hover` rule in the
+            // stylesheet can't otherwise win against an inline style without
+            // reaching for `!important`.
+            '--event-color': color,
+            borderLeftColor: color,
+            color: `color-mix(in srgb, ${color} 70%, var(--cv-event-contrast))`,
+          } as React.CSSProperties
+        }
       >
         {!arg.event.allDay && arg.timeText && <span className={styles.eventTime}>{arg.timeText}</span>}
         <span className={styles.eventTitle}>{arg.event.title}</span>
@@ -177,26 +185,38 @@ const Calendar = ({
         </div>
         {rightSlot}
       </div>
-      <FullCalendar
-        ref={calendarRef}
-        plugins={[dayGridPlugin, timeGridPlugin, multiMonthPlugin, interactionPlugin]}
-        initialView={FC_VIEW_NAME[view]}
-        initialDate={currentDate}
-        headerToolbar={false}
-        firstDay={1}
-        fixedWeekCount={false}
-        height={view === 'week' || view === 'day' ? 700 : 'auto'}
-        dayMaxEvents={3}
-        nowIndicator
-        slotMinTime="06:00:00"
-        slotMaxTime="23:00:00"
-        events={fcEvents}
-        eventContent={renderEventContent}
-        dayHeaderContent={renderDayHeaderContent}
-        datesSet={handleDatesSet}
-        dateClick={handleDateClick}
-        eventClick={handleEventClick}
-      />
+      {/* Month/year's own grid cells want a tall, fixed min-height (room for a
+          day number + up to 3 event chips); week/day's all-day row reuses that
+          exact same cell renderer and must NOT inherit it, or it balloons to a
+          month cell's height for a row that only ever holds one line of chips.
+          FullCalendar gives every view root a `fc-<type>-view` class, but that
+          name isn't a stable part of its public API — gating on our own
+          `view` prop here instead of guessing at that class is what actually
+          scopes the CSS rule reliably. */}
+      <div className={cx(styles.fcRoot, isGridView && styles.fcRootGrid)}>
+        <FullCalendar
+          ref={calendarRef}
+          plugins={[dayGridPlugin, timeGridPlugin, multiMonthPlugin, interactionPlugin]}
+          initialView={FC_VIEW_NAME[view]}
+          initialDate={currentDate}
+          headerToolbar={false}
+          firstDay={1}
+          fixedWeekCount={false}
+          height={view === 'week' || view === 'day' ? 700 : 'auto'}
+          dayMaxEvents={3}
+          allDayText=""
+          displayEventEnd={false}
+          nowIndicator
+          slotMinTime="06:00:00"
+          slotMaxTime="23:00:00"
+          events={fcEvents}
+          eventContent={renderEventContent}
+          dayHeaderContent={renderDayHeaderContent}
+          datesSet={handleDatesSet}
+          dateClick={handleDateClick}
+          eventClick={handleEventClick}
+        />
+      </div>
     </div>
   );
 };

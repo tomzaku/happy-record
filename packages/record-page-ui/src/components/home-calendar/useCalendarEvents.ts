@@ -11,13 +11,31 @@ import { useChecklist, useChecklistTemplates, getActiveFieldGroups, Checklist } 
 // all-day event instead of guessing which group's hour should win.
 const DEFAULT_EVENT_MINUTES = 60;
 
+// The pre-selected swatch every "Create Task" form seeds `selectedColor`
+// with (`CoreChecklistForm.tsx`, `create-task-modal`, `CreateChecklistForm`),
+// and the only color `AddInlineTask`'s quick-add row can ever save — not a
+// color anyone actually picked, just the form default.
+const UNCHOSEN_AVATAR_COLOR = '#607d8b';
+
 // A template with no `avatar.color` of its own (every seed/default template
 // today) still gets a real, distinct color per template instead of one flat
 // gray for everything — a deterministic hash of its id, so the same template
 // always lands on the same color across renders/devices without needing a
-// stored value. Swap for a real per-template color picker later; this is
-// just the default.
-const DEFAULT_PALETTE = ['#2f6fed', '#f2994a', '#27ae60', '#eb5757', '#9b51e0', '#2d9cdb', '#f2c94c', '#219653'];
+// stored value. Fixed at 10 colors, each a visually distinct hue, so two
+// unrelated templates rarely land on the same one. Swap for a real
+// per-template color picker later; this is just the default.
+const DEFAULT_PALETTE = [
+  '#2f6fed', // blue
+  '#f2994a', // orange
+  '#27ae60', // green
+  '#eb5757', // red
+  '#9b51e0', // purple
+  '#2d9cdb', // light blue
+  '#f2c94c', // yellow
+  '#1abc9c', // teal
+  '#eb5a90', // pink
+  '#8d6e63', // brown
+];
 
 const hashColor = (id: string): string => {
   let hash = 0;
@@ -25,6 +43,28 @@ const hashColor = (id: string): string => {
     hash = (hash * 31 + id.charCodeAt(i)) | 0;
   }
   return DEFAULT_PALETTE[Math.abs(hash) % DEFAULT_PALETTE.length];
+};
+
+// `repeat.until` is really "the last day this schedule repeats" (rrule's
+// UNTIL) — recurrence generation only ever reads its *date*, truncating to
+// end-of-day (see `rruleUtils.ts`'s `buildRule`). But the "Start & End Date"
+// picker that writes it (`StartEndDateFields.tsx`) lets someone pick a real
+// clock time for it too, same as the start-time field, and that time is
+// otherwise stored and never read anywhere — the exact "16:30 typed in, only
+// a 1-hour block shown" gap being fixed here. Reusing it as a daily end time
+// (ignoring its date, applying its hour/minute to every occurrence) is a
+// calendar-only reading of already-stored data — it doesn't touch
+// `buildRule` or when the schedule actually stops repeating.
+const computeEventEnd = (day: Date, start: Date, until: string | undefined): Date => {
+  if (until) {
+    const untilTime = new Date(until);
+    const end = new Date(day);
+    end.setHours(untilTime.getHours(), untilTime.getMinutes(), 0, 0);
+    if (end.getTime() > start.getTime()) {
+      return end;
+    }
+  }
+  return new Date(start.getTime() + DEFAULT_EVENT_MINUTES * 60000);
 };
 
 export type CalendarEventData = {
@@ -55,7 +95,15 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
 
       Object.values(checklist).forEach((task: Checklist) => {
         const template = checklistTemplate[task.checklistTemplateId];
-        const color = template?.avatar.color || hashColor(task.checklistTemplateId);
+        const avatarColor = template?.avatar.color;
+        // Every "Create Task" entry point pre-selects this exact swatch (and
+        // `AddInlineTask`'s quick-add row has no color picker at all, so it
+        // always saves it) — it's the form's default value, not a color
+        // anyone actually chose. Treating it the same as "unset" here is what
+        // lets templates that were never deliberately given a color still
+        // land on a distinct one, instead of every quickly-added task piling
+        // onto this one shade.
+        const color = avatarColor && avatarColor !== UNCHOSEN_AVATAR_COLOR ? avatarColor : hashColor(task.checklistTemplateId);
         const hasActiveFieldGroups = getActiveFieldGroups(template?.fieldGroups ?? []).length > 0;
 
         const base = {
@@ -73,7 +121,7 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
         if (!hasActiveFieldGroups && template?.repeat?.byhour) {
           const start = new Date(day);
           start.setHours(Number(template.repeat.byhour), Number(template.repeat.byminute), 0, 0);
-          events.push({ ...base, start, end: new Date(start.getTime() + DEFAULT_EVENT_MINUTES * 60000) });
+          events.push({ ...base, start, end: computeEventEnd(day, start, template.repeat.until) });
         } else {
           events.push({ ...base, start: day, allDay: true });
         }

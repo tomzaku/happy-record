@@ -19,6 +19,31 @@
   --cv-event-contrast: white;
 }
 
+.fcRoot {
+  width: 100%;
+}
+
+// Month/year's own grid cells want a tall, fixed min-height (room for a day
+// number + up to 3 event chips) — week/day's all-day row reuses this exact
+// same cell renderer and must NOT inherit it, or it balloons to a month
+// cell's height for a row that only ever holds one line of chips. Gated on
+// our own `.fcRootGrid` (set from the `view` prop in Calendar.tsx) rather
+// than a FullCalendar-assigned view-root class, since that class's name
+// isn't part of FullCalendar's stable public API.
+.fcRootGrid :global(.fc-daygrid-day-frame) {
+  min-height: 96px;
+}
+
+// Month/year's header row (plain "MON"/"TUE" text — week/day's own two-row
+// header is a separate `dayHeaderContent` override, untouched by this) —
+// right-aligned to match the day number's own right alignment in the cells
+// below (`.fc-daygrid-day-top`), with no border framing the row itself.
+.fcRootGrid :global(.fc-col-header-cell) {
+  text-align: right;
+  border-right-color: transparent !important;
+  // border-bottom-color: transparent !important;
+}
+
 // A single row: nav (Today / prev / next / title) on the left, `rightSlot`
 // (the host app's own view switcher) on the right.
 .toolbar {
@@ -98,7 +123,20 @@
 
   .fc .fc-daygrid-day-frame {
     padding: 4px 6px;
-    min-height: 96px;
+  }
+
+  // FullCalendar's own defaults reserve extra room in every day-events
+  // container — a 1em bottom margin in "natural" height rows (week/day's
+  // all-day row) and a 2em min-height in "unbalanced" ones — regardless of
+  // how many events are actually there. That's what was padding out the
+  // all-day row under a single event; neither is needed with our own
+  // event-block styling.
+  .fc .fc-daygrid-body-natural .fc-daygrid-day-events {
+    margin-bottom: 0 !important;
+  }
+
+  .fc .fc-daygrid-body-unbalanced .fc-daygrid-day-events {
+    min-height: 0 !important;
   }
 
   .fc .fc-daygrid-day-top {
@@ -113,7 +151,7 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 400;
     color: var(--text-color);
   }
 
@@ -154,6 +192,29 @@
   .fc .fc-timegrid-axis-cushion {
     font-size: 11px;
     color: var(--text-description-color);
+  }
+
+  // The blank corner column (no weekday header, no "all-day" text — see
+  // `allDayText=""` in Calendar.tsx) is its own cell in both the header row
+  // and the all-day row; `fc-timegrid-axis`/`-frame` is specific to those two
+  // (hour-row labels use the separate `fc-timegrid-slot-label*` classes), so
+  // this only drops the divider between those two blank cells, not any grid
+  // line under the actual day columns or between hour rows.
+  .fc .fc-timegrid-axis,
+  .fc .fc-timegrid-axis-frame {
+    border-top-color: transparent !important;
+    border-bottom-color: transparent !important;
+  }
+
+  // Same idea for the hour labels themselves (7am, 8am, ...). FullCalendar's
+  // own default already zeroes out `border-bottom` on every slot row
+  // (`.fc-timegrid-slot{border-bottom:0}`) — the line actually visible here
+  // is each row's `border-top` (solid on the hour, dotted on the half-hour
+  // minor row via `.fc-timegrid-slot-minor`). `fc-timegrid-slot-label` is
+  // unique to the axis column (day-column cells use `fc-timegrid-slot-lane`
+  // instead), so this doesn't touch the actual grid lines next to it.
+  .fc .fc-timegrid-slot-label {
+    border-top-color: transparent !important;
   }
 
   .fc .fc-timegrid-now-indicator-line,
@@ -225,26 +286,28 @@
   height: 100%;
   min-height: 18px;
   padding: 2px 6px;
+  background: color-mix(in srgb, var(--event-color, #6b7280) 10%, var(--card-background));
   border-left: 3px solid transparent;
   border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
-  transition: box-shadow 0.12s ease;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease;
 
   &:hover {
+    background: color-mix(in srgb, var(--event-color, #6b7280) 18%, var(--card-background));
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
   }
 }
 
 .eventTime {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: normal;
   opacity: 0.85;
 }
 
 .eventTitle {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
