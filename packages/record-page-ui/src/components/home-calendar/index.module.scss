@@ -1,74 +1,214 @@
+// The `Card` this component is always rendered inside (see index.desktop.tsx /
+// index.mobile.tsx) already gives the surface/border/shadow — this only owns
+// its own internal spacing.
 .container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-
-  // FullCalendar renders its own DOM tree outside this module's scoping, so
-  // its theme hookup has to reach in via `:global` — mapping FullCalendar's
-  // own CSS custom properties onto this app's semantic tokens (see
-  // MonthView.module.scss for the same tokens used un-global'd) is what keeps
-  // it in sync with light/dark instead of hardcoding colors twice.
-  :global {
-    .fc {
-      --fc-border-color: var(--division-color);
-      --fc-page-bg-color: transparent;
-      --fc-neutral-bg-color: var(--surface-secondary);
-      --fc-list-event-hover-bg-color: var(--surface-secondary);
-      --fc-today-bg-color: var(--button-action-background);
-      --fc-event-text-color: #fff;
-      --fc-now-indicator-color: var(--button-action-color);
-      font-family: inherit;
-      color: var(--text-color);
-    }
-
-    .fc .fc-toolbar-title {
-      color: var(--text-color);
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .fc .fc-button {
-      background: var(--surface-secondary);
-      border: 1px solid var(--card-border);
-      color: var(--text-color);
-      box-shadow: none;
-      text-transform: capitalize;
-    }
-
-    .fc .fc-button:hover {
-      background: var(--card-background);
-    }
-
-    .fc .fc-button:disabled {
-      opacity: 0.5;
-    }
-
-    .fc .fc-button-primary:not(:disabled).fc-button-active {
-      background: var(--button-action-color);
-      border-color: var(--button-action-color);
-      color: #fff;
-    }
-
-    .fc .fc-daygrid-day-number,
-    .fc .fc-col-header-cell-cushion,
-    .fc .fc-timegrid-slot-label-cushion,
-    .fc .fc-list-day-text,
-    .fc .fc-multimonth-title {
-      color: var(--text-color);
-    }
-
-    .fc .fc-day-other .fc-daygrid-day-number {
-      color: var(--text-description-color);
-    }
-
-    .fc-event.home-calendar-event-done {
-      opacity: 0.55;
-      text-decoration: line-through;
-    }
-  }
 }
 
 .header {
+  margin-bottom: 12px;
+}
+
+// FullCalendar renders its own DOM tree outside this module's scoping, so its
+// theme/layout hookup has to reach in via `:global`. Values here mirror
+// MonthView.module.scss's own tokens/measurements (today badge, chip dot +
+// label, muted weekday row) so the two calendars on this page read as one
+// design, not two.
+:global {
+  .fc {
+    --fc-border-color: var(--division-color);
+    --fc-page-bg-color: transparent;
+    --fc-neutral-bg-color: var(--surface-secondary);
+    --fc-list-event-hover-bg-color: var(--surface-secondary);
+    --fc-today-bg-color: transparent;
+    --fc-event-text-color: #fff;
+    --fc-now-indicator-color: var(--button-action-color);
+    font-family: inherit;
+    color: var(--text-color);
+  }
+
+  .fc .fc-toolbar {
+    margin-bottom: 16px !important;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .fc .fc-toolbar-title {
+    font-family: var(--almanac-font-serif, inherit);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .fc .fc-button {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--icon-color);
+    box-shadow: none !important;
+    padding: 6px 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+
+  .fc .fc-button:hover {
+    background: var(--surface-secondary);
+  }
+
+  .fc .fc-button:disabled {
+    opacity: 0.4;
+  }
+
+  .fc .fc-button-primary:not(:disabled).fc-button-active {
+    background: var(--button-action-background);
+    border-color: var(--button-action-color);
+    color: var(--button-action-color);
+  }
+
+  .fc .fc-today-button {
+    border-radius: 100px;
+    color: var(--button-action-color);
+    border-color: var(--button-action-color);
+  }
+
+  .fc .fc-prev-button,
+  .fc .fc-next-button {
+    border-radius: 6px;
+  }
+
+  // Weekday header row
+  .fc .fc-col-header-cell {
+    border-color: var(--division-color);
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    padding: 8px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-description-color);
+  }
+
+  // Month/year day cells
+  .fc .fc-daygrid-day-frame {
+    padding: 4px 6px;
+  }
+
+  .fc .fc-daygrid-day-top {
+    justify-content: flex-start;
+  }
+
+  .fc .fc-daygrid-day-number {
+    margin: 2px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .fc .fc-day-other .fc-daygrid-day-number {
+    color: var(--text-description-color);
+    opacity: 0.6;
+  }
+
+  .fc .fc-day-today .fc-daygrid-day-number {
+    background: var(--icon-primary);
+    color: #fff;
+    border-radius: 50%;
+  }
+
+  .fc .fc-daygrid-day:hover {
+    background: var(--surface-secondary);
+  }
+
+  .fc .fc-daygrid-more-link {
+    font-size: 10px;
+    color: var(--text-description-color);
+  }
+
+  // Month/year event pills — the harness/event wrapper's own inline
+  // background/border (from the event's `backgroundColor`) is neutralized so
+  // only our custom dot + label (below) supplies color.
+  .fc .fc-daygrid-event-harness {
+    margin: 1px 0 !important;
+  }
+
+  .fc-daygrid-event.fc-event {
+    background: transparent !important;
+    border: none !important;
+    padding: 0;
+  }
+
+  // Week/day time grid — real colored, time-positioned blocks
+  .fc .fc-timegrid-slot-label-cushion {
+    font-size: 11px;
+    color: var(--text-description-color);
+  }
+
+  .fc .fc-timegrid-axis-cushion {
+    color: var(--text-description-color);
+  }
+
+  .fc .fc-timegrid-event {
+    border-radius: 6px;
+    border: none;
+    padding: 2px 4px;
+  }
+
+  .fc .fc-timegrid-event .fc-event-title,
+  .fc .fc-timegrid-event .fc-event-time {
+    font-size: 11px;
+  }
+
+  // Year view's own mini-month titles
+  .fc .fc-multimonth-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .fc-event.home-calendar-event-done {
+    opacity: 0.55;
+  }
+}
+
+.eventPill {
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 1px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+}
+
+.eventDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.eventTitle {
+  font-size: 11px;
+  color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventPillDone {
+  .eventTitle {
+    color: var(--text-description-color);
+    text-decoration: line-through;
+  }
 }

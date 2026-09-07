@@ -281,6 +281,13 @@
   width: 100%;
 }
 
+.calendarViewCard {
+  width: 100%;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px var(--almanac-shadow);
+}
+
 .tagSelectorContainer {
   display: flex;
   align-items: center;

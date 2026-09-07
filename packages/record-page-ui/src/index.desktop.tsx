@@ -128,7 +128,9 @@ const TaskListPage = () => {
               </div>
             )}
             {viewMode === 'calendar' && (
-              <HomeCalendar currentDate={startDate} onDateChange={setStartDate} selectedTag={selectedTag} />
+              <Card className={styles.calendarViewCard}>
+                <HomeCalendar currentDate={startDate} onDateChange={setStartDate} selectedTag={selectedTag} />
+              </Card>
             )}
           </div>
         </div>
