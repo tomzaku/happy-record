@@ -8,6 +8,10 @@
   --cv-accent: #2f6fed;
   --cv-weekend: #d64545;
   --cv-event-contrast: black;
+  // Weekend columns shade slightly toward black in light mode, slightly
+  // toward white in dark mode — a relative darken/lighten of whatever the
+  // surface color already is, rather than a fixed color of its own.
+  --cv-weekend-bg: color-mix(in srgb, black 4%, transparent);
 
   display: flex;
   flex-direction: column;
@@ -17,6 +21,7 @@
   --cv-accent: #6ea8fe;
   --cv-weekend: #ff8a80;
   --cv-event-contrast: white;
+  --cv-weekend-bg: color-mix(in srgb, white 6%, transparent);
 }
 
 .fcRoot {
@@ -119,6 +124,16 @@
 
   .fc .fc-col-header-cell-cushion {
     padding: 6px 4px;
+  }
+
+  // Weekend columns — the whole column, not just the header/day-number text
+  // (see `.dayHeaderWeekend` for that) — in every view: month/year's day
+  // cells and week/day's own time-grid columns.
+  .fc .fc-day-sun.fc-daygrid-day,
+  .fc .fc-day-sat.fc-daygrid-day,
+  .fc .fc-day-sun.fc-timegrid-col,
+  .fc .fc-day-sat.fc-timegrid-col {
+    background-color: var(--cv-weekend-bg) !important;
   }
 
   .fc .fc-daygrid-day-frame {
@@ -243,9 +258,8 @@
 
 .dayHeaderLabel {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.03em;
-  text-transform: uppercase;
   color: var(--text-description-color);
 }
 
