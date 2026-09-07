@@ -8,6 +8,8 @@ import { a, useSpring } from '@react-spring/web';
 import { Day } from '@dreamer/tasks-page-common';
 import { FieldGroup, getActiveFieldGroups, mergeEditedFieldGroups, localDateStringToISO } from '@dreamer/global';
 import GroupScheduleList from './GroupScheduleList';
+import RecurrencePicker from './RecurrencePicker';
+import type { RecurrenceValue } from './recurrenceConfig';
 import styles from './index.module.scss';
 
 interface ScheduleModalContentProps {
@@ -45,6 +47,18 @@ interface ScheduleModalContentProps {
    */
   fieldGroups?: FieldGroup[];
   onFieldGroupsChange?: (groups: FieldGroup[]) => void;
+  /**
+   * Google-Calendar-style frequency/interval/end-condition controls, in place of the plain
+   * `tempWeeklyHobbies` day picker below — off by default so the quick "create a new task" flow
+   * (SchedulingGroup's own usage) stays exactly as simple as it always was; ChecklistGenericInfo's
+   * Schedule/My Reminder dialogs turn it on, since that's where the richer editing actually
+   * belongs (see this repo's own note on why: refining a schedule is an edit-time concern, not
+   * something a first-time "create a task" flow needs to front-load). Requires `tempRecurrence`/
+   * `setTempRecurrence` when true.
+   */
+  showRecurrenceControls?: boolean;
+  tempRecurrence?: RecurrenceValue;
+  setTempRecurrence?: (value: RecurrenceValue) => void;
 }
 
 const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
@@ -58,6 +72,9 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
   fieldGroups,
   onFieldGroupsChange,
   hideStartDate = false,
+  showRecurrenceControls = false,
+  tempRecurrence,
+  setTempRecurrence,
 }) => {
   const intl = useIntl();
   const activeFieldGroups = fieldGroups ? getActiveFieldGroups(fieldGroups) : undefined;
@@ -139,6 +156,11 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
               }
             />
           </div>
+        ) : showRecurrenceControls && tempRecurrence && setTempRecurrence ? (
+          // showOnDateEnd=false — the template level now edits its own end date next to Start
+          // Date instead (ChecklistGenericInfo's merged dialog), Google-Calendar-style, rather
+          // than burying it in this Ends section where it went unnoticed.
+          <RecurrencePicker value={tempRecurrence} onChange={setTempRecurrence} allowNoRepeat showOnDateEnd={false} />
         ) : (
           <a.div
             className={styles.weeklyHobbyContainer}
@@ -191,8 +213,11 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
         </div>
       )}
 
-      {/* Time Selector Section */}
-      {!hasFieldGroups && (
+      {/* Time Selector Section — never shown alongside the rich recurrence controls
+          (`showRecurrenceControls`): ChecklistGenericInfo now edits time as part of its own
+          merged Start/End Date dialog's All Day toggle instead, so this stays only for
+          SchedulingGroup's simpler create-task flow. */}
+      {!hasFieldGroups && !showRecurrenceControls && (
         <div className={styles.sectionContainer}>
           <List.ItemMeta
             logo={<Icon width={24} icon="solar:clock-circle-line-duotone" />}

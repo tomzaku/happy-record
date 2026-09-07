@@ -39,6 +39,18 @@ export type FieldGroup = {
     /** Comma-separated iCal weekday codes (SU/MO/TU/WE/TH/FR/SA) — see
      * ChecklistTemplate['repeat'].byday for why this matches the DB column shape directly. */
     byday: string;
+    /** Always `'WEEKLY'` when set — same as ChecklistTemplate['repeat'].freq, see its own comment. */
+    freq?: string;
+    /** "Every N weeks" — see ChecklistTemplate['repeat'].interval's own comment. Unlike that field,
+     * this one does have UI (RecurrencePicker's "Custom" frequency, GroupScheduleList). */
+    interval?: number;
+    /** Stop generating after N occurrences — see ChecklistTemplate['repeat'].count's own comment. */
+    count?: number;
+    /** Last day this group's own schedule generates an instance on — see
+     * ChecklistTemplate['repeat'].until's own comment. No `startedAt` equivalent here: a field
+     * group's recurrence anchors to whatever date is actually being tested (rruleUtils.ts's
+     * `buildRule` anchorDate fallback), it was never a stored concept for a group's own row. */
+    until?: string;
   };
   /** Soft delete, set by "Delete Group" — there's no undo elsewhere in this app, so this is what
    * makes a group recoverable at all. Every consumer that renders or counts a template's groups

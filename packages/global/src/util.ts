@@ -52,6 +52,19 @@ export function localDateStringToISO(dateOnly: string): string {
   return startOfDay(new Date(year, month - 1, day)).toISOString();
 }
 
+/**
+ * `localDateStringToISO`'s own counterpart for `<input type="datetime-local">`
+ * (`@moon-ui/date-picker/src/DateTimePicker`) — its `onChange` hands back a bare
+ * `yyyy-MM-ddTHH:mm`, read as *local* Y/M/D/H/M for the same reason: `new Date(string)` would
+ * parse it as UTC and silently shift the picked moment for anyone not on UTC.
+ */
+export function localDateTimeStringToISO(dateTime: string): string {
+  const [datePart, timePart = '00:00'] = dateTime.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  return new Date(year, month - 1, day, hour, minute).toISOString();
+}
+
 /** The device's own IANA timezone (e.g. `"Asia/Ho_Chi_Minh"`) — stamped onto every `repeats` row
  * write (see calculateRepeat.ts, createTaskUtil.ts, ChecklistGenericInfo's handleSave* family) so
  * a schedule's `started_at`/`ended_at` instants stay interpretable as the calendar days the

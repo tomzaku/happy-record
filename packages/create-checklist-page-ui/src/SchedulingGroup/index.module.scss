@@ -296,6 +296,42 @@
   margin-top: 16px; // Align with the select boxes
 }
 
+.recurrencePicker {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+}
+
+.recurrenceFrequencySelect {
+  max-width: 200px;
+}
+
+.recurrenceInterval {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: 13px;
+  color: var(--text-description-color, #666);
+}
+
+.recurrenceIntervalInput {
+  width: 64px;
+}
+
+.recurrenceEnds {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding-top: $spacing-xs;
+}
+
+.recurrenceEndsLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color, #222);
+}
+
 // Simple bottom sheet modal styles
 .simpleOverlay {
   position: fixed;
