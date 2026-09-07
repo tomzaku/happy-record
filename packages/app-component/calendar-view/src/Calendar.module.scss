@@ -1,0 +1,259 @@
+// This calendar's own accent tokens — "today"/now-indicator, weekend text,
+// and the color used to darken/lighten an event's own color into readable
+// text. Not existing app tokens (nothing else needed a weekend color before
+// this), so they get their own light/dark pair here rather than a fixed hex
+// — the host app's `data-theme` attribute (see @moon-ui/provider) drives the
+// switch the same way its own theme files do.
+.container {
+  --cv-accent: #2f6fed;
+  --cv-weekend: #d64545;
+  --cv-event-contrast: black;
+
+  display: flex;
+  flex-direction: column;
+}
+
+:global([data-theme='dark']) .container {
+  --cv-accent: #6ea8fe;
+  --cv-weekend: #ff8a80;
+  --cv-event-contrast: white;
+}
+
+// A single row: nav (Today / prev / next / title) on the left, `rightSlot`
+// (the host app's own view switcher) on the right.
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.todayButton {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  margin-right: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--icon-color);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+}
+
+.title {
+  margin: 0 0 0 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+// FullCalendar renders its own DOM tree outside this module's scoping, so its
+// grid/cell theming has to reach in via `:global`.
+:global {
+  .fc {
+    --fc-border-color: var(--division-color);
+    --fc-page-bg-color: transparent;
+    --fc-neutral-bg-color: var(--surface-secondary);
+    --fc-today-bg-color: transparent;
+    font-family: inherit;
+    color: var(--text-color);
+  }
+
+  .fc .fc-col-header-cell {
+    border-color: var(--division-color);
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    padding: 6px 4px;
+  }
+
+  .fc .fc-daygrid-day-frame {
+    padding: 4px 6px;
+    min-height: 96px;
+  }
+
+  .fc .fc-daygrid-day-top {
+    justify-content: flex-start;
+  }
+
+  .fc .fc-daygrid-day-number {
+    margin: 2px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .fc .fc-day-other .fc-daygrid-day-number {
+    color: var(--text-description-color);
+    opacity: 0.6;
+  }
+
+  .fc .fc-day-today .fc-daygrid-day-number {
+    background: var(--cv-accent);
+    color: #fff;
+    border-radius: 50%;
+  }
+
+  .fc .fc-daygrid-day:hover {
+    background: var(--surface-secondary);
+  }
+
+  .fc .fc-daygrid-more-link {
+    font-size: 10px;
+    color: var(--text-description-color);
+  }
+
+  .fc .fc-daygrid-event-harness {
+    margin: 1px 0 !important;
+  }
+
+  // Neutralize FullCalendar's own inline background/border from the event's
+  // `backgroundColor` prop — only `.eventBlock` (below) supplies color.
+  .fc-daygrid-event.fc-event,
+  .fc-timegrid-event.fc-event {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  .fc .fc-timegrid-slot-label-cushion,
+  .fc .fc-timegrid-axis-cushion {
+    font-size: 11px;
+    color: var(--text-description-color);
+  }
+
+  .fc .fc-timegrid-now-indicator-line,
+  .fc .fc-timegrid-now-indicator-arrow {
+    border-color: var(--cv-accent);
+    color: var(--cv-accent);
+  }
+
+  .fc .fc-multimonth-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+}
+
+// The two-row weekday/day-number header (`renderDayHeaderContent` in
+// Calendar.tsx) — month/year's header has no day number (there's no single
+// date a "Monday" column represents there), so that row just doesn't render.
+.dayHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.dayHeaderLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-description-color);
+}
+
+.dayHeaderNumber {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.dayHeaderNumberToday {
+  background: color-mix(in srgb, var(--cv-accent) 16%, transparent);
+  color: var(--cv-accent);
+}
+
+// A compound selector (two classes) so this reliably outranks
+// `.dayHeaderLabel`/`.dayHeaderNumber`'s own `color` regardless of which
+// rule happens to come first in the stylesheet — same specificity as those
+// on their own would otherwise make it a coin flip.
+.dayHeaderLabel.dayHeaderWeekend,
+.dayHeaderNumber.dayHeaderWeekend {
+  color: var(--cv-weekend);
+}
+
+// A tinted fill of the event's own color with a solid left border — the same
+// treatment for a timed block (week/day) and an all-day/no-time chip
+// (month/year).
+.eventBlock {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  height: 100%;
+  min-height: 18px;
+  padding: 2px 6px;
+  border-left: 3px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.12s ease;
+
+  &:hover {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  }
+}
+
+.eventTime {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.eventTitle {
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventBlockDone {
+  opacity: 0.55;
+
+  .eventTitle {
+    text-decoration: line-through;
+  }
+}
