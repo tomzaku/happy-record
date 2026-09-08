@@ -101,42 +101,27 @@ export function useChecklistTemplateMutations({
     },
     onMutate: async ({ template }) => {
       const idKey = checklistTemplatesKeys.byId(template.id, userId);
-      await queryClient.cancelQueries({ queryKey: allKey });
-      await queryClient.cancelQueries({ queryKey: idKey });
       const previousFromAll = queryClient.getQueryData<ChecklistTemplatesMap>(allKey)?.[template.id];
       const previousFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
+      // Before the awaits below: a caller's own synchronous checklist-store write
+      // (createTaskUtil.ts) can otherwise render before this template lands.
       writeTemplateIfPresent(queryClient, allKey, template.id, template);
       writeTemplate(queryClient, idKey, template);
-      // After the optimistic writes above, not before — this flips the id into
-      // `knownTemplateIds` (useChecklistTemplatesQuery.ts), which can flush a
-      // re-render of its own `byIdResults` per-id queries. Marking it known
-      // earlier left a window where that re-render could land before `idKey`'s
-      // cache actually had data yet, making its query think it had nothing
-      // cached and fire a real `GET /checklist-templates/:id` — immediately
-      // superseded by this same optimistic write, so pure waste.
+      await queryClient.cancelQueries({ queryKey: allKey });
+      await queryClient.cancelQueries({ queryKey: idKey });
+      // After the write above, not before — marking a template "known" can flush a re-render of
+      // byIdResults (useChecklistTemplatesQuery.ts) before idKey's cache actually has data.
       markTemplateIdKnown(template.id);
       return { previousFromAll, previousFromId };
     },
     onSuccess: (_result, { template, wire }) => {
       if (wire.kind !== 'create') return;
       invalidateChecklistLogs();
-      // `saveChecklistTemplate`'s own POST response is just `{ ok: true }` — no row to overwrite
-      // the optimistic (`isClient: true`) copy with, so this forces the real "all mine" fetch
-      // instead. `invalidateQueries` refetches any *active* observer immediately, which is
-      // exactly this same query wherever it's mounted — once that lands, the freshly DTO-mapped
-      // row (never carrying `isClient`) replaces the optimistic one in `allTemplates`.
+      // The POST response is just `{ ok: true }` — refetch "all mine" so the real, DTO-mapped row
+      // (never carrying `isClient`) replaces this optimistic one.
       queryClient.invalidateQueries({ queryKey: allKey });
-      // Not enough on its own, though: `useChecklistTemplatesQuery.ts`'s `checklistTemplate`
-      // merges `allTemplates` with a separate per-id cache (`byIdResults`, keyed by every id this
-      // session has ever seen via `markTemplateIdKnown`) — and that per-id `useQueries` entry
-      // keeps *subscribing to and returning* whatever's cached at `idKey` even while its own
-      // `enabled` is false (which it is here, since `allTemplates[id]` is already populated by
-      // the optimistic write in `onMutate`), it just never auto-fetches. Nothing else ever
-      // updates that `idKey` cache after `onMutate`'s one-time optimistic `writeTemplate`, so
-      // without this it sits there forever with `isClient: true` and wins the merge over the
-      // freshly-refetched `allTemplates[id]` — the actual reason the "Creating…" status never
-      // cleared. Removing it (rather than trying to keep it in sync) lets the merge fall back to
-      // `allTemplates[id]`, the real value, on its own.
+      // Also drop the stale per-id cache — checklistTemplate's merge (useChecklistTemplatesQuery.ts)
+      // otherwise lets it win over the freshly-refetched row above, so `isClient` never clears.
       queryClient.removeQueries({ queryKey: checklistTemplatesKeys.byId(template.id, userId), exact: true });
     },
     onError: (_error, { template }, context) => {
@@ -186,12 +171,14 @@ export function useChecklistTemplateMutations({
     mutationFn: ({ id, date, present }) => (present ? deleteOccurrenceApi(id, date) : restoreOccurrenceApi(id, date)),
     onMutate: async ({ id, date, present }) => {
       const idKey = checklistTemplatesKeys.byId(id, userId);
-      await queryClient.cancelQueries({ queryKey: allKey });
-      await queryClient.cancelQueries({ queryKey: idKey });
       const previousFromAll = queryClient.getQueryData<ChecklistTemplatesMap>(allKey)?.[id];
       const previousFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
+      // Before the awaits below: a caller's own synchronous `deleteChecklist` (ChecklistToday)
+      // can otherwise render before `exceptionDates` lands, synthesizing a phantom row for today.
       if (previousFromAll) writeTemplateIfPresent(queryClient, allKey, id, withExceptionDate(previousFromAll, date, present));
       if (previousFromId) writeTemplate(queryClient, idKey, withExceptionDate(previousFromId, date, present));
+      await queryClient.cancelQueries({ queryKey: allKey });
+      await queryClient.cancelQueries({ queryKey: idKey });
       return { previousFromAll, previousFromId };
     },
     onError: (_error, { id }, context) => {

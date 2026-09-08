@@ -12,7 +12,7 @@ import {
 } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import styles from './ChecklistToday.desktop.module.scss';
 import cx from 'classnames';
 import Typography from '@moon-ui/typography';
@@ -207,6 +207,12 @@ const ChecklistTodayDesktop = ({
     if (!deletingTaskId) return;
     const currentChecklist = checklist[deletingTaskId];
     setDeletingTaskId(null);
+    // The row about to animate out is very likely also the currently-hovered one (its own delete
+    // button is what opened this modal) — clearing this first keeps the shared `layoutId`
+    // hover-glide (see renderTaskRow's own `taskHoverBg`) from re-mounting onto whatever row the
+    // cursor ends up over once the list reflows, which reads as the highlight (and, at a glance,
+    // "the task") flying across the list mid-delete.
+    setHoveredTaskId(null);
     if (!currentChecklist) return;
     deleteOccurrence(currentChecklist.checklistTemplateId, format(date, 'yyyy-MM-dd'));
     if (!currentChecklist.clientOnly) deleteChecklist(deletingTaskId);
@@ -219,6 +225,7 @@ const ChecklistTodayDesktop = ({
     if (!deletingTaskId) return;
     const currentChecklist = checklist[deletingTaskId];
     setDeletingTaskId(null);
+    setHoveredTaskId(null);
     if (!currentChecklist) return;
     const template = checklistTemplate[currentChecklist.checklistTemplateId];
     if (!template) return;
@@ -236,11 +243,26 @@ const ChecklistTodayDesktop = ({
     if (!deletingTaskId) return;
     const currentChecklist = checklist[deletingTaskId];
     setDeletingTaskId(null);
+    setHoveredTaskId(null);
     if (!currentChecklist) return;
     const { checklistTemplateId } = currentChecklist;
     deleteChecklistTemplate(checklistTemplateId);
+    // The row the user actually clicked delete on goes first, synchronously — this is the row
+    // `DeleteTaskModal`'s exit animation is playing, and it's also *this app's* only instance for
+    // the overwhelmingly common case (a one-off task with a single Checklist row). Waiting on
+    // `getAllChecklistWithTemplate`'s real network round-trip before removing it at all (the
+    // previous shape here) left it sitting on screen — template already gone, so rendering with
+    // fallback icon/schedule — for however long that fetch took, then removing it as part of a
+    // batch alongside whatever else came back; by then enough had re-rendered in between that its
+    // exit animation no longer matched where it visually was, reading as a jump to the end of the
+    // list instead of a clean fade-out in place. Every *other* already-materialized instance
+    // (other days, for a task with more than the one row) still gets cleaned up right after, just
+    // not gating this row's own removal on it.
+    deleteChecklist(deletingTaskId);
     const instances = await getAllChecklistWithTemplate(checklistTemplateId);
-    instances.forEach(instance => deleteChecklist(instance.id));
+    instances.forEach(instance => {
+      if (instance.id !== deletingTaskId) deleteChecklist(instance.id);
+    });
   };
 
   // Optimistic placeholders for tasks that are still saving — see
@@ -404,6 +426,14 @@ const ChecklistTodayDesktop = ({
       ? Math.round((completedIds.length / checklistByGivingDateIds.length) * 100)
       : 0;
 
+  // Plain, unanimated — deliberately not a `motion.div` inside the `AnimatePresence` below. This
+  // placeholder's whole point is to bridge a gap that's normally imperceptibly short (the real
+  // optimistic checklist row typically lands within the very next render); giving it its own
+  // exit animation made that gap last a full transition's worth of time instead, during which
+  // both this placeholder and the real row it's handing off to were visibly on screen at once —
+  // read as a duplicated/empty row. `AnimatePresence` only special-cases children that declare
+  // exit variants, so a plain element among its `motion.div` siblings just unmounts immediately,
+  // same as before any of this animation existed.
   const renderPendingTaskRow = (task: PendingInlineTask) => (
     <div key={task.id} className={cx(styles.taskRow, styles.taskRowPending)}>
       <div className={styles.rowCheckbox}>
@@ -443,8 +473,12 @@ const ChecklistTodayDesktop = ({
     const isCreating = Boolean(currentChecklistTemplate?.isClient);
 
     return (
-      <div
+      <motion.div
         key={id}
+        initial={{ opacity: 0, x: -24 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -24 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         className={cx(
           styles.taskRow,
           completed && styles.taskRowDone,
@@ -567,7 +601,7 @@ const ChecklistTodayDesktop = ({
         {timeLabel && (
           <Typography.Text className={styles.rowTime}>{timeLabel}</Typography.Text>
         )}
-      </div>
+      </motion.div>
     );
   };
 
@@ -624,7 +658,12 @@ const ChecklistTodayDesktop = ({
               </Typography.Text>
             </div>
             <div className={styles.itemList}>
-              {pendingIds.map(renderTaskRow)}
+              {/* `pendingTasks` (the transient "Creating…" placeholder) stays outside this
+                  `AnimatePresence` on purpose — it's a plain, untracked element (see
+                  `renderPendingTaskRow`'s own comment), and mixing an untracked child in with the
+                  `motion.div` rows `AnimatePresence` *is* tracking confuses its own bookkeeping of
+                  which index each exiting row should reappear at. */}
+              <AnimatePresence initial={false}>{pendingIds.map(renderTaskRow)}</AnimatePresence>
               {pendingTasks.map(renderPendingTaskRow)}
             </div>
           </>
@@ -649,7 +688,9 @@ const ChecklistTodayDesktop = ({
             </Typography.Text>
             <Typography.Text className={styles.sectionCount}>{completedIds.length}</Typography.Text>
           </div>
-          <div className={styles.itemList}>{completedIds.map(renderTaskRow)}</div>
+          <div className={styles.itemList}>
+            <AnimatePresence initial={false}>{completedIds.map(renderTaskRow)}</AnimatePresence>
+          </div>
         </Card>
       )}
 

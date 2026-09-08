@@ -42,6 +42,16 @@ export type Checklist = {
 // identity re-fetches once the signed-in identity actually changes.
 const fetchedScopes = new Set<string>();
 
+// Ids removed locally via `deleteChecklist` — checked by `mergeFetched` below. A background fetch
+// (day/range/template-history, none of them react-query so none get `cancelQueries`'s protection)
+// can start before a delete and still resolve after it, and "last-write-wins by `updatedAt`"
+// alone doesn't help: the deleted id is simply absent from `checklist`, so `!existing` looks like
+// a brand new row rather than one that was just removed on purpose. Never pruned, same as
+// `fetchedScopes` above — a plain one-off task's own id (v4()/uuidv4()) is never reused, and a
+// recurring occurrence's deterministic `checklistInstanceId` only ever needs this once (restoring
+// a deleted occurrence resynthesizes it as a fresh `clientOnly` placeholder, not a merge).
+const deletedChecklistIds = new Set<string>();
+
 const dayScopeKey = (userId: string | undefined, date: Date) =>
   JSON.stringify({ userId, day: date.toDateString() });
 
@@ -92,6 +102,7 @@ export const useChecklist = () => {
         const merged = { ...prev };
         let changed = false;
         for (const item of fetched) {
+          if (deletedChecklistIds.has(item.id)) continue;
           const existing = merged[item.id];
           // Last-write-wins by `updatedAt` — cheap safety even though a
           // direct scoped fetch makes a real conflict rare.
@@ -494,6 +505,7 @@ export const useChecklist = () => {
 
   const deleteChecklist = React.useCallback(
     (id: string) => {
+      deletedChecklistIds.add(id);
       setChecklist(prev => {
         const next = { ...prev };
         delete next[id];
