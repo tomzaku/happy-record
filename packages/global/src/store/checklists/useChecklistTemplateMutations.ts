@@ -49,6 +49,19 @@ function withSyncedRepeat(template: ChecklistTemplate): ChecklistTemplate {
   return { ...template, repeat: { ...template.repeat, byday } };
 }
 
+// Adds/removes one date from `repeat.exceptionDates` — fully deterministic (unlike
+// `updateMyReminder`'s own clear-to-null-then-fallback-to-owner case, there's no server-computed
+// value the client doesn't already know), so this is the actual optimistic write, not just a
+// placeholder pending a refetch. Drops the key entirely rather than leaving `exceptionDates: []`,
+// same "absent means none" convention `toRepeat` itself already writes.
+function withExceptionDate(template: ChecklistTemplate, date: string, present: boolean): ChecklistTemplate {
+  if (!template.repeat) return template;
+  const current = template.repeat.exceptionDates ?? [];
+  const next = present ? (current.includes(date) ? current : [...current, date].sort()) : current.filter(d => d !== date);
+  const { exceptionDates: _drop, ...restRepeat } = template.repeat;
+  return { ...template, repeat: next.length > 0 ? { ...restRepeat, exceptionDates: next } : restRepeat };
+}
+
 type Deps = {
   userId: string | undefined;
   queryClient: QueryClient;
@@ -128,6 +141,37 @@ export function useChecklistTemplateMutations({
       const idKey = checklistTemplatesKeys.byId(id, userId);
       if (context?.previousFromAll) writeTemplateIfPresent(queryClient, allKey, id, context.previousFromAll);
       if (context?.previousFromId) writeTemplate(queryClient, idKey, context.previousFromId);
+    },
+  });
+
+  // Skips/restores one calendar day of a template's own schedule (`schedule_exceptions`) — see
+  // deleteOccurrence/restoreOccurrence below. Genuinely optimistic (unlike updateMyReminder's own
+  // invalidate-and-refetch): `withExceptionDate` already computes the exact resulting
+  // `exceptionDates`, so there's nothing to wait on a round-trip for. Same per-entity rollback
+  // shape as saveTemplateMutation above, on both caches — reached from the home list's own
+  // bulk-query-backed `checklistTemplate` (ChecklistToday.desktop.tsx) as well as
+  // detail-task-page's by-id one.
+  const exceptionMutation = useMutation<
+    { ok: true } | null,
+    Error,
+    { id: string; date: string; present: boolean },
+    RollbackContext
+  >({
+    mutationFn: ({ id, date, present }) => (present ? deleteOccurrenceApi(id, date) : restoreOccurrenceApi(id, date)),
+    onMutate: async ({ id, date, present }) => {
+      const idKey = checklistTemplatesKeys.byId(id, userId);
+      await queryClient.cancelQueries({ queryKey: allKey });
+      await queryClient.cancelQueries({ queryKey: idKey });
+      const previousFromAll = queryClient.getQueryData<ChecklistTemplatesMap>(allKey)?.[id];
+      const previousFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
+      if (previousFromAll) writeTemplateIfPresent(queryClient, allKey, id, withExceptionDate(previousFromAll, date, present));
+      if (previousFromId) writeTemplate(queryClient, idKey, withExceptionDate(previousFromId, date, present));
+      return { previousFromAll, previousFromId };
+    },
+    onError: (_error, { id }, context) => {
+      const idKey = checklistTemplatesKeys.byId(id, userId);
+      writeTemplateIfPresent(queryClient, allKey, id, context?.previousFromAll);
+      writeTemplate(queryClient, idKey, context?.previousFromId ?? null);
     },
   });
 
@@ -242,27 +286,14 @@ export function useChecklistTemplateMutations({
     queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.byId(id, userId) });
   };
 
-  /** Skips/restores one calendar day of this template's own schedule — Google Calendar's "delete
-   * this event" for a single occurrence of a recurring series, via a `schedule_exceptions` row
-   * (see scheduleExceptionsApi.ts). Same invalidate-and-let-the-live-query-refetch shape as
-   * `updateMyReminder` above, for the same reason: the server is the source of truth for the
-   * resulting `repeat.exceptionDates`, not something worth hand-merging into the optimistic cache.
-   * Unlike `updateMyReminder` (only ever reached from detail-task-page's own by-id query), this is
-   * also reached from the home list's row-level delete (ChecklistToday.desktop.tsx), which reads
-   * `checklistTemplate` off the *bulk* "all mine" query — invalidating only the by-id query left
-   * that list showing the stale, not-yet-excepted schedule until a full page reload re-fetched it
-   * fresh. Both queries need telling. */
-  const deleteOccurrence = async (id: string, date: string) => {
-    await deleteOccurrenceApi(id, date);
-    queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.byId(id, userId) });
-    queryClient.invalidateQueries({ queryKey: allKey });
-  };
+  /** Google Calendar's "delete this event" for a single occurrence of a recurring series — see
+   * exceptionMutation above for the actual optimistic write. Never rejects, same quiet-write
+   * convention as addChecklistTemplate's own `saved`. */
+  const deleteOccurrence = (id: string, date: string) =>
+    exceptionMutation.mutateAsync({ id, date, present: true }).catch(() => null);
 
-  const restoreOccurrence = async (id: string, date: string) => {
-    await restoreOccurrenceApi(id, date);
-    queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.byId(id, userId) });
-    queryClient.invalidateQueries({ queryKey: allKey });
-  };
+  const restoreOccurrence = (id: string, date: string) =>
+    exceptionMutation.mutateAsync({ id, date, present: false }).catch(() => null);
 
   return {
     addChecklistTemplate,

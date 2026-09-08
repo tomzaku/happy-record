@@ -12,6 +12,7 @@ import {
 } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
+import { motion } from 'framer-motion';
 import styles from './ChecklistToday.desktop.module.scss';
 import cx from 'classnames';
 import Typography from '@moon-ui/typography';
@@ -152,6 +153,10 @@ const ChecklistTodayDesktop = ({
   // a task name never gets swallowed as a shortcut — Escape there just blurs
   // back out instead.
   const [focusedTaskId, setFocusedTaskId] = React.useState<string | null>(null);
+  // Which row the cursor is over, driving the shared-`layoutId` background below —
+  // that's what makes it glide from one row to the next instead of each row
+  // fading in/out independently.
+  const [hoveredTaskId, setHoveredTaskId] = React.useState<string | null>(null);
   const addTaskRef = React.useRef<AddInlineTaskHandle>(null);
 
   // Inline rename — the row's own edit icon (shown on hover) swaps the title
@@ -446,7 +451,16 @@ const ChecklistTodayDesktop = ({
             `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
           );
         }}
+        onMouseEnter={() => setHoveredTaskId(id)}
+        onMouseLeave={() => setHoveredTaskId(current => (current === id ? null : current))}
       >
+        {id === hoveredTaskId && (
+          <motion.div
+            className={styles.taskHoverBg}
+            layoutId="taskHoverBg"
+            transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 0.5 }}
+          />
+        )}
         <div onClick={e => e.stopPropagation()} className={styles.rowCheckbox}>
           <Checkbox
             defaultChecked={completed}

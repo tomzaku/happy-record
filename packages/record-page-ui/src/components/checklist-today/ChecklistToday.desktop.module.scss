@@ -102,20 +102,22 @@
 }
 
 .taskRow {
+  position: relative;
+  // Establishes a local stacking context so `.taskHoverBg`'s negative
+  // z-index below stays confined behind this row's own content instead of
+  // escaping to paint behind the Card/page (negative z-index with no
+  // stacking context on the positioned ancestor stacks at the nearest real
+  // one, which could be much higher up the tree).
+  z-index: 0;
   display: flex;
   align-items: center;
   gap: $spacing-md;
   padding: 14px 4px;
   cursor: pointer;
   border-bottom: 1px solid var(--division-color);
-  transition: opacity 0.15s ease;
 
   &:last-child {
     border-bottom: none;
-  }
-
-  &:hover {
-    opacity: 0.8;
   }
 
   &.taskRowDone {
@@ -139,17 +141,25 @@
 
   // An optimistic placeholder for a task still saving — see
   // ChecklistToday.desktop.tsx's renderPendingTaskRow. No onClick is wired
-  // up on this row at all, but cursor/pointer-events/hover are overridden
-  // too so it doesn't visually invite a click it can't act on.
+  // up on this row at all, but cursor/pointer-events are overridden too so
+  // it doesn't visually invite a click it can't act on.
   &.taskRowPending {
     cursor: default;
     pointer-events: none;
     opacity: 0.6;
-
-    &:hover {
-      opacity: 0.6;
-    }
   }
+}
+
+// A single element reused across rows via framer-motion's shared `layoutId`
+// (ChecklistToday.desktop.tsx) — animating its position/size between
+// wherever it's mounted, rather than each row fading its own background in
+// place, is what makes the highlight glide row-to-row on hover.
+.taskHoverBg {
+  position: absolute;
+  inset: 2px 0;
+  z-index: -1;
+  border-radius: 8px;
+  background: var(--surface-secondary);
 }
 
 .rowCheckbox {

@@ -97,6 +97,8 @@ beforeEach(() => {
   mockSaveChecklistTemplate.mockResolvedValue({ ok: true });
   mockPatchChecklistTemplate.mockResolvedValue({ ok: true });
   mockRemoveChecklistTemplate.mockResolvedValue({ ok: true });
+  mockDeleteOccurrence.mockResolvedValue({ ok: true });
+  mockRestoreOccurrence.mockResolvedValue({ ok: true });
 });
 
 describe('updateSelectedChecklistTemplate', () => {
@@ -384,10 +386,19 @@ describe('updateMyReminder', () => {
 });
 
 describe('deleteOccurrence / restoreOccurrence', () => {
-  // Same "invalidate and let the live query refetch" shape as updateMyReminder above, for the
-  // same reason: the server is the source of truth for the resulting `repeat.exceptionDates`.
-  it('deleteOccurrence posts the exception then invalidates so a detail observer sees exceptionDates', async () => {
+  // Genuinely optimistic now (not invalidate-and-refetch — the round trip that used to make
+  // "This event" feel slow to reflect) — `exceptionDates` should already be right the instant the
+  // call resolves, on both caches, with no extra fetch involved.
+  it('deleteOccurrence writes exceptionDates on both the by-id and bulk caches immediately, with no refetch', async () => {
     mockFetchChecklistTemplateById.mockResolvedValueOnce({
+      templates: [{
+        ...baseTemplate('template-exception-1'),
+        createdAt: 'now',
+        updatedAt: '2024-02-01T00:00:00.000Z',
+        repeat: { byminute: '0', byhour: '8', byday: 'MO', startedAt: '2024-01-01T00:00:00.000Z' },
+      }],
+    });
+    mockFetchChecklistTemplates.mockResolvedValueOnce({
       templates: [{
         ...baseTemplate('template-exception-1'),
         createdAt: 'now',
@@ -400,52 +411,35 @@ describe('deleteOccurrence / restoreOccurrence', () => {
     const { result: detail } = renderHook(() => useChecklistTemplateDetail('template-exception-1'), { wrapper });
 
     await waitFor(() => expect(detail.current.template?.repeat?.byday).toBe('MO'));
-
-    mockFetchChecklistTemplateById.mockResolvedValueOnce({
-      templates: [{
-        ...baseTemplate('template-exception-1'),
-        createdAt: 'now',
-        updatedAt: '2024-02-02T00:00:00.000Z',
-        repeat: {
-          byminute: '0',
-          byhour: '8',
-          byday: 'MO',
-          startedAt: '2024-01-01T00:00:00.000Z',
-          exceptionDates: ['2024-02-05'],
-        },
-      }],
-    });
+    await waitFor(() => expect(templates.current.checklistTemplate['template-exception-1']?.repeat?.byday).toBe('MO'));
+    mockFetchChecklistTemplateById.mockClear();
+    mockFetchChecklistTemplates.mockClear();
 
     await act(async () => {
       await templates.current.deleteOccurrence('template-exception-1', '2024-02-05');
     });
 
     expect(mockDeleteOccurrence).toHaveBeenCalledWith('template-exception-1', '2024-02-05');
+    // No refetch of either query — the write above is the whole story.
+    expect(mockFetchChecklistTemplateById).not.toHaveBeenCalled();
+    expect(mockFetchChecklistTemplates).not.toHaveBeenCalled();
+    // react-query's own notifyManager defers the re-render notification (see every other
+    // post-mutation assertion in this file) — `waitFor` here is about that scheduling, not about
+    // waiting on a network round-trip, which the assertions right above already proved didn't happen.
     await waitFor(() => expect(detail.current.template?.repeat?.exceptionDates).toEqual(['2024-02-05']));
+    await waitFor(() =>
+      expect(templates.current.checklistTemplate['template-exception-1']?.repeat?.exceptionDates).toEqual([
+        '2024-02-05',
+      ]),
+    );
   });
 
-  // Regression: the home list (ChecklistToday.desktop.tsx's own row-level delete) reads
-  // `checklistTemplate` off the *bulk* "all mine" query, not the by-id one detail-task-page uses
-  // — deleteOccurrence used to only invalidate the latter, so "This event" appeared to do nothing
-  // on the home list until a full page reload re-fetched "all mine" fresh.
-  it("deleteOccurrence also invalidates the bulk 'all mine' query, so the home list sees exceptionDates without a reload", async () => {
+  it('restoreOccurrence removes the date from exceptionDates immediately, dropping the key entirely once empty', async () => {
     mockFetchChecklistTemplates.mockResolvedValueOnce({
       templates: [{
-        ...baseTemplate('template-exception-bulk-1'),
+        ...baseTemplate('template-exception-2'),
         createdAt: 'now',
-        updatedAt: '2024-02-01T00:00:00.000Z',
-        repeat: { byminute: '0', byhour: '8', byday: 'MO', startedAt: '2024-01-01T00:00:00.000Z' },
-      }],
-    });
-    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
-
-    await waitFor(() => expect(result.current.checklistTemplate['template-exception-bulk-1']?.repeat?.byday).toBe('MO'));
-
-    mockFetchChecklistTemplates.mockResolvedValueOnce({
-      templates: [{
-        ...baseTemplate('template-exception-bulk-1'),
-        createdAt: 'now',
-        updatedAt: '2024-02-02T00:00:00.000Z',
+        updatedAt: 'now',
         repeat: {
           byminute: '0',
           byhour: '8',
@@ -455,29 +449,58 @@ describe('deleteOccurrence / restoreOccurrence', () => {
         },
       }],
     });
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.checklistTemplate['template-exception-2']).toBeDefined());
 
     await act(async () => {
-      await result.current.deleteOccurrence('template-exception-bulk-1', '2024-02-05');
-    });
-
-    await waitFor(() =>
-      expect(result.current.checklistTemplate['template-exception-bulk-1']?.repeat?.exceptionDates).toEqual([
-        '2024-02-05',
-      ]),
-    );
-  });
-
-  it('restoreOccurrence calls the delete-exception API and invalidates the same query', async () => {
-    mockFetchChecklistTemplateById.mockResolvedValue({
-      templates: [{ ...baseTemplate('template-exception-2'), createdAt: 'now', updatedAt: 'now' }],
-    });
-    const { result: templates } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
-
-    await act(async () => {
-      await templates.current.restoreOccurrence('template-exception-2', '2024-02-05');
+      await result.current.restoreOccurrence('template-exception-2', '2024-02-05');
     });
 
     expect(mockRestoreOccurrence).toHaveBeenCalledWith('template-exception-2', '2024-02-05');
+    await waitFor(() =>
+      expect(result.current.checklistTemplate['template-exception-2']?.repeat?.exceptionDates).toBeUndefined(),
+    );
+  });
+
+  it('rolls back the optimistic exceptionDates write on both caches if the request fails', async () => {
+    mockFetchChecklistTemplates.mockResolvedValueOnce({
+      templates: [{
+        ...baseTemplate('template-exception-3'),
+        createdAt: 'now',
+        updatedAt: 'now',
+        repeat: { byminute: '0', byhour: '8', byday: 'MO', startedAt: '2024-01-01T00:00:00.000Z' },
+      }],
+    });
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.checklistTemplate['template-exception-3']?.repeat?.byday).toBe('MO'));
+
+    // A deferred rejection (same technique as this file's own createDeferred, extended to reject)
+    // so the test can observe the optimistic write actually landing *before* the request fails —
+    // proving a real rollback happened, not just "nothing ever changed."
+    let rejectDeleteOccurrence!: (err: Error) => void;
+    mockDeleteOccurrence.mockImplementationOnce(
+      () => new Promise((_resolve, reject) => { rejectDeleteOccurrence = reject; }),
+    );
+
+    act(() => {
+      result.current.deleteOccurrence('template-exception-3', '2024-02-05');
+    });
+    await waitFor(() =>
+      expect(result.current.checklistTemplate['template-exception-3']?.repeat?.exceptionDates).toEqual([
+        '2024-02-05',
+      ]),
+    );
+
+    await act(async () => {
+      rejectDeleteOccurrence(new Error('network error'));
+      // Let deleteOccurrence's own `.catch(() => null)` (same quiet-write convention as
+      // addChecklistTemplate's own `saved`) settle before asserting the rollback landed.
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(result.current.checklistTemplate['template-exception-3']?.repeat?.exceptionDates).toBeUndefined(),
+    );
   });
 });
 
