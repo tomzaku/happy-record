@@ -3,6 +3,7 @@
 // this moved.
 
 import { pickRepeat, type RepeatOwner } from '../../../shared/schedules.ts';
+import type { ScheduleException } from '../../../shared/scheduleExceptions.ts';
 import { toChecklistTemplate } from '../../../dto/checklist-templates/checklist-templates-dto.ts';
 import { fetchTemplateRow } from '../repository/checklist-templates-repository.ts';
 import type { Ctx } from '../api/checklist-templates-context.ts';
@@ -17,16 +18,21 @@ export function repeatOwnerOf(r: Record<string, unknown>): RepeatOwner {
 
 /** Resolves one row's effective schedule for `userId` and maps it to the wire shape — shared by
  * both list branches so "which row wins, and is it a personal override" is decided in exactly
- * one place. */
+ * one place. `exceptionsBySchedule` is keyed by the *resolved* schedule row's own id (not the
+ * template id — a template can resolve to either the owner's row or the caller's own override,
+ * each with its own, separate exceptions), so it's only looked up after `pickRepeat` decides
+ * which row actually won. */
 export function resolveTemplate(
   r: Record<string, unknown>,
   repeatsByTemplate: Record<string, Record<string, unknown>[]>,
   userId: string,
+  exceptionsBySchedule: Record<string, ScheduleException[]> = {},
 ) {
   const ownerId = r.user_id as string;
   const repeatRow = pickRepeat(repeatsByTemplate[r.id as string], userId, ownerId);
   const isPersonalOverride = !!repeatRow && repeatRow.user_id === userId && userId !== ownerId;
-  return toChecklistTemplate(r, repeatRow, isPersonalOverride);
+  const exceptions = repeatRow ? exceptionsBySchedule[repeatRow.id as string] : undefined;
+  return toChecklistTemplate(r, repeatRow, isPersonalOverride, exceptions);
 }
 
 /** For `GET /:id` — loads the row (there's nothing to authorize without it) and decides whether

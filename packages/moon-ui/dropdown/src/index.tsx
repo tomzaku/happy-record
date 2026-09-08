@@ -1,6 +1,8 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import cx from 'classnames';
 import { Icon } from '@moon-ui/icon/Icon';
+import { getMoonPortalRoot } from '@moon-ui/provider';
 import styles from './index.module.scss';
 
 export type DropdownItem = {
@@ -52,6 +54,16 @@ const GAP = 4;
  * (ChecklistFieldGroupMenu, MiniChallengeDashboard) hand-rolled the identical trigger/overlay/menu
  * shape independently; this is that shape, extracted once, with the positioning bug fixed in the
  * one place that now matters.
+ *
+ * The overlay + menu are portaled via the shared `getMoonPortalRoot()` (@moon-ui/provider, same
+ * technique Select already uses) rather than left as an in-flow sibling of the trigger — a
+ * `position: fixed` element's containing block is the nearest ancestor with a `transform` (or
+ * `filter`/`perspective`/`will-change: transform`), not necessarily the viewport, so a trigger
+ * sitting inside one of those (e.g. `@moon-ui/input`'s own `.right` slot, which is
+ * `transform: translateY(-50%)`-centered) silently mispositioned the menu off-screen before this —
+ * it looked like the click did nothing at all (AddInlineTask's own end-date picker hit this
+ * first). Portaling to a sibling of `MoonProvider`'s own root sidesteps the whole class of
+ * ancestor, not just the one case that happened to get noticed.
  */
 const Dropdown = ({
   trigger,
@@ -113,7 +125,7 @@ const Dropdown = ({
         {trigger}
       </button>
 
-      {position && (
+      {position && createPortal(
         <>
           <button
             type="button"
@@ -142,7 +154,8 @@ const Dropdown = ({
               </button>
             ))}
           </div>
-        </>
+        </>,
+        getMoonPortalRoot(),
       )}
     </>
   );

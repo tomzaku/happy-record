@@ -10,6 +10,7 @@ export const calculateRepeat = ({
   count,
   allDay,
   recurring,
+  durationMinutes,
 }: {
   weeklyHobbies: Day[];
   selectedTime?: string;
@@ -24,6 +25,9 @@ export const calculateRepeat = ({
   interval?: number;
   until?: string;
   count?: number;
+  /** How long each occurrence lasts, in minutes — see ChecklistTemplate['repeat'].durationMinutes'
+   * own comment. No UI sets this yet, same as `interval`/`count`. */
+  durationMinutes?: number;
   /** Google-Calendar-style "All Day" — forces byhour/byminute to `''` regardless of
    * `selectedTime`, instead of the 8am fallback below. That fallback is for a caller with no
    * explicit all-day concept (SchedulingGroup's create-task flow, where leaving Time blank has
@@ -60,5 +64,6 @@ export const calculateRepeat = ({
     ...(until ? { until } : {}),
     ...(count != null ? { count } : {}),
     ...(recurring === false ? { recurring: false } : {}),
+    ...(durationMinutes ? { durationMinutes } : {}),
   };
 };

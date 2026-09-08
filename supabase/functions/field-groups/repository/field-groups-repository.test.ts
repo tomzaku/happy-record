@@ -58,6 +58,7 @@ Deno.test('withRepeats: a participant sees their own patched schedule, not the o
     byday: 'MO,SU',
     startedAt: null,
     freq: 'WEEKLY',
+    recurring: true,
   });
 });
 

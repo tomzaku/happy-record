@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay } from 'date-fns';
 import {
   Checklist,
   checklistInstanceId,
@@ -28,7 +28,7 @@ import MiniChallengeDashboard from './components/MiniChallengeDashboard';
 const DetailTaskPageMobile = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
-  const { updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
+  const { updateChecklistTemplate, splitChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
   const {
     addChecklist,
@@ -113,7 +113,7 @@ const DetailTaskPageMobile = () => {
       title: checklistTemplate.title,
       checklistTemplateId: id,
       startedAt: startOfDay(new Date()).toISOString(),
-      endedAt: endOfDay(new Date()).toISOString(),
+      durationDays: 1,
     });
     setSearchParams({
       ...Object.fromEntries(search),
@@ -257,6 +257,11 @@ const DetailTaskPageMobile = () => {
         isDefaultCollapsed
         checklistTemplate={checklistTemplate}
         onUpdate={isOwner ? (updatedTemplate) => updateChecklistTemplate(updatedTemplate) : () => {}}
+        onSplitSchedule={
+          isOwner
+            ? (effectiveFrom, newRepeat) => splitChecklistTemplate(checklistTemplate, effectiveFrom, newRepeat)
+            : undefined
+        }
         onDelete={isOwner ? handleDeleteTask : undefined}
         readOnly={!isOwner}
         onUpdateMyReminder={!isOwner && challenge ? repeat => updateMyReminder(id, repeat) : undefined}

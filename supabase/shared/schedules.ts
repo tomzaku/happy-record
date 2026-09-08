@@ -15,6 +15,7 @@
 // rather than being copy-pasted into both index.ts files.
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import type { ScheduleException } from './scheduleExceptions.ts';
 
 type Row = Record<string, unknown>;
 type Owner = { userId: string; checklistTemplateId?: string; fieldGroupId?: string };
@@ -71,11 +72,19 @@ export function rowId(owner: Owner): string {
  * freq) — no translation at this boundary any more, see CLAUDE.md's "server schema can differ
  * from client shape" for when that's still worth doing (it wasn't here: both sides already meant
  * the same rrule concepts, just under different names). `rrule` (the debug-only column) is
- * deliberately never returned here. */
-export function toRepeat(row: Row | undefined): Record<string, unknown> | undefined {
+ * deliberately never returned here.
+ *
+ * `exceptions` is optional and separate from `row` on purpose — a caller that hasn't fetched this
+ * schedule's own `schedule_exceptions` yet (nothing outside checklist-templates/field-groups does
+ * today) still gets a valid repeat object, just with no `exceptionDates`, rather than being forced
+ * to thread an empty array through every call site. Only `DELETED`-type exceptions ever surface
+ * here — `MODIFIED` has no client-visible shape yet (see scheduleExceptions.ts's own comment). */
+export function toRepeat(row: Row | undefined, exceptions?: ScheduleException[]): Record<string, unknown> | undefined {
   const hasAny = !!row && [row.byday, row.byhour, row.byminute, row.started_at]
     .some(v => v !== null && v !== undefined);
   if (!hasAny) return undefined;
+
+  const exceptionDates = (exceptions ?? []).filter(e => e.type === 'DELETED').map(e => e.date);
 
   return {
     byminute: row!.byminute != null ? String(row!.byminute) : '',
@@ -88,6 +97,8 @@ export function toRepeat(row: Row | undefined): Record<string, unknown> | undefi
     ...(row!.interval != null && (row!.interval as number) !== 1 ? { interval: row!.interval as number } : {}),
     ...(row!.count != null ? { count: row!.count as number } : {}),
     ...(row!.freq ? { freq: row!.freq as string } : {}),
+    ...(row!.duration_minutes != null ? { durationMinutes: row!.duration_minutes as number } : {}),
+    ...(exceptionDates.length > 0 ? { exceptionDates } : {}),
     // Not-null with a `default true` at the column level (see the migration), so this always has
     // a real value — spelled as `!== false` (not `?? true`) so an explicit `false` on the row
     // survives even if some future caller ever passes a nullish placeholder through by mistake.
@@ -119,6 +130,7 @@ export function fromRepeat(repeat: unknown, owner: Owner): Row {
   const interval = typeof e.interval === 'number' ? e.interval : null;
   const count = typeof e.count === 'number' ? e.count : null;
   const until = str(e.until);
+  const durationMinutes = typeof e.durationMinutes === 'number' && e.durationMinutes > 0 ? e.durationMinutes : null;
   // The client is expected to send `freq` explicitly now (always `'WEEKLY'` today — see
   // ChecklistTemplate['repeat'].freq's own comment), but a missing/invalid value still falls back
   // to the same derivation this used to do unconditionally, so an older client build (or a
@@ -144,6 +156,7 @@ export function fromRepeat(repeat: unknown, owner: Owner): Row {
     count,
     until,
     recurring,
+    duration_minutes: durationMinutes,
     rrule: buildDebugRRuleString({ freq, interval, byday, byhour, byminute, count, until }),
     started_at: startedAt,
     completed_at: str(e.completedAt),

@@ -26,13 +26,15 @@
 // just vanishing.
 
 import { toRepeat } from '../../shared/schedules.ts';
+import type { ScheduleException } from '../../shared/scheduleExceptions.ts';
 
 export function toChecklistTemplate(
   r: Record<string, unknown>,
   repeatRow: Record<string, unknown> | undefined,
   isPersonalOverride: boolean,
+  exceptions?: ScheduleException[],
 ) {
-  const repeat = toRepeat(repeatRow);
+  const repeat = toRepeat(repeatRow, exceptions);
   return {
     id: r.id as string,
     title: r.title as string,
@@ -45,6 +47,7 @@ export function toChecklistTemplate(
     updatedAt: r.updated_at as string,
     ...(r.flag_id ? { flagId: r.flag_id as string } : {}),
     ...(r.copied_from_id ? { copiedFromId: r.copied_from_id as string } : {}),
+    ...(r.split_from_id ? { splitFromId: r.split_from_id as string } : {}),
     ...(r.deleted_at ? { deletedAt: r.deleted_at as string } : {}),
   };
 }
@@ -107,6 +110,9 @@ export function fromChecklistTemplate(e: Record<string, unknown>) {
     // Lineage only, set once at fork time (see useJoinChallenge.tsx) — never
     // read for access control.
     copied_from_id: str(e.copiedFromId),
+    // Lineage only, set once at split time (see useChecklistTemplateMutations.ts's
+    // `splitChecklistTemplate`) — never read for access control.
+    split_from_id: str(e.splitFromId),
     created_at: str(e.createdAt) ?? new Date().toISOString(),
     // Postgres only fills the default on insert, not update — an upsert
     // has to set this explicitly every time.

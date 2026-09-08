@@ -1,5 +1,5 @@
 import { Day } from '@dreamer/tasks-page-common';
-import { ICAL_WEEKDAY_ORDER, icalToDay, isRecurringSchedule } from '@dreamer/global';
+import { ICAL_WEEKDAY_ORDER, icalToDay } from '@dreamer/global';
 import { WEEK_DAYS } from './WeekDaysPills';
 
 export type EndCondition =
@@ -16,11 +16,6 @@ export type RecurrenceValue = {
   /** Only meaningful for 'custom' — every other frequency repeats weekly (interval 1). */
   interval: number;
   end: EndCondition;
-  /** Ongoing weekly pattern vs. a one-time arrangement — see `ChecklistTemplate['repeat'].recurring`'s
-   * own comment. Independent of `frequency`/`end`: a schedule can occur on several days within one
-   * bounded window (e.g. every day this week, `end` an `onDate` a week out) and still not be meant
-   * as a recurring pattern past that. */
-  recurring: boolean;
 };
 
 const ALL_DAYS = WEEK_DAYS.map(d => d.value);
@@ -31,7 +26,7 @@ const ALL_DAYS = WEEK_DAYS.map(d => d.value);
  * separate day-number mapping table. */
 export const todayDay = (): Day => icalToDay(ICAL_WEEKDAY_ORDER[new Date().getDay()]) ?? Day.Sun;
 
-type RepeatLike = { byday?: string; interval?: number; until?: string; count?: number; recurring?: boolean };
+type RepeatLike = { byday?: string; interval?: number; until?: string; count?: number };
 
 const isEveryDay = (byday: string): boolean =>
   new Set(byday.split(',').map(d => d.trim()).filter(Boolean)).size === 7;
@@ -64,35 +59,38 @@ export const repeatToRecurrenceValue = (
       : repeat?.count != null
         ? { type: 'after', count: repeat.count }
         : { type: 'never' };
-  const recurring = isRecurringSchedule(repeat);
 
   if (!byday) {
     // Absent byday means "off" for a template (no schedule at all) but "every day" for a field
     // group (see fieldGroupTypes.ts's own doc comment "Absent... means every day") — allowNoRepeat
     // is exactly that switch, same one the picker itself uses to hide "Does not repeat".
     return allowNoRepeat
-      ? { frequency: 'off', days: [], interval: 1, end: { type: 'never' }, recurring: true }
-      : { frequency: 'daily', days: ALL_DAYS, interval: 1, end, recurring };
+      ? { frequency: 'off', days: [], interval: 1, end: { type: 'never' } }
+      : { frequency: 'daily', days: ALL_DAYS, interval: 1, end };
   }
   if (repeat?.interval && repeat.interval !== 1) {
-    return { frequency: 'custom', days, interval: repeat.interval, end, recurring };
+    return { frequency: 'custom', days, interval: repeat.interval, end };
   }
   if (isEveryDay(byday)) {
-    return { frequency: 'daily', days, interval: 1, end, recurring };
+    return { frequency: 'daily', days, interval: 1, end };
   }
-  return { frequency: 'weekly', days, interval: 1, end, recurring };
+  return { frequency: 'weekly', days, interval: 1, end };
 };
 
 /** The `{interval, until, count, recurring}` slice every save path threads into calculateRepeat's/
  * buildFieldGroupRepeat's own `extra` param — one place for "interval only applies to Custom" and
- * "which end field is actually set," so no call site re-derives that switch by hand. */
+ * "which end field is actually set," so no call site re-derives that switch by hand. `recurring`
+ * is derived, never user-set (see `ChecklistTemplate['repeat'].recurring`'s own comment) — `false`
+ * only for `frequency: 'off'`, which is exactly the "no weekday pattern, no schedule at all" case
+ * `occursOnDate`'s one-time-arrangement branch expects; every other frequency always has a real
+ * `byday`, so it's always a genuine recurring pattern. */
 export const recurrenceValueToExtra = (
   value: RecurrenceValue,
 ): { interval?: number; until?: string; count?: number; recurring: boolean } => ({
   interval: value.frequency === 'custom' ? value.interval : undefined,
   until: value.end.type === 'onDate' ? value.end.until : undefined,
   count: value.end.type === 'after' ? value.end.count : undefined,
-  recurring: value.recurring,
+  recurring: value.frequency !== 'off',
 });
 
 /** The day list a save path passes as `weeklyHobbies` — 'daily' always means every day regardless

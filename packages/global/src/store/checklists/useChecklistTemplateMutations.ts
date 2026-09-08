@@ -1,4 +1,5 @@
 import { v4 } from 'uuid';
+import { subDays, endOfDay } from 'date-fns';
 import { useMutation, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
@@ -8,6 +9,7 @@ import {
   removeChecklistTemplate as removeChecklistTemplateApi,
   saveChecklistTemplate,
 } from './checklistTemplatesApi';
+import { deleteOccurrence as deleteOccurrenceApi, restoreOccurrence as restoreOccurrenceApi } from './scheduleExceptionsApi';
 import type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTemplateTypes';
 
 type RollbackContext = {
@@ -174,6 +176,39 @@ export function useChecklistTemplateMutations({
     });
   };
 
+  /** "Edit this and following events" — Google Calendar's series split. The original keeps
+   * whatever it already had, just capped to end the day before `effectiveFrom`; a brand new,
+   * independent template picks up from `effectiveFrom` with `newRepeat`, linked back via
+   * `splitFromId` for lineage only (nothing occurrence-matching reads it). Modeled as two
+   * ordinary templates, each with the one `schedules` row it already always has, rather than
+   * multiple schedule rows for one owner — see the `checklist_templates_split_from_id` migration's
+   * own comment on why (`schedules.id` is deterministic per (owner, user), so a second row for the
+   * same template can't exist without reworking that). No FK ordering to race here (unlike
+   * `addChecklistTemplate`'s own `saved` guard for a *dependent* insert) — the new template only
+   * references the original's already-persisted id, never the other way around. Existing
+   * `Checklist` instances before `effectiveFrom` stay on the original template untouched; ones
+   * from `effectiveFrom` on are generated fresh against the new template by the existing
+   * synthesis path (useChecklists.tsx) — nothing to migrate. */
+  const splitChecklistTemplate = (
+    original: ChecklistTemplate,
+    effectiveFrom: string,
+    newRepeat: NonNullable<ChecklistTemplate['repeat']>,
+  ) => {
+    updateChecklistTemplate({
+      ...original,
+      repeat: { ...original.repeat, until: endOfDay(subDays(new Date(effectiveFrom), 1)).toISOString() },
+    });
+    return addChecklistTemplate({
+      title: original.title,
+      avatar: original.avatar,
+      records: [],
+      fieldGroups: [],
+      tags: original.tags,
+      repeat: { ...newRepeat, startedAt: effectiveFrom },
+      splitFromId: original.id,
+    });
+  };
+
   const deleteChecklistTemplate = (id: string) => {
     removeTemplateMutation.mutate(id);
     deselectChecklistTemplate(id);
@@ -190,5 +225,28 @@ export function useChecklistTemplateMutations({
     queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.byId(id, userId) });
   };
 
-  return { addChecklistTemplate, updateChecklistTemplate, deleteChecklistTemplate, updateMyReminder };
+  /** Skips/restores one calendar day of this template's own schedule — Google Calendar's "delete
+   * this event" for a single occurrence of a recurring series, via a `schedule_exceptions` row
+   * (see scheduleExceptionsApi.ts). Same invalidate-and-let-the-live-query-refetch shape as
+   * `updateMyReminder` above, for the same reason: the server is the source of truth for the
+   * resulting `repeat.exceptionDates`, not something worth hand-merging into the optimistic cache. */
+  const deleteOccurrence = async (id: string, date: string) => {
+    await deleteOccurrenceApi(id, date);
+    queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.byId(id, userId) });
+  };
+
+  const restoreOccurrence = async (id: string, date: string) => {
+    await restoreOccurrenceApi(id, date);
+    queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.byId(id, userId) });
+  };
+
+  return {
+    addChecklistTemplate,
+    updateChecklistTemplate,
+    splitChecklistTemplate,
+    deleteChecklistTemplate,
+    updateMyReminder,
+    deleteOccurrence,
+    restoreOccurrence,
+  };
 }

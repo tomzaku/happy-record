@@ -5,6 +5,7 @@
 // there directly.
 
 import { fetchRepeats, saveRepeat } from '../../../shared/schedules.ts';
+import { fetchExceptionsForSchedules } from '../../../shared/scheduleExceptions.ts';
 import { recordChecklistLog } from '../../../shared/checklistLogs.ts';
 import {
   fetchJoinedTemplateIds,
@@ -35,15 +36,24 @@ export async function listOwnedAndJoinedTemplates({ db, userId }: Ctx) {
 
   const rows = [...ownedRows, ...visibleJoinedRows];
   const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(repeatOwnerOf), userId);
+  const exceptions = await fetchExceptionsForSchedules(db, scheduleIdsOf(repeats));
   // resolveTemplate's viewer/owner resolution actually matters here now: a joined row's `user_id`
   // is the sharer, not the caller, so a personal reminder override (`schedules.user_id === userId`)
   // has to win over the owner's own schedule.
-  return rows.map(r => resolveTemplate(r, repeats, userId));
+  return rows.map(r => resolveTemplate(r, repeats, userId, exceptions));
 }
 
 export async function getTemplateWithRepeat({ db, userId }: Ctx, row: Record<string, unknown>) {
   const repeats = await fetchRepeats(db, 'checklistTemplateId', [repeatOwnerOf(row)], userId);
-  return resolveTemplate(row, repeats, userId);
+  const exceptions = await fetchExceptionsForSchedules(db, scheduleIdsOf(repeats));
+  return resolveTemplate(row, repeats, userId, exceptions);
+}
+
+// Every schedule row's own id, across every template's own list (owner's default + any
+// participant overrides) — `fetchExceptionsForSchedules` batches by schedule id, not template id,
+// since exceptions belong to one specific row (see resolveTemplate's own comment on why).
+function scheduleIdsOf(repeatsByTemplate: Record<string, Record<string, unknown>[]>): string[] {
+  return Object.values(repeatsByTemplate).flat().map(row => row.id as string);
 }
 
 export async function saveTemplate({ db, userId }: Ctx, row: Record<string, unknown>, repeat: unknown): Promise<void> {

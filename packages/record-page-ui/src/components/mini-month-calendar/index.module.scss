@@ -127,6 +127,17 @@
   }
 }
 
+// Light theme only — `--almanac-pill-active-bg` stays its usual dark pill everywhere else it's
+// used (e.g. this same panel's own Today button hover), so this overrides just the selected day
+// cell here rather than changing that shared token.
+:global([data-theme='light']) .dayCell[data-selected] {
+  background: #fff;
+
+  .dayNumber {
+    color: var(--almanac-ink);
+  }
+}
+
 // A fixed-size circle rather than plain text — the panel is too small and
 // the day cell too tight for a separate dot indicator to read as anything
 // but a smudge, so completion state colors the number's own backdrop

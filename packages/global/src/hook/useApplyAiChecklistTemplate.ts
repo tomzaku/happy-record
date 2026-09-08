@@ -140,7 +140,8 @@ export const useApplyAiChecklistTemplate = () => {
       title: generated.title,
       checklistTemplateId: id,
       startedAt: new Date().toISOString(),
-      // No `endedAt` — see Checklist['endedAt']'s own comment on why this isn't a 2099 sentinel.
+      // No `durationDays` — see Checklist['durationDays']'s own comment on why this isn't a 2099
+      // sentinel-shaped `endedAt` any more.
     });
     return { id };
   };

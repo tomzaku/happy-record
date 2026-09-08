@@ -33,6 +33,21 @@ jest.mock('../../hook/useSession', () => ({
   useSession: () => ({ userId: mockUserId, ready: true }),
 }));
 
+// useFieldGroups.tsx transitively imports fieldGroupsApi.ts -> lib/api.ts -> lib/supabase.ts ->
+// @supabase/supabase-js, which fails to transform under this repo's current jest config — same
+// pre-existing issue useChecklistTemplates.test.tsx already works around (see its own comment).
+// Mocked here too so this file can actually run at all, not just so its new duration_days
+// coverage below has something to call.
+const mockGetFieldGroups = jest.fn((_checklistTemplateId: string, _isOwned?: boolean): unknown[] => []);
+jest.mock('./useFieldGroups', () => ({
+  useFieldGroups: () => ({
+    getFieldGroups: mockGetFieldGroups,
+    allGroupsSettled: true,
+    fieldGroupList: {},
+  }),
+  useFieldGroupsForTemplate: () => ({ fieldGroups: [], isLoading: false }),
+}));
+
 jest.mock('./checklistsApi', () => ({
   fetchChecklists: jest.fn().mockResolvedValue({ checklists: [] }),
   fetchChecklistById: jest.fn().mockResolvedValue({ checklists: [] }),
@@ -46,6 +61,12 @@ jest.mock('./checklistTemplatesApi', () => ({
   saveChecklistTemplate: jest.fn(),
   patchChecklistTemplate: jest.fn(),
   removeChecklistTemplate: jest.fn(),
+}));
+
+// Same transitive-chain reason as checklistTemplatesApi above.
+jest.mock('./scheduleExceptionsApi', () => ({
+  deleteOccurrence: jest.fn(),
+  restoreOccurrence: jest.fn(),
 }));
 
 import { fetchChecklists } from './checklistsApi';
@@ -248,7 +269,7 @@ describe('getChecklistByGivingDate — scheduled vs. non-scheduled agreement', (
         title: 'Gym',
         checklistTemplateId: `fg-template-${userId}`,
         startedAt: date.toISOString(),
-        endedAt: date.toISOString(),
+        durationDays: 1,
         completedAt: date.toISOString(),
       });
     });

@@ -27,10 +27,13 @@ export type FormState = {
   selectedColor: string;
   fieldGroups?: FieldGroup[];
   tags: string[];
-  /** Only consulted for a one-off (non-recurring) task — see createTaskUtil.ts. A real three-way
-   * signal: `false` means "single day" (end of `startedAt`'s own day, whatever day that is —
-   * not necessarily today); `true` or `undefined` (every caller that doesn't offer this choice
-   * yet) means no defined end. */
+  /** Only consulted for a one-off (non-recurring) task — see createTaskUtil.ts, which writes this
+   * to the one-off `Checklist` row's own `durationDays`, never to the template's `repeat` (see
+   * that file's own comment on why — `repeat.until`/`count` belong to ChecklistGenericInfo's
+   * Start & End Date / Schedule dialogs and would otherwise leak a stale cutoff into a schedule
+   * added later). A real three-way signal: `false` means "single day" (runs for exactly 1 day
+   * from `startedAt`, whatever day that is — not necessarily today); `true` or `undefined` (every caller that
+   * doesn't offer this choice yet) means no defined end. */
   noEndDate?: boolean;
 };
 const CoreChecklistForm = ({

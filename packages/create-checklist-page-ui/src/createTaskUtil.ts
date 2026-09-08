@@ -1,7 +1,6 @@
 import { useChecklist, useChecklistTemplates, getClientTimezone } from '@dreamer/global';
 import { calculateRepeat } from './calculateRepeat';
 import { FormState } from './CoreChecklistForm';
-import { endOfDay } from 'date-fns';
 
 /**
  * Utility function to handle task creation logic
@@ -61,6 +60,18 @@ export const createTask = async (
         // Explicit, not just implied by the empty `byday` above — a forever/one-off task is
         // exactly the "one-time arrangement" case `recurring` exists for (see
         // rruleUtils.ts's `occursInRange`), not the default `true` an absent value would read as.
+        //
+        // Deliberately never `until`/`count` here for "Single day" — those are the *same* fields
+        // ChecklistGenericInfo's Start & End Date and Schedule dialogs read/write and silently
+        // re-apply on every save of either one (they stage into shared temp* state precisely so
+        // neither Save clobbers what the other owns — see that file's own comments). A `until`
+        // set here at creation time would still be sitting on the template the next time the user
+        // opens the Schedule dialog to actually turn this into a real weekly recurrence — and get
+        // silently re-applied, capping the brand new pattern to zero real occurrences (reported:
+        // "single day... but having schedule... does not repeat"). "Single day" vs. "No end date"
+        // is expressed purely on the one-off Checklist row below (`durationDays` set or not)
+        // instead — see useChecklists.tsx's `computeChecklistsForDate`, which reads that row,
+        // never `repeat`, to decide whether this template keeps generating further days.
         recurring: false,
       };
 
@@ -89,12 +100,12 @@ export const createTask = async (
       checklistTemplateId: id,
       startedAt: effectiveStartedAt,
       // `noEndDate` is a real three-way signal, not a plain boolean default: `false` (a caller
-      // that offers the choice and defaults it to "Single day," e.g. AddInlineTask) means end of
-      // this task's own start day — whatever day that is, not necessarily today (see
-      // AddInlineTask's own `date` prop); `undefined` (every caller that doesn't offer this
-      // choice yet — CreateChecklistForm, create-task-modal) keeps the old behavior of no defined
-      // end at all, same as `true` (explicitly "no end date").
-      endedAt: noEndDate === false ? endOfDay(new Date(effectiveStartedAt)).toISOString() : undefined,
+      // that offers the choice and defaults it to "Single day," e.g. AddInlineTask) means this
+      // task runs for exactly 1 day from its own start — whatever day that is, not necessarily
+      // today (see AddInlineTask's own `date` prop); `undefined` (every caller that doesn't offer
+      // this choice yet — CreateChecklistForm, create-task-modal) keeps the old behavior of no
+      // defined end at all, same as `true` (explicitly "no end date").
+      durationDays: noEndDate === false ? 1 : undefined,
     });
   }
 

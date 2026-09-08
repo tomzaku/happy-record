@@ -18,7 +18,7 @@ import Typography from '@moon-ui/typography';
 import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 import Card from '@moon-ui/card';
-import { format, isToday } from 'date-fns';
+import { format, isToday, subDays, endOfDay } from 'date-fns';
 import AddInlineTask, { AddInlineTaskHandle, PendingInlineTask } from '../AddInlineTask';
 import { getLunarDate, getLunarPhraseId } from '../../utils/lunarDate';
 import EmptyChecklistIllustration from './EmptyChecklistIllustration';
@@ -69,7 +69,14 @@ const ChecklistTodayDesktop = ({
 }) => {
   const { getChecklistByGivingDate, updateChecklist, deleteChecklist, getAllChecklistWithTemplate, checklistsLoading } =
     useChecklist();
-  const { checklistTemplate, templatesLoading, isOwnedTemplate, deleteChecklistTemplate } = useChecklistTemplates();
+  const {
+    checklistTemplate,
+    templatesLoading,
+    isOwnedTemplate,
+    deleteChecklistTemplate,
+    updateChecklistTemplate,
+    deleteOccurrence,
+  } = useChecklistTemplates();
   const { getFieldGroups } = useFieldGroups();
   const navigate = useNavigate();
   const intl = useIntl();
@@ -184,10 +191,36 @@ const ChecklistTodayDesktop = ({
 
   const cancelDeleteTask = () => setDeletingTaskId(null);
 
+  // "This event" — Google Calendar's own EXDATE: skip just this one calendar day, leaving the
+  // rest of the series untouched. The exception alone is enough to hide it — `occursOnDate`
+  // (rruleUtils.ts) checks `exceptionDates` before either matching branch, so this day's own
+  // template id never even reaches `scheduledChecklists`'/`nonScheduledChecklists`' own lookups
+  // again once the invalidated query refetches. Also removes the local row when one was already
+  // materialized (not `clientOnly`) — not required for correctness, just hygiene, same as
+  // `handleDeleteAll` below already does for the whole series.
   const handleDeleteToday = () => {
     if (!deletingTaskId) return;
-    deleteChecklist(deletingTaskId);
+    const currentChecklist = checklist[deletingTaskId];
     setDeletingTaskId(null);
+    if (!currentChecklist) return;
+    deleteOccurrence(currentChecklist.checklistTemplateId, format(date, 'yyyy-MM-dd'));
+    if (!currentChecklist.clientOnly) deleteChecklist(deletingTaskId);
+  };
+
+  // "This and following events" — the series just ends the day before this one; no split needed
+  // (that's only for *editing* a different pattern from here on — see ChecklistGenericInfo's own
+  // handleSaveSchedule). Reuses the existing updateChecklistTemplate mutation exactly.
+  const handleDeleteThisAndFollowing = () => {
+    if (!deletingTaskId) return;
+    const currentChecklist = checklist[deletingTaskId];
+    setDeletingTaskId(null);
+    if (!currentChecklist) return;
+    const template = checklistTemplate[currentChecklist.checklistTemplateId];
+    if (!template) return;
+    updateChecklistTemplate({
+      ...template,
+      repeat: { ...template.repeat, until: endOfDay(subDays(date, 1)).toISOString() },
+    });
   };
 
   // Deleting the template alone doesn't remove instances already materialized into real rows
@@ -624,6 +657,7 @@ const ChecklistTodayDesktop = ({
         isRecurring={isRecurringSchedule(deletingTemplate?.repeat)}
         onCancel={cancelDeleteTask}
         onDeleteToday={handleDeleteToday}
+        onDeleteThisAndFollowing={handleDeleteThisAndFollowing}
         onDeleteAll={handleDeleteAll}
       />
     </div>

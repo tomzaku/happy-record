@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { endOfDay, subDays } from 'date-fns';
 
 // scheduleUtils.ts (reached via useChecklistTemplates.tsx) imports `Day`
 // from this package only for `getDaysFromRepeat`, which nothing here calls
@@ -50,6 +51,14 @@ jest.mock('./checklistTemplatesApi', () => ({
   saveChecklistTemplate: (...args: unknown[]) => mockSaveChecklistTemplate(...args),
   patchChecklistTemplate: (...args: unknown[]) => mockPatchChecklistTemplate(...args),
   removeChecklistTemplate: (...args: unknown[]) => mockRemoveChecklistTemplate(...args),
+}));
+
+// Same transitive-chain reason as checklistTemplatesApi above.
+const mockDeleteOccurrence = jest.fn();
+const mockRestoreOccurrence = jest.fn();
+jest.mock('./scheduleExceptionsApi', () => ({
+  deleteOccurrence: (...args: unknown[]) => mockDeleteOccurrence(...args),
+  restoreOccurrence: (...args: unknown[]) => mockRestoreOccurrence(...args),
 }));
 
 import { useChecklistTemplates, useChecklistTemplateDetail, type ChecklistTemplate } from './useChecklistTemplates';
@@ -253,6 +262,51 @@ describe('updateChecklistTemplate', () => {
   });
 });
 
+describe('splitChecklistTemplate', () => {
+  it('caps the original at the day before, and creates a new template linked back via splitFromId', async () => {
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.addChecklistTemplate(
+        {
+          ...baseTemplate('template-split-1'),
+          repeat: { byminute: '0', byhour: '8', byday: 'MO,WE,FR', startedAt: '2024-01-01T00:00:00.000Z' },
+        },
+        true,
+      );
+    });
+    await waitFor(() => expect(result.current.checklistTemplate['template-split-1']).toBeDefined());
+    mockSaveChecklistTemplate.mockClear();
+    mockPatchChecklistTemplate.mockClear();
+
+    act(() => {
+      result.current.splitChecklistTemplate(
+        result.current.checklistTemplate['template-split-1'],
+        '2026-09-08T00:00:00.000Z',
+        { byminute: '0', byhour: '9', byday: 'TU,TH', startedAt: '2026-09-08T00:00:00.000Z' },
+      );
+    });
+
+    // The original: same id, patched with a real `until` ending the day before the split — not
+    // re-created (no new saveChecklistTemplate call for it). Computed the same way the
+    // implementation does (subDays/endOfDay), not hardcoded, so this isn't tied to the test
+    // runner's own local timezone.
+    await waitFor(() => expect(mockPatchChecklistTemplate).toHaveBeenCalled());
+    const [patchedId, patch] = mockPatchChecklistTemplate.mock.calls[0];
+    const expectedUntil = endOfDay(subDays(new Date('2026-09-08T00:00:00.000Z'), 1)).toISOString();
+    expect(patchedId).toBe('template-split-1');
+    expect((patch as { repeat: { until: string } }).repeat.until).toBe(expectedUntil);
+
+    // The new template: a real create, linked back to the original, with the new schedule
+    // starting exactly on the split date (not whatever `newRepeat.startedAt` happened to say).
+    await waitFor(() => expect(mockSaveChecklistTemplate).toHaveBeenCalled());
+    const created = mockSaveChecklistTemplate.mock.calls[0][0] as ChecklistTemplate;
+    expect(created.splitFromId).toBe('template-split-1');
+    expect(created.repeat).toMatchObject({ byday: 'TU,TH', startedAt: '2026-09-08T00:00:00.000Z' });
+    expect(created.id).not.toBe('template-split-1');
+  });
+});
+
 describe('deleteChecklistTemplate', () => {
   it('rolls back if the delete fails, restoring exactly the removed template', async () => {
     mockRemoveChecklistTemplate.mockResolvedValue(null);
@@ -326,6 +380,61 @@ describe('updateMyReminder', () => {
     expect(mockPatchChecklistTemplate).toHaveBeenCalledWith('template-reminder-1', { repeat: null });
     // The invalidated query re-fetches on its own — no direct fetch-and-merge call needed here.
     await waitFor(() => expect(detail.current.template?.repeat?.byhour).toBe('20'));
+  });
+});
+
+describe('deleteOccurrence / restoreOccurrence', () => {
+  // Same "invalidate and let the live query refetch" shape as updateMyReminder above, for the
+  // same reason: the server is the source of truth for the resulting `repeat.exceptionDates`.
+  it('deleteOccurrence posts the exception then invalidates so a detail observer sees exceptionDates', async () => {
+    mockFetchChecklistTemplateById.mockResolvedValueOnce({
+      templates: [{
+        ...baseTemplate('template-exception-1'),
+        createdAt: 'now',
+        updatedAt: '2024-02-01T00:00:00.000Z',
+        repeat: { byminute: '0', byhour: '8', byday: 'MO', startedAt: '2024-01-01T00:00:00.000Z' },
+      }],
+    });
+    const wrapper = createWrapper();
+    const { result: templates } = renderHook(() => useChecklistTemplates(), { wrapper });
+    const { result: detail } = renderHook(() => useChecklistTemplateDetail('template-exception-1'), { wrapper });
+
+    await waitFor(() => expect(detail.current.template?.repeat?.byday).toBe('MO'));
+
+    mockFetchChecklistTemplateById.mockResolvedValueOnce({
+      templates: [{
+        ...baseTemplate('template-exception-1'),
+        createdAt: 'now',
+        updatedAt: '2024-02-02T00:00:00.000Z',
+        repeat: {
+          byminute: '0',
+          byhour: '8',
+          byday: 'MO',
+          startedAt: '2024-01-01T00:00:00.000Z',
+          exceptionDates: ['2024-02-05'],
+        },
+      }],
+    });
+
+    await act(async () => {
+      await templates.current.deleteOccurrence('template-exception-1', '2024-02-05');
+    });
+
+    expect(mockDeleteOccurrence).toHaveBeenCalledWith('template-exception-1', '2024-02-05');
+    await waitFor(() => expect(detail.current.template?.repeat?.exceptionDates).toEqual(['2024-02-05']));
+  });
+
+  it('restoreOccurrence calls the delete-exception API and invalidates the same query', async () => {
+    mockFetchChecklistTemplateById.mockResolvedValue({
+      templates: [{ ...baseTemplate('template-exception-2'), createdAt: 'now', updatedAt: 'now' }],
+    });
+    const { result: templates } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await templates.current.restoreOccurrence('template-exception-2', '2024-02-05');
+    });
+
+    expect(mockRestoreOccurrence).toHaveBeenCalledWith('template-exception-2', '2024-02-05');
   });
 });
 

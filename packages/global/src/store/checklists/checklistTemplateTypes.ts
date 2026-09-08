@@ -26,14 +26,36 @@ export type ChecklistTemplate = {
     interval?: number;
     /** Stop generating after N occurrences. No UI sets this yet — see `interval`'s own comment. */
     count?: number;
+    /** How long each occurrence lasts, in minutes — alongside `byhour`/`byminute` (its start
+     * time), not a replacement for `until`/`count` (those answer "when does the whole recurring
+     * series stop," a calendar-relative question; this only ever answers "how long does one
+     * occurrence run" — see the `schedules_duration_minutes` migration). Can span more than one
+     * calendar day (e.g. a 4500-minute/75h occurrence) — a plain minute count has no
+     * month/year-length ambiguity, so nothing special-cases that. Display-only today, though:
+     * `occursOnDate` (rruleUtils.ts) still only checks whether an occurrence *starts* on a given
+     * day, not whether a still-running multi-day one should keep the schedule active through the
+     * days after that (see rruleUtils.test.ts's own coverage). E.g. "clean the house, 8am-10am
+     * every weekday" is `byhour: '8', byminute: '0', durationMinutes: 120`. No UI sets this yet —
+     * see `interval`'s own comment for the same "data model ready, no picker built" shape. */
+    durationMinutes?: number;
     /** Whether this is meant as an ongoing weekly pattern vs. a one-time arrangement bounded by
      * `startedAt`/`until` (e.g. "Mon–Sun this week only") — a separate question from whether it
      * *will* stop (that's `until`/`count`); this is about user intent, for schedule-summary text
      * and an `isRecurring` check, not occurrence matching (`occursOnDate` reads `byday`/`until`/
      * `count` exactly as before, regardless of this flag). Absent means `true` — every schedule
      * before this field existed was created as an open-ended weekly pattern with no way to mark
-     * otherwise. */
+     * otherwise. Never a user-set toggle — derived from `byday`: `false` only for a genuinely
+     * schedule-less template (`byday` empty), `true` whenever any real days are picked (see
+     * recurrenceConfig.ts's `recurrenceValueToExtra`; the old "Repeats past this window" checkbox
+     * that used to let these two drift apart is gone). */
     recurring?: boolean;
+    /** `YYYY-MM-DD` dates a `DELETED`-type `schedule_exceptions` row skips this occurrence for —
+     * Google Calendar's "delete this event" for one specific day of a recurring series, without
+     * touching the rest of it. Read-only, server-embedded (see supabase/shared/schedules.ts's
+     * `toRepeat`) — never send back on a write; add/remove one via `useChecklistTemplates()`'s
+     * `deleteOccurrence`/`restoreOccurrence` instead (packages/global/src/store/checklists/
+     * scheduleExceptionsApi.ts), which invalidate this template's own query afterward. */
+    exceptionDates?: string[];
     /** Set only for a challenge participant's own row, distinct from the owner's default
      * (_shared/repeats.ts's `pickRepeat`) — seeded from the owner's schedule at join time
      * (challenge-participants-service.ts's `seedReminderFromOwner`), so it reads "personal"
@@ -56,6 +78,11 @@ export type ChecklistTemplate = {
   /** Lineage only, set at fork time when joining a challenge (useJoinChallenge.tsx) — never read
    * for access control. */
   copiedFromId?: string;
+  /** Lineage only, set when this template was created by splitting an existing recurring series
+   * ("edit this and following events" — see useChecklistTemplateMutations.ts's
+   * `splitChecklistTemplate`) — the template it continues from. Never read for occurrence
+   * matching or access control, same as `copiedFromId`. */
+  splitFromId?: string;
   /** Set when the owner has deleted this template — the row itself isn't removed, so a challenge
    * participant still resolves it (see 20260905000000_checklist_templates_soft_delete.sql), just
    * flagged. Absent means not deleted. */

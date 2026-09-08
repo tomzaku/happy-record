@@ -13,7 +13,7 @@ export function toChecklist(r: Record<string, unknown>) {
     title: r.title as string,
     checklistTemplateId: r.checklist_template_id as string,
     startedAt: r.started_at as string,
-    ...(r.ended_at ? { endedAt: r.ended_at as string } : {}),
+    ...(r.duration_days != null ? { durationDays: r.duration_days as number } : {}),
     ...(r.completed_at ? { completedAt: r.completed_at as string } : {}),
     updatedAt: r.updated_at as string,
   };
@@ -32,9 +32,9 @@ export function fromChecklist(e: Record<string, unknown>) {
     checklist_template_id: e.checklistTemplateId,
     title: e.title,
     started_at: e.startedAt,
-    // No defined end (a "forever" one-off task) is a real null now, not a 2099 sentinel — nothing
-    // client-side ever reads this back (see the migration's own comment).
-    ended_at: typeof e.endedAt === 'string' && e.endedAt ? e.endedAt : null,
+    // How many days this arrangement runs for, relative to `started_at` — null means no defined
+    // end (a "forever" one-off task), never a magic sentinel (see the migration's own comment).
+    duration_days: typeof e.durationDays === 'number' && e.durationDays > 0 ? e.durationDays : null,
     completed_at: typeof e.completedAt === 'string' ? e.completedAt : null,
     // Postgres only fills the default on insert, not update — an upsert
     // has to set this explicitly every time.

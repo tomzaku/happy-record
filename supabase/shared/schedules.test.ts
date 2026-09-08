@@ -52,6 +52,7 @@ Deno.test('toRepeat: populated once any field is set, even with the rest null', 
     byday: 'MO,SU',
     startedAt: null,
     freq: 'WEEKLY',
+    recurring: true,
   });
 });
 
@@ -88,6 +89,7 @@ Deno.test('fromRepeat/toRepeat: interval/count round-trip, and interval of 1 is 
     interval: 2,
     count: 6,
     freq: 'WEEKLY',
+    recurring: true,
   });
 
   const defaultIntervalRow = fromRepeat(
@@ -104,6 +106,33 @@ Deno.test('fromRepeat/toRepeat: until round-trips through the until column', () 
   );
   assertEquals(row.until, '2026-12-31T23:59:59.999Z');
   assertEquals(toRepeat(row)?.until, '2026-12-31T23:59:59.999Z');
+});
+
+Deno.test('fromRepeat/toRepeat: durationMinutes round-trips through the duration_minutes column, including a multi-day span', () => {
+  // 4500 minutes = 75h — an occurrence that starts one calendar day and runs into a later one
+  // (e.g. 09/08 05:00 -> 09/11 08:00). durationMinutes is a plain minute count, so a multi-day
+  // span is no different from a same-day one here — no month/year-length ambiguity the way a
+  // calendar-relative unit would have (see the migration's own comment).
+  const row = fromRepeat(
+    { byhour: '05', byminute: '00', byday: 'TU', durationMinutes: 4500 },
+    { userId: 'owner', checklistTemplateId: 'ct1' },
+  );
+  assertEquals(row.duration_minutes, 4500);
+  assertEquals(toRepeat(row)?.durationMinutes, 4500);
+});
+
+Deno.test('fromRepeat: durationMinutes is null when omitted or non-positive, never a stray 0', () => {
+  const omitted = fromRepeat(
+    { byhour: '08', byminute: '00', byday: 'MO' },
+    { userId: 'owner', checklistTemplateId: 'ct1' },
+  );
+  assertEquals(omitted.duration_minutes, null);
+
+  const zero = fromRepeat(
+    { byhour: '08', byminute: '00', byday: 'MO', durationMinutes: 0 },
+    { userId: 'owner', checklistTemplateId: 'ct1' },
+  );
+  assertEquals(zero.duration_minutes, null);
 });
 
 Deno.test('fromRepeat: defaults started_at to now on a checklist_template row when the client omits it', () => {

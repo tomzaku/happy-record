@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay } from 'date-fns';
 import {
   Checklist,
   checklistInstanceId,
@@ -30,7 +30,7 @@ import WarningModal from '@moon-ui/modal/src/WarningModal';
 const DetailTaskPageDesktop = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
-  const { updateChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
+  const { updateChecklistTemplate, splitChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
     useChecklistTemplates();
   const {
     addChecklist,
@@ -132,7 +132,7 @@ const DetailTaskPageDesktop = () => {
       title: checklistTemplate.title,
       checklistTemplateId: id,
       startedAt: startOfDay(new Date()).toISOString(),
-      endedAt: endOfDay(new Date()).toISOString(),
+      durationDays: 1,
     });
     setSearchParams(prev => {
       const newParams = new URLSearchParams(prev);
@@ -351,6 +351,11 @@ const DetailTaskPageDesktop = () => {
                 isDefaultCollapsed={false}
                 checklistTemplate={checklistTemplate}
                 onUpdate={isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}}
+                onSplitSchedule={
+                  isOwner
+                    ? (effectiveFrom, newRepeat) => splitChecklistTemplate(checklistTemplate, effectiveFrom, newRepeat)
+                    : undefined
+                }
                 onDelete={isOwner ? handleDeleteTask : undefined}
                 readOnly={!isOwner}
                 onUpdateMyReminder={

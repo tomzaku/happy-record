@@ -3,8 +3,8 @@ import { eachDayOfInterval } from 'date-fns';
 import type { CalendarEvent, CalendarRange } from '@dreamer/calendar-view';
 import { useChecklist, useChecklistTemplates, getActiveFieldGroups, Checklist } from '@dreamer/global';
 
-// A Checklist instance has no time of its own (`startedAt`/`endedAt` just span
-// the whole day) — only a template with no field groups carries a single
+// A Checklist instance has no time of its own (`startedAt`/`durationDays` just span
+// whole calendar days) — only a template with no field groups carries a single
 // `repeat.byhour`/`byminute` worth plotting on an hourly grid (see
 // ChecklistToday.desktop.tsx's own `getScheduledTimeLabel`). A field-group
 // template has no single time to show there either, so it renders here as an

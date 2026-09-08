@@ -332,15 +332,6 @@
   color: var(--text-color, #222);
 }
 
-.recurringToggle {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  font-size: 13px;
-  color: var(--text-description-color, #666);
-  cursor: pointer;
-}
-
 // Simple bottom sheet modal styles
 .simpleOverlay {
   position: fixed;

@@ -59,16 +59,23 @@ export const useChecklistTemplates = () => {
     isOwnedTemplate,
     markTemplateIdKnown,
   } = useChecklistTemplatesQuery();
-  const { addChecklistTemplate, updateChecklistTemplate, deleteChecklistTemplate, updateMyReminder } =
-    useChecklistTemplateMutations({
-      userId,
-      queryClient,
-      allKey,
-      checklistTemplate,
-      markTemplateIdKnown,
-      selectChecklistTemplate,
-      deselectChecklistTemplate,
-    });
+  const {
+    addChecklistTemplate,
+    updateChecklistTemplate,
+    splitChecklistTemplate,
+    deleteChecklistTemplate,
+    updateMyReminder,
+    deleteOccurrence,
+    restoreOccurrence,
+  } = useChecklistTemplateMutations({
+    userId,
+    queryClient,
+    allKey,
+    checklistTemplate,
+    markTemplateIdKnown,
+    selectChecklistTemplate,
+    deselectChecklistTemplate,
+  });
 
   // `field-groups` isn't a column on this row anymore — every read function below merges
   // `getFieldGroups(id)` onto the object it returns.
@@ -99,8 +106,11 @@ export const useChecklistTemplates = () => {
     templatesLoading,
     addChecklistTemplate,
     updateChecklistTemplate,
+    splitChecklistTemplate,
     deleteChecklistTemplate,
     updateMyReminder,
+    deleteOccurrence,
+    restoreOccurrence,
     selectedChecklistTemplates,
     updateSelectedChecklistTemplate,
     selectChecklistTemplate,

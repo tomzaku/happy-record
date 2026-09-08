@@ -5,6 +5,7 @@ import { useFieldGroups } from './useFieldGroups';
 import { v4, v5 as uuidv5 } from 'uuid';
 import { startOfDay, endOfDay, addDays, format } from 'date-fns';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
+import { getActiveFieldGroups } from './fieldGroupTypes';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
 // a failure resolves to null and this hook's own in-memory state is the
@@ -21,11 +22,15 @@ export type Checklist = {
   checklistTemplateId: string;
   completedAt?: string;
   startedAt: string;
-  /** Absent means no defined end — a "forever" one-off task (see createTaskUtil.ts's own
-   * non-recurring branch). Every scheduled-day instance still gets a real end-of-day value (see
-   * this file's own virtual-checklist construction below); this is genuinely unset only for that
-   * one case, not a 2099 sentinel any more (see the `checklists_ended_at_nullable` migration). */
-  endedAt?: string;
+  /** How many days this arrangement runs for, relative to `startedAt` — absent means no defined
+   * end, a "forever" one-off task (see createTaskUtil.ts's own non-recurring branch). Every
+   * scheduled-day instance still gets a real `1` (see this file's own virtual-checklist
+   * construction below); this is genuinely unset only for the one-off case. A relative day count,
+   * not an absolute end date (`ended_at`, now retired — see the `checklists_duration_days`
+   * migration) — an absolute date would still be sitting on a template the next time its own
+   * Schedule dialog re-applies whatever's already there (ChecklistGenericInfo), silently capping
+   * a brand new weekly pattern to zero real occurrences. */
+  durationDays?: number;
   clientOnly?: boolean;
   updatedAt: string;
 };
@@ -186,27 +191,53 @@ export const useChecklist = () => {
           const foundChecklist = checklistsByGivingDate.find(
             c => c.checklistTemplateId === id,
           );
-          if (foundChecklist) {
-            return foundChecklist;
-          } else {
-            return {
-              id: checklistInstanceId(id, date),
-              clientOnly: true,
-              title: checklistTemplate[id].title,
-              checklistTemplateId: id,
-              startedAt: new Date(date).toISOString(),
-              endedAt: (() => {
-                const endDate = new Date(date);
-                endDate.setHours(23, 59, 59, 999);
-                return endDate.toISOString();
-              })(),
-              // Never synced or reconciled against — this is a throwaway
-              // view, not yet a row this device has decided to persist
-              // (see updateChecklist's comment on that first-edit moment).
-              updatedAt: new Date(date).toISOString(),
-            };
+          if (foundChecklist) return foundChecklist;
+
+          // A one-off (`recurring: false`, no active field groups) template's own Checklist
+          // row(s) are what actually decide whether/how many days it keeps showing on — never
+          // `repeat.until`/`count`, which the Start & End Date and Schedule dialogs
+          // (ChecklistGenericInfo) already own and silently re-apply on every save of *either*
+          // one (see their own comments on why — both stage into the same shared temp* state so
+          // neither Save clobbers what the other set). Reusing that field for a "Single day"
+          // one-off task would leak a stale cutoff into a schedule the user adds later, capping a
+          // brand new weekly pattern to zero real occurrences — see createTaskUtil.ts's own
+          // comment. So: no real row yet at all (the template's own optimistic write always lands
+          // before `createTaskUtil.ts`'s own `addChecklist` call, which awaits the template's real
+          // network round-trip first, to avoid racing `checklists.checklist_template_id`'s FK) —
+          // skip, rather than render a placeholder that'd duplicate AddInlineTask's own
+          // "Creating…" row. A real row with `durationDays` set ("Single day") — its one
+          // occurrence already happened; never synthesize another. A real row with no
+          // `durationDays` ("No end date") — keep synthesizing, same as any other recurring
+          // template. A genuinely recurring template (or a field-group-driven one — see
+          // isTemplateScheduledOnDate's own `hasActiveFieldGroups` override) never reaches this
+          // branch at all; it always has a placeholder to synthesize, not a row to wait for or
+          // defer to.
+          const template = checklistTemplate[id];
+          // `fieldGroups` isn't a column on `template` itself (see nonScheduledChecklists' own
+          // comment below) — fetch the real, current groups rather than trusting a stale
+          // (or perpetually empty) copy off the raw store row.
+          const isOneOff =
+            template.repeat?.recurring === false &&
+            getActiveFieldGroups(getFieldGroups(id, isOwnedTemplate(id))).length === 0;
+          if (isOneOff) {
+            const anyRow = Object.values(checklist).find(c => c.checklistTemplateId === id);
+            if (!anyRow || anyRow.durationDays) return null;
           }
-        });
+
+          return {
+            id: checklistInstanceId(id, date),
+            clientOnly: true,
+            title: template.title,
+            checklistTemplateId: id,
+            startedAt: new Date(date).toISOString(),
+            durationDays: 1,
+            // Never synced or reconciled against — this is a throwaway
+            // view, not yet a row this device has decided to persist
+            // (see updateChecklist's comment on that first-edit moment).
+            updatedAt: new Date(date).toISOString(),
+          };
+        })
+        .filter((c): c is Checklist => c !== null);
 
       const nonScheduledChecklists = Object.values(checklist).filter(
         existingChecklist => {
@@ -233,18 +264,22 @@ export const useChecklist = () => {
         const hasSchedule = !!effectiveDayOfWeek && effectiveDayOfWeek.trim() !== '';
         if(hasSchedule) return false;
 
-        // A one-off (unscheduled) checklist shows from the day it was
-        // started through its own `endedAt` (inclusive) — a single day when
-        // `endedAt` is that same day's end (the "Single day" choice in
-        // AddInlineTask/CoreChecklistForm), every day onward with no upper
-        // bound when `endedAt` is unset ("No end date" — see
-        // createTaskUtil.ts). `completedAt` doesn't factor into which day
-        // this shows on at all; it's just whether it's checked off when it
-        // does, so it never extends or shortens this range on its own.
+        // A one-off (unscheduled) checklist's own row belongs to exactly the
+        // day it was started, not a range from there onward — how many days
+        // it actually shows across is decided one layer up, by the
+        // template's own `repeat.startedAt`/`until` via `occursInRange`
+        // (rruleUtils.ts, consulted through `isTemplateScheduledOnDate` for
+        // `checklistTemplatesByGivingDateIds` above) — a "Single day"/"No
+        // end date" one-off task (createTaskUtil.ts) still gets exactly one
+        // real `Checklist` row; every day it's scheduled on beyond that one
+        // is a synthetic per-day instance from `scheduledChecklists` above,
+        // same as a real recurring template. Matching the real row to its
+        // own day here, not a wider range, is what keeps this branch from
+        // double-counting it once `until` starts making it schedule-match on
+        // other days too. `completedAt` doesn't factor into which day this
+        // shows on at all; it's just whether it's checked off when it does.
         const startedAtDate = new Date(existingChecklist.startedAt);
-        if (startedAtDate > endOfDay(date)) return false;
-        if (!existingChecklist.endedAt) return true;
-        return new Date(existingChecklist.endedAt) >= startOfDay(date);
+        return startedAtDate >= startOfDay(date) && startedAtDate <= endOfDay(date);
         },
       );
       // Combine scheduled, non-scheduled, and forever checklists. Deduped by
