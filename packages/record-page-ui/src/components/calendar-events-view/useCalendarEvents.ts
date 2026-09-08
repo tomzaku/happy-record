@@ -73,7 +73,15 @@ export type CalendarEventData = {
   date: Date;
 };
 
-export const useCalendarEvents = (range: CalendarRange | null, selectedTag: string): CalendarEvent[] => {
+// `checklistTemplateId` scopes every day's tasks to one template instead of everything
+// scheduled that day — detail-task-page's own history calendar (ChecklistTemplateCalendar) uses
+// this; the home page's own CalendarEventsView usage leaves it unset. Same optional-scope shape
+// `WeekView`/`MonthView`/`YearView` used before this replaced them there.
+export const useCalendarEvents = (
+  range: CalendarRange | null,
+  selectedTag: string,
+  checklistTemplateId?: string,
+): CalendarEvent[] => {
   const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
   const { checklistTemplate } = useChecklistTemplates();
 
@@ -93,7 +101,10 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
     // immediately; turned into a single spanning event per template after the day loop, covering
     // exactly the days actually found to have an instance in this range (not re-derived from
     // `startedAt`/`until` — those may extend beyond what's actually been fetched/confirmed).
-    const spanningDaysByTemplate = new Map<string, { title: string; color: string; days: Date[] }>();
+    const spanningDaysByTemplate = new Map<
+      string,
+      { title: string; color: string; days: Date[]; allDone: boolean }
+    >();
 
     eachDayOfInterval({ start: range.from, end: range.to }).forEach(day => {
       const { checklist } = getChecklistForDateWithoutFetching({
@@ -102,6 +113,8 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
       });
 
       Object.values(checklist).forEach((task: Checklist) => {
+        if (checklistTemplateId && task.checklistTemplateId !== checklistTemplateId) return;
+
         const template = checklistTemplate[task.checklistTemplateId];
         const avatarColor = template?.avatar.color;
         // Every "Create Task" entry point pre-selects this exact swatch (and
@@ -122,8 +135,17 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
         // active on different days, which a single bar can't represent. Same guard as
         // `isTemplateScheduledOnDate`'s own.
         if (!hasActiveFieldGroups && template?.repeat?.recurring === false) {
-          const entry = spanningDaysByTemplate.get(task.checklistTemplateId) ?? { title, color, days: [] };
+          const entry = spanningDaysByTemplate.get(task.checklistTemplateId) ?? {
+            title,
+            color,
+            days: [],
+            allDone: true,
+          };
           entry.days.push(day);
+          // The bar reads as done only once every day it spans is — one
+          // incomplete instance is enough to keep the whole thing looking
+          // active, the same way a partly-checked-off multi-day task should.
+          entry.allDone = entry.allDone && Boolean(task.completedAt);
           spanningDaysByTemplate.set(task.checklistTemplateId, entry);
           return;
         }
@@ -150,7 +172,7 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
       });
     });
 
-    spanningDaysByTemplate.forEach(({ title, color, days }, checklistTemplateId) => {
+    spanningDaysByTemplate.forEach(({ title, color, days, allDone }, checklistTemplateId) => {
       const sortedDays = [...days].sort((a, b) => a.getTime() - b.getTime());
       const start = sortedDays[0];
       const lastDay = sortedDays[sortedDays.length - 1];
@@ -164,10 +186,11 @@ export const useCalendarEvents = (range: CalendarRange | null, selectedTag: stri
         start,
         end,
         allDay: true,
+        done: allDone,
         data: { checklistTemplateId, date: start } satisfies CalendarEventData,
       });
     });
 
     return events;
-  }, [range, getChecklistForDateWithoutFetching, checklistTemplate, selectedTag]);
+  }, [range, getChecklistForDateWithoutFetching, checklistTemplate, selectedTag, checklistTemplateId]);
 };

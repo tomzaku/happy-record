@@ -63,11 +63,18 @@ const HistorySection = ({ title, defaultCollapsed = false, renderList, renderCal
           {/* @moon-ui/icon's own base class sets `color`/`fill` directly on
               the icon element itself (see its styles.module.scss), which
               overrides anything inherited from this button — only a `color`
-              prop (an inline style, always wins) actually recolors it. */}
+              prop (an inline style, always wins) actually recolors it.
+              `--button-action-color` here, not `--almanac-pill-active-ink` —
+              that token is light ink tuned for a dark/accent-filled pill
+              (mini-month-calendar's own selected day), but `.active` below
+              fills with the light `--card-background` instead, the same
+              pairing `.label`'s own active color already uses; the ink
+              token there read as almost the same shade as this pill's own
+              background. */}
           <Icon
             icon="solar:list-check-linear"
             width={16}
-            color={mode === 'list' ? 'var(--almanac-pill-active-ink)' : undefined}
+            color={mode === 'list' ? 'var(--button-action-color)' : undefined}
           />
         </button>
         <button
@@ -80,7 +87,7 @@ const HistorySection = ({ title, defaultCollapsed = false, renderList, renderCal
           <Icon
             icon="solar:calendar-outline"
             width={16}
-            color={mode === 'calendar' ? 'var(--almanac-pill-active-ink)' : undefined}
+            color={mode === 'calendar' ? 'var(--button-action-color)' : undefined}
           />
         </button>
       </div>

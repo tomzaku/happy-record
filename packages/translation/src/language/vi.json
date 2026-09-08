@@ -25,10 +25,6 @@
   "ListTask.label-show-done-task": "Hiển Thị Nhiệm Vụ Đã Hoàn Thành",
   "ListTask.label-your-list-tasks": "Danh Sách Nhiệm Vụ Của Bạn",
   "LunarCalendar.label-passed-day": "Âm Lịch: Ngày {{day}}",
-  "lunar-phrase.full-moon": "trăng tròn khép lại ngày",
-  "lunar-phrase.new-moon": "trăng non mở đầu chu kỳ",
-  "lunar-phrase.waning": "trăng đang khuyết",
-  "lunar-phrase.waxing": "trăng đang tròn dần",
   "PregnantIntro.checklists": "Chọn những nhiệm vụ bạn muốn thực hiện mỗi ngày!",
   "PregnantIntro.checklists-management": "Quản Lý Mẫu Danh Sách Kiểm Tra",
   "PregnantIntro.label-enter-the-due-date": "Ngày dự sinh của bé là khi nào?",
@@ -246,7 +242,6 @@
   "ChecklistToday.shortcuts-navigate": "Di chuyển",
   "ChecklistToday.shortcuts-open": "Mở",
   "ChecklistToday.shortcuts-toggle": "Đánh dấu xong",
-  "ChecklistToday.summary": "{{done}}/{{total}} đã xong · {{phrase}}",
   "ChecklistToday.to-go-count": "còn {{count}}",
   "ChecklistToday.today": "Hôm nay",
   "WeeklyProgressCard.summary": "{{completed}}/{{total}} việc đã xong",
@@ -266,11 +261,5 @@
   "home-view-switcher.list": "Danh Sách",
   "home-view-switcher.calendar": "Lịch",
   "home-calendar.today": "Hôm nay",
-  "week-view.today": "Hôm nay",
-  "week-view.no-tasks": "Không có nhiệm vụ",
-  "month-view.today": "Hôm nay",
-  "month-view.more": "+{{count}} nữa",
-  "year-view.this-year": "Năm nay",
-  "year-view.legend-less": "Ít",
-  "year-view.legend-more": "Nhiều"
+  "month-view.today": "Hôm nay"
 }

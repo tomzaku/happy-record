@@ -1,10 +1,11 @@
 import React from 'react';
-import Calendar, { CalendarViewMode, CalendarRange, CalendarEvent } from '@dreamer/calendar-view';
+import { CalendarViewMode, CalendarEvent } from '@dreamer/calendar-view';
 import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 
 import ViewSwitcher, { ViewMode } from '../view-switcher';
-import { useCalendarEvents, CalendarEventData } from './useCalendarEvents';
+import CalendarEventsView from '../calendar-events-view';
+import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
 
 // dayGrid/multiMonth cells are date-only, so a click there always means "go
 // look at this day" — timeGrid's own slot clicks (picking an hour within a
@@ -17,17 +18,14 @@ type Props = {
   selectedTag: string;
 };
 
-// The home page's own wiring of `@dreamer/calendar-view`'s generic Calendar —
-// this app's checklist data mapped to its `CalendarEvent` shape, this app's
-// own translated Day/Week/Month/Year switcher as the toolbar's `rightSlot`,
-// and navigation to a clicked task's detail page.
+// The home page's own layer on top of `CalendarEventsView` (unscoped, every template) — this
+// app's own translated Day/Week/Month/Year switcher as the toolbar's `rightSlot`, and navigation
+// to a clicked task's detail page. `ChecklistTemplateCalendar` (detail-task-page) is the other
+// consumer, scoped to one template instead.
 const HomeCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
   const navigate = useNavigate();
   const intl = useIntl();
   const [mode, setMode] = React.useState<CalendarViewMode>('month');
-  const [range, setRange] = React.useState<CalendarRange | null>(null);
-
-  const events = useCalendarEvents(range, selectedTag);
 
   const handleDateClick = () => {
     if (DATE_ONLY_VIEWS.includes(mode)) {
@@ -43,12 +41,11 @@ const HomeCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
   };
 
   return (
-    <Calendar
+    <CalendarEventsView
       view={mode}
       currentDate={currentDate}
-      events={events}
       onDateChange={onDateChange}
-      onRangeChange={setRange}
+      selectedTag={selectedTag}
       onDateClick={handleDateClick}
       onEventClick={handleEventClick}
       todayLabel={intl.formatMessage({ id: 'home-calendar.today', defaultMessage: 'Today' })}

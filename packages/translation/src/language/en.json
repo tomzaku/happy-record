@@ -92,7 +92,6 @@
   "ChecklistToday.shortcuts-navigate": "Navigate",
   "ChecklistToday.shortcuts-open": "Open",
   "ChecklistToday.shortcuts-toggle": "Toggle done",
-  "ChecklistToday.summary": "{{done}} of {{total}} done · {{phrase}}",
   "ChecklistToday.to-go-count": "{{count}} to go",
   "ChecklistToday.today": "Today",
   "CreateChecklist.label-create-checklist-input-placeholder": "Write your task here",
@@ -288,7 +287,6 @@
   "label-time.label": "Time",
   "label-time.minute": "Minute",
   "mini-month-calendar.today": "Today",
-  "month-view.more": "+{{count}} more",
   "month-view.today": "Today",
   "music-controller-mobile.label-music-title": "Music",
   "music-controller-mobile.label-mute-all": "Mute all",
@@ -321,10 +319,5 @@
   "setting-page.label-dark": "Dark",
   "setting-page.label-light": "Light",
   "setting-page.label-theme": "Theme",
-  "setting-page.title": "Setting",
-  "week-view.no-tasks": "No tasks",
-  "week-view.today": "Today",
-  "year-view.legend-less": "Less",
-  "year-view.legend-more": "More",
-  "year-view.this-year": "This year"
+  "setting-page.title": "Setting"
 }

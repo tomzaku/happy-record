@@ -35,7 +35,7 @@ type Props = {
   onDaySelect?: (date: Date) => void;
 };
 
-// Same 0/1/3 scale as record-page-ui's YearView, just fed by record
+// A 0/1/3 heatmap scale (not scheduled / scheduled-but-empty / recorded), fed by record
 // presence instead of Checklist.completedAt — a field group has no
 // completedAt of its own (see ChecklistFieldGroupHistory's own doc
 // comment), so "done" here means at least one record among this group's
@@ -47,8 +47,8 @@ const completionLevel = (scheduled: boolean, recorded: boolean): 0 | 1 | 3 =>
 // same three modes HistorySection gives the whole task, one level down (see
 // ChecklistTemplateCalendar). Fetches its own range via getChecklistRecords
 // since a field group's completion signal (a submission that day) is a
-// different shape than a Checklist's own completedAt, so it can't just
-// reuse WeekView/MonthView/YearView's own data as-is — but the mode itself
+// different shape than a Checklist's own completedAt, so it can't just reuse
+// CalendarEventsView/useCalendarEvents's own data as-is — but the mode itself
 // (which grid to show) is controlled by HistorySection now, not owned here.
 const FieldGroupCalendar = ({ checklistTemplateId, fieldIds, repeat, mode, onDaySelect }: Props) => {
   const intl = useIntl();

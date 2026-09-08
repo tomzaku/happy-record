@@ -357,13 +357,13 @@ const DetailTaskPageDesktop = () => {
                   onDaySelect={handleCalendarDaySelect}
                 />
               )}
-              {isTemplateReady && (
-                <ChecklistTemplateCalendar
-                  checklistTemplateId={id}
-                  fields={fields}
-                  onDaySelect={handleCalendarDaySelect}
-                />
-              )}
+              {/* Shows immediately rather than waiting on `isTemplateReady` — nothing it
+                  renders actually needs the template itself (`id` is the only thing this
+                  page can't render without at all, guarded above), and HistoryList/
+                  CalendarEventsView each already show their own loading state for the one
+                  thing they do wait on: their own scoped fetch. */}
+              <ChecklistTemplateCalendar checklistTemplateId={id} fields={fields} onDaySelect={handleCalendarDaySelect} />
+
             </div>
             <div className={styles.side}>
               {!isTemplateReady ? (

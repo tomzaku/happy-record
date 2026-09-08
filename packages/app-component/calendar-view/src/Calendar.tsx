@@ -112,7 +112,16 @@ const Calendar = ({
         }
       >
         {!arg.event.allDay && arg.timeText && <span className={styles.eventTime}>{arg.timeText}</span>}
-        <span className={styles.eventTitle}>{arg.event.title}</span>
+        {/* Set directly rather than relying only on `.eventBlockDone .eventTitle` in the
+            stylesheet — this event's title text also carries the inline `color` above, and an
+            inline style here is what reliably wins over that regardless of module-nesting
+            specificity. */}
+        <span
+          className={styles.eventTitle}
+          style={source.done ? { textDecoration: 'line-through' } : undefined}
+        >
+          {arg.event.title}
+        </span>
       </div>
     );
   };
@@ -153,7 +162,11 @@ const Calendar = ({
         start: event.start,
         end: event.end,
         allDay: event.allDay,
-        extendedProps: { source: event },
+        // `done` is duplicated here, flat, alongside `source` — FullCalendar's
+        // own `eventOrder` field-spec strings only look up plain top-level
+        // properties (see `buildSegCompareObj`/`compareByFieldSpec`), so a
+        // nested `source.done` isn't sortable by name the way this flat copy is.
+        extendedProps: { source: event, done: event.done },
       })),
     [events],
   );
@@ -210,6 +223,12 @@ const Calendar = ({
           fixedWeekCount={false}
           height={view === 'week' || view === 'day' ? 700 : 'auto'}
           dayMaxEvents={3}
+          // Completed tasks sink to the bottom of each day's event list —
+          // `done` first, everything else falling back to FullCalendar's own
+          // default ordering (its default `eventOrder` value, minus `start`
+          // since these are otherwise unsorted all-day chips as often as
+          // timed events).
+          eventOrder="done,start,-duration,allDay,title"
           allDaySlot={hasAllDayEvents}
           allDayText=""
           displayEventEnd={false}

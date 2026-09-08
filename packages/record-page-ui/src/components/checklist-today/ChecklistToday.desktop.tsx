@@ -21,7 +21,7 @@ import { useIntl } from '@dreamer/translation';
 import Card from '@moon-ui/card';
 import { format, isToday, subDays, endOfDay } from 'date-fns';
 import AddInlineTask, { AddInlineTaskHandle, PendingInlineTask } from '../AddInlineTask';
-import { getLunarDate, getLunarPhraseId } from '../../utils/lunarDate';
+import { getLunarDate } from '../../utils/lunarDate';
 import EmptyChecklistIllustration from './EmptyChecklistIllustration';
 import DeleteTaskModal from './DeleteTaskModal';
 
@@ -103,29 +103,6 @@ const ChecklistTodayDesktop = ({
   );
 
   const lunar = React.useMemo(() => getLunarDate(date), [date]);
-  const lunarPhrase = getLunarPhraseId(lunar.day);
-
-  // Depends only on `date`/`lunar` — never on the templates/checklists fetch — so it renders
-  // the same on every branch below (loading, empty, and the full list) instead of waiting on
-  // the network like the rest of the page does.
-  const header = (
-    <div className={styles.header}>
-      <Typography.Title level={2} className={styles.dateTitle} noMargin>
-        {isToday(date)
-          ? intl.formatMessage({ id: 'ChecklistToday.today', defaultMessage: 'Today' })
-          : format(date, 'EEEE')}
-      </Typography.Title>
-      <Typography.Text className={styles.dateSubtitle}>
-        {intl.formatMessage(
-          {
-            id: 'ChecklistToday.date-subtitle',
-            defaultMessage: '{{solarDate}} · Lunar day {{day}}, mo {{month}}',
-          },
-          { solarDate: format(date, 'MMMM d'), day: lunar.day, month: lunar.month },
-        )}
-      </Typography.Text>
-    </div>
-  );
 
   // Grouped by completion, not schedule time — a field group's own `repeat`
   // does carry a `byhour`/`byminute` (see fieldGroupRepeat.ts), but nothing in
@@ -136,7 +113,8 @@ const ChecklistTodayDesktop = ({
   // Computed above the loading/empty early returns (rather than alongside
   // the render below, where they used to live) purely so the keyboard-nav
   // hooks right after can depend on `orderedIds` without breaking the rules
-  // of hooks.
+  // of hooks, and so `header` below (shown on every branch) can already show
+  // real progress instead of waiting for the full-list branch.
   const pendingIds = React.useMemo(
     () => checklistByGivingDateIds.filter(id => !checklist[id]?.completedAt),
     [checklistByGivingDateIds, checklist],
@@ -146,6 +124,52 @@ const ChecklistTodayDesktop = ({
     [checklistByGivingDateIds, checklist],
   );
   const orderedIds = React.useMemo(() => [...pendingIds, ...completedIds], [pendingIds, completedIds]);
+
+  const completedPercent =
+    checklistByGivingDateIds.length > 0
+      ? Math.round((completedIds.length / checklistByGivingDateIds.length) * 100)
+      : 0;
+
+  // Depends only on `date`/`lunar`/completion counts — never on the templates/checklists fetch
+  // itself — so it renders the same on every branch below (loading, empty, and the full list)
+  // instead of waiting on the network like the rest of the page does.
+  const header = (
+    <div className={styles.header}>
+      <div className={styles.headerLeft}>
+        <Typography.Title level={2} className={styles.dateTitle} noMargin>
+          {isToday(date)
+            ? intl.formatMessage({ id: 'ChecklistToday.today', defaultMessage: 'Today' })
+            : format(date, 'EEEE')}
+        </Typography.Title>
+        <Typography.Text className={styles.dateSubtitle}>
+          {intl.formatMessage(
+            {
+              id: 'ChecklistToday.date-subtitle',
+              defaultMessage: '{{solarDate}} · Lunar day {{day}}, mo {{month}}',
+            },
+            { solarDate: format(date, 'MMMM d'), day: lunar.day, month: lunar.month },
+          )}
+        </Typography.Text>
+      </div>
+      <div className={styles.progressBlock}>
+        <Typography.Text className={styles.progressLabel}>
+          {intl.formatMessage(
+            { id: 'ChecklistToday.done-count', defaultMessage: '{{count}} done' },
+            { count: completedIds.length },
+          )}
+        </Typography.Text>
+        <div className={styles.progressTrack}>
+          <div className={styles.progressFill} style={{ width: `${completedPercent}%` }} />
+        </div>
+        <Typography.Text className={styles.progressLabel}>
+          {intl.formatMessage(
+            { id: 'ChecklistToday.to-go-count', defaultMessage: '{{count}} to go' },
+            { count: pendingIds.length },
+          )}
+        </Typography.Text>
+      </div>
+    </div>
+  );
 
   // Vim-style list navigation: j/k to move the focused row, x to toggle it
   // done, o/Enter to open it, a to jump into "Add a new task...". Ignored
@@ -421,11 +445,6 @@ const ChecklistTodayDesktop = ({
     );
   }
 
-  const completedPercent =
-    checklistByGivingDateIds.length > 0
-      ? Math.round((completedIds.length / checklistByGivingDateIds.length) * 100)
-      : 0;
-
   // Plain, unanimated — deliberately not a `motion.div` inside the `AnimatePresence` below. This
   // placeholder's whole point is to bridge a gap that's normally imperceptibly short (the real
   // optimistic checklist row typically lands within the very next render); giving it its own
@@ -612,39 +631,6 @@ const ChecklistTodayDesktop = ({
   return (
     <div className={styles.container}>
       {header}
-
-      <div className={styles.summaryRow}>
-        <Typography.Text className={styles.summaryText}>
-          {intl.formatMessage(
-            {
-              id: 'ChecklistToday.summary',
-              defaultMessage: '{{done}} of {{total}} done · {{phrase}}',
-            },
-            {
-              done: completedIds.length,
-              total: checklistByGivingDateIds.length,
-              phrase: intl.formatMessage(lunarPhrase),
-            },
-          )}
-        </Typography.Text>
-        <div className={styles.progressBlock}>
-          <Typography.Text className={styles.progressLabel}>
-            {intl.formatMessage(
-              { id: 'ChecklistToday.done-count', defaultMessage: '{{count}} done' },
-              { count: completedIds.length },
-            )}
-          </Typography.Text>
-          <div className={styles.progressTrack}>
-            <div className={styles.progressFill} style={{ width: `${completedPercent}%` }} />
-          </div>
-          <Typography.Text className={styles.progressLabel}>
-            {intl.formatMessage(
-              { id: 'ChecklistToday.to-go-count', defaultMessage: '{{count}} to go' },
-              { count: pendingIds.length },
-            )}
-          </Typography.Text>
-        </div>
-      </div>
 
       <Card className={styles.sectionCard}>
         {(pendingIds.length > 0 || pendingTasks.length > 0) && (

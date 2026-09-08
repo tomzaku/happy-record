@@ -101,13 +101,12 @@
   margin-right: $spacing-sm;
 }
 
-// The grid/heatmap views need a fixed height to lay out against (see
-// WeekView/MonthView/YearView's own `height: 100%` container) — the list
-// has no such requirement, so it gets a cap instead of a fixed height:
-// short history stays short, and only a long one scrolls.
+// CalendarEventsView (FullCalendar underneath) sizes itself — a fixed week/day height with its
+// own internal scroll, 'auto' for month/year — same as the home page's own calendarViewCard, so
+// this needs no height/overflow of its own; the list body below is the one that caps and scrolls,
+// since a long list has no such self-sizing.
 .bodyCalendar {
-  height: 520px;
-  overflow: hidden;
+  width: 100%;
 }
 
 .bodyList {
