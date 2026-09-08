@@ -41,6 +41,32 @@ Deno.test('saveTemplate: does not log when the row already existed (the edit fal
   assertEquals(calls.checklist_logs ?? 0, 0);
 });
 
+Deno.test('saveTemplate: seeds the checklist row in the same call when one is given (a one-off task\'s own creation flow)', async () => {
+  const { db, calls } = countingDb({
+    checklist_templates: [{ data: null, error: null }, { data: null, error: null }],
+    schedules: [{ data: null, error: null }],
+    checklists: [{ data: null, error: null }],
+    checklist_logs: [{ data: null, error: null }],
+  });
+  await saveTemplate(
+    { db, userId: 'u1' } as never,
+    { id: 't1' },
+    undefined,
+    { id: 'c1', checklist_template_id: 't1', title: 'Gym', started_at: '2026-09-08T00:00:00.000Z' },
+  );
+  assertEquals(calls.checklists, 1);
+});
+
+Deno.test('saveTemplate: never touches checklists when no checklistRow is given (the recurring/edit path)', async () => {
+  const { db, calls } = countingDb({
+    checklist_templates: [{ data: null, error: null }, { data: null, error: null }],
+    schedules: [{ data: null, error: null }],
+    checklist_logs: [{ data: null, error: null }],
+  });
+  await saveTemplate({ db, userId: 'u1' } as never, { id: 't1' }, undefined);
+  assertEquals(calls.checklists ?? 0, 0);
+});
+
 Deno.test('deleteTemplate: logs a delete for an existing own row', async () => {
   const { db, calls } = countingDb({
     checklist_templates: [{ data: { id: 't1', user_id: 'u1' }, error: null }, { data: null, error: null }],

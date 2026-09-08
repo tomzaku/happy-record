@@ -1,4 +1,5 @@
-import { useChecklist, useChecklistTemplates, getClientTimezone } from '@dreamer/global';
+import { v4 as uuidv4 } from 'uuid';
+import { useChecklist, useChecklistTemplates, getClientTimezone, type Checklist } from '@dreamer/global';
 import { calculateRepeat } from './calculateRepeat';
 import { FormState } from './CoreChecklistForm';
 
@@ -75,38 +76,58 @@ export const createTask = async (
         recurring: false,
       };
 
-  const { id, saved } = addChecklistTemplate({
-    title: checklistText,
-    repeat,
-    avatar: {
-      type: 'icon',
-      name: selectedIcon,
-      color: selectedColor,
-    },
-    records: selectedRecords || [], // Default empty array since RecordTaskSetting is commented out
-    fieldGroups: fieldGroups || [], // Default empty array since RecordTaskSetting is commented out
-    tags,
-  });
+  // A forever/one-off task's single Checklist instance is seeded in the *same* `POST
+  // /checklist-templates` request as the template itself, not a separate follow-up call — see
+  // useChecklistTemplateMutations.ts's `addChecklistTemplate` `seedChecklist` param and the edge
+  // function's own comment. That means this id has to be picked up front (normally
+  // addChecklistTemplate mints its own), so both the network payload and the local `addChecklist`
+  // mirror call below agree on it.
+  const templateId = uuidv4();
+  const checklistSeed: Checklist | undefined = isRecurring
+    ? undefined
+    : {
+        id: uuidv4(),
+        title: checklistText,
+        checklistTemplateId: templateId,
+        startedAt: effectiveStartedAt,
+        // `noEndDate` is a real three-way signal, not a plain boolean default: `false` (a caller
+        // that offers the choice and defaults it to "Single day," e.g. AddInlineTask) means this
+        // task runs for exactly 1 day from its own start — whatever day that is, not necessarily
+        // today (see AddInlineTask's own `date` prop); `undefined` (every caller that doesn't offer
+        // this choice yet — CreateChecklistForm, create-task-modal) keeps the old behavior of no
+        // defined end at all, same as `true` (explicitly "no end date").
+        durationDays: noEndDate === false ? 1 : undefined,
+        updatedAt: new Date().toISOString(),
+      };
 
-  // Forever task → also create a one-off Checklist row. `checklists.checklist_template_id` is a
-  // real FK into `checklist_templates` — firing this immediately (id in hand, but the template's
-  // own POST above still in flight) races that insert and can 500 with a foreign-key violation
-  // if this one lands first. `saved` is exactly the guard useJoinChallenge.tsx's own comment
-  // describes for this same race.
-  if (!isRecurring) {
-    await saved;
-    addChecklist({
+  // addChecklistTemplate's own optimistic write (into the template query cache) happens
+  // synchronously within this call, same as always — no `await saved` needed here any more (the
+  // FK-ordering race that used to require it is now avoided server-side, sequential awaits inside
+  // one request — see the edge function's own comment) or anywhere below, since a quiet write's
+  // own promise never actually surfaces an error to catch either way.
+  const { id } = addChecklistTemplate(
+    {
+      id: templateId,
       title: checklistText,
-      checklistTemplateId: id,
-      startedAt: effectiveStartedAt,
-      // `noEndDate` is a real three-way signal, not a plain boolean default: `false` (a caller
-      // that offers the choice and defaults it to "Single day," e.g. AddInlineTask) means this
-      // task runs for exactly 1 day from its own start — whatever day that is, not necessarily
-      // today (see AddInlineTask's own `date` prop); `undefined` (every caller that doesn't offer
-      // this choice yet — CreateChecklistForm, create-task-modal) keeps the old behavior of no
-      // defined end at all, same as `true` (explicitly "no end date").
-      durationDays: noEndDate === false ? 1 : undefined,
-    });
+      repeat,
+      avatar: {
+        type: 'icon',
+        name: selectedIcon,
+        color: selectedColor,
+      },
+      records: selectedRecords || [], // Default empty array since RecordTaskSetting is commented out
+      fieldGroups: fieldGroups || [], // Default empty array since RecordTaskSetting is commented out
+      tags,
+    },
+    true, // keepId — the checklist seed above already committed to this exact template id
+    checklistSeed,
+  );
+
+  // The network write already went out above (bundled into the template's own request) — this is
+  // just mirroring the same row into this store's local optimistic state, same as
+  // addChecklistTemplate's own write did for the template a few lines up.
+  if (checklistSeed) {
+    addChecklist(checklistSeed, { skipNetwork: true });
   }
 
   return { id };

@@ -14,6 +14,7 @@ import {
   fetchTemplatesByIds,
   patchTemplate,
   removeTemplate,
+  seedChecklist,
   upsertTemplate,
 } from '../repository/checklist-templates-repository.ts';
 import { repeatOwnerOf, resolveTemplate } from './checklist-templates-access-service.ts';
@@ -56,7 +57,12 @@ function scheduleIdsOf(repeatsByTemplate: Record<string, Record<string, unknown>
   return Object.values(repeatsByTemplate).flat().map(row => row.id as string);
 }
 
-export async function saveTemplate({ db, userId }: Ctx, row: Record<string, unknown>, repeat: unknown): Promise<void> {
+export async function saveTemplate(
+  { db, userId }: Ctx,
+  row: Record<string, unknown>,
+  repeat: unknown,
+  checklistRow?: Record<string, unknown>,
+): Promise<void> {
   // Read before writing — this route is a full-row upsert reused for both a genuine create and
   // `updateChecklistTemplate`'s own "no local copy yet" fallback (see useChecklistTemplates.tsx),
   // so "this route was hit" isn't a reliable "create" signal on its own; only a row that didn't
@@ -64,8 +70,18 @@ export async function saveTemplate({ db, userId }: Ctx, row: Record<string, unkn
   const existing = await fetchTemplateRow(db, row.id as string);
   await upsertTemplate(db, userId, row);
   // After the template row exists — schedules.checklist_template_id is a real FK, so the parent has
-  // to be there first.
+  // to be there first. Same reasoning for `checklistRow` below (checklists.checklist_template_id
+  // is a real FK too) — sequential awaits within this one request already guarantee the ordering
+  // that createTaskUtil.ts used to need a whole second client round-trip (`await saved`, see its
+  // own comment) to get right.
   await saveRepeat(db, repeat, { userId, checklistTemplateId: row.id as string });
+  // Optional — only a one-off task's own creation flow sends this (see createTaskUtil.ts), seeding
+  // its single Checklist instance in the same request instead of a separate `POST /checklists`
+  // afterward. `checklistRow` is already fully shaped/validated by the handler (fromChecklist), so
+  // this is just the write, same as `seedChecklist`'s own repository-layer role.
+  if (checklistRow) {
+    await seedChecklist(db, userId, checklistRow);
+  }
   if (!existing) {
     await recordChecklistLog(db, userId, { checklistTemplateId: row.id as string, action: 'create' });
   }

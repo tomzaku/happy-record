@@ -424,6 +424,49 @@ describe('deleteOccurrence / restoreOccurrence', () => {
     await waitFor(() => expect(detail.current.template?.repeat?.exceptionDates).toEqual(['2024-02-05']));
   });
 
+  // Regression: the home list (ChecklistToday.desktop.tsx's own row-level delete) reads
+  // `checklistTemplate` off the *bulk* "all mine" query, not the by-id one detail-task-page uses
+  // — deleteOccurrence used to only invalidate the latter, so "This event" appeared to do nothing
+  // on the home list until a full page reload re-fetched "all mine" fresh.
+  it("deleteOccurrence also invalidates the bulk 'all mine' query, so the home list sees exceptionDates without a reload", async () => {
+    mockFetchChecklistTemplates.mockResolvedValueOnce({
+      templates: [{
+        ...baseTemplate('template-exception-bulk-1'),
+        createdAt: 'now',
+        updatedAt: '2024-02-01T00:00:00.000Z',
+        repeat: { byminute: '0', byhour: '8', byday: 'MO', startedAt: '2024-01-01T00:00:00.000Z' },
+      }],
+    });
+    const { result } = renderHook(() => useChecklistTemplates(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.checklistTemplate['template-exception-bulk-1']?.repeat?.byday).toBe('MO'));
+
+    mockFetchChecklistTemplates.mockResolvedValueOnce({
+      templates: [{
+        ...baseTemplate('template-exception-bulk-1'),
+        createdAt: 'now',
+        updatedAt: '2024-02-02T00:00:00.000Z',
+        repeat: {
+          byminute: '0',
+          byhour: '8',
+          byday: 'MO',
+          startedAt: '2024-01-01T00:00:00.000Z',
+          exceptionDates: ['2024-02-05'],
+        },
+      }],
+    });
+
+    await act(async () => {
+      await result.current.deleteOccurrence('template-exception-bulk-1', '2024-02-05');
+    });
+
+    await waitFor(() =>
+      expect(result.current.checklistTemplate['template-exception-bulk-1']?.repeat?.exceptionDates).toEqual([
+        '2024-02-05',
+      ]),
+    );
+  });
+
   it('restoreOccurrence calls the delete-exception API and invalidates the same query', async () => {
     mockFetchChecklistTemplateById.mockResolvedValue({
       templates: [{ ...baseTemplate('template-exception-2'), createdAt: 'now', updatedAt: 'now' }],

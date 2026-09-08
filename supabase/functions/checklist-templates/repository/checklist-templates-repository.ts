@@ -52,6 +52,19 @@ export async function upsertTemplate(db: SupabaseClient, userId: string, row: Re
   if (error) throw new Error(error.message);
 }
 
+/** A direct write into `checklists` (a peer resource's own table), not a call into that
+ * resource's own service/repository — same "reach the peer table directly, shape the row with
+ * *its* dto" shape `checklist-records-repository.ts` already uses for its own `notes` writes (see
+ * that file's own header). Only ever called right after `upsertTemplate` above, in the same
+ * request, for `saveTemplate`'s own "seed this one-off task's first (and only) instance right
+ * alongside its template" case — see that function's own comment on why this collapses what used
+ * to be two sequential client round-trips (`createTaskUtil.ts`'s own `addChecklistTemplate` then
+ * `addChecklist`, racing `checklists.checklist_template_id`'s FK) into one. */
+export async function seedChecklist(db: SupabaseClient, userId: string, row: Record<string, unknown>): Promise<void> {
+  const { error } = await db.from('checklists').upsert({ user_id: userId, ...row });
+  if (error) throw new Error(error.message);
+}
+
 /** Owner-only — a caller who doesn't own `id` matches nothing, a silent no-op (see
  * update-checklist-template-handler.ts's own doc comment on why `repeat` is handled separately). */
 export async function patchTemplate(

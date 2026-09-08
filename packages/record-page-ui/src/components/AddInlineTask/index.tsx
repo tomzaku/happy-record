@@ -24,10 +24,9 @@ interface AddInlineTaskProps {
   onTaskCreated?: () => void;
   // Fired synchronously right before the create request goes out, and again
   // once it settles (success or failure) — lets a parent render an
-  // optimistic "Creating…" row in its own list for the gap between "user hit
-  // submit" and "the real Checklist row exists in the store" (createTaskUtil
-  // has to await the template's own POST before it can create the checklist
-  // instance, to avoid racing checklist_template_id's FK — see its comment).
+  // optimistic "Creating…" row in its own list for the gap until the real
+  // template (and, for a one-off task, its Checklist row — seeded in the
+  // same request now, see createTaskUtil.ts's own comment) lands locally.
   onTaskCreateStart?: (task: PendingInlineTask) => void;
   onTaskCreateEnd?: (id: string) => void;
   className?: string;

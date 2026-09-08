@@ -385,7 +385,15 @@ export const useChecklist = () => {
   );
 
   const addChecklist = React.useCallback(
-    (checklistToAdd: Omit<Checklist, 'id' | 'updatedAt'> & { id?: string }) => {
+    (
+      checklistToAdd: Omit<Checklist, 'id' | 'updatedAt'> & { id?: string },
+      // Set by createTaskUtil.ts's one-off task flow: the checklist row already went out as part
+      // of the *template's* own `POST /checklist-templates` request (see
+      // useChecklistTemplateMutations.ts's `addChecklistTemplate` `seedChecklist` param) — this
+      // call is only here to mirror that same row into this store's local optimistic state, not
+      // to fire a second, redundant `POST /checklists` for a row the server already has.
+      opts: { skipNetwork?: boolean } = {},
+    ) => {
       // Callers that already know the natural (checklistTemplateId, day) key
       // — detail-task-page's "create today's instance if one doesn't exist
       // yet" effect — pass `checklistInstanceId(...)` explicitly so a
@@ -403,7 +411,7 @@ export const useChecklist = () => {
         ...prev,
         [id]: newChecklist,
       }));
-      saveChecklist(newChecklist);
+      if (!opts.skipNetwork) saveChecklist(newChecklist);
       return newChecklist;
     },
     [checklist, setChecklist],

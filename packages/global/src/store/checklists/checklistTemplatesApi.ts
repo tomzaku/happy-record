@@ -4,6 +4,7 @@
 
 import { request } from '../../lib/api';
 import type { ChecklistTemplate } from './checklistTemplateTypes';
+import type { Checklist } from './useChecklists';
 
 export function fetchChecklistTemplates(): Promise<{ templates: ChecklistTemplate[] } | null> {
   return request.get('/checklist-templates', { quiet: true });
@@ -20,8 +21,17 @@ export function fetchChecklistTemplateById(id: string): Promise<{ templates: Che
   return request.get(`/checklist-templates/${encodeURIComponent(id)}`, { quiet: true });
 }
 
-export function saveChecklistTemplate(template: ChecklistTemplate): Promise<{ ok: true } | null> {
-  return request.post('/checklist-templates', { template }, { quiet: true });
+/**
+ * `checklist` is optional — only a one-off task's own creation flow (createTaskUtil.ts) sends
+ * one, seeding that task's single Checklist instance in this same request rather than a separate
+ * `POST /checklists` afterward (which used to have to `await` this one landing first, to avoid
+ * racing `checklists.checklist_template_id`'s own FK — see the edge function's own comment).
+ */
+export function saveChecklistTemplate(
+  template: ChecklistTemplate,
+  checklist?: Checklist,
+): Promise<{ ok: true } | null> {
+  return request.post('/checklist-templates', { template, ...(checklist ? { checklist } : {}) }, { quiet: true });
 }
 
 /**

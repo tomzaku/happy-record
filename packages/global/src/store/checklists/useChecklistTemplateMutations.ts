@@ -11,6 +11,7 @@ import {
 } from './checklistTemplatesApi';
 import { deleteOccurrence as deleteOccurrenceApi, restoreOccurrence as restoreOccurrenceApi } from './scheduleExceptionsApi';
 import type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTemplateTypes';
+import type { Checklist } from './useChecklists';
 
 type RollbackContext = {
   previousFromAll: ChecklistTemplate | undefined;
@@ -19,6 +20,9 @@ type RollbackContext = {
 type SaveTemplateArgs = {
   template: ChecklistTemplate;
   wire: { kind: 'create' } | { kind: 'patch'; changes: Record<string, unknown> } | { kind: 'none' };
+  // Only ever set alongside `wire.kind === 'create'` — see addChecklistTemplate's own `seedChecklist`
+  // param, threaded through to saveChecklistTemplate so the server seeds this in the same request.
+  seedChecklist?: Checklist;
 };
 
 function writeTemplate(queryClient: QueryClient, key: QueryKey, template: ChecklistTemplate | null) {
@@ -71,11 +75,13 @@ export function useChecklistTemplateMutations({
   // Per-entity rollback (see useTags.tsx). Writes both caches — a write here is always the
   // caller's own template, safe to reflect in "all mine" too.
   const saveTemplateMutation = useMutation<{ ok: true }, Error, SaveTemplateArgs, RollbackContext>({
-    mutationFn: async ({ template, wire }) => {
+    mutationFn: async ({ template, wire, seedChecklist }) => {
       if (wire.kind === 'none') return { ok: true };
       const result =
         wire.kind === 'create'
-          ? await saveChecklistTemplate(template)
+          ? seedChecklist
+            ? await saveChecklistTemplate(template, seedChecklist)
+            : await saveChecklistTemplate(template)
           : await patchChecklistTemplate(template.id, wire.changes);
       if (!result) throw new Error('Failed to save checklist template');
       return result;
@@ -125,9 +131,18 @@ export function useChecklistTemplateMutations({
     },
   });
 
+  /** `seedChecklist`, when given, rides along in the *same* `POST /checklist-templates` request
+   * (see checklistTemplatesApi.ts's own `saveChecklistTemplate` and the edge function's own
+   * comment) — only createTaskUtil.ts's one-off task creation flow uses this, to seed that task's
+   * single Checklist instance without a second client round-trip racing this template's own FK.
+   * This function only ever handles the *template*-side optimistic write and network call; the
+   * caller is still responsible for its own local `checklist` store update (see
+   * useChecklists.tsx's `addChecklist`, called with `{ skipNetwork: true }` for this exact case —
+   * the network side already happened here). */
   const addChecklistTemplate = (
     currentChecklistTemplate: Omit<ChecklistTemplate, 'id' | 'createdAt' | 'updatedAt'> & { id?: string },
     keepId = false,
+    seedChecklist?: Checklist,
   ) => {
     const id = keepId && currentChecklistTemplate.id ? currentChecklistTemplate.id : v4();
     const template: ChecklistTemplate = withSyncedRepeat({
@@ -140,7 +155,9 @@ export function useChecklistTemplateMutations({
     // Optimistic — `saved` lets a rare caller (useJoinChallenge.tsx forking a template then
     // inserting a challenge_participants row with a real FK to it) await the write landing before
     // racing a dependent insert. Never rejects, same as every other quiet write here.
-    const saved = saveTemplateMutation.mutateAsync({ template, wire: { kind: 'create' } }).catch(() => null);
+    const saved = saveTemplateMutation
+      .mutateAsync({ template, wire: { kind: 'create' }, seedChecklist })
+      .catch(() => null);
     return { id, saved };
   };
 
@@ -229,15 +246,22 @@ export function useChecklistTemplateMutations({
    * this event" for a single occurrence of a recurring series, via a `schedule_exceptions` row
    * (see scheduleExceptionsApi.ts). Same invalidate-and-let-the-live-query-refetch shape as
    * `updateMyReminder` above, for the same reason: the server is the source of truth for the
-   * resulting `repeat.exceptionDates`, not something worth hand-merging into the optimistic cache. */
+   * resulting `repeat.exceptionDates`, not something worth hand-merging into the optimistic cache.
+   * Unlike `updateMyReminder` (only ever reached from detail-task-page's own by-id query), this is
+   * also reached from the home list's row-level delete (ChecklistToday.desktop.tsx), which reads
+   * `checklistTemplate` off the *bulk* "all mine" query — invalidating only the by-id query left
+   * that list showing the stale, not-yet-excepted schedule until a full page reload re-fetched it
+   * fresh. Both queries need telling. */
   const deleteOccurrence = async (id: string, date: string) => {
     await deleteOccurrenceApi(id, date);
     queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.byId(id, userId) });
+    queryClient.invalidateQueries({ queryKey: allKey });
   };
 
   const restoreOccurrence = async (id: string, date: string) => {
     await restoreOccurrenceApi(id, date);
     queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.byId(id, userId) });
+    queryClient.invalidateQueries({ queryKey: allKey });
   };
 
   return {
