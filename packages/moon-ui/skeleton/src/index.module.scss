@@ -1,5 +1,11 @@
 .skeleton {
   display: inline-block;
+  // An inline-block's default baseline alignment leaves room for a real line's descenders —
+  // fine once real text/an icon sits next to it, but a skeleton is usually the only content on
+  // its line (nothing to set a baseline against), so that reserved space reads as an unwanted
+  // vertical offset against whatever it's sitting next to (an icon centered by its own flex
+  // parent, say).
+  vertical-align: middle;
   flex-shrink: 0;
   border-radius: 6px;
   // A wide gradient panned left-to-right, not a plain pulsing opacity — reads less like "this is
@@ -7,6 +13,20 @@
   background: linear-gradient(90deg, var(--input-background) 25%, var(--surface-secondary) 37%, var(--input-background) 63%);
   background-size: 400% 100%;
   animation: shimmer 1.4s ease infinite;
+}
+
+// A skeleton sitting directly on the page background (no Card wrapper), rather than inside one
+// — see `tone` above. A translucent overlay of the current text color instead of a fixed
+// card/surface tone, so contrast stays right against whatever the page background is, in both
+// light and dark theme, without per-theme tuning.
+.onPage {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--text-color) 8%, transparent) 25%,
+    color-mix(in srgb, var(--text-color) 16%, transparent) 37%,
+    color-mix(in srgb, var(--text-color) 8%, transparent) 63%
+  );
+  background-size: 400% 100%;
 }
 
 @keyframes shimmer {

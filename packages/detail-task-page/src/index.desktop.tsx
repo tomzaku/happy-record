@@ -22,6 +22,9 @@ import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import CardShare from './components/CardShare';
 import AiChecklistGenerate from './components/AiChecklistGenerate';
 import MiniChallengeDashboard from './components/MiniChallengeDashboard';
+import { GenericInfoSkeleton } from './components/DetailTaskSkeleton';
+import ChecklistFieldGroupAddGroup from './components/ChecklistFieldGroupAddGroup';
+import Skeleton from '@moon-ui/skeleton';
 import styles from './index.desktop.module.scss';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button/src/DefaultButton';
@@ -243,9 +246,13 @@ const DetailTaskPageDesktop = () => {
     }
   };
 
-  if (!checklistId || !checklist || !checklistTemplate) {
-    return null;
-  }
+  // `checklistTemplate` and the day's own `checklist` instance fetch independently, on their
+  // own timelines — gating every section on both (the old `return null` behavior) meant e.g.
+  // General Settings sat blank waiting on a checklist instance it never actually reads. Each
+  // section below waits only on the data it actually needs, showing a matching skeleton
+  // otherwise — so the drawer, and whichever of these lands first, show right away.
+  const isTemplateReady = !!checklistTemplate;
+  const isChecklistReady = !!checklistId && !!checklist;
 
   return (
     <div className={styles.desktopContainer}>
@@ -258,8 +265,15 @@ const DetailTaskPageDesktop = () => {
               items={[
                 { label: 'Task', to: '/' },
                 {
-                  icon: { name: checklistTemplate.avatar?.name || 'solar:settings-linear', color: checklistTemplate.avatar?.color },
-                  label: isEditingTitle ? (
+                  icon: isTemplateReady
+                    ? { name: checklistTemplate.avatar?.name || 'solar:settings-linear', color: checklistTemplate.avatar?.color }
+                    // Same generic icon a template with no custom avatar already falls back
+                    // to, just muted — reads as "not decided yet" rather than a second,
+                    // differently-styled placeholder shape.
+                    : { name: 'solar:settings-linear', color: 'var(--text-description-color)' },
+                  label: !isTemplateReady ? (
+                    <Skeleton width={180} height={22} tone="page" />
+                  ) : isEditingTitle ? (
                     <div className={styles.titleEditContainer}>
                       <input
                         type="text"
@@ -293,6 +307,7 @@ const DetailTaskPageDesktop = () => {
               <div className={styles.headerActions}>
                 <Button
                   onClick={() => setIsAiModalVisible(true)}
+                  disabled={!isTemplateReady}
                   className={styles.aiButton}
                 >
                   <Icon icon="solar:magic-stick-3-bold-duotone" width={20} color="#fff" className={styles.aiIcon} />
@@ -311,7 +326,7 @@ const DetailTaskPageDesktop = () => {
               20260905000000_checklist_templates_soft_delete.sql), so this page still resolves
               for a participant instead of just breaking; the owner already navigates away on
               their own delete (handleDeleteTask), so this only ever shows to someone else. */}
-          {!isOwner && checklistTemplate.deletedAt && (
+          {isTemplateReady && !isOwner && checklistTemplate.deletedAt && (
             <div className={styles.deletedBanner}>
               <Icon icon="solar:danger-triangle-bold" width={20} />
               <Typography.Text>
@@ -326,10 +341,12 @@ const DetailTaskPageDesktop = () => {
           {/* Main Content */}
           <div className={styles.mainContent}>
             <div className={styles.main}>
-              {allRecordFieldsLoading ? (
-                <div className={styles.fieldsLoading}>
-                  <Icon width={32} icon="svg-spinners:180-ring" />
-                </div>
+              {!isTemplateReady || !isChecklistReady || allRecordFieldsLoading ? (
+                // Same "Field Groups" row ChecklistFieldGroup itself would render via its own
+                // ChecklistFieldGroupAddGroup once loaded — with no groups known yet, "No groups
+                // created" is exactly what it'll say either way, so there's nothing to fake with
+                // a skeleton here; just the Add button can't actually attach to anything yet.
+                <ChecklistFieldGroupAddGroup fieldGroups={[]} onAddFieldGroup={() => {}} disabled />
               ) : (
                 <ChecklistFieldGroup
                   checklist={checklist}
@@ -340,46 +357,54 @@ const DetailTaskPageDesktop = () => {
                   onDaySelect={handleCalendarDaySelect}
                 />
               )}
-              <ChecklistTemplateCalendar
-                checklistTemplateId={id}
-                fields={fields}
-                onDaySelect={handleCalendarDaySelect}
-              />
+              {isTemplateReady && (
+                <ChecklistTemplateCalendar
+                  checklistTemplateId={id}
+                  fields={fields}
+                  onDaySelect={handleCalendarDaySelect}
+                />
+              )}
             </div>
             <div className={styles.side}>
-              <ChecklistGenericInfo
-                isDefaultCollapsed={false}
-                checklistTemplate={checklistTemplate}
-                onUpdate={isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}}
-                onSplitSchedule={
-                  isOwner
-                    ? (effectiveFrom, newRepeat) => splitChecklistTemplate(checklistTemplate, effectiveFrom, newRepeat)
-                    : undefined
-                }
-                onDelete={isOwner ? handleDeleteTask : undefined}
-                readOnly={!isOwner}
-                onUpdateMyReminder={
-                  !isOwner && challenge ? repeat => updateMyReminder(id, repeat) : undefined
-                }
-              >
-                {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
-              </ChecklistGenericInfo>
+              {!isTemplateReady ? (
+                <GenericInfoSkeleton />
+              ) : (
+                <>
+                  <ChecklistGenericInfo
+                    isDefaultCollapsed={false}
+                    checklistTemplate={checklistTemplate}
+                    onUpdate={isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}}
+                    onSplitSchedule={
+                      isOwner
+                        ? (effectiveFrom, newRepeat) => splitChecklistTemplate(checklistTemplate, effectiveFrom, newRepeat)
+                        : undefined
+                    }
+                    onDelete={isOwner ? handleDeleteTask : undefined}
+                    readOnly={!isOwner}
+                    onUpdateMyReminder={
+                      !isOwner && challenge ? repeat => updateMyReminder(id, repeat) : undefined
+                    }
+                  >
+                    {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
+                  </ChecklistGenericInfo>
 
-              {/* Owner or participant, either way — replaces the plain "View
-                  Dashboard" link this used to be (CardShare's own, or the
-                  one that lived right here for a participant) with an
-                  actual leaderboard preview. index.mobile.tsx renders the
-                  same widget in its own single-column flow. Its own "⋮"
-                  menu is now the one "Leave Challenge" trigger for this
-                  page — see MiniChallengeDashboard's own onLeaveChallenge
-                  doc comment for why the leave-and-navigate-away logic
-                  itself still lives here, not inside that widget. */}
-              {challenge && (
-                <MiniChallengeDashboard
-                  challengeId={challenge.id}
-                  userId={userId}
-                  onLeaveChallenge={() => setLeaveModalVisible(true)}
-                />
+                  {/* Owner or participant, either way — replaces the plain "View
+                      Dashboard" link this used to be (CardShare's own, or the
+                      one that lived right here for a participant) with an
+                      actual leaderboard preview. index.mobile.tsx renders the
+                      same widget in its own single-column flow. Its own "⋮"
+                      menu is now the one "Leave Challenge" trigger for this
+                      page — see MiniChallengeDashboard's own onLeaveChallenge
+                      doc comment for why the leave-and-navigate-away logic
+                      itself still lives here, not inside that widget. */}
+                  {challenge && (
+                    <MiniChallengeDashboard
+                      challengeId={challenge.id}
+                      userId={userId}
+                      onLeaveChallenge={() => setLeaveModalVisible(true)}
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>

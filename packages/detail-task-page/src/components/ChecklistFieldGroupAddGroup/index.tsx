@@ -23,6 +23,10 @@ interface ChecklistFieldGroupAddGroupProps {
   onAddFieldGroup: (newGroup: NewFieldGroup) => void;
   availableFields?: string[];
   onFieldAdded?: (newField: RecordField) => void;
+  /** The checklist/template this would attach a new group to hasn't loaded yet — this row
+   *  itself is still worth showing as-is (it reads the same "No groups created" either way
+   *  until real data says otherwise), just with nothing to actually add a group against yet. */
+  disabled?: boolean;
 }
 
 // Form/AddField are the same two-view drill-down ChecklistFieldGroupMenu's own Select Fields
@@ -52,6 +56,7 @@ const ChecklistFieldGroupAddGroup = ({
   onAddFieldGroup,
   availableFields,
   onFieldAdded,
+  disabled,
 }: ChecklistFieldGroupAddGroupProps) => {
   const intl = useIntl();
   const { getAllRecordFields } = useRecordField();
@@ -148,7 +153,7 @@ const ChecklistFieldGroupAddGroup = ({
           title={intl.formatMessage({ defaultMessage: 'Field Groups', id: 'label-field-groups' })}
           description={getGroupsSummary()}
           rightComponent={
-            <Button onClick={handleModalOpen} className={styles.addButton} type="dash">
+            <Button onClick={handleModalOpen} disabled={disabled} className={styles.addButton} type="dash">
               <Icon width={16} icon="material-symbols:add" />
               {intl.formatMessage({ defaultMessage: 'Add Group', id: 'label-add-group' })}
             </Button>

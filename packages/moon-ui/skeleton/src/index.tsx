@@ -8,6 +8,14 @@ type Props = {
   /** Custom corner radius. Ignored when `circle` is set. */
   radius?: number | string;
   className?: string;
+  /**
+   * Default `'surface'` — the shimmer's two-tone gradient (`--input-background`/
+   * `--surface-secondary`) is tuned to blend into a Card's own background. Pass `'page'` for a
+   * skeleton sitting directly on the page background instead of inside a card — those tokens
+   * are usually a different (often lighter) shade than the page background itself, so the same
+   * gradient reads as a mismatched floating box rather than a blended shimmer there.
+   */
+  tone?: 'surface' | 'page';
 };
 
 /**
@@ -16,9 +24,9 @@ type Props = {
  * once the fetch lands — no layout jump, and no bare spinner that tells you something's loading
  * but nothing about the shape of what's coming.
  */
-const Skeleton = ({ width = '100%', height = 12, circle, radius, className }: Props) => (
+const Skeleton = ({ width = '100%', height = 12, circle, radius, className, tone = 'surface' }: Props) => (
   <span
-    className={[styles.skeleton, className].filter(Boolean).join(' ')}
+    className={[styles.skeleton, tone === 'page' && styles.onPage, className].filter(Boolean).join(' ')}
     style={{ width, height, borderRadius: circle ? '50%' : radius }}
   />
 );
