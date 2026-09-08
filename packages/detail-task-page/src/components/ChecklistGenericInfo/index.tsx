@@ -527,13 +527,10 @@ const ChecklistGenericInfo = ({
     <>
       <SettingsCard>
         <SettingsRow
-          logo={
-            <Icon
-              width={24}
-              icon={checklistTemplate.avatar?.name || 'solar:settings-linear'}
-              color={checklistTemplate.avatar?.color || '#607d8b'}
-            />
-          }
+          // A plain settings icon, not the task's own avatar — that's already shown once, in
+          // the page's own breadcrumb header right above this card; repeating it here just
+          // read as the task's icon changing, not as "this is the settings section."
+          logo={<Icon width={24} icon="solar:settings-linear" />}
           title={
             <Typography.Title level={4} noMargin>
               General Settings
