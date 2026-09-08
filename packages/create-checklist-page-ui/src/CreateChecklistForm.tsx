@@ -24,8 +24,13 @@ const CreateCheclistForm = () => {
     setActiveTab(newTab);
   };
 
-  const onSubmit = (formData: FormState) => {
-    createTask(formData, addChecklistTemplate, addChecklist);
+  const onSubmit = async (formData: FormState) => {
+    // Awaited (not fire-and-forget) purely so the Submit button's own
+    // "Creating…" state (CoreChecklistForm.tsx) has a real frame to show —
+    // `createTask`'s own write is still the usual optimistic, no-retry-queue
+    // one (see CLAUDE.md's "online-first" section), this just delays the
+    // navigate-away by exactly as long as that local write takes to land.
+    await createTask(formData, addChecklistTemplate, addChecklist);
     navigate('/');
   };
 

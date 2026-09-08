@@ -13,7 +13,7 @@ import styles from './index.module.scss';
 // starting here, capped by checklist-logs' own server-side max
 // (`limitFrom(ctx.url, 50, 200)` in checklist-logs-context.ts) — the
 // tighter of the two sources' own caps (checklist-records' is 5000).
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 15;
 const MAX_WINDOW = 200;
 
 // Fallback for a task whose own template failed to load (or was deleted) —

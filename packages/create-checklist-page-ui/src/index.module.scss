@@ -162,6 +162,13 @@
   }
 }
 
+.submitButtonContent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 .deleteButton {
   padding: 10px 20px;
   border: 0;

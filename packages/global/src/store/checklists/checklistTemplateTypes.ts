@@ -87,6 +87,13 @@ export type ChecklistTemplate = {
    * participant still resolves it (see 20260905000000_checklist_templates_soft_delete.sql), just
    * flagged. Absent means not deleted. */
   deletedAt?: string;
+  /** Set only on the local, optimistic copy `addChecklistTemplate` writes at create time — never
+   * sent to or returned by the server, so it's absent on every DTO-mapped (real) row. A consumer
+   * (ChecklistToday's own row) reads this to show a "Creating…" status; it disappears on its own
+   * once the real row lands, since `saveTemplateMutation`'s own `onSuccess` invalidates `allKey`
+   * for a create specifically to force that real fetch — `saveChecklistTemplate`'s POST response
+   * is just `{ ok: true }`, no row to overwrite the optimistic copy with otherwise. */
+  isClient?: boolean;
   updatedAt: string;
 };
 

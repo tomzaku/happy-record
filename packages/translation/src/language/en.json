@@ -98,6 +98,7 @@
   "CreateChecklist.label-create-checklist-input-placeholder": "Write your task here",
   "CreateChecklist.label-delete": "DELETE",
   "CreateChecklist.label-submit": "SUBMIT",
+  "CreateChecklist.label-submitting": "Creating…",
   "Dashboard.empty-week": "Nothing was scheduled this week.",
   "Dashboard.jump-to-current": "Jump to this week",
   "Dashboard.next-week": "Next week",

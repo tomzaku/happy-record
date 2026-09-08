@@ -1,5 +1,6 @@
 import React from 'react';
 import Button from '@moon-ui/button';
+import { Icon } from '@moon-ui/icon/Icon';
 import TextareaAutosize from 'react-textarea-autosize';
 import SchedulingGroup from './SchedulingGroup';
 import { Day } from '@dreamer/tasks-page-common';
@@ -43,7 +44,7 @@ const CoreChecklistForm = ({
   classes,
 }: {
   initialValues: FormState;
-  onSubmit: (form: FormState) => void;
+  onSubmit: (form: FormState) => void | Promise<void>;
   onClickDeleteButton?: () => void;
   classes?: {
     container?: string;
@@ -58,6 +59,10 @@ const CoreChecklistForm = ({
   // button has no native form to dedupe the submit event for it — can't
   // fire `onSubmit` twice before the first click's own render lands.
   const isSubmittingRef = React.useRef(false);
+  // Drives the Submit button's own "Creating…" state below — a caller whose
+  // `onSubmit` navigates away right after (CreateChecklistForm.tsx) now
+  // awaits it first specifically so this has a real frame to show on.
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const {
     checklistText,
     weeklyHobbies,
@@ -165,23 +170,40 @@ const CoreChecklistForm = ({
           )}
           <Button
             type="primary"
+            disabled={isSubmitting}
             className={cx(styles.submitButton, classes?.submitButton)}
-            onClick={() => {
+            onClick={async () => {
               if (isSubmittingRef.current) return;
               isSubmittingRef.current = true;
+              setIsSubmitting(true);
               const validGroups = fieldGroups.filter(
                 group => group.fields.length > 0,
               );
-              onSubmit({
-                ...form,
-                fieldGroups: validGroups,
-              });
+              try {
+                await onSubmit({
+                  ...form,
+                  fieldGroups: validGroups,
+                });
+              } finally {
+                isSubmittingRef.current = false;
+                setIsSubmitting(false);
+              }
             }}
           >
-            {intl.formatMessage({
-              id: 'CreateChecklist.label-submit',
-              defaultMessage: 'SUBMIT',
-            })}
+            {isSubmitting ? (
+              <span className={styles.submitButtonContent}>
+                <Icon width={16} icon="svg-spinners:180-ring" />
+                {intl.formatMessage({
+                  id: 'CreateChecklist.label-submitting',
+                  defaultMessage: 'Creating…',
+                })}
+              </span>
+            ) : (
+              intl.formatMessage({
+                id: 'CreateChecklist.label-submit',
+                defaultMessage: 'SUBMIT',
+              })
+            )}
           </Button>
         </div>
       </div>

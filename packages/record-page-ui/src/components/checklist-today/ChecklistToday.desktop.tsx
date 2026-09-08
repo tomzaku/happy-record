@@ -436,6 +436,11 @@ const ChecklistTodayDesktop = ({
       : getScheduledTimeLabel(currentChecklistTemplate);
     const title = currentChecklist?.title || currentChecklistTemplate?.title || '';
     const isEditingTitle = editingTaskId === id;
+    // Set only on the local optimistic copy (addChecklistTemplate) until the real row lands —
+    // see checklistTemplateTypes.ts's own `isClient`. The row already renders (the optimistic
+    // write already made it real enough to show), so this only swaps its checkbox/subtitle for a
+    // "Creating…" status rather than hiding it.
+    const isCreating = Boolean(currentChecklistTemplate?.isClient);
 
     return (
       <div
@@ -444,8 +449,10 @@ const ChecklistTodayDesktop = ({
           styles.taskRow,
           completed && styles.taskRowDone,
           id === focusedTaskId && styles.taskRowFocused,
+          isCreating && styles.taskRowPending,
         )}
         onClick={() => {
+          if (isCreating) return;
           setFocusedTaskId(id);
           navigate(
             `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
@@ -462,20 +469,24 @@ const ChecklistTodayDesktop = ({
           />
         )}
         <div onClick={e => e.stopPropagation()} className={styles.rowCheckbox}>
-          <Checkbox
-            defaultChecked={completed}
-            className={styles.checkbox}
-            style={{ accentColor: color }}
-            onChange={event => {
-              event.stopPropagation();
-              updateChecklist({
-                ...currentChecklist,
-                completedAt: event.target.checked
-                  ? new Date().toISOString()
-                  : undefined,
-              });
-            }}
-          />
+          {isCreating ? (
+            <Icon width={20} icon="svg-spinners:180-ring" />
+          ) : (
+            <Checkbox
+              defaultChecked={completed}
+              className={styles.checkbox}
+              style={{ accentColor: color }}
+              onChange={event => {
+                event.stopPropagation();
+                updateChecklist({
+                  ...currentChecklist,
+                  completedAt: event.target.checked
+                    ? new Date().toISOString()
+                    : undefined,
+                });
+              }}
+            />
+          )}
         </div>
         <Icon
           className={styles.rowIcon}
@@ -548,7 +559,9 @@ const ChecklistTodayDesktop = ({
             )}
           </div>
           <Typography.Text className={styles.rowSubtitle}>
-            {formatTemplateSchedule(currentChecklistTemplate)}
+            {isCreating
+              ? intl.formatMessage({ id: 'ChecklistToday.creating', defaultMessage: 'Creating…' })
+              : formatTemplateSchedule(currentChecklistTemplate)}
           </Typography.Text>
         </div>
         {timeLabel && (

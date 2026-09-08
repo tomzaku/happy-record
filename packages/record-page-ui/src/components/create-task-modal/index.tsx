@@ -34,8 +34,11 @@ const CreateTaskModal = ({
     setActiveTab(newTab);
   };
 
-  const onSubmit = (formData: FormState) => {
-    createTask(formData, addChecklistTemplate, addChecklist);
+  const onSubmit = async (formData: FormState) => {
+    // Awaited so CoreChecklistForm's own Submit button can show its
+    // "Creating…" state before this dismisses the modal — see
+    // CreateChecklistForm.tsx's own onSubmit for the same reasoning.
+    await createTask(formData, addChecklistTemplate, addChecklist);
     onDismiss();
     onTaskCreated?.();
   };

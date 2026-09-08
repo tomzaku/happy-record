@@ -100,7 +100,6 @@ export function useChecklistTemplateMutations({
       return result;
     },
     onMutate: async ({ template }) => {
-      markTemplateIdKnown(template.id);
       const idKey = checklistTemplatesKeys.byId(template.id, userId);
       await queryClient.cancelQueries({ queryKey: allKey });
       await queryClient.cancelQueries({ queryKey: idKey });
@@ -108,10 +107,37 @@ export function useChecklistTemplateMutations({
       const previousFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
       writeTemplateIfPresent(queryClient, allKey, template.id, template);
       writeTemplate(queryClient, idKey, template);
+      // After the optimistic writes above, not before — this flips the id into
+      // `knownTemplateIds` (useChecklistTemplatesQuery.ts), which can flush a
+      // re-render of its own `byIdResults` per-id queries. Marking it known
+      // earlier left a window where that re-render could land before `idKey`'s
+      // cache actually had data yet, making its query think it had nothing
+      // cached and fire a real `GET /checklist-templates/:id` — immediately
+      // superseded by this same optimistic write, so pure waste.
+      markTemplateIdKnown(template.id);
       return { previousFromAll, previousFromId };
     },
-    onSuccess: (_result, { wire }) => {
-      if (wire.kind === 'create') invalidateChecklistLogs();
+    onSuccess: (_result, { template, wire }) => {
+      if (wire.kind !== 'create') return;
+      invalidateChecklistLogs();
+      // `saveChecklistTemplate`'s own POST response is just `{ ok: true }` — no row to overwrite
+      // the optimistic (`isClient: true`) copy with, so this forces the real "all mine" fetch
+      // instead. `invalidateQueries` refetches any *active* observer immediately, which is
+      // exactly this same query wherever it's mounted — once that lands, the freshly DTO-mapped
+      // row (never carrying `isClient`) replaces the optimistic one in `allTemplates`.
+      queryClient.invalidateQueries({ queryKey: allKey });
+      // Not enough on its own, though: `useChecklistTemplatesQuery.ts`'s `checklistTemplate`
+      // merges `allTemplates` with a separate per-id cache (`byIdResults`, keyed by every id this
+      // session has ever seen via `markTemplateIdKnown`) — and that per-id `useQueries` entry
+      // keeps *subscribing to and returning* whatever's cached at `idKey` even while its own
+      // `enabled` is false (which it is here, since `allTemplates[id]` is already populated by
+      // the optimistic write in `onMutate`), it just never auto-fetches. Nothing else ever
+      // updates that `idKey` cache after `onMutate`'s one-time optimistic `writeTemplate`, so
+      // without this it sits there forever with `isClient: true` and wins the merge over the
+      // freshly-refetched `allTemplates[id]` — the actual reason the "Creating…" status never
+      // cleared. Removing it (rather than trying to keep it in sync) lets the merge fall back to
+      // `allTemplates[id]`, the real value, on its own.
+      queryClient.removeQueries({ queryKey: checklistTemplatesKeys.byId(template.id, userId), exact: true });
     },
     onError: (_error, { template }, context) => {
       const idKey = checklistTemplatesKeys.byId(template.id, userId);
@@ -194,6 +220,8 @@ export function useChecklistTemplateMutations({
       id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      // Cleared the moment the real row lands — see saveTemplateMutation's own `onSuccess` above.
+      isClient: true,
     });
     selectChecklistTemplate(id);
     // Optimistic — `saved` lets a rare caller (useJoinChallenge.tsx forking a template then
