@@ -1,6 +1,6 @@
 import React from 'react';
 
-import ChecklistTodayDesktop from './components/checklist-today/ChecklistToday.desktop';
+import ChecklistDayDesktop from './components/checklist-day/ChecklistDay.desktop';
 import MiniMonthCalendar from './components/mini-month-calendar';
 import RecentHistory from './components/RecentHistory';
 import WeeklyProgressCard from './components/WeeklyProgressCard';
@@ -48,7 +48,7 @@ const TaskListPage = () => {
       <div className={cx(styles.desktopBody, styles.almanacScope)}>
         {/* Right Calendar — rendered first (see the module's own
             `grid-column` placement) so its checklists range-fetch effect
-            claims the visible days before ChecklistTodayDesktop's own
+            claims the visible days before ChecklistDayDesktop's own
             single-day fetch runs; effects fire in JSX order for sibling
             components, and this fetch is the one that should win the race
             for "today" — see useChecklists.tsx's `ensureChecklistsFetched`. */}
@@ -119,7 +119,7 @@ const TaskListPage = () => {
               >
                 <div className={cx(styles.flipper)}>
                   <div className={styles.front} key={key}>
-                    <ChecklistTodayDesktop
+                    <ChecklistDayDesktop
                       date={startDate}
                       selectedTag={selectedTag === 'all' ? undefined : selectedTag}
                     />

@@ -6,7 +6,7 @@ import { useChecklist, useChecklistTemplates, getActiveFieldGroups, Checklist } 
 // A Checklist instance has no time of its own (`startedAt`/`durationDays` just span
 // whole calendar days) — only a template with no field groups carries a single
 // `repeat.byhour`/`byminute` worth plotting on an hourly grid (see
-// ChecklistToday.desktop.tsx's own `getScheduledTimeLabel`). A field-group
+// ChecklistDay.desktop.tsx's own `getScheduledTimeLabel`). A field-group
 // template has no single time to show there either, so it renders here as an
 // all-day event instead of guessing which group's hour should win.
 const DEFAULT_EVENT_MINUTES = 60;

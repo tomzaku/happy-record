@@ -10,7 +10,7 @@ import { useIntl } from '@dreamer/translation';
 import AddInlineTask, { PendingInlineTask } from '../AddInlineTask';
 import EmptyChecklistIllustration from './EmptyChecklistIllustration';
 
-const ChecklistToday = ({
+const ChecklistDay = ({
   date,
   selectedTag,
 }: {
@@ -22,7 +22,7 @@ const ChecklistToday = ({
   const navigate = useNavigate();
   const intl = useIntl();
 
-  // See ChecklistToday.desktop.tsx's comment on the equivalent fix: this
+  // See ChecklistDay.desktop.tsx's comment on the equivalent fix: this
   // used to snapshot into local state from a `useEffect` keyed on
   // `[date, selectedTag, checklistTemplate]`, which never noticed
   // `selectedChecklistTemplates` changing — a template synced in for the
@@ -36,7 +36,7 @@ const ChecklistToday = ({
   );
 
   // Optimistic placeholders for tasks that are still saving — see
-  // AddInlineTask's and ChecklistToday.desktop.tsx's equivalent comments on
+  // AddInlineTask's and ChecklistDay.desktop.tsx's equivalent comments on
   // why creating a task's real Checklist row can't appear until its
   // template's own POST resolves.
   const [pendingTasks, setPendingTasks] = React.useState<PendingInlineTask[]>([]);
@@ -47,7 +47,7 @@ const ChecklistToday = ({
     setPendingTasks(prev => prev.filter(task => task.id !== id));
   }, []);
 
-  // See ChecklistToday.desktop.tsx's equivalent check: empty here means
+  // See ChecklistDay.desktop.tsx's equivalent check: empty here means
   // either "still fetching" or "genuinely nothing" — these flags are what
   // tell the two apart, so a fresh page load doesn't flash "No tasks
   // found!" before the real data has had a chance to arrive.
@@ -70,7 +70,7 @@ const ChecklistToday = ({
   }
 
   // A pending optimistic task still counts as "something to show" even
-  // before any real Checklist row exists — see ChecklistToday.desktop.tsx's
+  // before any real Checklist row exists — see ChecklistDay.desktop.tsx's
   // equivalent check.
   if (checklistByGivingDateIds.length === 0 && pendingTasks.length === 0) {
     return (
@@ -94,7 +94,7 @@ const ChecklistToday = ({
     );
   }
 
-  // Same completion-based grouping as ChecklistToday.desktop.tsx — see that
+  // Same completion-based grouping as ChecklistDay.desktop.tsx — see that
   // file's comment on why schedule *time* isn't a usable grouping key.
   const pendingIds = checklistByGivingDateIds.filter(id => !checklist[id]?.completedAt);
   const completedIds = checklistByGivingDateIds.filter(id => checklist[id]?.completedAt);
@@ -146,7 +146,7 @@ const ChecklistToday = ({
           <Typography.Text className={styles.title}>
             {currentChecklistTemplate?.title}
           </Typography.Text>
-          {/* Same badge as ChecklistToday.desktop.tsx's own — mobile just
+          {/* Same badge as ChecklistDay.desktop.tsx's own — mobile just
               never got it, not a deliberate omission. */}
           {currentChecklistTemplate?.visibility === 'public' && (
             <span className={styles.publicBadge}>
@@ -206,4 +206,4 @@ const ChecklistToday = ({
   );
 };
 
-export default ChecklistToday;
+export default ChecklistDay;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Motion, spring } from 'react-motion';
 
-import ChecklistToday from './components/checklist-today';
+import ChecklistDay from './components/checklist-day';
 import WeeklyCalendar from './components/weekly-calendar';
 import RecentHistory from './components/RecentHistory';
 import WeeklyProgressCard from './components/WeeklyProgressCard';
@@ -114,7 +114,7 @@ const TaskListPage = () => {
                     >
                       <Card className={cx(styles.cardFooter, styles.flipper)}>
                         <div className={styles.front} key={key}>
-                          <ChecklistToday
+                          <ChecklistDay
                             date={startDate}
                             selectedTag={selectedTag === 'all' ? undefined : selectedTag}
                           />

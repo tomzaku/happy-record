@@ -179,7 +179,7 @@ const DetailTaskPageDesktop = () => {
 
   const navigate = useNavigate();
 
-  // Mirrors ChecklistToday.desktop.tsx's own vim-style `h`-to-go-back — this
+  // Mirrors ChecklistDay.desktop.tsx's own vim-style `h`-to-go-back — this
   // page has no j/k/o nav of its own (there's no list to move focus through),
   // just the one binding so leaving via keyboard works symmetrically with
   // entering via `l`/`o`/Enter on the home page.
@@ -217,7 +217,7 @@ const DetailTaskPageDesktop = () => {
 
   // Jumps the page's own currentDay/checklistId (the same pair the effect
   // above creates a checklist for) to whatever day was clicked in the
-  // calendar below — mirrors ChecklistToday.desktop.tsx's own day-click
+  // calendar below — mirrors ChecklistDay.desktop.tsx's own day-click
   // navigation, minus the actual page navigation since we're already here.
   const handleCalendarDaySelect = (date: Date) => {
     const { checklist: checklistsForDay } = getChecklistForDateWithoutFetching({ date });

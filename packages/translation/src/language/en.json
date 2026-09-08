@@ -89,6 +89,7 @@
   "ChecklistToday.public-badge": "Public",
   "ChecklistToday.shortcuts-add": "Add task",
   "ChecklistToday.shortcuts-clear": "Clear focus",
+  "ChecklistToday.shortcuts-delete": "Delete task",
   "ChecklistToday.shortcuts-navigate": "Navigate",
   "ChecklistToday.shortcuts-open": "Open",
   "ChecklistToday.shortcuts-toggle": "Toggle done",

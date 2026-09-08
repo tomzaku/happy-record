@@ -19,7 +19,7 @@ type Props = {
   onCancel: () => void;
 };
 
-// Reached from each task row's own hover-revealed delete icon (ChecklistToday.desktop.tsx) — the
+// Reached from each task row's own hover-revealed delete icon (ChecklistDay.desktop.tsx) — the
 // same warning-badge WarningModal used by EditChecklistForm.tsx's own "delete checklist template"
 // confirm, so both places' delete confirmations look like one system rather than two.
 //

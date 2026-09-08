@@ -160,7 +160,7 @@ export function useChecklistTemplateMutations({
   // invalidate-and-refetch): `withExceptionDate` already computes the exact resulting
   // `exceptionDates`, so there's nothing to wait on a round-trip for. Same per-entity rollback
   // shape as saveTemplateMutation above, on both caches — reached from the home list's own
-  // bulk-query-backed `checklistTemplate` (ChecklistToday.desktop.tsx) as well as
+  // bulk-query-backed `checklistTemplate` (ChecklistDay.desktop.tsx) as well as
   // detail-task-page's by-id one.
   const exceptionMutation = useMutation<
     { ok: true } | null,

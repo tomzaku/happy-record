@@ -34,6 +34,29 @@ export default function WarningModal({
   content,
   title,
 }: Props) {
+  // Enter confirms, Escape cancels — registered on the capture phase so this runs (and
+  // stops the event) before any bubble-phase `window` keydown listener the page underneath
+  // already has (e.g. ChecklistDay.desktop.tsx's own j/k/x/d vim-style shortcuts), which
+  // would otherwise still see Enter and act on whatever row was focused before this modal
+  // opened. Capture order doesn't depend on which listener was attached first the way two
+  // bubble-phase listeners on the same target would — the capture phase always runs first.
+  React.useEffect(() => {
+    if (!visible) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        event.stopPropagation();
+        primaryButtonOnClick();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        secondaryButtonClick();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [visible, primaryButtonOnClick, secondaryButtonClick]);
+
   if (!visible) return null;
   // Same header/body/footer shell as AiChecklistGenerate/CardShare's modals — a small icon
   // badge inline with the title on an edge-to-edge tinted header, no hard divider line
