@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { startOfDay, endOfDay } from 'date-fns';
 import {
   Checklist,
   checklistInstanceId,
   isRecurringSchedule,
+  occurrenceSeed,
   useChallenge,
   useChecklist,
   useChecklistTemplateDetail,
@@ -122,8 +122,7 @@ const DetailTaskPageMobile = () => {
       id: deterministicId,
       title: checklistTemplate.title,
       checklistTemplateId: id,
-      startedAt: startOfDay(new Date()).toISOString(),
-      endedDate: endOfDay(new Date()).toISOString(),
+      ...occurrenceSeed(checklistTemplate, new Date(currentDay)),
     });
     setSearchParams({
       ...Object.fromEntries(search),

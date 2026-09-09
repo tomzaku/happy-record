@@ -221,7 +221,6 @@
   "checklist-generic-info.schedule-mode-switch-per-group": "Per-Group",
   "checklist-generic-info.start-date-description": "Start of the task",
   "checklist-generic-info.start-date-title": "Start Date",
-  "checklist-generic-info.starts-on-date": "Starts {{date}}",
   "checklist-generic-info.untitled-group": "Untitled group",
   "checklist-template-calendar.list-empty": "No completed days yet",
   "checklist-template-calendar.marked-done": "Marked as done",

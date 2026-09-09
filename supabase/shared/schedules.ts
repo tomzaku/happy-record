@@ -15,6 +15,7 @@
 // rather than being copy-pasted into both index.ts files.
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import { calendarDayIn, exists as scheduleExistsOn } from './rruleUtils.ts';
 import type { ScheduleException } from './scheduleExceptions.ts';
 
 type Row = Record<string, unknown>;
@@ -97,7 +98,7 @@ export function toRepeat(row: Row | undefined, exceptions?: ScheduleException[])
     ...(row!.interval != null && (row!.interval as number) !== 1 ? { interval: row!.interval as number } : {}),
     ...(row!.count != null ? { count: row!.count as number } : {}),
     ...(row!.freq ? { freq: row!.freq as string } : {}),
-    ...(row!.duration_minutes != null ? { durationMinutes: row!.duration_minutes as number } : {}),
+    ...(row!.duration != null ? { durationMs: row!.duration as number } : {}),
     ...(exceptionDates.length > 0 ? { exceptionDates } : {}),
     // Not-null with a `default true` at the column level (see the migration), so this always has
     // a real value — spelled as `!== false` (not `?? true`) so an explicit `false` on the row
@@ -130,7 +131,7 @@ export function fromRepeat(repeat: unknown, owner: Owner): Row {
   const interval = typeof e.interval === 'number' ? e.interval : null;
   const count = typeof e.count === 'number' ? e.count : null;
   const until = str(e.until);
-  const durationMinutes = typeof e.durationMinutes === 'number' && e.durationMinutes > 0 ? e.durationMinutes : null;
+  const durationMs = typeof e.durationMs === 'number' && e.durationMs > 0 ? e.durationMs : null;
   // The client is expected to send `freq` explicitly now (always `'WEEKLY'` today — see
   // ChecklistTemplate['repeat'].freq's own comment), but a missing/invalid value still falls back
   // to the same derivation this used to do unconditionally, so an older client build (or a
@@ -156,7 +157,7 @@ export function fromRepeat(repeat: unknown, owner: Owner): Row {
     count,
     until,
     recurring,
-    duration_minutes: durationMinutes,
+    duration: durationMs,
     rrule: buildDebugRRuleString({ freq, interval, byday, byhour, byminute, count, until }),
     started_at: startedAt,
     completed_at: str(e.completedAt),
@@ -257,4 +258,31 @@ export async function saveRepeat(db: SupabaseClient, repeat: unknown, owner: Own
 
   const { error } = await db.from('schedules').upsert(fromRepeat(repeat, owner));
   if (error) throw new Error(error.message);
+}
+
+const DEFAULT_OCCURRENCE_DURATION_MS = 60 * 60 * 1000;
+
+/**
+ * Does `repeatRow`'s own weekly pattern actually recur on `startedAt`'s calendar day? A thin
+ * wrapper over `rruleUtils.ts`'s own `exists` — that module works in plain `yyyy-MM-dd` days, so
+ * this is just the one conversion (`startedAt`'s own calendar day, read through the row's
+ * `timezone` — see `calendarDayIn`'s own doc comment on why a bare UTC read can't be trusted for
+ * this) — scoped to exactly what `checklists-service.ts`'s own `saveChecklist` needs it for:
+ * reject a `startedAt` the client got wrong (the exact class of bug — "today" sent regardless of
+ * which day was actually being viewed — behind a real live report) instead of silently creating a
+ * bogus row for it.
+ */
+export function occurrenceDayMatches(repeatRow: Row, startedAt: string): boolean {
+  const timezone = typeof repeatRow.timezone === 'string' && repeatRow.timezone ? repeatRow.timezone : 'UTC';
+  return scheduleExistsOn(repeatRow, calendarDayIn(new Date(startedAt), timezone));
+}
+
+/** `startedAt + repeatRow.duration` (or `DEFAULT_OCCURRENCE_DURATION_MS` when unset — set from
+ * `End - Start` in ScheduleEditDialogs.tsx's own Schedule dialog) — call once `occurrenceDayMatches`
+ * above has already confirmed `startedAt` is a real occurrence of this schedule. Plain arithmetic,
+ * no timezone reasoning needed here at all: `startedAt` is already a real, fully-resolved instant
+ * by this point, and a duration is just how long after that instant the occurrence runs. */
+export function resolveOccurrenceEnd(repeatRow: Row, startedAt: string): string {
+  const durationMs = typeof repeatRow.duration === 'number' && repeatRow.duration > 0 ? repeatRow.duration : DEFAULT_OCCURRENCE_DURATION_MS;
+  return new Date(new Date(startedAt).getTime() + durationMs).toISOString();
 }

@@ -16,12 +16,11 @@ type RecurrencePickerProps = {
   /** false for a field group's own picker — an unset field-group schedule already means "every
    * day" (see fieldGroupTypes.ts), there's no separate "off" state to offer. */
   allowNoRepeat: boolean;
-  /** false for the template-level picker (ChecklistGenericInfo) — "On date" now lives in the
-   * merged Start/End Date dialog next to Start Date instead, Google-Calendar-style, rather than
-   * buried in here where the user reported never noticing it. `until` is edited entirely outside
-   * this component in that case; the Ends radio only offers Never/After. Field groups (default
-   * `true`) have no separate Start-Date concept to fold an end date into (see schedules.ts's own
-   * comment — a field group's row never has `started_at`), so they keep all 3 options here. */
+  /** Defaults `true` — offers all 3 Ends options (Never/On date/After N occurrences), the real
+   * "when does the whole series stop" control. ChecklistGenericInfo's own Start/End Date fields
+   * (next to this picker) mean something different now — one occurrence's own time window
+   * (`durationMs`), not the series' own end — so they no longer compete with this section
+   * for the same `until` value; this stays the one place `until`/`count` are actually edited. */
   showOnDateEnd?: boolean;
 };
 

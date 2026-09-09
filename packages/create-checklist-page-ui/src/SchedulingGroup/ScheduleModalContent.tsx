@@ -157,10 +157,12 @@ const ScheduleModalContent: React.FC<ScheduleModalContentProps> = ({
             />
           </div>
         ) : showRecurrenceControls && tempRecurrence && setTempRecurrence ? (
-          // showOnDateEnd=false — the template level now edits its own end date next to Start
-          // Date instead (ChecklistGenericInfo's merged dialog), Google-Calendar-style, rather
-          // than burying it in this Ends section where it went unnoticed.
-          <RecurrencePicker value={tempRecurrence} onChange={setTempRecurrence} allowNoRepeat showOnDateEnd={false} />
+          // showOnDateEnd=true — "when does the series stop repeating" (Ends: Never/On date/
+          // After N occurrences) is a genuinely separate concept from the merged Start/End Date
+          // fields next to this (ChecklistGenericInfo's own dialog), which now mean one
+          // occurrence's own time window (its duration), not the series' own end — see
+          // ScheduleEditDialogs.tsx's own comment on why those two stopped sharing a field.
+          <RecurrencePicker value={tempRecurrence} onChange={setTempRecurrence} allowNoRepeat showOnDateEnd />
         ) : (
           <a.div
             className={styles.weeklyHobbyContainer}

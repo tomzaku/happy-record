@@ -4,7 +4,7 @@
 // fresh read, since that's exactly what was reported broken.
 
 import { assertEquals, assertNotEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { fetchRepeats, fromRepeat, pickRepeat, toRepeat } from './schedules.ts';
+import { fetchRepeats, fromRepeat, occurrenceDayMatches, pickRepeat, resolveOccurrenceEnd, toRepeat } from './schedules.ts';
 import { fakeSupabase } from './testSupport/fakeSupabase.ts';
 
 Deno.test('pickRepeat: the viewer\'s own row wins over the owner\'s', () => {
@@ -108,31 +108,31 @@ Deno.test('fromRepeat/toRepeat: until round-trips through the until column', () 
   assertEquals(toRepeat(row)?.until, '2026-12-31T23:59:59.999Z');
 });
 
-Deno.test('fromRepeat/toRepeat: durationMinutes round-trips through the duration_minutes column, including a multi-day span', () => {
-  // 4500 minutes = 75h — an occurrence that starts one calendar day and runs into a later one
-  // (e.g. 09/08 05:00 -> 09/11 08:00). durationMinutes is a plain minute count, so a multi-day
-  // span is no different from a same-day one here — no month/year-length ambiguity the way a
-  // calendar-relative unit would have (see the migration's own comment).
+Deno.test('fromRepeat/toRepeat: durationMs round-trips through the duration column, including a multi-day span', () => {
+  // 4500 minutes = 75h = 270000000ms — an occurrence that starts one calendar day and runs into
+  // a later one (e.g. 09/08 05:00 -> 09/11 08:00). durationMs is a plain millisecond count, so a
+  // multi-day span is no different from a same-day one here — no month/year-length ambiguity the
+  // way a calendar-relative unit would have (see the migration's own comment).
   const row = fromRepeat(
-    { byhour: '05', byminute: '00', byday: 'TU', durationMinutes: 4500 },
+    { byhour: '05', byminute: '00', byday: 'TU', durationMs: 270000000 },
     { userId: 'owner', checklistTemplateId: 'ct1' },
   );
-  assertEquals(row.duration_minutes, 4500);
-  assertEquals(toRepeat(row)?.durationMinutes, 4500);
+  assertEquals(row.duration, 270000000);
+  assertEquals(toRepeat(row)?.durationMs, 270000000);
 });
 
-Deno.test('fromRepeat: durationMinutes is null when omitted or non-positive, never a stray 0', () => {
+Deno.test('fromRepeat: durationMs is null when omitted or non-positive, never a stray 0', () => {
   const omitted = fromRepeat(
     { byhour: '08', byminute: '00', byday: 'MO' },
     { userId: 'owner', checklistTemplateId: 'ct1' },
   );
-  assertEquals(omitted.duration_minutes, null);
+  assertEquals(omitted.duration, null);
 
   const zero = fromRepeat(
-    { byhour: '08', byminute: '00', byday: 'MO', durationMinutes: 0 },
+    { byhour: '08', byminute: '00', byday: 'MO', durationMs: 0 },
     { userId: 'owner', checklistTemplateId: 'ct1' },
   );
-  assertEquals(zero.duration_minutes, null);
+  assertEquals(zero.duration, null);
 });
 
 Deno.test('fromRepeat: defaults started_at to now on a checklist_template row when the client omits it', () => {
@@ -270,4 +270,39 @@ Deno.test('fetchRepeats: a row for an owner id not in the batch is dropped defen
     'owner',
   );
   assertEquals(result, {});
+});
+
+Deno.test('occurrenceDayMatches: the schedule\'s own DTSTART day matches, read through its timezone (not a bare UTC day)', () => {
+  // "2026-09-08T17:00:00.000Z" is local midnight Sep 9 in Asia/Saigon (UTC+7) — a Wednesday. A
+  // bare UTC read of the same instant lands on Sep 8, a Tuesday, which is NOT in byday — exactly
+  // the bug `calendarDayIn` exists to avoid (see occurrenceDayMatches' own doc comment).
+  const repeatRow = { byday: 'WE', started_at: '2026-09-08T17:00:00.000Z', timezone: 'Asia/Saigon' };
+  assertEquals(occurrenceDayMatches(repeatRow, '2026-09-08T17:00:00.000Z'), true);
+});
+
+Deno.test('occurrenceDayMatches: a later occurrence of the same weekly pattern also matches', () => {
+  // One week later — Sep 16 2026 local midnight, also a Wednesday.
+  const repeatRow = { byday: 'WE', started_at: '2026-09-08T17:00:00.000Z', timezone: 'Asia/Saigon' };
+  assertEquals(occurrenceDayMatches(repeatRow, '2026-09-15T17:00:00.000Z'), true);
+});
+
+Deno.test('occurrenceDayMatches: a startedAt on a day not in byday is rejected', () => {
+  // Sep 10 2026 local midnight — a Thursday, not Wednesday.
+  const repeatRow = { byday: 'WE', started_at: '2026-09-08T17:00:00.000Z', timezone: 'Asia/Saigon' };
+  assertEquals(occurrenceDayMatches(repeatRow, '2026-09-09T17:00:00.000Z'), false);
+});
+
+Deno.test('occurrenceDayMatches: no byday at all is always rejected', () => {
+  assertEquals(occurrenceDayMatches({ byday: null, timezone: 'Asia/Saigon' }, '2026-09-08T17:00:00.000Z'), false);
+});
+
+Deno.test('resolveOccurrenceEnd: startedAt + a real duration', () => {
+  assertEquals(
+    resolveOccurrenceEnd({ duration: 180 * 60000 }, '2026-09-27T02:00:00.000Z'),
+    '2026-09-27T05:00:00.000Z',
+  );
+});
+
+Deno.test('resolveOccurrenceEnd: no duration falls back to a 60-minute default', () => {
+  assertEquals(resolveOccurrenceEnd({}, '2026-09-27T02:00:00.000Z'), '2026-09-27T03:00:00.000Z');
 });

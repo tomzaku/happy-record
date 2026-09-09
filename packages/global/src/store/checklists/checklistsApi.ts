@@ -22,8 +22,15 @@ export function fetchChecklistById(id: string): Promise<{ checklists: Checklist[
   return request.get(`/checklists/${encodeURIComponent(id)}`, { quiet: true });
 }
 
-/** Create or update one checklist. Always the whole object — see `checklists/model/checklists-model.ts`. */
-export function saveChecklist(checklist: Checklist): Promise<{ ok: true } | null> {
+/**
+ * Create or update one checklist. Always the whole object — see `checklists/model/checklists-model.ts`.
+ * The response carries the server-resolved checklist back, which can differ from what was sent:
+ * a fresh occurrence of a repeating template with no `endedDate` yet gets one filled in from the
+ * template's own schedule (see checklists-service.ts's own saveChecklist and
+ * supabase/shared/schedules.ts's resolveOccurrenceEnd), and any save can come back under a
+ * different `id` than the one sent, when the (template, startedAt) slot already had one.
+ */
+export function saveChecklist(checklist: Checklist): Promise<{ checklist: Checklist } | null> {
   return request.post('/checklists', { checklist }, { quiet: true });
 }
 

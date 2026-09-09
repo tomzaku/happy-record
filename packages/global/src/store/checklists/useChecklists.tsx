@@ -76,6 +76,28 @@ export function checklistInstanceId(checklistTemplateId: string, date: Date): st
   return uuidv5(`${checklistTemplateId}:${format(date, 'yyyy-MM-dd')}`, CHECKLIST_INSTANCE_NAMESPACE);
 }
 
+// The real `startedAt`/`endedDate` seed for a fresh occurrence of `template` on `date` — every
+// "create this day's instance if missing" effect (index.desktop.tsx, index.mobile.tsx,
+// useTaskDetailModalData.ts) uses this instead of hand-rolling `startOfDay`/`endOfDay`, so a
+// timed schedule's own `byhour`/`byminute` (applied the same way useCalendarEvents.ts's own event
+// rendering already does — local `Date` methods, no timezone conversion needed client-side) is
+// never silently dropped in favor of midnight. `endedDate` is included only for an all-day/
+// no-schedule template — a timed one's real `endedDate` needs the template's own `duration`,
+// which only the server (checklists-service.ts's saveChecklist) can fill in; deliberately absent
+// here rather than guessed at, so that server-side fill-in actually runs (see its own gate).
+export function occurrenceSeed(
+  template: { repeat?: { byhour?: string; byminute?: string } } | undefined,
+  date: Date,
+): { startedAt: string; endedDate?: string } {
+  const { byhour, byminute } = template?.repeat ?? {};
+  if (!byhour || !byminute) {
+    return { startedAt: startOfDay(date).toISOString(), endedDate: endOfDay(date).toISOString() };
+  }
+  const start = startOfDay(date);
+  start.setHours(Number(byhour), Number(byminute), 0, 0);
+  return { startedAt: start.toISOString() };
+}
+
 export const useChecklist = () => {
   const [checklist, setChecklist] = useSessionStore<Record<string, Checklist>>(CHECKLIST_KEY, {});
   const { userId, ready } = useSession();
@@ -380,17 +402,20 @@ export const useChecklist = () => {
       // one of these directly) with no row on the server yet. `saveChecklist`
       // is an upsert, so that's exactly right: this call is what creates it.
       const saved = saveChecklist(merged);
-      // A completedAt change is the only thing this route ever logs
-      // server-side (see checklists-service.ts's own saveChecklist) — only
-      // bump for that, not every unrelated field edit that also goes through
-      // this same upsert.
-      if ('completedAt' in checklistToUpdate) {
-        saved.then(result => {
-          if (result) invalidateChecklistLogs();
-        });
-      }
+      saved.then(result => {
+        if (!result) return;
+        // A completedAt change is the only thing this route ever logs
+        // server-side (see checklists-service.ts's own saveChecklist) — only
+        // bump for that, not every unrelated field edit that also goes through
+        // this same upsert.
+        if ('completedAt' in checklistToUpdate) invalidateChecklistLogs();
+        // Self-corrects the optimistic write above — same slot-resolution reasoning as
+        // `addChecklist`'s own comment below (a same-(template, day) write can land under a
+        // different, already-existing id server-side).
+        mergeFetched([result.checklist]);
+      });
     },
-    [checklist, setChecklist, invalidateChecklistLogs],
+    [checklist, setChecklist, invalidateChecklistLogs, mergeFetched],
   );
 
   const addChecklist = React.useCallback(
@@ -420,10 +445,20 @@ export const useChecklist = () => {
         ...prev,
         [id]: newChecklist,
       }));
-      if (!opts.skipNetwork) saveChecklist(newChecklist);
+      if (!opts.skipNetwork) {
+        // A fresh occurrence of a repeating schedule may leave `endedDate` unset here — this
+        // store's own local instance's own `startedAt` already carries the real, correctly-timed
+        // instant (the caller applies the template's own byhour/byminute itself; see
+        // index.desktop.tsx's own creation effect), but not necessarily the template's own
+        // `duration` — the server fills that in and this `.then` self-corrects the optimistic
+        // guess once that response lands (see checklists-service.ts's own saveChecklist).
+        saveChecklist(newChecklist).then(result => {
+          if (result?.checklist) mergeFetched([result.checklist]);
+        });
+      }
       return newChecklist;
     },
-    [checklist, setChecklist],
+    [checklist, setChecklist, mergeFetched],
   );
 
   const getChecklistByGivingDate = React.useCallback(

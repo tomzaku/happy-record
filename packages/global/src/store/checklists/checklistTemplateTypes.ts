@@ -26,18 +26,23 @@ export type ChecklistTemplate = {
     interval?: number;
     /** Stop generating after N occurrences. No UI sets this yet — see `interval`'s own comment. */
     count?: number;
-    /** How long each occurrence lasts, in minutes — alongside `byhour`/`byminute` (its start
+    /** How long each occurrence lasts, in milliseconds — alongside `byhour`/`byminute` (its start
      * time), not a replacement for `until`/`count` (those answer "when does the whole recurring
      * series stop," a calendar-relative question; this only ever answers "how long does one
-     * occurrence run" — see the `schedules_duration_minutes` migration). Can span more than one
-     * calendar day (e.g. a 4500-minute/75h occurrence) — a plain minute count has no
-     * month/year-length ambiguity, so nothing special-cases that. Display-only today, though:
-     * `occursOnDate` (rruleUtils.ts) still only checks whether an occurrence *starts* on a given
-     * day, not whether a still-running multi-day one should keep the schedule active through the
-     * days after that (see rruleUtils.test.ts's own coverage). E.g. "clean the house, 8am-10am
-     * every weekday" is `byhour: '8', byminute: '0', durationMinutes: 120`. No UI sets this yet —
-     * see `interval`'s own comment for the same "data model ready, no picker built" shape. */
-    durationMinutes?: number;
+     * occurrence run" — see the `schedules_duration_ms` migration). Milliseconds, not minutes: a
+     * `Date` diff already is one (`End.getTime() - Start.getTime()`), so nothing has to convert on
+     * either side of the wire. Can span more than one calendar day (e.g. a 270000000ms/75h
+     * occurrence) — a plain millisecond count has no month/year-length ambiguity, so nothing
+     * special-cases that. Display-only client-side today (`occursOnDate` in rruleUtils.ts still
+     * only checks whether an occurrence *starts* on a given day, not whether a still-running
+     * multi-day one should keep the schedule active through the days after that — see
+     * rruleUtils.test.ts's own coverage), but real server-side: derived from `End - Start` in
+     * ScheduleEditDialogs' own Schedule dialog (one occurrence's own time window, not the series'
+     * "ends on" — that's `until`/`count`, a separate control) and consulted by
+     * `resolveOccurrenceEnd` (supabase/shared/schedules.ts) to compute each occurrence's real
+     * `endedDate` when a checklist row is created for it. E.g. "clean the house, 8am-10am every
+     * weekday" is `byhour: '8', byminute: '0', durationMs: 7200000`. */
+    durationMs?: number;
     /** Whether this is meant as an ongoing weekly pattern vs. a one-time arrangement bounded by
      * `startedAt`/`until` (e.g. "Mon–Sun this week only") — a separate question from whether it
      * *will* stop (that's `until`/`count`); this is about user intent, for schedule-summary text

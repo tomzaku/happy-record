@@ -49,10 +49,12 @@ type Props = {
    * a genuine recurring series (real `byday`, no active field groups) before this save — Google
    * Calendar's "edit this and following events." Never offered for a field-group-driven schedule
    * (each group would need its own independent split decision — a real follow-up, not assumed
-   * here) or a template with no schedule yet (nothing to split). `effectiveFrom` is always "now"
-   * (today) — this dialog is template-level, not tied to any specific day's own Checklist
-   * instance, so there's no other date to split from. See useChecklistTemplateMutations.ts's
-   * `splitChecklistTemplate`, which this calls into.
+   * here) or a template with no schedule yet (nothing to split). `effectiveFrom` is the specific
+   * day's own Checklist instance currently being viewed (`checklist.startedAt` — see
+   * ScheduleEditDialogs.tsx's own `handleConfirmScheduleScope`), not "today": the whole point of
+   * this scope is splitting relative to whichever occurrence was actually being edited, which can
+   * be a past or future day. See useChecklistTemplateMutations.ts's `splitChecklistTemplate`,
+   * which this calls into.
    */
   onSplitSchedule?: (effectiveFrom: string, newRepeat: NonNullable<ChecklistTemplate['repeat']>) => void;
   isDefaultCollapsed: boolean;
@@ -180,46 +182,22 @@ const ChecklistGenericInfo = ({
   // The merged Schedule row's own first line — a real date range plus an All Day/time suffix,
   // Google-Calendar-style, so an end date (previously buried inside the Schedule dialog's own Ends
   // section and reported as effectively invisible) is visible right here without opening anything.
+  // Always the checklist row currently being viewed, not `checklistTemplate.repeat` — same as
+  // ScheduleEditDialogs.tsx's own `initialStartDay`/`initialEndDay`: opening this page on a
+  // specific occurrence (a Sunday three weeks into a WE/FR/SU series, say) should show *that
+  // day*, not the series' own original DTSTART, which nothing about the day being viewed has any
+  // relationship to. `checklistTemplate.repeat.byhour`/`byminute` still supplies the time-of-day
+  // suffix — that genuinely is a schedule-level (or, for a field-group template, "All Day" by
+  // construction) property, not something the checklist row carries its own copy of.
   const formatDisplayStartEndDate = () => {
-    // A one-off task (`repeat.recurring === false`, no field groups) has no real series to
-    // describe — `repeat.startedAt`/`until` are the *schedule*'s own fields, and `until` is
-    // deliberately never set for this shape (see createTaskUtil.ts's own comment on why). The
-    // task's own dates live on its one real Checklist instance instead — `startedAt`/`endedDate`
-    // — so this reads those directly rather than the template's schedule.
-    const isOneOff = checklistTemplate.repeat?.recurring === false && !hasFieldGroups;
-    if (isOneOff) {
-      if (!checklist?.startedAt) return '';
-      const start = new Date(checklist.startedAt).toLocaleDateString();
-      const end = checklist.endedDate ? new Date(checklist.endedDate).toLocaleDateString() : 'No end date';
-      const timeSuffix = formatTimeSuffix(checklistTemplate.repeat?.byhour, checklistTemplate.repeat?.byminute);
-      return `${start} – ${end} · ${timeSuffix}`;
-    }
-
-    if (!checklistTemplate.repeat?.startedAt) {
-      // A template with field groups but no template-level `repeat` at all (schedules were only
-      // ever set per-group, the template's own Schedule modal never saved) has no start date to
-      // show — but it does have a real schedule, already shown in the Schedule row's second line
-      // via the derived days. "Not set" here read as if nothing were configured at all. See
-      // withSyncedRepeat in useChecklistTemplates.tsx for why `repeat` can be entirely absent here.
+    if (!checklist?.startedAt) {
+      // Not loaded yet, or no real instance concept for this template at all — the per-group
+      // schedule (if any) is already shown separately, in the row's own second line below.
       return hasFieldGroups ? '' : 'Not set';
     }
-    const start = new Date(checklistTemplate.repeat.startedAt).toLocaleDateString();
-    if (hasFieldGroups) {
-      // End Date/Time are per-group here (each group's own row in GroupScheduleList, summarized
-      // in the row's second line via formatDisplayGroupEnds) — the template's own `until`/
-      // byhour/byminute aren't consulted for scheduling in this mode, so showing them here would
-      // just contradict whatever a group's own end/time actually says.
-      return intl.formatMessage(
-        { id: 'checklist-generic-info.starts-on-date', defaultMessage: 'Starts {{date}}' },
-        { date: start },
-      );
-    }
-    // A genuinely recurring template (real `byday`) — this is a real schedule, not a single
-    // task's own dates, so it stays sourced from the template's `repeat`.
-    const end = checklistTemplate.repeat.until
-      ? new Date(checklistTemplate.repeat.until).toLocaleDateString()
-      : 'No end date';
-    const timeSuffix = formatTimeSuffix(checklistTemplate.repeat.byhour, checklistTemplate.repeat.byminute);
+    const start = new Date(checklist.startedAt).toLocaleDateString();
+    const end = checklist.endedDate ? new Date(checklist.endedDate).toLocaleDateString() : 'No end date';
+    const timeSuffix = formatTimeSuffix(checklistTemplate.repeat?.byhour, checklistTemplate.repeat?.byminute);
     return `${start} – ${end} · ${timeSuffix}`;
   };
 

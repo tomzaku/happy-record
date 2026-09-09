@@ -33,7 +33,10 @@ export function fromChecklist(e: Record<string, unknown>) {
     title: e.title,
     started_at: e.startedAt,
     // The last day this arrangement runs through, inclusive — null means no defined end (a
-    // "forever" one-off task), never a magic sentinel (see the migration's own comment).
+    // "forever" one-off task) *or* "the caller doesn't know yet" for a fresh occurrence of a
+    // repeating schedule (see checklists-service.ts's own saveChecklist, which fills this in from
+    // the template's own schedule when it's still null here) — never a magic sentinel either way
+    // (see the migration's own comment).
     ended_date: typeof e.endedDate === 'string' && e.endedDate ? e.endedDate : null,
     completed_at: typeof e.completedAt === 'string' ? e.completedAt : null,
     // Postgres only fills the default on insert, not update — an upsert

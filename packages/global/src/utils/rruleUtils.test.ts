@@ -1,4 +1,4 @@
-import { occursOnDate, nextOccurrenceLabel } from './rruleUtils';
+import { occursOnDate, nextOccurrenceLabel, list } from './rruleUtils';
 
 // Every date below is constructed via Date.UTC so it lines up exactly with occursOnDate's own
 // UTC-midnight-of-calendar-day comparison, regardless of the machine's local timezone running
@@ -85,14 +85,14 @@ describe('occursOnDate', () => {
     expect(occursOnDate(repeat, utcDate(2026, 9, 13))).toBe(true); // Sunday
   });
 
-  it('durationMinutes is display-only — a multi-day occurrence only matches its own start day, not the days it runs through', () => {
+  it('durationMs is display-only — a multi-day occurrence only matches its own start day, not the days it runs through', () => {
     // 2026-09-08 05:00 -> 2026-09-11 08:00, weekly on Tuesdays (2026-09-08 and 2026-09-15 both
-    // are) — a 75h/4500min occurrence spanning three calendar days. Documents the known gap: a
-    // long duration doesn't make the schedule "occur" on the days it's still running through.
+    // are) — a 75h/270000000ms occurrence spanning three calendar days. Documents the known gap:
+    // a long duration doesn't make the schedule "occur" on the days it's still running through.
     const repeat = {
       byday: 'TU',
       startedAt: utcDate(2026, 9, 8).toISOString(),
-      durationMinutes: 4500,
+      durationMs: 270000000,
     };
     expect(occursOnDate(repeat, utcDate(2026, 9, 8))).toBe(true); // the occurrence's own start day
     expect(occursOnDate(repeat, utcDate(2026, 9, 9))).toBe(false); // still running, but not matched
@@ -127,5 +127,49 @@ describe('nextOccurrenceLabel', () => {
     const repeat = { byday: 'FR', count: 1, startedAt: utcDate(2026, 9, 4).toISOString() };
     expect(nextOccurrenceLabel(repeat, utcDate(2026, 9, 4))).toBeUndefined();
     expect(nextOccurrenceLabel(undefined, utcDate(2026, 9, 4))).toBeUndefined();
+  });
+});
+
+describe('list', () => {
+  it('every matching day within [from, to], inclusive by default', () => {
+    const repeat = { byday: 'WE' };
+    expect(list(repeat, utcDate(2026, 9, 9), utcDate(2026, 9, 23)).map(d => d.toISOString())).toEqual([
+      utcDate(2026, 9, 9).toISOString(),
+      utcDate(2026, 9, 16).toISOString(),
+      utcDate(2026, 9, 23).toISOString(),
+    ]);
+  });
+
+  it('includingFrom/includingTo drop the matching boundary day', () => {
+    const repeat = { byday: 'WE' };
+    expect(list(repeat, utcDate(2026, 9, 9), utcDate(2026, 9, 23), { includingFrom: false })).toHaveLength(2);
+    expect(list(repeat, utcDate(2026, 9, 9), utcDate(2026, 9, 23), { includingTo: false })).toHaveLength(2);
+  });
+
+  it('agrees with occursOnDate for every day in the range, including exceptionDates and interval', () => {
+    const repeat = { byday: 'TU,TH,SU', interval: 2, startedAt: utcDate(2026, 9, 8).toISOString(), exceptionDates: ['2026-09-10'] };
+    const from = utcDate(2026, 9, 1);
+    const to = utcDate(2026, 9, 30);
+    const matched = list(repeat, from, to);
+    for (let d = new Date(from); d <= to; d = new Date(d.getTime() + 24 * 60 * 60 * 1000)) {
+      const inList = matched.some(m => m.getTime() === d.getTime());
+      expect(inList).toBe(occursOnDate(repeat, d));
+    }
+  });
+
+  it('no schedule at all returns an empty list, not an error', () => {
+    expect(list(undefined, utcDate(2026, 9, 1), utcDate(2026, 9, 30))).toEqual([]);
+    expect(list({ byday: '' }, utcDate(2026, 9, 1), utcDate(2026, 9, 30))).toEqual([]);
+  });
+
+  it('a one-time (recurring: false) arrangement lists every day within its own window, clipped to [from, to]', () => {
+    const repeat = { startedAt: utcDate(2026, 9, 8).toISOString(), until: utcDate(2026, 9, 12).toISOString(), recurring: false };
+    expect(list(repeat, utcDate(2026, 9, 1), utcDate(2026, 9, 30)).map(d => d.toISOString())).toEqual(
+      [8, 9, 10, 11, 12].map(day => utcDate(2026, 9, day).toISOString()),
+    );
+    // Queried range starts after startedAt — clipped to the query window, not the item's own start.
+    expect(list(repeat, utcDate(2026, 9, 10), utcDate(2026, 9, 30)).map(d => d.toISOString())).toEqual(
+      [10, 11, 12].map(day => utcDate(2026, 9, day).toISOString()),
+    );
   });
 });

@@ -1,10 +1,10 @@
 import React from 'react';
-import { startOfDay, endOfDay } from 'date-fns';
 import {
   useChecklist,
   useChecklistTemplates,
   useSyncedSelector,
   checklistInstanceId,
+  occurrenceSeed,
   getActiveFieldGroups,
   getEffectiveFieldDisplay,
   isFieldGroupActiveOnDay,
@@ -86,8 +86,7 @@ export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
       id: deterministicId,
       title: template.title,
       checklistTemplateId: data.checklistTemplateId,
-      startedAt: startOfDay(data.date).toISOString(),
-      endedDate: endOfDay(data.date).toISOString(),
+      ...occurrenceSeed(template, data.date),
     });
   }, [data, template, relevantGroups.length, checklist, addChecklist, deterministicId]);
 

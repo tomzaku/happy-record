@@ -51,7 +51,10 @@ jest.mock('./useFieldGroups', () => ({
 jest.mock('./checklistsApi', () => ({
   fetchChecklists: jest.fn().mockResolvedValue({ checklists: [] }),
   fetchChecklistById: jest.fn().mockResolvedValue({ checklists: [] }),
-  saveChecklist: jest.fn(),
+  // A quiet `null`, same as a real failed/offline save — matches saveChecklist's own real return
+  // shape (a Promise) so addChecklist/updateChecklist's own `.then(...)` self-correction has
+  // something to chain onto instead of throwing on `undefined`.
+  saveChecklist: jest.fn().mockResolvedValue(null),
   removeChecklist: jest.fn(),
 }));
 

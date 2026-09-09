@@ -130,7 +130,6 @@
   "checklist-generic-info.edit-icon-color-title": "Chỉnh Sửa Biểu Tượng & Màu Sắc",
   "checklist-generic-info.start-date-title": "Ngày Bắt Đầu",
   "checklist-generic-info.start-date-description": "Bắt đầu nhiệm vụ",
-  "checklist-generic-info.starts-on-date": "Bắt đầu {{date}}",
   "checklist-generic-info.all-day-title": "Cả Ngày",
   "checklist-generic-info.all-day-description": "Không có thời gian cụ thể trong ngày",
   "checklist-generic-info.end-date-title": "Ngày Kết Thúc",

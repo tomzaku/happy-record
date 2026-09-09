@@ -40,10 +40,10 @@ type Props = {
   readOnly?: boolean;
   onUpdateMyReminder?: (repeat: ChecklistTemplate['repeat'] | null) => void;
   // The specific day's own Checklist instance, when there is one — same prop
-  // ChecklistGenericInfo itself takes (see that component's own comment). The Start/End Date
-  // fields always seed from — and, on Save, write back to — this row's own `startedAt`/
-  // `endedDate`, never the template's `repeat` (see `initialStartDay` below), so
-  // `onUpdateChecklist` is required for those fields to be editable at all here.
+  // ChecklistGenericInfo itself takes (see that component's own comment). Its own `startedAt`/
+  // `endedDate` are always what the Start/End Date fields display (see `initialStartDay` below),
+  // and, for a one-off task specifically (`isOneOffTask` below), what an edit writes back to too —
+  // `onUpdateChecklist` is required for that shape to be editable at all here.
   checklist?: Checklist;
   onUpdateChecklist?: (patch: Partial<Checklist> & { id: string }) => void;
   // 'schedule' shows the owner's editor, 'myReminder' the participant's own-override editor,
@@ -86,12 +86,22 @@ const ScheduleEditDialogs = ({
 
   const hasFieldGroups = hasGroupSchedule(checklistTemplate);
   const hasActiveFieldGroups = getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).length > 0;
-  // Start/End Date always belong to the checklist row, never `checklistTemplate.repeat` — one
-  // source, not two copies that can drift apart. `repeat.startedAt` (the recurrence's own DTSTART)
-  // is still derived from it on save (see `handleSaveSchedule`'s `finalRepeat.startedAt:
-  // tempStartDay` below), but `repeat.until` is never set from this dialog at all any more —
-  // avoids the exact bug createTaskUtil.ts's own comment describes (a value there sitting on the
-  // template and getting silently reapplied the next time a real weekly pattern is saved).
+  // A one-off task (`repeat.recurring === false`, no field groups) has no real series — its own
+  // Start/End Date live on its one real Checklist instance instead, never `repeat` at all (`until`
+  // is deliberately never set on `repeat` for this shape — see createTaskUtil.ts's own comment on
+  // why: a value there would still be sitting on the template the next time this same dialog saves
+  // a real recurring pattern, silently capping it). See `handleSaveSchedule` below for the
+  // write-back half of this — an edited End Date goes to `checklist.endedDate`, never `repeat`.
+  const isOneOffTask = checklistTemplate.repeat?.recurring === false && !hasFieldGroups;
+  // Both fields always *read* from the checklist row currently being viewed — not
+  // `checklistTemplate.repeat.startedAt` — even for a repeating template: opening this dialog
+  // from a specific occurrence (e.g. a Sunday three weeks into a WE/FR/SU series) should show
+  // *that day*, not the series' own original DTSTART, which nothing about the day being viewed
+  // has any relationship to. `isOneOffTask` still decides *where an edit gets written* below
+  // (`handleSaveSchedule`) — a one-off task's own end lives on the checklist row, a repeating
+  // template's own occurrence length (`End - Start`) becomes `repeat.durationMs`, consulted by
+  // every future occurrence via `resolveOccurrenceEnd` (supabase/shared/schedules.ts) — but the
+  // *displayed* value is always this row's own real dates either way.
   const initialStartDay = () => checklist?.startedAt || startOfDay(new Date()).toISOString();
   const initialEndDay = () => checklist?.endedDate ?? '';
 
@@ -106,7 +116,10 @@ const ScheduleEditDialogs = ({
     !(checklistTemplate.repeat?.byhour && checklistTemplate.repeat?.byminute),
   );
   const [tempRecurrence, setTempRecurrence] = React.useState<RecurrenceValue>(
-    repeatToRecurrenceValue(checklistTemplate.repeat, true, false),
+    // `respectUntil: true` — the Ends section (showOnDateEnd, ScheduleModalContent.tsx) is real
+    // again now that Start/End Date no longer double as the series' own "ends on" field, so this
+    // needs to actually seed from a real `until`/`count` instead of always reading "never".
+    repeatToRecurrenceValue(checklistTemplate.repeat, true, true),
   );
   const [tempFieldGroups, setTempFieldGroups] = React.useState<FieldGroup[]>(checklistTemplate.fieldGroups);
   const [tempScheduleMode, setTempScheduleMode] = React.useState<'general' | 'per_group' | undefined>(
@@ -123,7 +136,7 @@ const ScheduleEditDialogs = ({
         ? `${checklistTemplate.repeat.byhour.padStart(2, '0')}:${checklistTemplate.repeat.byminute.padStart(2, '0')}`
         : '',
     );
-    setTempRecurrence(repeatToRecurrenceValue(checklistTemplate.repeat, true, false));
+    setTempRecurrence(repeatToRecurrenceValue(checklistTemplate.repeat, true, true));
     setTempFieldGroups(checklistTemplate.fieldGroups);
     setTempScheduleMode(checklistTemplate.scheduleMode);
   };
@@ -131,11 +144,20 @@ const ScheduleEditDialogs = ({
   // Re-stages from the live template every time this opens — mirrors ChecklistGenericInfo's own
   // "resetModalStates() right before setActiveModal" (opening used to be one synchronous click
   // handler in the same component); here opening is driven externally via `mode`, so a mount-style
-  // effect keyed on it turning non-null is the equivalent moment.
+  // effect keyed on it turning non-null is the equivalent moment. `checklist?.id` is also in the
+  // deps — not for exhaustiveness, deliberately: this page's own "General Settings" (and this
+  // dialog's own pencil icon with it) is clickable as soon as the *template* loads, before the
+  // day's own `checklist` row necessarily has (see index.desktop.tsx's own `isTemplateReady`-only
+  // gate) — opening this dialog in that window staged a one-off task's Start/End Date from
+  // `initialStartDay`'s own `checklist?.startedAt || startOfDay(new Date())` fallback, silently
+  // landing on *today* instead of the task's real date. Keying on `checklist?.id` re-stages once
+  // that arrives late, without re-staging (and discarding an in-progress edit) on every subsequent
+  // change to the *same* checklist while the dialog stays open — its `id` doesn't change just
+  // because `startedAt`/`endedDate` do.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     if (mode) resetStagedFields();
-  }, [mode]);
+  }, [mode, checklist?.id]);
 
   const handleStartDateChange = (iso: string) => {
     setTempStartDay(iso);
@@ -154,22 +176,29 @@ const ScheduleEditDialogs = ({
     }
   };
 
+  // One occurrence's own length (`End - Start`) — already milliseconds, a plain `Date` diff, so
+  // no unit conversion either way. Meaningless for an all-day schedule (nothing timed to measure)
+  // or with no End Date set at all, so `undefined` in both those cases rather than a bogus
+  // 0/negative value. Shared by the owner's Schedule save and a participant's My Reminder save
+  // below — both stage the same `tempStartDay`/`tempEndDay`/`tempAllDay`.
+  const computeDurationMs = (): number | undefined =>
+    !tempAllDay && tempEndDay
+      ? Math.max(1, new Date(tempEndDay).getTime() - new Date(tempStartDay).getTime())
+      : undefined;
+
   const handleSaveSchedule = () => {
     const repeat = calculateRepeat({
       weeklyHobbies: recurrenceValueToDays(tempRecurrence),
       selectedTime: tempTime,
       startedAt: tempStartDay,
       allDay: tempAllDay,
+      durationMs: isOneOffTask ? undefined : computeDurationMs(),
       ...recurrenceValueToExtra(tempRecurrence),
     });
 
     const finalRepeat = {
       ...(repeat ?? noScheduleRepeatBase(tempAllDay, tempTime)),
       startedAt: tempStartDay,
-      // `tempEndDay` is the checklist's own end date, staged here only for editing (see
-      // `initialEndDay` above) and written back to `checklist.endedDate` below — never to
-      // `repeat.until` (see `initialStartDay`'s own comment on why).
-      until: undefined,
       timezone: getClientTimezone(),
     };
 
@@ -181,7 +210,10 @@ const ScheduleEditDialogs = ({
         }
       });
     }
-    if (checklist) {
+    // Only a one-off task's Start/End Date belong to its own checklist row — a repeating (or
+    // field-group) template's own Start/End Date became `repeat.durationMs` above instead, via
+    // `finalRepeat`; there's no single checklist instance they'd write to here anyway.
+    if (isOneOffTask && checklist) {
       onUpdateChecklist?.({ id: checklist.id, startedAt: tempStartDay, endedDate: tempEndDay || undefined });
     }
     onClose();
@@ -200,7 +232,14 @@ const ScheduleEditDialogs = ({
     const repeat = pendingScheduleRepeat;
     setPendingScheduleRepeat(null);
     if (scope === 'thisAndFollowing') {
-      onSplitSchedule?.(new Date().toISOString(), repeat);
+      // The occurrence actually being viewed, not "right now" — this page can be open on a past
+      // or future day (see initialStartDay's own comment on why Start/End Date already read from
+      // this same row), and the whole point of "This and following" is splitting relative to
+      // *that* day. Using today's real date here instead used to cap the original template's
+      // `until` (and start the new one) at whatever day happened to be current when the edit was
+      // saved, not the occurrence being edited — silently pulling other, untouched days onto the
+      // new pattern (or leaving them on the old one) whenever the two didn't coincide.
+      onSplitSchedule?.(checklist?.startedAt ?? new Date().toISOString(), repeat);
     } else {
       onUpdate({ ...checklistTemplate, repeat, scheduleMode: tempScheduleMode });
     }
@@ -225,12 +264,12 @@ const ScheduleEditDialogs = ({
       selectedTime: tempTime,
       startedAt: tempStartDay,
       allDay: tempAllDay,
+      durationMs: computeDurationMs(),
       ...recurrenceValueToExtra(tempRecurrence),
     });
     onUpdateMyReminder?.({
       ...(repeat ?? noScheduleRepeatBase(tempAllDay, tempTime)),
       startedAt: tempStartDay,
-      until: tempEndDay || undefined,
       timezone: getClientTimezone(),
     });
     onClose();

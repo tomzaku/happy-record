@@ -4,7 +4,7 @@
 // same as `tasks`' `updateTask`.
 
 import { ApiError } from '../../../shared/cors.ts';
-import { fromChecklist } from '../../../dto/checklists/checklists-dto.ts';
+import { fromChecklist, toChecklist } from '../../../dto/checklists/checklists-dto.ts';
 import { saveChecklist } from '../services/checklists-service.ts';
 import { body, type Ctx } from './checklists-context.ts';
 
@@ -19,6 +19,10 @@ export async function saveChecklistHandler(ctx: Ctx) {
     throw new ApiError(400, err instanceof Error ? err.message : 'Invalid checklist.');
   }
 
-  await saveChecklist(ctx, row);
-  return { ok: true };
+  // The saved row, mapped back to the client shape — a fresh occurrence of a repeating schedule
+  // resolved a real `endedDate` (and any save may have adopted a different, already-existing `id`
+  // for its exact (template, startedAt) slot) the caller had no way to know in advance; see
+  // checklists-service.ts's own saveChecklist.
+  const saved = await saveChecklist(ctx, row);
+  return { checklist: toChecklist(saved) };
 }
