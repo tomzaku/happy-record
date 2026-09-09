@@ -1,8 +1,8 @@
-// The 4 visual directions a challenge owner can pick in CardShare
-// (CHALLENGE_THEMES / ChallengeThemeId in @dreamer/global) — this is the
+// The 4 visual directions a challenge owner can pick, in this package's own
+// ChallengeConfigForm (CHALLENGE_THEMES / ChallengeThemeId in @dreamer/global) — this is the
 // other half: what each one actually looks like on this page. Nothing
 // outside this package renders the shared page, so unlike
-// CHALLENGE_THEME_SWATCH (the single color CardShare's picker needs) this
+// CHALLENGE_THEME_SWATCH (the single color the picker needs) this
 // lives here, not in the global store.
 import * as React from 'react';
 import type { ChallengeThemeId } from '@dreamer/global';

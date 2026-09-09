@@ -15,16 +15,76 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: $spacing-md;
+  // Bigger than a group's own $spacing-md gap — the two mainSection cards below need real
+  // breathing room between them, not the same rhythm as the finer groups nested inside each.
+  gap: $spacing-lg;
   padding: $spacing-lg;
   overflow-y: auto;
   flex: 1;
 }
 
-.section {
+// One of the two top-level sections (Configuration, UI Changes) — a real bordered/tinted card,
+// not just a bigger heading over the same flat background as everything else. A 2px title and a
+// 1px-thicker divider (the previous attempt at this split) read as barely different from a
+// .group's own .groupTitle/.groupDivider — a whole distinct surface is what actually reads as
+// "these two things are different sections," at a glance and while scrolling.
+.mainSection {
   display: flex;
   flex-direction: column;
-  gap: $spacing-xxs;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  border: 1px solid var(--division-color);
+  border-radius: 12px;
+  background: var(--surface-secondary);
+}
+
+.mainSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid var(--division-color);
+}
+
+.mainSectionBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+// Blue for Configuration (matches this app's own real primary/accent color — see
+// index.module.scss's own .gradientButton), purple for UI Changes — two different hues, not just
+// two different icons, so which section you're looking at is legible even at a glance.
+.mainSectionBadgeConfig {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0b7dc2 100%);
+}
+
+.mainSectionBadgeUi {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+}
+
+.mainSectionTitle {
+  font-size: toRem(16px) !important;
+  font-weight: 700 !important;
+}
+
+// Trails a .groupTitle inline ("Corner background photo (optional)") — muted and not bold, so it
+// reads as a caveat rather than part of the heading itself.
+.optionalTag {
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+// The "Allow comments" checkbox row — same shape CardShare's own modal used to use for it.
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  cursor: pointer;
 }
 
 // One group ("Target / Goal", "Start date", "UI Changes") — a title followed by whatever that
@@ -145,13 +205,6 @@
   width: auto;
   padding: 14px 24px;
   font-size: toRem(15px);
-}
-
-.label {
-  font-size: toRem(11px);
-  font-weight: 600;
-  color: var(--text-color-secondary, var(--text-color));
-  text-transform: uppercase;
 }
 
 .themeSwatches {

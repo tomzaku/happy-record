@@ -1,26 +1,14 @@
 import React, { useState } from 'react';
-import cx from 'classnames';
+import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 import Typography from '@moon-ui/typography';
 import Button from '@moon-ui/button';
-import Checkbox from '@moon-ui/checkbox';
-import Input from '@moon-ui/input';
 import Icon from '@moon-ui/icon/Icon';
-import List from '@moon-ui/list';
 import { Modal, BottomModal } from '@moon-ui/modal';
-import DatePicker from '@moon-ui/date-picker';
-import { useRecordField } from '@dreamer/global/src/store/record-field';
-import type { RecordField } from '@dreamer/global/src/store/record-field';
 import { useCreateChecklistTemplate } from '@dreamer/global/src/hook/checklist-template/useCreateChecklistTemplateApi';
 import {
-  CHALLENGE_THEMES,
-  CHALLENGE_THEME_SWATCH,
-  Challenge,
-  ChallengeThemeId,
   ChecklistTemplate,
-  getActiveFieldGroups,
   getSharedChecklistTemplateUrl,
-  localDateStringToISO,
   useChallenge,
   useChecklistTemplates,
   useIsMobile,
@@ -28,35 +16,6 @@ import {
 } from '@dreamer/global';
 import { SettingsRow } from '../SettingsCard';
 import styles from './index.module.scss';
-
-// Copy for each theme — kept here (translated via intl) rather than beside
-// CHALLENGE_THEME_SWATCH in the global store, which has no i18n access.
-const THEME_COPY: Record<ChallengeThemeId, { labelId: string; label: string; descriptionId: string; description: string }> = {
-  classic: {
-    labelId: 'CardShare.theme-classic',
-    label: 'Classic',
-    descriptionId: 'CardShare.theme-classic-description',
-    description: 'Clean and on-brand',
-  },
-  ignite: {
-    labelId: 'CardShare.theme-ignite',
-    label: 'Ignite',
-    descriptionId: 'CardShare.theme-ignite-description',
-    description: 'Bold and competitive',
-  },
-  playful: {
-    labelId: 'CardShare.theme-playful',
-    label: 'Playful',
-    descriptionId: 'CardShare.theme-playful-description',
-    description: 'Fun and low-pressure',
-  },
-  dark: {
-    labelId: 'CardShare.theme-dark',
-    label: 'Dark',
-    descriptionId: 'CardShare.theme-dark-description',
-    description: 'Sits on a dark background photo',
-  },
-};
 
 type CardShareProps = {
   checklistTemplate: ChecklistTemplate;
@@ -66,108 +25,43 @@ type CardShareProps = {
  * One row, meant to be rendered as a child of ChecklistGenericInfo (inside its own General
  * Settings card, among its other rows) rather than in a card of its own — see that
  * component's own `children` slot. Not a desktop/mobile pair either: the row itself doesn't
- * need to look any different by device, only the config modal it opens does (Modal vs
- * BottomModal, same reasoning as AiChecklistGenerate).
+ * need to look any different by device, only the confirm modal it opens (pre-share) does
+ * (Modal vs BottomModal, same reasoning as AiChecklistGenerate).
+ *
+ * Deliberately just "do you want to challenge friends?" plus a Share button — no theme/target/
+ * date/comments config here anymore. Every one of those is owner-only config for an *already
+ * shared* challenge, so it belongs on the invite page's own config drawer
+ * (checklist-template-shared-page-ui's ChallengeConfigDrawer, already gated to the owner there)
+ * instead of cluttering the very first "do you want to do this at all" prompt. This component
+ * writes sane defaults for all of it on first share and never touches those fields again —
+ * once shared, this row's own onClick navigates to the invite page instead of reopening a modal.
  */
 const CardShare = ({ checklistTemplate }: CardShareProps) => {
   const intl = useIntl();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
-  // The config (checkboxes, theme, targets) is editable both before and after the first
-  // share — the row itself only ever shows the url + copy/edit icons once shared, so the
-  // actual checkboxes/theme picker/target inputs live in this modal, opened from the row
-  // (pre-share) or its edit pencil (post-share) rather than sitting on the row permanently.
-  const [modalVisible, setModalVisible] = useState(false);
-  // Generating a share URL round-trips two requests (publish the template, then
-  // create/update the challenge row) before there's anything to show — without this the
-  // "Share" click just sat there with no feedback until both landed.
+  // Only ever asks once — "do you want to challenge friends?" — never reopened after the first
+  // share (see the row's own onClick below).
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  // Generating a share URL round-trips two requests (publish the template, then create the
+  // challenge row) before there's anything to show — without this the "Share" click just sat
+  // there with no feedback until both landed.
   const [generating, setGenerating] = useState(false);
   const checklistTemplateId = checklistTemplate?.id;
-  const { getRecordFieldsByIds } = useRecordField();
   const { updateChecklistTemplate } = useCreateChecklistTemplate();
   const { updateChecklistTemplate: updateChecklistTemplateLocal } = useChecklistTemplates();
-  const { getChallengeForTemplate, setChallengeOptions } = useChallenge();
-  const challenge = getChallengeForTemplate(checklistTemplateId);
-  // The owner's name/photo on the group dashboard, straight from Google
-  // (see useSession.ts) — no reason to ask them to type it again. Both
-  // `undefined` for an anonymous owner (joining a challenge doesn't itself
-  // require signing in for the owner's own side), same as before this
+  const { setChallengeOptions } = useChallenge();
+  // The owner's name/photo on the group dashboard, straight from Google (see useSession.ts) — no
+  // reason to ask them to type it again. Both `undefined` for an anonymous owner (joining a
+  // challenge doesn't itself require signing in for the owner's own side), same as before this
   // existed: the participant row just gets saved with no name/photo.
   const { displayName, avatarUrl } = useSession();
-  // Local until the first share (there's nothing to persist yet); once a challenge row
-  // exists it's the source of truth, so this only seeds from it — a later toggle/edit
-  // writes straight through instead of drifting.
-  const [commentsEnabled, setCommentsEnabled] = useState(false);
-  const [fieldTargets, setFieldTargets] = useState<Record<string, number>>({});
-  // Applies to every share link, not only a "real" challenge (every share is
-  // one now — see generateShareUrl's own comment) — generateShareUrl below
-  // always writes a challenges row, so theme is always there to pick.
-  const [theme, setTheme] = useState<ChallengeThemeId>('classic');
-  // A plain URL, not an upload (this app has no file-storage pipeline) — an
-  // already-hosted photo shown behind the shared page in place of the
-  // theme's own background. Optional; empty string means "use the theme".
-  const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
-  // No UI here for this — it's set from the shared invite page's own config widget
-  // (checklist-template-shared-page-ui) — but generateShareUrl's setChallengeOptions call below is
-  // a full upsert, so this still has to be hydrated and carried through unchanged on every save
-  // from here, or a re-share/re-save from this modal would silently null out whatever the owner
-  // set on the invite page.
-  const [greetingText, setGreetingText] = useState<string | null>(null);
-  // Same "no UI here, just carry it through unchanged" passthrough as greetingText above, for
-  // each of the 6 independent widget layouts.
-  const [startWidgetLayout, setStartWidgetLayout] = useState<Challenge['startWidgetLayout']>('countdown');
-  const [greetingWidgetLayout, setGreetingWidgetLayout] = useState<Challenge['greetingWidgetLayout']>('heading');
-  const [targetsWidgetLayout, setTargetsWidgetLayout] = useState<Challenge['targetsWidgetLayout']>('list');
-  const [buttonWidgetLayout, setButtonWidgetLayout] = useState<Challenge['buttonWidgetLayout']>('plain');
-  const [titleWidgetLayout, setTitleWidgetLayout] = useState<Challenge['titleWidgetLayout']>('row');
-  const [pageBackgroundLayout, setPageBackgroundLayout] = useState<Challenge['pageBackgroundLayout']>('solid');
-  const [pageBackgroundImageUrl, setPageBackgroundImageUrl] = useState<Challenge['pageBackgroundImageUrl']>(null);
-  const [glassOpacity, setGlassOpacity] = useState<Challenge['glassOpacity']>(12);
-  // Required — defaults to "now" for a brand-new challenge (nothing to hydrate from yet), same
-  // default useChallenge.tsx's own setChallengeOptions already gives createdAt. Once a challenge
-  // exists, its own startDate is the source of truth (hydrated below), so re-saving without
-  // touching this field carries the original date forward rather than resetting it to "now" again.
-  const [startDate, setStartDate] = useState(() => new Date().toISOString());
-  // Optional — empty string means "open-ended" (null on the wire, see generateShareUrl).
-  const [endDate, setEndDate] = useState('');
-  React.useEffect(() => {
-    if (challenge) {
-      setCommentsEnabled(challenge.commentsEnabled);
-      setFieldTargets(challenge.fieldTargets);
-      setTheme(challenge.theme);
-      setBackgroundImageUrl(challenge.backgroundImageUrl ?? '');
-      setGreetingText(challenge.greetingText);
-      setStartWidgetLayout(challenge.startWidgetLayout);
-      setGreetingWidgetLayout(challenge.greetingWidgetLayout);
-      setTargetsWidgetLayout(challenge.targetsWidgetLayout);
-      setButtonWidgetLayout(challenge.buttonWidgetLayout);
-      setTitleWidgetLayout(challenge.titleWidgetLayout);
-      setPageBackgroundLayout(challenge.pageBackgroundLayout);
-      setPageBackgroundImageUrl(challenge.pageBackgroundImageUrl);
-      setGlassOpacity(challenge.glassOpacity);
-      setStartDate(challenge.startDate);
-      setEndDate(challenge.endDate ?? '');
-    }
-  }, [challenge]);
   const [shareUrl, setShareUrl] = useState(
     checklistTemplate.visibility === 'public'
       ? getSharedChecklistTemplateUrl(checklistTemplateId)
       : '',
   );
-
-  // The template's own number fields — a target is a shared goal ("100 push-ups"), which
-  // only makes sense for a number. Fetched once per template (not gated on being already
-  // shared, since targets can be set "before or after share" — see CLAUDE.md's
-  // challenge_targets migration).
-  const [numberFields, setNumberFields] = useState<RecordField[]>([]);
-  React.useEffect(() => {
-    const fieldIds = getActiveFieldGroups(checklistTemplate.fieldGroups).flatMap(group =>
-      group.fields.map(f => f.fieldId),
-    );
-    if (!fieldIds.length) return;
-    getRecordFieldsByIds(fieldIds).then(fields => setNumberFields(fields.filter(f => f.type === 'number')));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checklistTemplate.fieldGroups]);
 
   const isShared = !!shareUrl;
 
@@ -193,60 +87,42 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
       };
       const result = await updateChecklistTemplate(data);
       updateChecklistTemplateLocal(data.checklistTemplate);
+      // Sane defaults for everything a challenge needs — every one of these becomes editable
+      // afterward from the invite page's own owner-only config drawer, never from here again
+      // (see this file's own top comment on why).
       await setChallengeOptions(checklistTemplateId, {
-        // Every challenge shares everyone's check-ins on the group
-        // dashboard now — there's no private-roster mode, so this is no
-        // longer a checkbox (see the module's own history if you need the
-        // old toggle).
+        // Every challenge shares everyone's check-ins on the group dashboard now — there's no
+        // private-roster mode, so this is no longer a checkbox (see the module's own history if
+        // you need the old toggle).
         shareRecords: true,
-        commentsEnabled,
-        fieldTargets,
-        theme,
-        backgroundImageUrl: backgroundImageUrl.trim() || null,
-        greetingText,
-        startWidgetLayout,
-        greetingWidgetLayout,
-        targetsWidgetLayout,
-        buttonWidgetLayout,
-        titleWidgetLayout,
-        pageBackgroundLayout,
-        pageBackgroundImageUrl,
-        glassOpacity,
-        startDate,
-        endDate: endDate || null,
+        commentsEnabled: false,
+        fieldTargets: {},
+        theme: 'classic',
+        backgroundImageUrl: null,
+        greetingText: null,
+        startWidgetLayout: 'countdown',
+        greetingWidgetLayout: 'heading',
+        targetsWidgetLayout: 'list',
+        buttonWidgetLayout: 'plain',
+        titleWidgetLayout: 'row',
+        pageBackgroundLayout: 'solid',
+        pageBackgroundImageUrl: null,
+        glassOpacity: 12,
+        startDate: new Date().toISOString(),
+        endDate: null,
         ownerDisplayName: displayName,
         ownerAvatarUrl: avatarUrl,
       });
       const fullUrl = getSharedChecklistTemplateUrl(result.id);
       setShareUrl(fullUrl);
-      // Only auto-copy on the first share (the point where there's a brand-new link the
-      // owner almost certainly wants on their clipboard right away) — re-opening this modal
-      // afterward to change the theme or a target shouldn't clobber whatever's on the
-      // clipboard just because Save was clicked.
-      if (!isShared) handleCopyLink(fullUrl);
-      setModalVisible(false);
+      handleCopyLink(fullUrl);
+      setConfirmVisible(false);
     } catch (err) {
       console.error('Failed to generate share URL:', err);
     } finally {
       setGenerating(false);
     }
   };
-
-  // Only renders inside the share config modal (before or after the first share — see
-  // isShared below), so there's no "write straight through" case to handle here either way —
-  // generateShareUrl is what persists it, on submit.
-  const handleToggleComments = (checked: boolean) => setCommentsEnabled(checked);
-  const handleTargetChange = (fieldId: string, value: string) => {
-    const next = { ...fieldTargets };
-    if (value.trim() === '') {
-      delete next[fieldId];
-    } else {
-      const num = Number(value);
-      if (Number.isFinite(num) && num > 0) next[fieldId] = num;
-    }
-    setFieldTargets(next);
-  };
-  const handleThemeChange = (next: ChallengeThemeId) => setTheme(next);
 
   const handleCopyLink = async (url?: string) => {
     const urlToCopy = url || shareUrl;
@@ -273,7 +149,7 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
           </Typography.Title>
         </div>
         <Icon
-          onClick={() => !generating && setModalVisible(false)}
+          onClick={() => !generating && setConfirmVisible(false)}
           width={20}
           icon="basil:close-outline"
           className={styles.closeIcon}
@@ -281,129 +157,18 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
       </div>
 
       <div className={styles.body}>
-        <div className={styles.options}>
-          <label className={styles.optionRow}>
-            <Checkbox
-              checked={commentsEnabled}
-              onChange={e => handleToggleComments(e.target.checked)}
-            />
-            <Typography.Text>
-              {intl.formatMessage({
-                id: 'CardShare.option-comments',
-                defaultMessage: 'Allow comments on this challenge',
-              })}
-            </Typography.Text>
-          </label>
-        </div>
-        <div className={styles.themePicker}>
-          <Typography.Text className={styles.themeLabel}>
-            {intl.formatMessage({ id: 'CardShare.theme-label', defaultMessage: 'Page theme' })}
-          </Typography.Text>
-          <div className={styles.themeSwatches}>
-            {CHALLENGE_THEMES.map(id => {
-              const copy = THEME_COPY[id];
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  className={cx(styles.themeSwatch, theme === id && styles.themeSwatchSelected)}
-                  style={{ background: CHALLENGE_THEME_SWATCH[id] }}
-                  title={intl.formatMessage({ id: copy.descriptionId, defaultMessage: copy.description })}
-                  aria-label={intl.formatMessage({ id: copy.labelId, defaultMessage: copy.label })}
-                  aria-pressed={theme === id}
-                  onClick={() => handleThemeChange(id)}
-                />
-              );
-            })}
-          </div>
-        </div>
-        <div className={styles.themePicker}>
-          <Typography.Text className={styles.themeLabel}>
-            {intl.formatMessage({
-              id: 'CardShare.background-image-label',
-              defaultMessage: 'Corner background photo (optional)',
-            })}
-          </Typography.Text>
-          <Input
-            value={backgroundImageUrl}
-            onChange={e => setBackgroundImageUrl(e.target.value)}
-            placeholder={intl.formatMessage({
-              id: 'CardShare.background-image-placeholder',
-              defaultMessage: 'Paste an image URL — shown as a small accent in the corner, not the full page',
-            })}
-            renderRightInput={() => <></>}
-          />
-        </div>
-        <div className={styles.themePicker}>
-          <Typography.Text className={styles.themeLabel}>
-            {intl.formatMessage({ id: 'CardShare.start-date-label', defaultMessage: 'Start date' })}
-          </Typography.Text>
-          <DatePicker value={startDate} onChange={e => setStartDate(localDateStringToISO(e.target.value))} />
-        </div>
-        <div className={styles.themePicker}>
-          <Typography.Text className={styles.themeLabel}>
-            {intl.formatMessage({ id: 'CardShare.end-date-label', defaultMessage: 'End date (optional)' })}
-          </Typography.Text>
-          <DatePicker
-            value={endDate}
-            onChange={e => setEndDate(e.target.value ? localDateStringToISO(e.target.value) : '')}
-          />
-          {!!endDate && (
-            <Button type="ghost" size="sm" onClick={() => setEndDate('')} className={styles.secondaryButton}>
-              {intl.formatMessage({ id: 'CardShare.clear-end-date', defaultMessage: 'Clear end date' })}
-            </Button>
-          )}
-        </div>
-        {!!numberFields.length && (
-          <div className={styles.targets}>
-            <Typography.Text className={styles.targetsLabel}>
-              {intl.formatMessage({
-                id: 'CardShare.targets-label',
-                defaultMessage: 'Group targets (optional)',
-              })}
-            </Typography.Text>
-            {/* Same bordered-card, icon-badge row shell as the Select Fields list
-                (ChecklistFieldGroupMenu's `.fieldIconBadge`) / CoreFieldRecord's form rows —
-                a plain label+small-input pair read too cramped next to those, so each target
-                gets the same field-row treatment the rest of the app uses. */}
-            <div className={styles.targetsCard}>
-              {numberFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className={cx(styles.targetRow, index === numberFields.length - 1 && styles.targetRowLast)}
-                >
-                  <List.ItemMeta
-                    noPaddingHorizontal
-                    className={styles.targetItemMeta}
-                    logo={
-                      <div className={styles.targetIconBadge}>
-                        <Icon width={18} icon={field.icon} />
-                      </div>
-                    }
-                    title={field.title}
-                  />
-                  <Input
-                    value={fieldTargets[field.id] ?? ''}
-                    border="dash"
-                    type="number"
-                    placeholder={intl.formatMessage({ id: 'CardShare.no-target', defaultMessage: 'No target' })}
-                    onChange={e => handleTargetChange(field.id, e.target.value)}
-                    className={styles.targetInput}
-                    classes={{ input: styles.targetInputField }}
-                    suffix={field.unit || undefined}
-                    renderRightInput={() => <></>}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <Typography.Text>
+          {intl.formatMessage({
+            id: 'CardShare.confirm-message',
+            defaultMessage: 'Do you want to challenge other friends?',
+          })}
+        </Typography.Text>
       </div>
 
       <div className={styles.footer}>
         <Button
           type="ghost"
-          onClick={() => setModalVisible(false)}
+          onClick={() => setConfirmVisible(false)}
           disabled={generating}
           className={styles.secondaryButton}
         >
@@ -415,9 +180,7 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
           className={styles.gradientButton}
         >
           {generating && <Icon icon="svg-spinners:180-ring-with-bg" width={16} className={styles.buttonSpinner} />}
-          {isShared
-            ? intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })
-            : intl.formatMessage({ id: 'CardShare.share-button', defaultMessage: 'Share' })}
+          {intl.formatMessage({ id: 'CardShare.share-button', defaultMessage: 'Share' })}
         </Button>
       </div>
     </>
@@ -446,21 +209,10 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         }
         rightComponent={
           isShared ? (
-            // Edit pencil alongside copy once a link exists — the config (target, theme,
-            // dashboard/comments toggles) stays editable after the first share, not just
-            // before it; only the "generate a link" framing goes away, since there's already
-            // one to keep. See generateShareUrl's own isShared branch for why Save here
-            // doesn't re-copy the link to the clipboard the way the first share does.
+            // Copy stays a quick inline action; everything else (theme, target, dates,
+            // comments) is owner-only config that now lives entirely on the invite page's own
+            // config drawer instead — the row itself (onClick below) is what gets you there.
             <div className={styles.rightIcons}>
-              <Icon
-                width={16}
-                icon="solar:pen-2-line-duotone"
-                className={styles.editIcon}
-                onClick={e => {
-                  e.stopPropagation();
-                  setModalVisible(true);
-                }}
-              />
               <Icon
                 width={16}
                 icon={copied ? 'solar:check-circle-bold' : 'solar:copy-line-duotone'}
@@ -470,47 +222,44 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
                   handleCopyLink();
                 }}
               />
+              <Icon width={16} icon="solar:alt-arrow-right-linear" />
             </div>
           ) : (
-            // The whole row already opens the config modal (onClick below) — a "Share"
+            // The whole row already opens the confirm modal (onClick below) — a "Share"
             // button here was a second, redundant way to do the exact same thing. A plain
             // chevron just says "this opens something," same as Archived Groups' own row.
             <Icon width={16} icon="solar:alt-arrow-right-linear" />
           )
         }
-        onClick={() => setModalVisible(true)}
+        onClick={() =>
+          isShared
+            ? navigate(`/checklist-template/shared/${checklistTemplateId}`)
+            : setConfirmVisible(true)
+        }
       />
       {/* No plain link here anymore on either device — MiniChallengeDashboard
           (rendered by index.desktop.tsx/index.mobile.tsx right next to
           ChecklistGenericInfo) replaces it everywhere with an actual
           leaderboard preview instead of just a link down to one. */}
 
-      {/* Share config — reachable both before the first share (row's own onClick) and after
-          (the row's edit pencil, once it exists), since the config itself (target, theme,
-          dashboard/comments toggles) is never done changing just because a link was already
-          generated. Same header/body/footer layout as AiChecklistGenerate's own modal,
-          including the Modal-vs-BottomModal split by device — just a different (blue, not
-          purple/pink) header gradient, since that combination is specifically the AI
-          feature's own signature, not a generic "this is a nice modal" treatment to reuse
-          verbatim everywhere. */}
-      {/* `closeOnOverlayClick={false}` — real config lives here (target numbers per field,
-          dashboard/comments toggles, theme), not just the `generating` guard's own async-safety
-          window; a stray click on the backdrop shouldn't discard it any more than one on
-          AiChecklistGenerate's own form should. */}
+      {/* Confirm modal — only ever shown before the first share (see the row's own onClick,
+          which navigates to the invite page instead once shared). Same header/body/footer
+          layout as AiChecklistGenerate's own modal, including the Modal-vs-BottomModal split
+          by device — just a different (blue, not purple/pink) header gradient, since that
+          combination is specifically the AI feature's own signature, not a generic "this is a
+          nice modal" treatment to reuse verbatim everywhere. */}
       {isMobile ? (
         <BottomModal
-          visible={modalVisible}
-          onDismiss={() => !generating && setModalVisible(false)}
+          visible={confirmVisible}
+          onDismiss={() => !generating && setConfirmVisible(false)}
           content={<div className={styles.mobileSheet}>{modalContent}</div>}
-          closeOnOverlayClick={false}
         />
       ) : (
         <Modal
-          visible={modalVisible}
-          onDismiss={() => !generating && setModalVisible(false)}
+          visible={confirmVisible}
+          onDismiss={() => !generating && setConfirmVisible(false)}
           content={modalContent}
           className={styles.modalShell}
-          closeOnOverlayClick={false}
         />
       )}
     </>
