@@ -10,6 +10,7 @@ import Typography from '@moon-ui/typography';
 import { Icon } from '@moon-ui/icon/Icon';
 import { useIsMobile, isRecurringSchedule } from '@dreamer/global';
 import ChecklistFieldGroupAdd from '@dreamer/detail-task-page/src/components/ChecklistFieldGroupAdd';
+import ScheduleEditDialogs from '@dreamer/detail-task-page/src/components/ChecklistGenericInfo/ScheduleEditDialogs';
 import FieldGroupNotePreview from '@happy-record/checklist-template-shared-page-ui/src/components/task-shared-card/FieldGroupNotePreview';
 import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
 import { formatTemplateSchedule, getScheduledTimeLabel } from '../checklist-day/checklistDayHelpers';
@@ -37,8 +38,20 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
   const intl = useIntl();
   const isMobile = useIsMobile();
   const data = event?.data as CalendarEventData | undefined;
-  const { template, relevantGroups, fieldsByGroup, checklist, markCompleted, setCalendarColor } =
-    useTaskDetailModalData(data);
+  const {
+    template,
+    relevantGroups,
+    fieldsByGroup,
+    checklist,
+    markCompleted,
+    setCalendarColor,
+    updateChecklistTemplate,
+    splitChecklistTemplate,
+    updateMyReminder,
+    isOwnedTemplate,
+  } = useTaskDetailModalData(data);
+  const [scheduleEditOpen, setScheduleEditOpen] = React.useState(false);
+  const isOwner = template ? isOwnedTemplate(template.id) : true;
   const {
     deletingTaskId,
     deletingTaskTitle,
@@ -79,6 +92,7 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
           <TaskOptionsMenu
             colorValue={template?.calendarColor}
             onColorChange={setCalendarColor}
+            onEditScheduleClick={() => setScheduleEditOpen(true)}
             onRemoveClick={() => eventChecklistId && openDelete(eventChecklistId)}
           />
           <Button type="primary" size="sm" className={styles.viewButton} onClick={() => onViewDetails(data)}>
@@ -170,6 +184,21 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
         onDeleteAll={withCloseOnDelete(handleDeleteAll)}
         onCancel={cancelDelete}
       />
+      {/* Same Schedule/My Reminder editor ChecklistGenericInfo uses on the full detail page — see
+          ScheduleEditDialogs' own doc comment — so "Edit schedule" from this quick-look modal
+          updates the template right here instead of navigating away. `template` is only known
+          once the calendar's own fetch resolves; nothing to edit before then. */}
+      {template && (
+        <ScheduleEditDialogs
+          checklistTemplate={template}
+          onUpdate={updateChecklistTemplate}
+          onSplitSchedule={isOwner ? (from, repeat) => splitChecklistTemplate(template, from, repeat) : undefined}
+          onUpdateMyReminder={!isOwner ? repeat => updateMyReminder(template.id, repeat) : undefined}
+          readOnly={!isOwner}
+          mode={scheduleEditOpen ? (isOwner ? 'schedule' : 'myReminder') : null}
+          onClose={() => setScheduleEditOpen(false)}
+        />
+      )}
     </>
   );
 };

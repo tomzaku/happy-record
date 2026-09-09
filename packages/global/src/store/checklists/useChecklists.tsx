@@ -22,15 +22,14 @@ export type Checklist = {
   checklistTemplateId: string;
   completedAt?: string;
   startedAt: string;
-  /** How many days this arrangement runs for, relative to `startedAt` — absent means no defined
-   * end, a "forever" one-off task (see createTaskUtil.ts's own non-recurring branch). Every
-   * scheduled-day instance still gets a real `1` (see this file's own virtual-checklist
-   * construction below); this is genuinely unset only for the one-off case. A relative day count,
-   * not an absolute end date (`ended_at`, now retired — see the `checklists_duration_days`
-   * migration) — an absolute date would still be sitting on a template the next time its own
-   * Schedule dialog re-applies whatever's already there (ChecklistGenericInfo), silently capping
-   * a brand new weekly pattern to zero real occurrences. */
-  durationDays?: number;
+  /** The last day this arrangement runs through, inclusive — absent means no defined end, a
+   * "forever" one-off task (see createTaskUtil.ts's own non-recurring branch). Every
+   * scheduled-day instance still gets this set to its own single day (see this file's own
+   * virtual-checklist construction below); this is genuinely unset only for the one-off case. An
+   * absolute date, not the template's own `repeat.until` — that's a separate field this never
+   * writes to, so it can't get silently reapplied the next time the Schedule dialog
+   * (ChecklistGenericInfo) saves a real recurring pattern. */
+  endedDate?: string;
   clientOnly?: boolean;
   updatedAt: string;
 };
@@ -215,9 +214,9 @@ export const useChecklist = () => {
           // before `createTaskUtil.ts`'s own `addChecklist` call, which awaits the template's real
           // network round-trip first, to avoid racing `checklists.checklist_template_id`'s FK) —
           // skip, rather than render a placeholder that'd duplicate AddInlineTask's own
-          // "Creating…" row. A real row with `durationDays` set ("Single day") — its one
+          // "Creating…" row. A real row with `endedDate` set ("Single day") — its one
           // occurrence already happened; never synthesize another. A real row with no
-          // `durationDays` ("No end date") — keep synthesizing, same as any other recurring
+          // `endedDate` ("No end date") — keep synthesizing, same as any other recurring
           // template. A genuinely recurring template (or a field-group-driven one — see
           // isTemplateScheduledOnDate's own `hasActiveFieldGroups` override) never reaches this
           // branch at all; it always has a placeholder to synthesize, not a row to wait for or
@@ -231,7 +230,7 @@ export const useChecklist = () => {
             getActiveFieldGroups(getFieldGroups(id, isOwnedTemplate(id))).length === 0;
           if (isOneOff) {
             const anyRow = Object.values(checklist).find(c => c.checklistTemplateId === id);
-            if (!anyRow || anyRow.durationDays) return null;
+            if (!anyRow || anyRow.endedDate) return null;
           }
 
           return {
@@ -240,7 +239,7 @@ export const useChecklist = () => {
             title: template.title,
             checklistTemplateId: id,
             startedAt: new Date(date).toISOString(),
-            durationDays: 1,
+            endedDate: new Date(date).toISOString(),
             // Never synced or reconciled against — this is a throwaway
             // view, not yet a row this device has decided to persist
             // (see updateChecklist's comment on that first-edit moment).

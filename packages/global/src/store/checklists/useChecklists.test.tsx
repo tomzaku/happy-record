@@ -36,7 +36,7 @@ jest.mock('../../hook/useSession', () => ({
 // useFieldGroups.tsx transitively imports fieldGroupsApi.ts -> lib/api.ts -> lib/supabase.ts ->
 // @supabase/supabase-js, which fails to transform under this repo's current jest config — same
 // pre-existing issue useChecklistTemplates.test.tsx already works around (see its own comment).
-// Mocked here too so this file can actually run at all, not just so its new duration_days
+// Mocked here too so this file can actually run at all, not just so its own field-group
 // coverage below has something to call.
 const mockGetFieldGroups = jest.fn((_checklistTemplateId: string, _isOwned?: boolean): unknown[] => []);
 jest.mock('./useFieldGroups', () => ({
@@ -269,7 +269,7 @@ describe('getChecklistByGivingDate — scheduled vs. non-scheduled agreement', (
         title: 'Gym',
         checklistTemplateId: `fg-template-${userId}`,
         startedAt: date.toISOString(),
-        durationDays: 1,
+        endedDate: date.toISOString(),
         completedAt: date.toISOString(),
       });
     });

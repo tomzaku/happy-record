@@ -4,6 +4,7 @@ import { startOfDay } from 'date-fns';
 import {
   Checklist,
   checklistInstanceId,
+  isRecurringSchedule,
   useChallenge,
   useChecklist,
   useChecklistTemplateDetail,
@@ -18,6 +19,8 @@ import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
 import Typography from '@moon-ui/typography';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
+import DeleteTaskModal from '@dreamer/record-page-ui/src/components/checklist-day/DeleteTaskModal';
+import { useDeleteTaskFlow } from '@dreamer/record-page-ui/src/components/checklist-day/useDeleteTaskFlow';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistTemplateCalendar from './components/ChecklistTemplateCalendar';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
@@ -28,8 +31,14 @@ import MiniChallengeDashboard from './components/MiniChallengeDashboard';
 const DetailTaskPageMobile = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
-  const { updateChecklistTemplate, splitChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
-    useChecklistTemplates();
+  const {
+    checklistTemplate: allChecklistTemplates,
+    updateChecklistTemplate,
+    splitChecklistTemplate,
+    updateMyReminder,
+    deleteChecklistTemplate,
+    deleteOccurrence,
+  } = useChecklistTemplates();
   const {
     addChecklist,
     getChecklistDetail,
@@ -113,7 +122,7 @@ const DetailTaskPageMobile = () => {
       title: checklistTemplate.title,
       checklistTemplateId: id,
       startedAt: startOfDay(new Date()).toISOString(),
-      durationDays: 1,
+      endedDate: startOfDay(new Date()).toISOString(),
     });
     setSearchParams({
       ...Object.fromEntries(search),
@@ -121,6 +130,31 @@ const DetailTaskPageMobile = () => {
     });
     setChecklist(checklist);
   }, [checklistTemplate, checklistId, id, currentDay, getChecklistDetail]);
+
+  // Same This/This-and-following/All scope delete as index.desktop.tsx's matching block — see
+  // its own comment for why `checklistsForDay`/`allChecklistTemplates` (maps), not just this one
+  // `checklist`/`checklistTemplate`.
+  const { checklist: checklistsForDay } = getChecklistForDateWithoutFetching({ date: new Date(currentDay) });
+  const {
+    deletingTaskId,
+    deletingTaskTitle,
+    openDelete,
+    cancelDelete,
+    handleDeleteToday,
+    handleDeleteThisAndFollowing,
+    handleDeleteAll,
+  } = useDeleteTaskFlow({
+    date: new Date(currentDay),
+    checklist: checklistsForDay,
+    checklistTemplate: allChecklistTemplates,
+    deleteChecklist,
+    getAllChecklistWithTemplate,
+    deleteChecklistTemplate,
+    updateChecklistTemplate,
+    deleteOccurrence,
+    setHoveredTaskId: () => {},
+    setFocusedTaskId: () => {},
+  });
 
   // See index.desktop.tsx's matching handler for why this mirrors
   // ChecklistToday's own day-click navigation instead of a real navigate().
@@ -140,20 +174,6 @@ const DetailTaskPageMobile = () => {
   };
 
   const navigate = useNavigate();
-
-  const handleDeleteTask = async () => {
-    if (!id) return;
-    deleteChecklistTemplate(id);
-    // The template alone doesn't remove every day it's already generated a
-    // Checklist instance for — without this, an orphaned instance (its
-    // checklistTemplateId no longer resolving to anything) keeps showing up
-    // on the home page, since computeChecklistsForDate falls back to
-    // treating a missing template as "unscheduled" rather than excluding it.
-    // Mirrors EditChecklistForm's own delete-with-instances flow.
-    const checklistsToDelete = await getAllChecklistWithTemplate(id);
-    checklistsToDelete.forEach(checklistItem => deleteChecklist(checklistItem.id));
-    navigate('/');
-  };
 
   const confirmLeaveChallenge = async () => {
     if (!challenge || !id || leaving) return;
@@ -211,7 +231,8 @@ const DetailTaskPageMobile = () => {
       {/* The template row still exists (soft-deleted, not removed — see
           20260905000000_checklist_templates_soft_delete.sql), so this page still resolves for a
           participant instead of just breaking; the owner already navigates away on their own
-          delete (handleDeleteTask), so this only ever shows to someone else. */}
+          "All events" delete (see the DeleteTaskModal below), so this only ever shows to someone
+          else. */}
       {!isOwner && checklistTemplate.deletedAt && (
         <div
           style={{
@@ -256,13 +277,14 @@ const DetailTaskPageMobile = () => {
       <ChecklistGenericInfo
         isDefaultCollapsed
         checklistTemplate={checklistTemplate}
+        checklist={checklist}
         onUpdate={isOwner ? (updatedTemplate) => updateChecklistTemplate(updatedTemplate) : () => {}}
         onSplitSchedule={
           isOwner
             ? (effectiveFrom, newRepeat) => splitChecklistTemplate(checklistTemplate, effectiveFrom, newRepeat)
             : undefined
         }
-        onDelete={isOwner ? handleDeleteTask : undefined}
+        onDelete={isOwner ? () => openDelete(checklist.id) : undefined}
         readOnly={!isOwner}
         onUpdateMyReminder={!isOwner && challenge ? repeat => updateMyReminder(id, repeat) : undefined}
       >
@@ -301,6 +323,21 @@ const DetailTaskPageMobile = () => {
           defaultMessage: 'Cancel',
         })}
         secondaryButtonClick={() => setLeaveModalVisible(false)}
+      />
+
+      {/* Same This/This-and-following/All scope confirm as index.desktop.tsx's matching block —
+          see its own comment on why only "All events" navigates away. */}
+      <DeleteTaskModal
+        visible={!!deletingTaskId}
+        taskTitle={deletingTaskTitle || checklistTemplate.title}
+        isRecurring={isRecurringSchedule(checklistTemplate.repeat)}
+        onCancel={cancelDelete}
+        onDeleteToday={handleDeleteToday}
+        onDeleteThisAndFollowing={handleDeleteThisAndFollowing}
+        onDeleteAll={() => {
+          handleDeleteAll();
+          navigate('/');
+        }}
       />
 
       {/* <FocusZoneModal */}

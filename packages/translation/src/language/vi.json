@@ -255,8 +255,11 @@
   "home-calendar.status-done": "Đã hoàn thành",
   "home-calendar.status-pending": "Chưa hoàn thành",
   "home-calendar.remove-task": "Xóa",
+  "home-calendar.edit-schedule": "Sửa lịch trình",
   "home-calendar.color-automatic": "Tự động",
   "home-calendar.color-section": "Màu sắc",
   "home-calendar.task-menu-label": "Tùy chọn",
+  "home-calendar.search-placeholder": "Tìm kiếm công việc…",
+  "home-calendar.clear-search": "Xóa tìm kiếm",
   "month-view.today": "Hôm nay"
 }

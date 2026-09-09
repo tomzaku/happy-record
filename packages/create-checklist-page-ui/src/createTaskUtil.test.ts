@@ -68,19 +68,19 @@ describe('createTask — one-off (forever) task', () => {
     expect(addChecklist).toHaveBeenCalledWith(seedChecklist, { skipNetwork: true });
   });
 
-  it('"Single day" (noEndDate: false) seeds durationDays: 1', async () => {
+  it('"Single day" (noEndDate: false) seeds endedDate as the same day as startedAt', async () => {
     const { addChecklistTemplate, addChecklist } = makeMocks();
     await createTask({ ...baseFormData, noEndDate: false }, addChecklistTemplate as never, addChecklist as never);
-    const seedChecklist = addChecklistTemplate.mock.calls[0][2] as { durationDays?: number };
-    expect(seedChecklist.durationDays).toBe(1);
+    const seedChecklist = addChecklistTemplate.mock.calls[0][2] as { startedAt?: string; endedDate?: string };
+    expect(seedChecklist.endedDate).toBe(seedChecklist.startedAt);
   });
 
-  it('"No end date" (noEndDate: true) and the no-choice-offered case (undefined) both omit durationDays', async () => {
+  it('"No end date" (noEndDate: true) and the no-choice-offered case (undefined) both omit endedDate', async () => {
     for (const noEndDate of [true, undefined] as const) {
       const { addChecklistTemplate, addChecklist } = makeMocks();
       await createTask({ ...baseFormData, noEndDate }, addChecklistTemplate as never, addChecklist as never);
-      const seedChecklist = addChecklistTemplate.mock.calls[0][2] as { durationDays?: number };
-      expect(seedChecklist.durationDays).toBeUndefined();
+      const seedChecklist = addChecklistTemplate.mock.calls[0][2] as { endedDate?: string };
+      expect(seedChecklist.endedDate).toBeUndefined();
     }
   });
 

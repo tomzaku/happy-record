@@ -10,6 +10,9 @@ type Props = {
    * usage leaves this unset. See `useCalendarEvents`'s own doc comment. */
   checklistTemplateId?: string;
   selectedTag?: string;
+  /** Filters rendered events to those whose title matches (case-insensitive substring) — the home
+   * page's own search box; other consumers leave this unset. */
+  searchQuery?: string;
   onEventClick?: (event: CalendarEvent) => void;
   onDateClick?: (date: Date) => void;
   todayLabel?: string;
@@ -29,6 +32,7 @@ const CalendarEventsView = ({
   onDateChange,
   checklistTemplateId,
   selectedTag = 'all',
+  searchQuery,
   onEventClick,
   onDateClick,
   todayLabel,
@@ -36,7 +40,7 @@ const CalendarEventsView = ({
   className,
 }: Props) => {
   const [range, setRange] = React.useState<CalendarRange | null>(null);
-  const events = useCalendarEvents(range, selectedTag, checklistTemplateId);
+  const events = useCalendarEvents(range, selectedTag, checklistTemplateId, searchQuery);
 
   return (
     <Calendar

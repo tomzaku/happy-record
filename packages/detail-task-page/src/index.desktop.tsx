@@ -4,6 +4,7 @@ import { startOfDay } from 'date-fns';
 import {
   Checklist,
   checklistInstanceId,
+  isRecurringSchedule,
   useChallenge,
   useChecklist,
   useChecklistTemplateDetail,
@@ -16,6 +17,8 @@ import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { Breadcrumb, DesktopDrawer } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
+import DeleteTaskModal from '@dreamer/record-page-ui/src/components/checklist-day/DeleteTaskModal';
+import { useDeleteTaskFlow } from '@dreamer/record-page-ui/src/components/checklist-day/useDeleteTaskFlow';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistTemplateCalendar from './components/ChecklistTemplateCalendar';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
@@ -33,8 +36,14 @@ import WarningModal from '@moon-ui/modal/src/WarningModal';
 const DetailTaskPageDesktop = () => {
   const { id } = useParams<{ id: string }>();
   const [search, setSearchParams] = useSearchParams();
-  const { updateChecklistTemplate, splitChecklistTemplate, updateMyReminder, deleteChecklistTemplate } =
-    useChecklistTemplates();
+  const {
+    checklistTemplate: allChecklistTemplates,
+    updateChecklistTemplate,
+    splitChecklistTemplate,
+    updateMyReminder,
+    deleteChecklistTemplate,
+    deleteOccurrence,
+  } = useChecklistTemplates();
   const {
     addChecklist,
     getChecklistDetail,
@@ -135,7 +144,7 @@ const DetailTaskPageDesktop = () => {
       title: checklistTemplate.title,
       checklistTemplateId: id,
       startedAt: startOfDay(new Date()).toISOString(),
-      durationDays: 1,
+      endedDate: startOfDay(new Date()).toISOString(),
     });
     setSearchParams(prev => {
       const newParams = new URLSearchParams(prev);
@@ -144,6 +153,34 @@ const DetailTaskPageDesktop = () => {
     });
     setChecklist(checklist);
   }, [checklistTemplate, checklistId, id, currentDay, getChecklistDetail]);
+
+  // Same This/This-and-following/All scope delete the calendar's own list (ChecklistDay.desktop.tsx)
+  // and quick-look modal (TaskDetailModal) already use — reused as-is rather than the page's old
+  // plain "delete everything" confirm, so deleting from General Settings offers the same choice.
+  // `checklistsForDay`/`allChecklistTemplates` (not just this one `checklist`/`checklistTemplate`)
+  // since `useDeleteTaskFlow` looks its target up by id out of a map, the same shape
+  // `getChecklistForDateWithoutFetching`'s own callers already pass it elsewhere.
+  const { checklist: checklistsForDay } = getChecklistForDateWithoutFetching({ date: new Date(currentDay) });
+  const {
+    deletingTaskId,
+    deletingTaskTitle,
+    openDelete,
+    cancelDelete,
+    handleDeleteToday,
+    handleDeleteThisAndFollowing,
+    handleDeleteAll,
+  } = useDeleteTaskFlow({
+    date: new Date(currentDay),
+    checklist: checklistsForDay,
+    checklistTemplate: allChecklistTemplates,
+    deleteChecklist,
+    getAllChecklistWithTemplate,
+    deleteChecklistTemplate,
+    updateChecklistTemplate,
+    deleteOccurrence,
+    setHoveredTaskId: () => {},
+    setFocusedTaskId: () => {},
+  });
 
   // Handle title editing
   const handleEditTitle = () => {
@@ -200,20 +237,6 @@ const DetailTaskPageDesktop = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
-
-  const handleDeleteTask = async () => {
-    if (!id) return;
-    deleteChecklistTemplate(id);
-    // The template alone doesn't remove every day it's already generated a
-    // Checklist instance for — without this, an orphaned instance (its
-    // checklistTemplateId no longer resolving to anything) keeps showing up
-    // on the home page, since computeChecklistsForDate falls back to
-    // treating a missing template as "unscheduled" rather than excluding it.
-    // Mirrors EditChecklistForm's own delete-with-instances flow.
-    const checklistsToDelete = await getAllChecklistWithTemplate(id);
-    checklistsToDelete.forEach(checklistItem => deleteChecklist(checklistItem.id));
-    navigate('/');
-  };
 
   // Jumps the page's own currentDay/checklistId (the same pair the effect
   // above creates a checklist for) to whatever day was clicked in the
@@ -325,7 +348,8 @@ const DetailTaskPageDesktop = () => {
           {/* The template row still exists (soft-deleted, not removed — see
               20260905000000_checklist_templates_soft_delete.sql), so this page still resolves
               for a participant instead of just breaking; the owner already navigates away on
-              their own delete (handleDeleteTask), so this only ever shows to someone else. */}
+              their own "All events" delete (see the DeleteTaskModal below), so this only ever
+              shows to someone else. */}
           {isTemplateReady && !isOwner && checklistTemplate.deletedAt && (
             <div className={styles.deletedBanner}>
               <Icon icon="solar:danger-triangle-bold" width={20} />
@@ -373,13 +397,14 @@ const DetailTaskPageDesktop = () => {
                   <ChecklistGenericInfo
                     isDefaultCollapsed={false}
                     checklistTemplate={checklistTemplate}
+                    checklist={checklist}
                     onUpdate={isOwner ? updatedTemplate => updateChecklistTemplate(updatedTemplate) : () => {}}
                     onSplitSchedule={
                       isOwner
                         ? (effectiveFrom, newRepeat) => splitChecklistTemplate(checklistTemplate, effectiveFrom, newRepeat)
                         : undefined
                     }
-                    onDelete={isOwner ? handleDeleteTask : undefined}
+                    onDelete={isOwner && checklist ? () => openDelete(checklist.id) : undefined}
                     readOnly={!isOwner}
                     onUpdateMyReminder={
                       !isOwner && challenge ? repeat => updateMyReminder(id, repeat) : undefined
@@ -451,6 +476,25 @@ const DetailTaskPageDesktop = () => {
         })}
         secondaryButtonClick={() => setLeaveModalVisible(false)}
       />
+
+      {/* Same This/This-and-following/All scope confirm the calendar's own list and quick-look
+          modal use — "All events" is the only scope that leaves this page, since the template
+          itself (and every instance) is gone; "This event"/"This and following" leave the owner
+          on this same page, same as the calendar's own partial-delete behavior. */}
+      {isTemplateReady && (
+        <DeleteTaskModal
+          visible={!!deletingTaskId}
+          taskTitle={deletingTaskTitle || checklistTemplate.title}
+          isRecurring={isRecurringSchedule(checklistTemplate.repeat)}
+          onCancel={cancelDelete}
+          onDeleteToday={handleDeleteToday}
+          onDeleteThisAndFollowing={handleDeleteThisAndFollowing}
+          onDeleteAll={() => {
+            handleDeleteAll();
+            navigate('/');
+          }}
+        />
+      )}
 
       {/* <FocusZoneModal */}
       {/*   visible={isFocusZoneOpen} */}

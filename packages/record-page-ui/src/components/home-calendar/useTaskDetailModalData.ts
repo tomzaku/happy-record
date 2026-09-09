@@ -17,7 +17,8 @@ import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
 // layout (see CLAUDE.md's ~200-line-per-file guideline; this pairs with useDeleteTaskFlow.ts's
 // own hook/component split in checklist-day).
 export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
-  const { checklistTemplate, withFieldGroups, updateChecklistTemplate } = useChecklistTemplates();
+  const { checklistTemplate, withFieldGroups, updateChecklistTemplate, splitChecklistTemplate, updateMyReminder, isOwnedTemplate } =
+    useChecklistTemplates();
   const { getChecklistDetail, addChecklist, updateChecklist } = useChecklist();
   const { getAllRecordFields, getRecordFieldsByTemplateId } = useRecordField();
 
@@ -86,7 +87,7 @@ export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
       title: template.title,
       checklistTemplateId: data.checklistTemplateId,
       startedAt: startOfDay(data.date).toISOString(),
-      durationDays: 1,
+      endedDate: startOfDay(data.date).toISOString(),
     });
   }, [data, template, relevantGroups.length, checklist, addChecklist, deterministicId]);
 
@@ -107,5 +108,22 @@ export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
     updateChecklistTemplate({ ...template, calendarColor: (color ?? null) as unknown as string | undefined });
   };
 
-  return { template, relevantGroups, fieldsByGroup, checklist, markCompleted, setCalendarColor };
+  return {
+    template,
+    relevantGroups,
+    fieldsByGroup,
+    checklist,
+    markCompleted,
+    setCalendarColor,
+    updateChecklistTemplate,
+    splitChecklistTemplate,
+    updateMyReminder,
+    // Whether *this device* owns the template, not just whether it's synced locally — a joined
+    // challenge's template lands in the same `checklistTemplate` map (see withFieldGroups above),
+    // so this is what tells "my own task" from "one I joined" for the Schedule vs. My Reminder
+    // choice below (same check detail-task-page's own index.desktop.tsx/index.mobile.tsx make via
+    // `!challenge || challenge.ownerId === userId` — this modal has no `challenge` object in scope,
+    // so `isOwnedTemplate` is the simpler equivalent).
+    isOwnedTemplate,
+  };
 };

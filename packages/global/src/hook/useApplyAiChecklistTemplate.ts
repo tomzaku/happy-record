@@ -157,8 +157,7 @@ export const useApplyAiChecklistTemplate = () => {
       title: generated.title,
       checklistTemplateId: id,
       startedAt: new Date().toISOString(),
-      // No `durationDays` — see Checklist['durationDays']'s own comment on why this isn't a 2099
-      // sentinel-shaped `endedAt` any more.
+      // No `endedDate` — an AI-generated template is always the "forever, no defined end" shape.
     });
     return { id };
   };

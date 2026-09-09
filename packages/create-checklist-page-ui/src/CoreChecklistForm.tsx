@@ -29,7 +29,7 @@ export type FormState = {
   fieldGroups?: FieldGroup[];
   tags: string[];
   /** Only consulted for a one-off (non-recurring) task — see createTaskUtil.ts, which writes this
-   * to the one-off `Checklist` row's own `durationDays`, never to the template's `repeat` (see
+   * to the one-off `Checklist` row's own `endedDate`, never to the template's `repeat` (see
    * that file's own comment on why — `repeat.until`/`count` belong to ChecklistGenericInfo's
    * Schedule dialog and would otherwise leak a stale cutoff into a schedule added later). A real
    * three-way signal: `false` means "single day" (runs for exactly 1 day

@@ -69,7 +69,7 @@ export const createTask = async (
         // opens the Schedule dialog to actually turn this into a real weekly recurrence — and get
         // silently re-applied, capping the brand new pattern to zero real occurrences (reported:
         // "single day... but having schedule... does not repeat"). "Single day" vs. "No end date"
-        // is expressed purely on the one-off Checklist row below (`durationDays` set or not)
+        // is expressed purely on the one-off Checklist row below (`endedDate` set or not)
         // instead — see useChecklists.tsx's `computeChecklistsForDate`, which reads that row,
         // never `repeat`, to decide whether this template keeps generating further days.
         recurring: false,
@@ -92,10 +92,11 @@ export const createTask = async (
         // `noEndDate` is a real three-way signal, not a plain boolean default: `false` (a caller
         // that offers the choice and defaults it to "Single day," e.g. AddInlineTask) means this
         // task runs for exactly 1 day from its own start — whatever day that is, not necessarily
-        // today (see AddInlineTask's own `date` prop); `undefined` (every caller that doesn't offer
-        // this choice yet — CreateChecklistForm, create-task-modal) keeps the old behavior of no
-        // defined end at all, same as `true` (explicitly "no end date").
-        durationDays: noEndDate === false ? 1 : undefined,
+        // today (see AddInlineTask's own `date` prop), so its last day is that same start day;
+        // `undefined` (every caller that doesn't offer this choice yet — CreateChecklistForm,
+        // create-task-modal) keeps the old behavior of no defined end at all, same as `true`
+        // (explicitly "no end date").
+        endedDate: noEndDate === false ? effectiveStartedAt : undefined,
         updatedAt: new Date().toISOString(),
       };
 

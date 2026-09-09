@@ -1,0 +1,61 @@
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 34px;
+  min-width: 200px;
+  border-radius: 8px;
+  // Same fallback chain as ViewSwitcher's own `.container` — the home page's
+  // `.almanacScope` defines `--almanac-pill-bg`; other consumers of this pill styling fall back
+  // to the pre-existing surface token.
+  background: var(--almanac-pill-bg, var(--surface-secondary));
+}
+
+.searchIcon {
+  flex-shrink: 0;
+  color: var(--text-description-color);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: var(--text-color);
+
+  &::placeholder {
+    color: var(--text-description-color);
+  }
+
+  // Safari/Chrome's own default search-input decorations (the round cancel dot, extra
+  // inset) fight this pill's own clear button and padding — same reasoning as
+  // Input's own hand-rolled clear button in @moon-ui/input.
+  &::-webkit-search-decoration,
+  &::-webkit-search-cancel-button,
+  &::-webkit-search-results-button,
+  &::-webkit-search-results-decoration {
+    display: none;
+  }
+}
+
+.clearButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-description-color);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--card-background);
+  }
+}

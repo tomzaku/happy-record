@@ -10,7 +10,7 @@ import {
   Checklist,
 } from '@dreamer/global';
 
-// A Checklist instance has no time of its own (`startedAt`/`durationDays` just span
+// A Checklist instance has no time of its own (`startedAt`/`endedDate` just span
 // whole calendar days) — only a template with no field groups carries a single
 // `repeat.byhour`/`byminute` worth plotting on an hourly grid (see
 // ChecklistDay.desktop.tsx's own `getScheduledTimeLabel`). A field-group
@@ -97,6 +97,7 @@ export const useCalendarEvents = (
   range: CalendarRange | null,
   selectedTag: string,
   checklistTemplateId?: string,
+  searchQuery?: string,
 ): CalendarEvent[] => {
   const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
   const { checklistTemplate, withFieldGroups } = useChecklistTemplates();
@@ -273,6 +274,16 @@ export const useCalendarEvents = (
       });
     });
 
-    return events;
-  }, [range, getChecklistForDateWithoutFetching, checklistTemplate, withFieldGroups, selectedTag, checklistTemplateId]);
+    const trimmedQuery = searchQuery?.trim().toLowerCase();
+    if (!trimmedQuery) return events;
+    return events.filter(event => event.title.toLowerCase().includes(trimmedQuery));
+  }, [
+    range,
+    getChecklistForDateWithoutFetching,
+    checklistTemplate,
+    withFieldGroups,
+    selectedTag,
+    checklistTemplateId,
+    searchQuery,
+  ]);
 };

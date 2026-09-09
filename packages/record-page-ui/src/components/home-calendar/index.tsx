@@ -7,6 +7,8 @@ import ViewSwitcher, { ViewMode } from '../view-switcher';
 import CalendarEventsView from '../calendar-events-view';
 import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
 import TaskDetailModal from './TaskDetailModal';
+import TaskSearchInput from './TaskSearchInput';
+import styles from './index.module.scss';
 
 // dayGrid/multiMonth cells are date-only, so a click there always means "go
 // look at this day" — timeGrid's own slot clicks (picking an hour within a
@@ -30,6 +32,7 @@ const HomeCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
   const intl = useIntl();
   const [mode, setMode] = React.useState<CalendarViewMode>('month');
   const [selectedEvent, setSelectedEvent] = React.useState<CalendarEvent | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   const handleDateClick = () => {
     if (DATE_ONLY_VIEWS.includes(mode)) {
@@ -51,10 +54,16 @@ const HomeCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
         currentDate={currentDate}
         onDateChange={onDateChange}
         selectedTag={selectedTag}
+        searchQuery={searchQuery}
         onDateClick={handleDateClick}
         onEventClick={setSelectedEvent}
         todayLabel={intl.formatMessage({ id: 'home-calendar.today', defaultMessage: 'Today' })}
-        rightSlot={<ViewSwitcher value={mode} onChange={setMode} />}
+        rightSlot={
+          <div className={styles.rightSlot}>
+            <TaskSearchInput value={searchQuery} onChange={setSearchQuery} />
+            <ViewSwitcher value={mode} onChange={setMode} />
+          </div>
+        }
       />
       <TaskDetailModal
         event={selectedEvent}
