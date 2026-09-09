@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import { uniqueId } from '../../util';
@@ -165,6 +166,11 @@ type ChallengesMap = Record<string, Challenge>;
 // writes.
 type RollbackContext = { previousChallenge: Challenge | undefined };
 
+// A stable reference for `useQuery`'s own `data` fallback below — see useRecordField.tsx's
+// `EMPTY_FIELDS_MAP` for why an inline `{}` literal there is a real infinite-render-loop bug, not
+// just wasted work, once something downstream memoizes against this map's identity.
+const EMPTY_CHALLENGES_MAP: ChallengesMap = {};
+
 type SetChallengeOptionsArgs = {
   checklistTemplateId: string;
   options: {
@@ -199,11 +205,13 @@ const fetchedFor = new Set<string>();
 export const useChallenge = () => {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
-  const queryKey = challengesKeys.map(userId);
+  // Memoized — see useChecklistRecord.ts's own fix for why an unmemoized key factory result here
+  // is a real infinite-render-loop risk for any consumer, not just wasted work.
+  const queryKey = useMemo(() => challengesKeys.map(userId), [userId]);
 
   // Same "one shared cache entry, backed by React Query instead of useSessionStore" shape as
   // useTags.tsx's own list query — see its own comment for the reasoning.
-  const { data: challenges = {} } = useQuery<ChallengesMap>({
+  const { data: challenges = EMPTY_CHALLENGES_MAP } = useQuery<ChallengesMap>({
     queryKey,
     queryFn: () => queryClient.getQueryData<ChallengesMap>(queryKey) ?? {},
     enabled: false,

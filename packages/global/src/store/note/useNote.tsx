@@ -74,6 +74,11 @@ type NotesMap = Record<string, Note>;
 // (same fix, same resource shape) for why a global snapshot isn't safe under concurrent writes.
 type RollbackContext = { previousNote: Note | undefined };
 
+// A stable reference for `useQuery`'s own `data` fallback below — see useRecordField.tsx's
+// `EMPTY_FIELDS_MAP` for why an inline `{}` literal there is a real infinite-render-loop bug, not
+// just wasted work, once something downstream memoizes against this map's identity.
+const EMPTY_NOTES_MAP: NotesMap = {};
+
 // Ids already fetched (or created locally, which counts as "fetched" — see createNote) this page
 // load, so the same id isn't re-requested every call. Separate from the reactive `loadingIds`
 // store below: this is only ever a write-once dedup key, never rendered.
@@ -97,7 +102,11 @@ const fetchedFieldGroupScopes = new Set<string>();
 export const useNote = () => {
   const { ready, userId } = useSession();
   const queryClient = useQueryClient();
-  const queryKey = notesKeys.map(userId);
+  // Memoized — `notesKeys.map` returns a fresh array literal every call, and several `useCallback`s
+  // below depend on `queryKey` by reference (see useChecklistRecord.ts's own fix for why an
+  // unmemoized key here is a real infinite-render-loop risk for any consumer that memoizes against
+  // one of those callbacks' identity, not just wasted work).
+  const queryKey = React.useMemo(() => notesKeys.map(userId), [userId]);
 
   const invalidateIfFieldGroupNote = (ownerType: Note['ownerType']) => {
     if (ownerType === 'field_group') queryClient.invalidateQueries({ queryKey: checklistLogsKeys.all });
@@ -111,7 +120,7 @@ export const useNote = () => {
   // into this same cache entry via `setQueryData` — this `useQuery` call exists purely to give
   // every one of those merges somewhere reactive to write into, so a component re-renders no
   // matter which read path actually populated the note it's looking at.
-  const { data: notes = {} } = useQuery<NotesMap>({
+  const { data: notes = EMPTY_NOTES_MAP } = useQuery<NotesMap>({
     queryKey,
     queryFn: () => queryClient.getQueryData<NotesMap>(queryKey) ?? {},
     enabled: false,

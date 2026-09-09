@@ -67,6 +67,13 @@ export type ChecklistTemplate = {
     name: string;
     color?: string;
   };
+  /** A manual pick from the calendar's own fixed 10-swatch palette (TaskColorPicker,
+   * home-calendar/useCalendarEvents.ts's own DEFAULT_PALETTE) — deliberately separate from
+   * `avatar.color` (the icon badge shown everywhere else) and scoped to the calendar view only.
+   * Undefined means "never picked one" — the calendar falls back to `avatar.color`, or failing
+   * that a deterministic hash of the template's own id (see useCalendarEvents.ts), same as before
+   * this field existed. */
+  calendarColor?: string;
   createdAt: string;
   // @deprecated use groups instead
   records: string[];

@@ -254,5 +254,9 @@
   "home-calendar.view-details": "Xem chi tiết",
   "home-calendar.status-done": "Đã hoàn thành",
   "home-calendar.status-pending": "Chưa hoàn thành",
+  "home-calendar.remove-task": "Xóa",
+  "home-calendar.color-automatic": "Tự động",
+  "home-calendar.color-section": "Màu sắc",
+  "home-calendar.task-menu-label": "Tùy chọn",
   "month-view.today": "Hôm nay"
 }

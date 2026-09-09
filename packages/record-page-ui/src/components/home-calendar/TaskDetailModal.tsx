@@ -8,12 +8,15 @@ import Card from '@moon-ui/card';
 import Button from '@moon-ui/button';
 import Typography from '@moon-ui/typography';
 import { Icon } from '@moon-ui/icon/Icon';
-import { useIsMobile } from '@dreamer/global';
+import { useIsMobile, isRecurringSchedule } from '@dreamer/global';
 import ChecklistFieldGroupAdd from '@dreamer/detail-task-page/src/components/ChecklistFieldGroupAdd';
 import FieldGroupNotePreview from '@happy-record/checklist-template-shared-page-ui/src/components/task-shared-card/FieldGroupNotePreview';
 import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
 import { formatTemplateSchedule, getScheduledTimeLabel } from '../checklist-day/checklistDayHelpers';
+import DeleteTaskModal from '../checklist-day/DeleteTaskModal';
 import { useTaskDetailModalData } from './useTaskDetailModalData';
+import { useTaskDetailDeleteFlow } from './useTaskDetailDeleteFlow';
+import TaskOptionsMenu from './TaskOptionsMenu';
 import styles from './TaskDetailModal.module.scss';
 
 type Props = {
@@ -34,9 +37,27 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
   const intl = useIntl();
   const isMobile = useIsMobile();
   const data = event?.data as CalendarEventData | undefined;
-  const { template, relevantGroups, fieldsByGroup, checklist, markCompleted } = useTaskDetailModalData(data);
+  const { template, relevantGroups, fieldsByGroup, checklist, markCompleted, setCalendarColor } =
+    useTaskDetailModalData(data);
+  const {
+    deletingTaskId,
+    deletingTaskTitle,
+    openDelete,
+    cancelDelete,
+    handleDeleteToday,
+    handleDeleteThisAndFollowing,
+    handleDeleteAll,
+    eventChecklistId,
+  } = useTaskDetailDeleteFlow(data);
 
   if (!event || !data) return null;
+
+  // Any scope of delete removes the event this modal is showing — close it along with the
+  // confirm modal rather than leaving a now-deleted (or now-truncated) event on screen.
+  const withCloseOnDelete = (handler: () => void) => () => {
+    handler();
+    onClose();
+  };
 
   const timeLabel = getScheduledTimeLabel(template);
   const showGroupLabels = relevantGroups.length > 1;
@@ -54,7 +75,17 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
             {event.title}
           </Typography.Title>
         </div>
-        <Icon onClick={onClose} width={20} icon="basil:close-outline" className={styles.closeIcon} />
+        <div className={styles.headerActions}>
+          <TaskOptionsMenu
+            colorValue={template?.calendarColor}
+            onColorChange={setCalendarColor}
+            onRemoveClick={() => eventChecklistId && openDelete(eventChecklistId)}
+          />
+          <Button type="primary" size="sm" className={styles.viewButton} onClick={() => onViewDetails(data)}>
+            {intl.formatMessage({ id: 'home-calendar.view-details', defaultMessage: 'View details' })}
+          </Button>
+          <Icon onClick={onClose} width={20} icon="basil:close-outline" className={styles.closeIcon} />
+        </div>
       </div>
 
       <div className={cx(styles.body, showSubmit && styles.twoColumn)}>
@@ -116,19 +147,30 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
           </div>
         )}
       </div>
-
-      <div className={styles.footer}>
-        <Button type="primary" className={styles.viewButton} onClick={() => onViewDetails(data)}>
-          {intl.formatMessage({ id: 'home-calendar.view-details', defaultMessage: 'View details' })}
-        </Button>
-      </div>
     </>
   );
 
-  return isMobile ? (
-    <BottomModal visible={Boolean(event)} onDismiss={onClose} content={<div className={styles.mobileSheet}>{content}</div>} />
-  ) : (
-    <Modal visible={Boolean(event)} onDismiss={onClose} content={content} className={styles.modalShell} />
+  return (
+    <>
+      {isMobile ? (
+        <BottomModal
+          visible={Boolean(event)}
+          onDismiss={onClose}
+          content={<div className={styles.mobileSheet}>{content}</div>}
+        />
+      ) : (
+        <Modal visible={Boolean(event)} onDismiss={onClose} content={content} className={styles.modalShell} />
+      )}
+      <DeleteTaskModal
+        visible={Boolean(deletingTaskId)}
+        taskTitle={deletingTaskTitle || event.title}
+        isRecurring={isRecurringSchedule(template?.repeat)}
+        onDeleteToday={withCloseOnDelete(handleDeleteToday)}
+        onDeleteThisAndFollowing={withCloseOnDelete(handleDeleteThisAndFollowing)}
+        onDeleteAll={withCloseOnDelete(handleDeleteAll)}
+        onCancel={cancelDelete}
+      />
+    </>
   );
 };
 

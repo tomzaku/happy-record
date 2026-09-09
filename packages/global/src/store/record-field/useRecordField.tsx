@@ -139,6 +139,17 @@ type RecordFieldsMap = Record<string, RecordField>;
 // writes.
 type RollbackContext = { previousField: RecordField | undefined };
 
+// A stable reference for `useQuery`'s own `data` fallback below — before anything has ever
+// populated this queryKey's cache, `data` is `undefined` every render, and a fresh `{}` literal
+// there would be a brand-new object each render. `getAllRecordFields`' own useCallback depends on
+// `recordFieldList` (see its deps array further down), so that churn made its identity change
+// every render too — which made every consumer relying on it for memoization (e.g. home-calendar's
+// `useTaskDetailModalData`, via `useSyncedSelector`) recompute every render, cascading into a real
+// infinite render loop downstream (`ChecklistFieldGroupAdd`'s own reload effect refiring on every
+// render, forever) rather than just extra work. Same bug, same fix, as
+// `useChecklistRecord.ts`'s own `EMPTY_RECORD_STORE`.
+const EMPTY_FIELDS_MAP: RecordFieldsMap = {};
+
 // Fetched by whatever scope is actually asked for — "all mine + public"
 // (needed by most consumers: field pickers, the manage-fields screen, AI
 // context, dedupe checks) or a specific set of ids (the share-flow
@@ -151,14 +162,18 @@ const ALL_SCOPE = '__all__';
 export const useRecordField = () => {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
-  const queryKey = recordFieldsKeys.map(userId);
+  // Memoized — `recordFieldsKeys.map` returns a fresh array literal every call, and
+  // `mergeRecordFields`/`getAllRecordFields` below depend on `queryKey` by reference (this was the
+  // actual last piece of the TaskDetailModal infinite-loop chase — see useChecklistRecord.ts's own
+  // identical fix for the full mechanism).
+  const queryKey = React.useMemo(() => recordFieldsKeys.map(userId), [userId]);
 
   // The shared fields cache, backed by React Query instead of useSessionStore — same "one cache
   // entry, several imperative scoped fetches merging into it" shape as useNote.tsx's own notes
   // cache (see recordFieldsKeys.ts's own comment on why). `enabled: false` since nothing
   // auto-fetches this query itself; every read function below does its own scoped fetch and
   // merges via setQueryData.
-  const { data: recordFieldList = {} } = useQuery<RecordFieldsMap>({
+  const { data: recordFieldList = EMPTY_FIELDS_MAP } = useQuery<RecordFieldsMap>({
     queryKey,
     queryFn: () => queryClient.getQueryData<RecordFieldsMap>(queryKey) ?? {},
     enabled: false,

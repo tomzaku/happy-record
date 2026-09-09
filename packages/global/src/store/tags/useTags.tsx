@@ -27,10 +27,17 @@ type TagsMap = Record<string, Tag>;
 // `saveTagMutation` for why a global snapshot isn't safe here.
 type RollbackContext = { previousTag: Tag | undefined };
 
+// A stable reference for `useQuery`'s own `data` fallback below — see useRecordField.tsx's
+// `EMPTY_FIELDS_MAP` for why an inline `{}` literal there is a real infinite-render-loop bug, not
+// just wasted work, once something downstream memoizes against this map's identity.
+const EMPTY_TAGS_MAP: TagsMap = {};
+
 export const useTags = () => {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
-  const queryKey = tagsKeys.list(userId);
+  // Memoized — see useChecklistRecord.ts's own fix for why an unmemoized key factory result here
+  // is a real infinite-render-loop risk for any consumer, not just wasted work.
+  const queryKey = React.useMemo(() => tagsKeys.list(userId), [userId]);
 
   // Backed by React Query's own cache instead of useSessionStore — no more hand-rolled
   // "have I already fetched this identity" Set (see git history for the old shape): the query
@@ -38,7 +45,7 @@ export const useTags = () => {
   // this "fetch once per identity" like the code it replaces, rather than React Query's default
   // refetch-on-refocus — a background refetch would otherwise race an optimistic write below
   // (see the mutations' own comment on why there's no reconciling refetch after a write either).
-  const { data: tags = {} } = useQuery({
+  const { data: tags = EMPTY_TAGS_MAP } = useQuery({
     queryKey,
     queryFn: async () => {
       const result = await fetchTags();

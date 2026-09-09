@@ -4,6 +4,14 @@ $drawer-z-index-3: 1003;
 
 $modal-z-index: 10000;
 
+// Above $modal-z-index — a Dropdown (@moon-ui/dropdown) is frequently triggered from a control
+// that itself lives inside a Modal (TaskOptionsMenu's own "⋮" trigger in TaskDetailModal, for
+// one), and both portal into the same shared `#moon-ui-portal-root` (MoonProvider.tsx) as DOM
+// siblings — without a higher z-index here, the dropdown's own menu render *behind* the modal,
+// invisible even though it's technically open. Below $tooltip-z-index: a tooltip should still be
+// able to float over an open dropdown menu.
+$dropdown-z-index: 10500;
+
 $tooltip-z-index: 11000;
 
 $video-z-index: 12000;

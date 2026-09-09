@@ -49,6 +49,16 @@ type ChecklistRecorStore = {
   [checklistTemplateId: string]: ChecklistRecord[];
 };
 
+// A stable reference for `useQuery`'s own `data` fallback below — before anything has ever
+// populated this queryKey's cache, `data` is `undefined` every render, and a fresh `{}` literal
+// there would be a brand-new object each time. `getChecklistRecords`' own useCallback depends on
+// `checklistRecordList` (see its deps array further down), so that churn made its identity change
+// every render too — which made any effect depending on it (ChecklistFieldGroupAdd's own reload
+// effect) refire every render, calling setState with a new array each time, forcing another
+// render, forever: a real infinite loop, not just wasted renders, since nothing ever broke the
+// cycle before React's own runaway-render limit tripped ("Maximum update depth exceeded").
+const EMPTY_RECORD_STORE: ChecklistRecorStore = {};
+
 type AddChecklistRecordData = {
   records: {
     fieldId: string;
@@ -90,14 +100,22 @@ const syncedRanges = new Set<string>();
 export const useChecklistRecord = () => {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
-  const queryKey = checklistRecordsKeys.store(userId);
+  // `checklistRecordsKeys.store` returns a fresh array literal (`[...all, userId]`) on every
+  // call — memoized here since `getChecklistRecords`' own useCallback depends on `queryKey` by
+  // reference (see its deps array below): an unmemoized `queryKey` gave `getChecklistRecords` a
+  // new identity every render regardless of whether `userId` actually changed, which was enough
+  // on its own to refire any consumer's effect that depends on it every render, forever (see
+  // ChecklistFieldGroupAdd's own reload effect — this was the actual last piece of that loop,
+  // after fixing `checklistRecordList`'s own unstable `{}` default and TaskDetailModal's own
+  // unmemoized `template`).
+  const queryKey = React.useMemo(() => checklistRecordsKeys.store(userId), [userId]);
 
   // The shared checklist-records cache, backed by React Query instead of useSessionStore — same
   // "one cache entry, several imperative scoped fetches merging into it" shape as useNote.tsx's
   // own notes cache (see checklistRecordsKeys.ts's own comment on why). `enabled: false` since
   // nothing auto-fetches this query itself; getChecklistRecords' own background sync below is
   // what actually populates it, via setQueryData.
-  const { data: checklistRecordList = {} } = useQuery<ChecklistRecorStore>({
+  const { data: checklistRecordList = EMPTY_RECORD_STORE } = useQuery<ChecklistRecorStore>({
     queryKey,
     queryFn: () => queryClient.getQueryData<ChecklistRecorStore>(queryKey) ?? {},
     enabled: false,

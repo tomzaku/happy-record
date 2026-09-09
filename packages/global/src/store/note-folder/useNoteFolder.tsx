@@ -22,14 +22,21 @@ type NoteFoldersMap = Record<string, NoteFolder>;
 // writes.
 type RollbackContext = { previousFolder: NoteFolder | undefined };
 
+// A stable reference for `useQuery`'s own `data` fallback below — see useRecordField.tsx's
+// `EMPTY_FIELDS_MAP` for why an inline `{}` literal there is a real infinite-render-loop bug, not
+// just wasted work, once something downstream memoizes against this map's identity.
+const EMPTY_NOTE_FOLDERS_MAP: NoteFoldersMap = {};
+
 export const useNoteFolder = () => {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
-  const queryKey = noteFoldersKeys.list(userId);
+  // Memoized — see useChecklistRecord.ts's own fix for why an unmemoized key factory result here
+  // is a real infinite-render-loop risk for any consumer, not just wasted work.
+  const queryKey = React.useMemo(() => noteFoldersKeys.list(userId), [userId]);
 
   // Backed by React Query's own cache instead of useSessionStore — see useTags.tsx's own
   // comment on this exact shape (same resource pattern, ported from the same code).
-  const { data: noteFolders = {} } = useQuery({
+  const { data: noteFolders = EMPTY_NOTE_FOLDERS_MAP } = useQuery({
     queryKey,
     queryFn: async () => {
       const result = await fetchNoteFolders();

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import {
@@ -17,6 +18,10 @@ type ReactionsMap = Record<string, ChallengeReactionSummary>;
 type RollbackContext = { previous: ChallengeReactionSummary | undefined };
 
 const EMPTY_SUMMARY: ChallengeReactionSummary = { likes: 0, dislikes: 0, myReaction: null };
+// A stable reference for `useQuery`'s own `data` fallback below — see useRecordField.tsx's
+// `EMPTY_FIELDS_MAP` for why an inline `{}` literal there is a real infinite-render-loop bug, not
+// just wasted work, once something downstream memoizes against this map's identity.
+const EMPTY_REACTIONS_MAP: ReactionsMap = {};
 
 /**
  * Like/dislike counts + the caller's own reaction, for the "Discover" browse cards
@@ -27,9 +32,11 @@ const EMPTY_SUMMARY: ChallengeReactionSummary = { likes: 0, dislikes: 0, myReact
 export const useChallengeReactions = () => {
   const { userId } = useSession();
   const queryClient = useQueryClient();
-  const queryKey = challengeReactionsKeys.map(userId);
+  // Memoized — see useChecklistRecord.ts's own fix for why an unmemoized key factory result here
+  // is a real infinite-render-loop risk for any consumer, not just wasted work.
+  const queryKey = useMemo(() => challengeReactionsKeys.map(userId), [userId]);
 
-  const { data: reactions = {} } = useQuery<ReactionsMap>({
+  const { data: reactions = EMPTY_REACTIONS_MAP } = useQuery<ReactionsMap>({
     queryKey,
     queryFn: () => queryClient.getQueryData<ReactionsMap>(queryKey) ?? {},
     enabled: false,

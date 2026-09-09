@@ -28,6 +28,14 @@
 import { toRepeat } from '../../shared/schedules.ts';
 import type { ScheduleException } from '../../shared/scheduleExceptions.ts';
 
+// Mirrors the migration's own CHECK constraint (20260909020000_checklist_templates_calendar_color.sql)
+// and useCalendarEvents.ts's own DEFAULT_PALETTE — kept in sync by hand, same as scheduleMode's
+// own inline allow-list below, rather than a shared import across the client/server boundary.
+const ALLOWED_CALENDAR_COLORS = [
+  '#2f6fed', '#f2994a', '#27ae60', '#eb5757', '#9b51e0',
+  '#2d9cdb', '#f2c94c', '#1abc9c', '#eb5a90', '#8d6e63',
+];
+
 export function toChecklistTemplate(
   r: Record<string, unknown>,
   repeatRow: Record<string, unknown> | undefined,
@@ -50,6 +58,7 @@ export function toChecklistTemplate(
     ...(r.split_from_id ? { splitFromId: r.split_from_id as string } : {}),
     ...(r.deleted_at ? { deletedAt: r.deleted_at as string } : {}),
     ...(r.schedule_mode ? { scheduleMode: r.schedule_mode as 'general' | 'per_group' } : {}),
+    ...(r.calendar_color ? { calendarColor: r.calendar_color as string } : {}),
   };
 }
 
@@ -88,6 +97,12 @@ export function patchChecklistTemplate(e: Record<string, unknown>): Record<strin
   if ('scheduleMode' in e) {
     patch.schedule_mode = e.scheduleMode === 'general' || e.scheduleMode === 'per_group' ? e.scheduleMode : null;
   }
+  if ('calendarColor' in e) {
+    patch.calendar_color =
+      typeof e.calendarColor === 'string' && ALLOWED_CALENDAR_COLORS.includes(e.calendarColor)
+        ? e.calendarColor
+        : null;
+  }
 
   // Postgres only fills the default on insert, not update — every write
   // has to set this explicitly, partial or not.
@@ -118,6 +133,10 @@ export function fromChecklistTemplate(e: Record<string, unknown>) {
     // `splitChecklistTemplate`) — never read for access control.
     split_from_id: str(e.splitFromId),
     schedule_mode: e.scheduleMode === 'general' || e.scheduleMode === 'per_group' ? e.scheduleMode : null,
+    calendar_color:
+      typeof e.calendarColor === 'string' && ALLOWED_CALENDAR_COLORS.includes(e.calendarColor)
+        ? e.calendarColor
+        : null,
     created_at: str(e.createdAt) ?? new Date().toISOString(),
     // Postgres only fills the default on insert, not update — an upsert
     // has to set this explicitly every time.

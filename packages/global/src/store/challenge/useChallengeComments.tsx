@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../hook/useSession';
 import { uniqueId } from '../../util';
@@ -22,14 +23,21 @@ type CommentsByChallenge = Record<string, ChallengeComment[]>;
 // until a fresh load.
 const fetchedFor = new Set<string>();
 
+// A stable reference for `useQuery`'s own `data` fallback below — see useRecordField.tsx's
+// `EMPTY_FIELDS_MAP` for why an inline `{}` literal there is a real infinite-render-loop bug, not
+// just wasted work, once something downstream memoizes against this map's identity.
+const EMPTY_COMMENTS_MAP: CommentsByChallenge = {};
+
 export const useChallengeComments = () => {
   const { userId, ready } = useSession();
   const queryClient = useQueryClient();
-  const queryKey = challengeCommentsKeys.map(userId);
+  // Memoized — see useChecklistRecord.ts's own fix for why an unmemoized key factory result here
+  // is a real infinite-render-loop risk for any consumer, not just wasted work.
+  const queryKey = useMemo(() => challengeCommentsKeys.map(userId), [userId]);
 
   // Same "one shared cache entry, backed by React Query instead of useSessionStore" shape as
   // useTags.tsx's own list query — see its own comment for the reasoning.
-  const { data: byChallengeId = {} } = useQuery<CommentsByChallenge>({
+  const { data: byChallengeId = EMPTY_COMMENTS_MAP } = useQuery<CommentsByChallenge>({
     queryKey,
     queryFn: () => queryClient.getQueryData<CommentsByChallenge>(queryKey) ?? {},
     enabled: false,

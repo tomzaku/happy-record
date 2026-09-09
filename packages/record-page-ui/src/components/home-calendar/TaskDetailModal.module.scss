@@ -8,7 +8,7 @@
 // that doesn't fit this content.
 .modalShell {
   padding: 0 !important;
-  width: 100%;
+  min-width: 500px;
   max-width: 880px;
   max-height: 85vh;
   overflow: hidden;
@@ -36,6 +36,13 @@
   align-items: center;
   gap: $spacing-sm;
   min-width: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-shrink: 0;
 }
 
 .badge {
@@ -156,14 +163,11 @@
   margin-bottom: $spacing-sm;
 }
 
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: $spacing-sm;
-  padding: $spacing-lg;
-  flex-shrink: 0;
-}
-
+// Lives in .headerActions, alongside TaskOptionsMenu's own "⋮" trigger and the close icon.
+// Explicit `--icon-primary` rather than DefaultButton's own default background — the same blue as
+// .badge, so the header's one real action reads as part of the same accent rather than whatever
+// the app's generic button color is.
 .viewButton {
-  min-width: 140px;
+  flex-shrink: 0;
+  background: var(--icon-primary) !important;
 }

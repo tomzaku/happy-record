@@ -31,7 +31,10 @@ const UNCHOSEN_AVATAR_COLOR = '#607d8b';
 // stored value. Fixed at 10 colors, each a visually distinct hue, so two
 // unrelated templates rarely land on the same one. Swap for a real
 // per-template color picker later; this is just the default.
-const DEFAULT_PALETTE = [
+// Exported for TaskColorPicker (home-calendar) — the same fixed 10 swatches offered there for a
+// manual per-template pick, so a manually-chosen color always looks like it could have been the
+// automatic one.
+export const DEFAULT_PALETTE = [
   '#2f6fed', // blue
   '#f2994a', // orange
   '#27ae60', // green
@@ -136,14 +139,16 @@ export const useCalendarEvents = (
         const rawTemplate = checklistTemplate[task.checklistTemplateId];
         const template = rawTemplate ? withFieldGroups(rawTemplate) : undefined;
         const avatarColor = template?.avatar.color;
-        // Every "Create Task" entry point pre-selects this exact swatch (and
-        // `AddInlineTask`'s quick-add row has no color picker at all, so it
-        // always saves it) — it's the form's default value, not a color
-        // anyone actually chose. Treating it the same as "unset" here is what
-        // lets templates that were never deliberately given a color still
-        // land on a distinct one, instead of every quickly-added task piling
-        // onto this one shade.
-        const color = avatarColor && avatarColor !== UNCHOSEN_AVATAR_COLOR ? avatarColor : hashColor(task.checklistTemplateId);
+        // `calendarColor` (TaskColorPicker, home-calendar) is a deliberate manual pick, scoped to
+        // the calendar only — takes priority over everything below when set. Below that: every
+        // "Create Task" entry point pre-selects this exact swatch (and `AddInlineTask`'s quick-add
+        // row has no color picker at all, so it always saves it) — it's the form's default value,
+        // not a color anyone actually chose. Treating it the same as "unset" here is what lets
+        // templates that were never deliberately given a color still land on a distinct one,
+        // instead of every quickly-added task piling onto this one shade.
+        const color =
+          template?.calendarColor ??
+          (avatarColor && avatarColor !== UNCHOSEN_AVATAR_COLOR ? avatarColor : hashColor(task.checklistTemplateId));
         const hasActiveFieldGroups = hasGroupSchedule(template ?? {});
 
         // Which of this template's own active groups are actually due *today* (not just active
