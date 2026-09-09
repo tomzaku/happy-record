@@ -143,7 +143,10 @@ const TargetFormulaEditor = ({ targets, numberFields, onChange }: Props) => {
                   <Select
                     options={fieldOptions}
                     value={fieldId}
-                    onChange={option => updateVariables(target, { ...target.variables, [name]: option.value })}
+                    onChange={(option, { close }) => {
+                      updateVariables(target, { ...target.variables, [name]: option.value });
+                      close();
+                    }}
                     classes={{ container: styles.variableSelect }}
                   />
                   <Input

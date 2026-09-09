@@ -7,7 +7,7 @@ import { v4 } from 'uuid';
 import { useChecklist } from '../store/checklists/useChecklists';
 import { useChecklistTemplates, type ChecklistTemplate, type FieldGroup } from '../store/checklists/useChecklistTemplates';
 import { useFieldGroups } from '../store/checklists/useFieldGroups';
-import { useRecordField } from '../store/record-field/useRecordField';
+import { useRecordField, type RecordField } from '../store/record-field/useRecordField';
 import { useTags } from '../store/tags/useTags';
 import { useNote } from '../store/note/useNote';
 import { buildEditorJsDocument } from '../lib/editorJsNoteBlocks';
@@ -28,7 +28,7 @@ export const useApplyAiChecklistTemplate = () => {
   const { addChecklistTemplate, updateChecklistTemplate } = useChecklistTemplates();
   const { addFieldGroup } = useFieldGroups();
   const { addChecklist } = useChecklist();
-  const { getAllRecordFields, addRecordField } = useRecordField();
+  const { getAllRecordFieldsAsync, addRecordField } = useRecordField();
   const { addTag } = useTags();
   // A generated group's own note lives in `notes` now, not on `FieldGroup` itself (see
   // useNote.tsx) — applyFieldGroups below writes it as its own row, once per group that got real
@@ -52,14 +52,18 @@ export const useApplyAiChecklistTemplate = () => {
   /**
    * One id per proposed field, reusing an existing field by title (case-insensitive) instead of
    * creating a duplicate — see CLAUDE.md's fields.id warning: a new field always gets its own
-   * generated id (addRecordField already does this), never a hardcoded/reused literal.
+   * generated id (addRecordField already does this), never a hardcoded/reused literal. Takes the
+   * by-title map as a shared, mutable accumulator (see applyFieldGroups below) rather than
+   * re-reading the field list itself, so two proposed groups sharing a field title reuse the same
+   * newly created field instead of a same-tick race each creating their own.
    */
-  const resolveFieldIds = (fields: AiGeneratedGroup['fields']): string[] => {
-    const existing = getAllRecordFields();
-    return fields.map(field => {
-      const match = existing.find(
-        e => e.title.trim().toLowerCase() === field.title.trim().toLowerCase(),
-      );
+  const resolveFieldIds = (
+    fields: AiGeneratedGroup['fields'],
+    byTitle: Map<string, RecordField>,
+  ): string[] =>
+    fields.map(field => {
+      const key = field.title.trim().toLowerCase();
+      const match = byTitle.get(key);
       if (match) return match.id;
       const created = addRecordField({
         title: field.title,
@@ -70,10 +74,9 @@ export const useApplyAiChecklistTemplate = () => {
         ...(field.defaultValue !== undefined ? { defaultValue: field.defaultValue } : {}),
         ...(field.options?.length ? { options: field.options } : {}),
       });
-      existing.push(created);
+      byTitle.set(key, created);
       return created.id;
     });
-  };
 
   /**
    * Writes each proposed group as its own real row (see useFieldGroups.tsx) — `startPosition` is
@@ -89,13 +92,26 @@ export const useApplyAiChecklistTemplate = () => {
    * real FK, so the note has to actually exist server-side before the group referencing it is
    * written (see createNote's own comment); groups themselves are independent of each other, so
    * this still runs them concurrently via `Promise.all` rather than one at a time.
+   *
+   * Field ids are resolved for every group up front, in one pass, before that `Promise.all` — not
+   * inside each group's own async callback. `getAllRecordFieldsAsync` is awaited so the dedupe
+   * below sees the real field list even on a cold apply (the fire-and-forget `getAllRecordFields`
+   * used to return an empty snapshot the first time this ran in a session, since nothing had
+   * awaited its background fetch yet — see CLAUDE.md's "one-shot action handler" rule), and doing
+   * every group's resolution against one shared `byTitle` map means two groups in the same
+   * generation proposing the same field title reuse each other's field instead of a same-tick race
+   * (concurrent `Promise.all` callbacks each reading their own stale snapshot) creating one each.
    */
-  const applyFieldGroups = (
+  const applyFieldGroups = async (
     checklistTemplateId: string,
     groups: AiGeneratedGroup[],
     startPosition: number,
-  ): Promise<FieldGroup[]> =>
-    Promise.all(
+  ): Promise<FieldGroup[]> => {
+    const existing = await getAllRecordFieldsAsync();
+    const byTitle = new Map(existing.map(f => [f.title.trim().toLowerCase(), f]));
+    const resolvedFieldIds = groups.map(group => resolveFieldIds(group.fields, byTitle));
+
+    return Promise.all(
       groups.map(async (group, i) => {
         const fieldGroupId = v4();
         const value = buildNoteFromBlocks(group.note);
@@ -113,13 +129,14 @@ export const useApplyAiChecklistTemplate = () => {
           // No overrides — an AI-generated group's fields start exactly as the (possibly reused)
           // field itself already is; overriding is a manual per-group customization, not something
           // the AI proposes.
-          fields: resolveFieldIds(group.fields).map(fieldId => ({ fieldId })),
+          fields: resolvedFieldIds[i].map(fieldId => ({ fieldId })),
           position: startPosition + i,
           ...(noteId ? { noteId } : {}),
           ...(group.repeat ? { repeat: group.repeat } : {}),
         });
       }),
     );
+  };
 
   /** Home tab entry point: a whole new template, plus today's checklist instance — same two
    * calls packages/create-checklist-page-ui/src/createTaskUtil.ts's createTask makes for a

@@ -101,13 +101,16 @@
   border: 1px solid var(--card-border);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  // Above $modal-z-index (10000, @moon-ui/app-scss/metric.scss) — portaled to a body-level
-  // sibling of Modal's own portal root now instead of a normal in-flow descendant, so it needs to
-  // out-rank a Dialog's own stacking explicitly to still paint above one, the same way it always
-  // visually sat above whatever was inside its own dialog before. This package intentionally has
-  // no dependency on @moon-ui/modal just to import its actual z-index constant, so this is the
-  // literal value, not a shared variable.
-  z-index: 10001;
+  // Has to out-rank not just $modal-z-index (10000, @moon-ui/app-scss/metric.scss) but the
+  // higher, separate "always on top" convention several custom desktop drawers/overlays use
+  // instead of that scale — ChallengeConfigDrawer (checklist-template-shared-page-ui),
+  // MusicDrawerDesktop (focus-zone-modal-ui), music-controller-mobile — all hardcode
+  // `z-index: 99999`. A Select nested inside one of those (e.g. ChallengeConfigDrawer's own
+  // target-formula editor) used to render its dropdown portal behind the drawer, invisible, since
+  // 10001 lost to 99999 — this package intentionally has no dependency on @moon-ui/modal or those
+  // other packages just to import a shared z-index constant, so this is a literal value, kept
+  // comfortably above the highest ceiling anything else in the app currently uses.
+  z-index: 999999;
   padding: 4px;
 
   &.optionsListAbove {

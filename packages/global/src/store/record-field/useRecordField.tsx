@@ -228,6 +228,32 @@ export const useRecordField = () => {
    * forever, which is fine: nothing reads this without also being one that does. */
   const allRecordFieldsLoading = allLoading;
 
+  /**
+   * Awaited counterpart to getAllRecordFields, for a one-shot handler that needs the real, complete
+   * "all mine + public" list this tick rather than a render-time value that's fine to start empty
+   * (see CLAUDE.md's "one-shot action handler" rule, and getRecordFieldsByIds above for the same
+   * shape) — useApplyAiChecklistTemplate's field-reuse dedupe needs this: reading the fire-and-forget
+   * getAllRecordFields from an imperative Apply click can return an empty/stale snapshot on a cold
+   * apply, so every proposed field looks new and gets duplicated instead of reused. Reads the live
+   * cache via queryClient rather than the closed-over recordFieldList, which would be stale by the
+   * time the await above resolves.
+   */
+  const getAllRecordFieldsAsync = React.useCallback(async (): Promise<RecordField[]> => {
+    const scopeKey = JSON.stringify({ userId, scope: ALL_SCOPE });
+    if (ready && !fetchedScopes.has(scopeKey)) {
+      fetchedScopes.add(scopeKey);
+      setAllLoading(true);
+      const result = await fetchRecordFields();
+      setAllLoading(false);
+      if (!result) {
+        fetchedScopes.delete(scopeKey);
+      } else {
+        mergeRecordFields(result.fields);
+      }
+    }
+    return Object.values(queryClient.getQueryData<RecordFieldsMap>(queryKey) ?? {});
+  }, [userId, ready, mergeRecordFields, setAllLoading, queryClient, queryKey]);
+
   const getRecordFields = React.useCallback(
     (ids: string[]) => {
       return ids.map(id => recordFieldList[id]);
@@ -386,6 +412,7 @@ export const useRecordField = () => {
 
   return {
     getAllRecordFields,
+    getAllRecordFieldsAsync,
     allRecordFieldsLoading,
     getRecordFields,
     getRecordFieldsByIds,

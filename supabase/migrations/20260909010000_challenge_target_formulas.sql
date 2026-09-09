@@ -8,10 +8,11 @@
 alter table challenges
   add column if not exists targets jsonb not null default '[]';
 
-alter table challenges drop column if exists field_targets;
-
--- Both policies read `challenges.field_targets`, now dropped, and are inert leftovers anyway —
--- peer-visibility for target contributions is enforced in getTargets via `visibleUserIds`, not
--- RLS (see CLAUDE.md's "Authorization: app layer, not RLS").
+-- Both policies read `challenges.field_targets` — have to go before the column itself is dropped
+-- below, or Postgres refuses (SQLSTATE 2BP01: dependent objects still exist). They're inert
+-- leftovers anyway — peer-visibility for target contributions is enforced in getTargets via
+-- `visibleUserIds`, not RLS (see CLAUDE.md's "Authorization: app layer, not RLS").
 drop policy if exists "Challenge participants can resolve peers' targeted field forks" on fields;
 drop policy if exists "Challenge participants can see peers' targeted contributions" on checklist_records;
+
+alter table challenges drop column if exists field_targets;
