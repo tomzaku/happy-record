@@ -95,14 +95,20 @@ enum EditModal {
   MyReminder,
 }
 
-// Fallback shape for `repeat` when calculateRepeat itself returns `undefined` — empty-string
-// "not scheduled" sentinels, matching createTaskUtil.ts's own non-recurring branch (and
-// getEffectiveDayOfWeek/getChecklistTemplateIdsByGivingDate's own reading of `byday: ''`).
-// `recurring: false` explicit, not left absent — `isRecurringSchedule`/`occursOnDate` treat absent
-// as `true`, but several other consumers (`useCalendarEvents.ts`'s spanning-bar check,
-// `useChecklists.tsx`'s one-off gate) test `=== false` directly, so an absent value here would
-// read as "still a weekly pattern" to those even though `byday` is empty.
-const NO_SCHEDULE_REPEAT_BASE = { byhour: '', byminute: '', byday: '', recurring: false };
+// Fallback shape for `repeat` when calculateRepeat itself returns `undefined` (no days selected —
+// a one-time, "does not repeat" event) — empty-string "not scheduled" sentinels for byday, matching
+// createTaskUtil.ts's own non-recurring branch (and getEffectiveDayOfWeek/
+// getChecklistTemplateIdsByGivingDate's own reading of `byday: ''`). `recurring: false` explicit,
+// not left absent — `isRecurringSchedule`/`occursOnDate` treat absent as `true`, but several other
+// consumers (`useCalendarEvents.ts`'s spanning-bar check, `useChecklists.tsx`'s one-off gate) test
+// `=== false` directly, so an absent value here would read as "still a weekly pattern" to those
+// even though `byday` is empty. byhour/byminute still need to reflect All Day/tempTime the same way
+// calculateRepeat's own does — this branch only skips the weekly-pattern fields, not the time ones,
+// so turning All Day off on a one-time event must not get silently reset to All Day on reload.
+const noScheduleRepeatBase = (allDay: boolean, selectedTime: string) => {
+  const [byhour = '', byminute = ''] = allDay || !selectedTime ? ['', ''] : selectedTime.split(':');
+  return { byhour, byminute, byday: '', recurring: false };
+};
 
 // ScheduleModalContent's plain `tempWeeklyHobbies` day picker is unreachable from here —
 // `showRecurrenceControls`/`tempRecurrence` below always take that branch instead — but the prop
@@ -360,7 +366,7 @@ const ChecklistGenericInfo = ({
     // ever reflects RecurrencePicker's now-count-only Ends section) since this must not drop
     // whatever the End Date field (StartEndDateFields, same dialog now) already staged for it.
     const finalRepeat = {
-      ...(repeat ?? NO_SCHEDULE_REPEAT_BASE),
+      ...(repeat ?? noScheduleRepeatBase(tempAllDay, tempTime)),
       startedAt: tempStartDay,
       until: tempEndDay || undefined,
       timezone: getClientTimezone(),
@@ -443,7 +449,7 @@ const ChecklistGenericInfo = ({
       ...recurrenceValueToExtra(tempRecurrence),
     });
     onUpdateMyReminder?.({
-      ...(repeat ?? NO_SCHEDULE_REPEAT_BASE),
+      ...(repeat ?? noScheduleRepeatBase(tempAllDay, tempTime)),
       startedAt: tempStartDay,
       until: tempEndDay || undefined,
       timezone: getClientTimezone(),

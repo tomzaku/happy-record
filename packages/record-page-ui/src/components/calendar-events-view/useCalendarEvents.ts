@@ -121,6 +121,17 @@ export const useCalendarEvents = (
       string,
       { title: string; color: string; days: Date[]; allDone: boolean }
     >();
+    // Same one-bar-not-one-chip-per-day idea as spanningDaysByTemplate above, for a one-time event
+    // that has a real time set (`byhour`) instead of being All Day. Its `startedAt`/`until` are
+    // already absolute timestamps for the whole span, not a time-of-day pattern to reapply to each
+    // occurrence's own day the way a genuinely recurring template's `byhour`/`until` are used below
+    // (`computeEventEnd`) — so this collects only title/color/done-ness per day found, and takes
+    // start/end straight from the template's own repeat once, instead of reconstructing an end from
+    // each individual day like the per-day branch does.
+    const timedSpanByTemplate = new Map<
+      string,
+      { title: string; color: string; start: Date; end: Date; allDone: boolean }
+    >();
 
     eachDayOfInterval({ start: range.from, end: range.to }).forEach(day => {
       const { checklist } = getChecklistForDateWithoutFetching({
@@ -171,18 +182,40 @@ export const useCalendarEvents = (
         // active on different days, which a single bar can't represent. Same guard as
         // `isTemplateScheduledOnDate`'s own.
         if (!hasActiveFieldGroups && template?.repeat?.recurring === false) {
-          const entry = spanningDaysByTemplate.get(task.checklistTemplateId) ?? {
+          if (!template?.repeat?.byhour) {
+            const entry = spanningDaysByTemplate.get(task.checklistTemplateId) ?? {
+              title,
+              color,
+              days: [],
+              allDone: true,
+            };
+            entry.days.push(day);
+            // The bar reads as done only once every day it spans is — one
+            // incomplete instance is enough to keep the whole thing looking
+            // active, the same way a partly-checked-off multi-day task should.
+            entry.allDone = entry.allDone && Boolean(task.completedAt);
+            spanningDaysByTemplate.set(task.checklistTemplateId, entry);
+            return;
+          }
+
+          // A one-time event with a real time set — `startedAt`/`until` carry the actual from/to
+          // instant for the whole span (e.g. Sept 9 8am to Sept 10 12:47pm), not a time-of-day to
+          // reapply to whichever day is being iterated, so take them as-is rather than routing
+          // through `computeEventEnd` (which would truncate `until` back onto `day`).
+          const spanStart = new Date(template.repeat.startedAt ?? day);
+          spanStart.setHours(Number(template.repeat.byhour), Number(template.repeat.byminute), 0, 0);
+          const spanEnd = template.repeat.until
+            ? new Date(template.repeat.until)
+            : new Date(spanStart.getTime() + DEFAULT_EVENT_MINUTES * 60000);
+          const entry = timedSpanByTemplate.get(task.checklistTemplateId) ?? {
             title,
             color,
-            days: [],
+            start: spanStart,
+            end: spanEnd,
             allDone: true,
           };
-          entry.days.push(day);
-          // The bar reads as done only once every day it spans is — one
-          // incomplete instance is enough to keep the whole thing looking
-          // active, the same way a partly-checked-off multi-day task should.
           entry.allDone = entry.allDone && Boolean(task.completedAt);
-          spanningDaysByTemplate.set(task.checklistTemplateId, entry);
+          timedSpanByTemplate.set(task.checklistTemplateId, entry);
           return;
         }
 
@@ -223,6 +256,18 @@ export const useCalendarEvents = (
         start,
         end,
         allDay: true,
+        done: allDone,
+        data: { checklistTemplateId, date: start } satisfies CalendarEventData,
+      });
+    });
+
+    timedSpanByTemplate.forEach(({ title, color, start, end, allDone }, checklistTemplateId) => {
+      events.push({
+        id: `range:${checklistTemplateId}`,
+        title,
+        color,
+        start,
+        end,
         done: allDone,
         data: { checklistTemplateId, date: start } satisfies CalendarEventData,
       });
