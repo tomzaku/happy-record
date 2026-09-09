@@ -1,0 +1,169 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+
+// Wider than @moon-ui/modal's own Dialog shell (fixed at 480px) — this needs room for a
+// two-column layout (info + the field group's own note on the left, the submit form on the
+// right) once the viewport allows one. See AiChecklistGenerate/CardShare's own `.modalShell` for
+// the same "bypass Dialog, use Modal directly" pattern, for the same reason: a fixed-width shell
+// that doesn't fit this content.
+.modalShell {
+  padding: 0 !important;
+  width: 100%;
+  max-width: 880px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobileSheet {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  background: rgba(11, 125, 194, 0.08);
+  flex-shrink: 0;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  min-width: 0;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: var(--icon-primary);
+  box-shadow: 0 2px 8px rgba(11, 125, 194, 0.4);
+}
+
+.closeIcon {
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  color: var(--text-description-color);
+  flex-shrink: 0;
+
+  &:hover {
+    background-color: var(--surface-secondary);
+  }
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-lg;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-lg;
+}
+
+// Two columns only once there's a real .submit form to show (see .twoColumn's own className,
+// applied in TaskDetailModal.tsx only once a relevant field group actually has a checklist to
+// submit into) and there's real room for it beside .info. Without `.twoColumn`, `.body` stays a
+// single `1fr` track even at this width — plain `grid-template-columns: 1fr 1fr` on `.body` itself
+// would reserve that second column's width regardless of whether anything ever renders into it,
+// leaving a blank strip down the right side of a plain task with no fields.
+@media (min-width: 720px) {
+  .body.twoColumn {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  // `.info`'s own `min-height: 0` (below) is what makes this height real — matching `.submit`'s
+  // stretched height, via grid's default `align-items: stretch` — rather than infinite; this just
+  // lifts `.notesSection`'s flat 300px ceiling (below) once there's a taller submit form beside it
+  // to size against. Nested in the same media query as the two-column grid itself: below it,
+  // `.info`/`.submit` stack into separate rows instead of side-by-side columns, so there's no
+  // sibling height to match against and the flat 300px cap is what actually applies (mobile's
+  // BottomModal always renders below this width, same content either way).
+  .twoColumn .notesSection {
+    max-height: none;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}
+
+// First column — everything read-only: the day/schedule/status rows, and the field group's own
+// note (if it has one). The submit form (`.submit`, second column) is the one interactive piece.
+// `min-height: 0` overrides a grid item's default `auto` min-height (which is its own
+// max-content size) with its actual stretched size (grid's default `align-items: stretch` makes
+// this column match `.submit`'s height already) — without it, `.notesSection`'s own `flex: 1`
+// below would have no real ceiling to grow into, since `.info` would just keep growing to fit
+// whatever's inside it instead of the other way around.
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  min-width: 0;
+  min-height: 0;
+}
+
+.submit {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  color: var(--text-color);
+}
+
+.rowIcon {
+  flex-shrink: 0;
+  color: var(--text-description-color);
+}
+
+// Capped and scrollable, same as the challenge invite page's own note list
+// (task-shared-card's `.notesList`) — a long note (or several groups' worth) shouldn't push the
+// footer out of view. 300px is the single-column fallback (mobile, or no `.submit` beside it to
+// size against) — the media query above lifts this to match the submit form's own height once
+// there's real room for both side by side.
+.notesSection {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding-top: $spacing-sm;
+  border-top: 1px solid var(--division-color);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.groupCard {
+  padding: $spacing-md;
+}
+
+.groupTitle {
+  display: block;
+  font-weight: 600;
+  margin-bottom: $spacing-sm;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+  flex-shrink: 0;
+}
+
+.viewButton {
+  min-width: 140px;
+}

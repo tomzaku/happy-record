@@ -74,6 +74,17 @@ const TargetFormulaEditor = ({ targets, numberFields, onChange }: Props) => {
     updateVariables(target, { ...target.variables, [name]: field.id });
   };
 
+  // Re-keys the variable to match the newly picked field's own title (same auto-name `addVariable`
+  // gives a brand-new row) rather than leaving it pointed at the old field's name — picking a
+  // different field is meant to replace it outright, not silently keep calling it by the old name.
+  const changeVariableField = (target: ChallengeTarget, oldName: string, fieldId: string) => {
+    const field = numberFields.find(f => f.id === fieldId);
+    const rest = { ...target.variables };
+    delete rest[oldName];
+    const name = field ? slugifyVariableName(field.title, new Set(Object.keys(rest))) : oldName;
+    updateVariables(target, { ...rest, [name]: fieldId });
+  };
+
   const renameVariable = (target: ChallengeTarget, oldName: string, raw: string) => {
     let newName = raw.replace(/[^a-zA-Z0-9_]/g, '');
     if (newName && /^[0-9]/.test(newName)) newName = `_${newName}`;
@@ -138,33 +149,45 @@ const TargetFormulaEditor = ({ targets, numberFields, onChange }: Props) => {
             </div>
 
             <div className={styles.variableList}>
-              {Object.entries(target.variables).map(([name, fieldId]) => (
-                <div key={name} className={styles.variableRow}>
-                  <Select
-                    options={fieldOptions}
-                    value={fieldId}
-                    onChange={(option, { close }) => {
-                      updateVariables(target, { ...target.variables, [name]: option.value });
-                      close();
-                    }}
-                    classes={{ container: styles.variableSelect }}
-                  />
-                  <Input
-                    value={name}
-                    border="dash"
-                    onChange={e => renameVariable(target, name, e.target.value)}
-                    className={styles.variableNameInput}
-                    classes={{ input: styles.targetInputField }}
-                    renderRightInput={() => <></>}
-                  />
-                  <Icon
-                    width={16}
-                    icon="material-symbols:close-rounded"
-                    className={styles.removeTargetIcon}
-                    onClick={() => removeVariable(target, name)}
-                  />
-                </div>
-              ))}
+              {Object.entries(target.variables).map(([name, fieldId]) => {
+                // A field already claimed by a sibling variable in this same target can't be
+                // picked again here — a formula referencing the same field twice under two names
+                // is never what "add another field" means. This row's own current field stays
+                // selectable (it must, to render as selected at all).
+                const usedBySiblings = new Set(
+                  Object.entries(target.variables)
+                    .filter(([otherName]) => otherName !== name)
+                    .map(([, otherFieldId]) => otherFieldId),
+                );
+                const rowOptions = fieldOptions.filter(o => !usedBySiblings.has(o.value));
+                return (
+                  <div key={name} className={styles.variableRow}>
+                    <Select
+                      options={rowOptions}
+                      value={fieldId}
+                      onChange={(option, { close }) => {
+                        changeVariableField(target, name, option.value);
+                        close();
+                      }}
+                      classes={{ container: styles.variableSelect }}
+                    />
+                    <Input
+                      value={name}
+                      border="dash"
+                      onChange={e => renameVariable(target, name, e.target.value)}
+                      className={styles.variableNameInput}
+                      classes={{ input: styles.targetInputField }}
+                      renderRightInput={() => <></>}
+                    />
+                    <Icon
+                      width={16}
+                      icon="material-symbols:close-rounded"
+                      className={styles.removeTargetIcon}
+                      onClick={() => removeVariable(target, name)}
+                    />
+                  </div>
+                );
+              })}
               {!!availableFields.length && (
                 <button type="button" className={styles.addTargetButton} onClick={() => addVariable(target)}>
                   <Icon width={14} icon="material-symbols:add-rounded" />

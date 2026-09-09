@@ -48,6 +48,14 @@ type Props = {
   // ChecklistFieldGroup's ref map) — lets someone filling out the Submit tab jump straight to
   // adding/removing fields without first finding the "⋮" settings menu on the group header.
   onOpenFieldSettings?: () => void;
+  /** Hides the week-strip nav (`WeeklyRow`, which reads/writes this *page's own* `currentDay`
+   * search param) and the collapsible History section below the fields — both assume they're
+   * sitting on the real `/task/:id` page. home-calendar's own `TaskDetailModal` embeds this same
+   * component for its calendar quick-look, outside that route entirely: `WeeklyRow`'s week
+   * nav would silently rewrite whatever page it's actually mounted on's own query string instead,
+   * and History duplicates the calendar already visible behind the modal. Defaults false —
+   * unchanged for every existing detail-task-page caller. */
+  compact?: boolean;
 };
 
 // A number record's `value` can be null/undefined/a non-numeric string —
@@ -85,6 +93,7 @@ const ChecklistFieldGroupAdd = ({
   currentDay,
   onSubmit,
   onOpenFieldSettings,
+  compact = false,
 }: Props) => {
   // A `type: 'note'` field's own value is a checklist journal entry (see ChecklistFieldGeneral's
   // own comment) — one new note per Submit click, same shape a number field's own record already
@@ -374,7 +383,7 @@ const ChecklistFieldGroupAdd = ({
   };
   return (
     <>
-      <WeeklyRow currentDay={currentDay} />
+      {!compact && <WeeklyRow currentDay={currentDay} />}
       {numberFields.map(field => (
         <List.ItemMeta
           key={field.id}
@@ -653,29 +662,33 @@ const ChecklistFieldGroupAdd = ({
           </>
         )}
 
-        {/* History Section Header */}
-        <div className={styles.historyHeader} onClick={() => setShowHistory(!showHistory)}>
-          <div className={styles.historyHeaderContent}>
-            <Icon icon="solar:history-3-outline" width={20} />
-            <Typography.Title level={5} noMargin>
-              History
-            </Typography.Title>
-          </div>
-          <Icon
-            icon="solar:alt-arrow-down-outline"
-            width={16}
-            className={`${styles.arrowIcon} ${showHistory ? styles.arrowExpanded : ''}`}
-          />
-        </div>
+        {!compact && (
+          <>
+            {/* History Section Header */}
+            <div className={styles.historyHeader} onClick={() => setShowHistory(!showHistory)}>
+              <div className={styles.historyHeaderContent}>
+                <Icon icon="solar:history-3-outline" width={20} />
+                <Typography.Title level={5} noMargin>
+                  History
+                </Typography.Title>
+              </div>
+              <Icon
+                icon="solar:alt-arrow-down-outline"
+                width={16}
+                className={`${styles.arrowIcon} ${showHistory ? styles.arrowExpanded : ''}`}
+              />
+            </div>
 
-        {showHistory && (
-          <div className={styles.historyContent}>
-            <ChecklistFieldGroupHistory
-              checklistTemplate={checklistTemplate}
-              fieldGroup={fieldGroup}
-              fields={fields}
-            />
-          </div>
+            {showHistory && (
+              <div className={styles.historyContent}>
+                <ChecklistFieldGroupHistory
+                  checklistTemplate={checklistTemplate}
+                  fieldGroup={fieldGroup}
+                  fields={fields}
+                />
+              </div>
+            )}
+          </>
         )}
     </>
   );

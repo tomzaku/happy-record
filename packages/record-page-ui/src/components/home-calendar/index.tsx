@@ -6,6 +6,7 @@ import { useIntl } from '@dreamer/translation';
 import ViewSwitcher, { ViewMode } from '../view-switcher';
 import CalendarEventsView from '../calendar-events-view';
 import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
+import TaskDetailModal from './TaskDetailModal';
 
 // dayGrid/multiMonth cells are date-only, so a click there always means "go
 // look at this day" — timeGrid's own slot clicks (picking an hour within a
@@ -19,13 +20,16 @@ type Props = {
 };
 
 // The home page's own layer on top of `CalendarEventsView` (unscoped, every template) — this
-// app's own translated Day/Week/Month/Year switcher as the toolbar's `rightSlot`, and navigation
-// to a clicked task's detail page. `ChecklistTemplateCalendar` (detail-task-page) is the other
-// consumer, scoped to one template instead.
+// app's own translated Day/Week/Month/Year switcher as the toolbar's `rightSlot`, and a
+// quick-look `TaskDetailModal` on event click rather than navigating straight to the detail
+// page — that's still one button away, via the modal's own footer action.
+// `ChecklistTemplateCalendar` (detail-task-page) is the other consumer, scoped to one template
+// instead.
 const HomeCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
   const navigate = useNavigate();
   const intl = useIntl();
   const [mode, setMode] = React.useState<CalendarViewMode>('month');
+  const [selectedEvent, setSelectedEvent] = React.useState<CalendarEvent | null>(null);
 
   const handleDateClick = () => {
     if (DATE_ONLY_VIEWS.includes(mode)) {
@@ -33,24 +37,31 @@ const HomeCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
     }
   };
 
-  const handleEventClick = (event: CalendarEvent) => {
-    const { checklistTemplateId, checklistId, date } = event.data as CalendarEventData;
+  const handleViewDetails = ({ checklistTemplateId, checklistId, date }: CalendarEventData) => {
     const params = new URLSearchParams({ currentDay: date.toISOString() });
     if (checklistId) params.set('checklistId', checklistId);
+    setSelectedEvent(null);
     navigate(`/task/${checklistTemplateId}?${params.toString()}`);
   };
 
   return (
-    <CalendarEventsView
-      view={mode}
-      currentDate={currentDate}
-      onDateChange={onDateChange}
-      selectedTag={selectedTag}
-      onDateClick={handleDateClick}
-      onEventClick={handleEventClick}
-      todayLabel={intl.formatMessage({ id: 'home-calendar.today', defaultMessage: 'Today' })}
-      rightSlot={<ViewSwitcher value={mode} onChange={setMode} />}
-    />
+    <>
+      <CalendarEventsView
+        view={mode}
+        currentDate={currentDate}
+        onDateChange={onDateChange}
+        selectedTag={selectedTag}
+        onDateClick={handleDateClick}
+        onEventClick={setSelectedEvent}
+        todayLabel={intl.formatMessage({ id: 'home-calendar.today', defaultMessage: 'Today' })}
+        rightSlot={<ViewSwitcher value={mode} onChange={setMode} />}
+      />
+      <TaskDetailModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        onViewDetails={handleViewDetails}
+      />
+    </>
   );
 };
 

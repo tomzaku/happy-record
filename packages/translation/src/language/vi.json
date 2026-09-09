@@ -251,5 +251,8 @@
   "home-view-switcher.list": "Danh Sách",
   "home-view-switcher.calendar": "Lịch",
   "home-calendar.today": "Hôm nay",
+  "home-calendar.view-details": "Xem chi tiết",
+  "home-calendar.status-done": "Đã hoàn thành",
+  "home-calendar.status-pending": "Chưa hoàn thành",
   "month-view.today": "Hôm nay"
 }
