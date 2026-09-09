@@ -107,6 +107,15 @@
   padding: $spacing-lg $spacing-lg 0;
 }
 
+// The owner's Schedule dialog's own StartEndDateFields section — same restore-padding shape as
+// .myReminderDateFields above, now that Start/End Date and "how often" are merged into this one
+// dialog (see the Schedule row's own comment). Always followed by either ScheduleModeChooser or
+// ScheduleModeSwitcher/ScheduleModalContent, both of which bring their own top padding, so no
+// bottom padding here either — same reasoning as .myReminderDateFields.
+.scheduleDateFields {
+  padding: $spacing-lg $spacing-lg 0;
+}
+
 .archivedGroupRow {
   display: flex;
   align-items: center;

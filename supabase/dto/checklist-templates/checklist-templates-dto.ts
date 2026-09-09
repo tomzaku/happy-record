@@ -49,6 +49,7 @@ export function toChecklistTemplate(
     ...(r.copied_from_id ? { copiedFromId: r.copied_from_id as string } : {}),
     ...(r.split_from_id ? { splitFromId: r.split_from_id as string } : {}),
     ...(r.deleted_at ? { deletedAt: r.deleted_at as string } : {}),
+    ...(r.schedule_mode ? { scheduleMode: r.schedule_mode as 'general' | 'per_group' } : {}),
   };
 }
 
@@ -84,6 +85,9 @@ export function patchChecklistTemplate(e: Record<string, unknown>): Record<strin
   if ('copiedFromId' in e) {
     patch.copied_from_id = str(e.copiedFromId);
   }
+  if ('scheduleMode' in e) {
+    patch.schedule_mode = e.scheduleMode === 'general' || e.scheduleMode === 'per_group' ? e.scheduleMode : null;
+  }
 
   // Postgres only fills the default on insert, not update — every write
   // has to set this explicitly, partial or not.
@@ -113,6 +117,7 @@ export function fromChecklistTemplate(e: Record<string, unknown>) {
     // Lineage only, set once at split time (see useChecklistTemplateMutations.ts's
     // `splitChecklistTemplate`) — never read for access control.
     split_from_id: str(e.splitFromId),
+    schedule_mode: e.scheduleMode === 'general' || e.scheduleMode === 'per_group' ? e.scheduleMode : null,
     created_at: str(e.createdAt) ?? new Date().toISOString(),
     // Postgres only fills the default on insert, not update — an upsert
     // has to set this explicitly every time.

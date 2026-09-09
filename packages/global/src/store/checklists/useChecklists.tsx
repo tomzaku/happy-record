@@ -206,10 +206,9 @@ export const useChecklist = () => {
 
           // A one-off (`recurring: false`, no active field groups) template's own Checklist
           // row(s) are what actually decide whether/how many days it keeps showing on — never
-          // `repeat.until`/`count`, which the Start & End Date and Schedule dialogs
-          // (ChecklistGenericInfo) already own and silently re-apply on every save of *either*
-          // one (see their own comments on why — both stage into the same shared temp* state so
-          // neither Save clobbers what the other set). Reusing that field for a "Single day"
+          // `repeat.until`/`count`, which ChecklistGenericInfo's Schedule dialog already owns and
+          // silently re-applies on every save (see its own comments on why). Reusing that field
+          // for a "Single day"
           // one-off task would leak a stale cutoff into a schedule the user adds later, capping a
           // brand new weekly pattern to zero real occurrences — see createTaskUtil.ts's own
           // comment. So: no real row yet at all (the template's own optimistic write always lands

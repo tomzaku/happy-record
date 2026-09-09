@@ -1,7 +1,14 @@
 import React from 'react';
 import { eachDayOfInterval } from 'date-fns';
 import type { CalendarEvent, CalendarRange } from '@dreamer/calendar-view';
-import { useChecklist, useChecklistTemplates, getActiveFieldGroups, Checklist } from '@dreamer/global';
+import {
+  useChecklist,
+  useChecklistTemplates,
+  hasGroupSchedule,
+  getActiveFieldGroups,
+  isFieldGroupActiveOnDay,
+  Checklist,
+} from '@dreamer/global';
 
 // A Checklist instance has no time of its own (`startedAt`/`durationDays` just span
 // whole calendar days) — only a template with no field groups carries a single
@@ -71,6 +78,12 @@ export type CalendarEventData = {
   checklistTemplateId: string;
   checklistId?: string;
   date: Date;
+  /** ids of the field groups actually due on this specific day (see isFieldGroupActiveOnDay) —
+   * only ever set for a per-group-scheduled template with more than one active group (see
+   * hasGroupSchedule); absent for a plain template, one with no field groups, or one in 'general'
+   * schedule mode. Lets a click handler know exactly which group(s) this day's event covers
+   * without re-deriving it from the template. */
+  fieldGroupIds?: string[];
 };
 
 // `checklistTemplateId` scopes every day's tasks to one template instead of everything
@@ -83,7 +96,7 @@ export const useCalendarEvents = (
   checklistTemplateId?: string,
 ): CalendarEvent[] => {
   const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
-  const { checklistTemplate } = useChecklistTemplates();
+  const { checklistTemplate, withFieldGroups } = useChecklistTemplates();
 
   React.useEffect(() => {
     if (!range) return;
@@ -115,7 +128,13 @@ export const useCalendarEvents = (
       Object.values(checklist).forEach((task: Checklist) => {
         if (checklistTemplateId && task.checklistTemplateId !== checklistTemplateId) return;
 
-        const template = checklistTemplate[task.checklistTemplateId];
+        // `checklistTemplate[id]` alone has no `fieldGroups` — that's not a column on the row
+        // (see useChecklistTemplates.tsx's own comment) — so every hasGroupSchedule/field-group
+        // check below needs the merged copy, not the raw map entry, or a field-group template
+        // reads as having none and falls through to the plain/spanning-bar branches below as if
+        // it were a bare recurring task.
+        const rawTemplate = checklistTemplate[task.checklistTemplateId];
+        const template = rawTemplate ? withFieldGroups(rawTemplate) : undefined;
         const avatarColor = template?.avatar.color;
         // Every "Create Task" entry point pre-selects this exact swatch (and
         // `AddInlineTask`'s quick-add row has no color picker at all, so it
@@ -125,8 +144,20 @@ export const useCalendarEvents = (
         // land on a distinct one, instead of every quickly-added task piling
         // onto this one shade.
         const color = avatarColor && avatarColor !== UNCHOSEN_AVATAR_COLOR ? avatarColor : hashColor(task.checklistTemplateId);
-        const title = template?.title ?? task.title;
-        const hasActiveFieldGroups = getActiveFieldGroups(template?.fieldGroups ?? []).length > 0;
+        const hasActiveFieldGroups = hasGroupSchedule(template ?? {});
+
+        // Which of this template's own active groups are actually due *today* (not just active
+        // in general — a group can have its own independent day-of-week schedule, see
+        // isFieldGroupActiveOnDay) — only worth surfacing once there's more than one group to
+        // disambiguate between; a single-group template's own title already says what it is.
+        const allGroups = getActiveFieldGroups(template?.fieldGroups ?? []);
+        const groupsToday = hasActiveFieldGroups
+          ? allGroups.filter(group => isFieldGroupActiveOnDay(group.repeat, day))
+          : [];
+        const title =
+          allGroups.length > 1 && groupsToday.length > 0
+            ? `${template?.title ?? task.title} · ${groupsToday.map(group => group.title).join(', ')}`
+            : template?.title ?? task.title;
 
         // A field-group-driven template's real schedule lives on each active group's own
         // `repeat`, not the template's top-level one — a top-level `recurring: false` there (e.g.
@@ -159,6 +190,7 @@ export const useCalendarEvents = (
             checklistTemplateId: task.checklistTemplateId,
             checklistId: task.clientOnly ? undefined : task.id,
             date: day,
+            ...(groupsToday.length > 0 ? { fieldGroupIds: groupsToday.map(group => group.id) } : {}),
           } satisfies CalendarEventData,
         };
 
@@ -192,5 +224,5 @@ export const useCalendarEvents = (
     });
 
     return events;
-  }, [range, getChecklistForDateWithoutFetching, checklistTemplate, selectedTag, checklistTemplateId]);
+  }, [range, getChecklistForDateWithoutFetching, checklistTemplate, withFieldGroups, selectedTag, checklistTemplateId]);
 };

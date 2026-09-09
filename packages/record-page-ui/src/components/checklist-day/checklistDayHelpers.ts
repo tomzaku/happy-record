@@ -2,7 +2,7 @@ import {
   ChecklistTemplate,
   getEffectiveDayOfWeek,
   formatDaysOfWeek,
-  getActiveFieldGroups,
+  hasGroupSchedule,
   ALL_ICAL_DAYS,
 } from '@dreamer/global';
 import { format } from 'date-fns';
@@ -34,7 +34,7 @@ export const getNextFocusId = (ids: string[], id: string): string | null => {
 export const formatTemplateSchedule = (template?: ChecklistTemplate): string => {
   if (!template) return 'No schedule';
 
-  if (getActiveFieldGroups(template.fieldGroups ?? []).length > 0) {
+  if (hasGroupSchedule(template)) {
     return formatDaysOfWeek(getEffectiveDayOfWeek(template) ?? ALL_ICAL_DAYS);
   }
 
@@ -47,7 +47,7 @@ export const formatTemplateSchedule = (template?: ChecklistTemplate): string => 
 // field groups (see formatTemplateSchedule's own comment on why a merged
 // per-group schedule has no single time to show).
 export const getScheduledTimeLabel = (template?: ChecklistTemplate): string | undefined => {
-  if (!template?.repeat?.byhour || getActiveFieldGroups(template.fieldGroups ?? []).length > 0) {
+  if (!template?.repeat?.byhour || hasGroupSchedule(template)) {
     return undefined;
   }
   return format(new Date(0, 0, 0, Number(template.repeat.byhour), Number(template.repeat.byminute)), 'h:mm');

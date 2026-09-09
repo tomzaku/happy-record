@@ -45,15 +45,26 @@ const RecurrencePicker = ({ value, onChange, allowNoRepeat, showOnDateEnd = true
 
   // Switching frequency never drops a prior custom day selection — going Weekly → Daily → back to
   // Weekly/Custom restores whatever days were picked before, rather than forcing a re-pick. But
-  // landing on Weekly/Custom with nothing picked yet (fresh "off"/"daily" → "weekly", or the very
-  // first choice) defaults to today rather than an empty day-pill row with nothing to save.
+  // landing on Weekly/Custom with nothing meaningfully picked yet needs a fresh, narrower default
+  // — "nothing picked" means either a genuinely empty selection (fresh "off" → "weekly") or every
+  // day already selected (a field group's own untouched default is 'daily' with all 7 days
+  // pre-filled — see repeatToRecurrenceValue's `allowNoRepeat: false` branch). Without this second
+  // case, picking Weekly/Custom while every day is still checked round-trips right back to 'daily'
+  // the moment this saves (repeatToRecurrenceValue's own `isEveryDay` check can't tell "every day,
+  // chosen via Daily" from "every day, chosen via Weekly/Custom"), making the frequency switch look
+  // like it silently did nothing.
   const setFrequency = (frequency: Frequency) => {
     const showsDays = frequency === 'weekly' || frequency === 'custom';
+    const needsFreshDays = value.days.length === 0 || value.days.length >= 7;
     onChange({
       ...value,
       frequency,
-      days: showsDays && value.days.length === 0 ? [todayDay()] : value.days,
-      interval: frequency === 'custom' ? (value.interval || 1) : 1,
+      days: showsDays && needsFreshDays ? [todayDay()] : value.days,
+      // Same collapse risk for Custom: an interval of 1 is indistinguishable from Weekly once
+      // saved (see RecurrenceValue['interval']'s own comment) — a freshly-chosen Custom coming
+      // from any interval-1 state defaults to 2 instead, so it round-trips as real Custom rather
+      // than instantly collapsing back to Weekly before the interval input is even reachable.
+      interval: frequency === 'custom' ? (value.interval && value.interval !== 1 ? value.interval : 2) : 1,
     });
   };
 

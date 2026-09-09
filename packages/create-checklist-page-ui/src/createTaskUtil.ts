@@ -63,9 +63,8 @@ export const createTask = async (
         // rruleUtils.ts's `occursInRange`), not the default `true` an absent value would read as.
         //
         // Deliberately never `until`/`count` here for "Single day" — those are the *same* fields
-        // ChecklistGenericInfo's Start & End Date and Schedule dialogs read/write and silently
-        // re-apply on every save of either one (they stage into shared temp* state precisely so
-        // neither Save clobbers what the other owns — see that file's own comments). A `until`
+        // ChecklistGenericInfo's Schedule dialog (Start/End Date and "how often" merged into one —
+        // see that file's own comments) reads/writes and silently re-applies on every save. A `until`
         // set here at creation time would still be sitting on the template the next time the user
         // opens the Schedule dialog to actually turn this into a real weekly recurrence — and get
         // silently re-applied, capping the brand new pattern to zero real occurrences (reported:

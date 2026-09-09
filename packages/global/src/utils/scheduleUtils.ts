@@ -166,7 +166,10 @@ export const getNextScheduledDayLabel = (
 export const getEffectiveDayOfWeek = (template: {
   repeat?: { byday?: string };
   fieldGroups?: { repeat?: { byday?: string }; archivedAt?: string | null }[];
+  scheduleMode?: 'general' | 'per_group';
 }): string | undefined => {
+  if (template.scheduleMode === 'general') return template.repeat?.byday;
+
   const groups = (template.fieldGroups ?? []).filter(group => !group.archivedAt);
   if (groups.length === 0) return template.repeat?.byday;
 
@@ -177,6 +180,25 @@ export const getEffectiveDayOfWeek = (template: {
     for (const day of byday.split(',')) allDays.add(day.trim());
   }
   return ICAL_WEEKDAY_ORDER.filter(code => allDays.has(code)).join(',');
+};
+
+/**
+ * Whether a template's *schedule* should be derived from its field groups (unioned via
+ * getEffectiveDayOfWeek) rather than its own top-level `repeat` — true only when it has active
+ * field groups and hasn't opted into one combined schedule (`scheduleMode: 'general'`, chosen in
+ * ChecklistGenericInfo's Schedule modal). Every place that used to gate a *scheduling* decision on
+ * "does this template have active field groups" should call this instead of
+ * `getActiveFieldGroups(...).length > 0` directly, so 'general' mode consistently makes a
+ * field-group template behave exactly like one with none, everywhere — not just in the modal that
+ * sets it. Rendering the groups themselves (not their schedule) is unaffected and keeps using plain
+ * `getActiveFieldGroups`.
+ */
+export const hasGroupSchedule = (template: {
+  scheduleMode?: 'general' | 'per_group';
+  fieldGroups?: { archivedAt?: string | null }[];
+}): boolean => {
+  if (template.scheduleMode === 'general') return false;
+  return (template.fieldGroups ?? []).some(group => !group.archivedAt);
 };
 
 /**

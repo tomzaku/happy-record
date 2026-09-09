@@ -1,0 +1,75 @@
+@use '@moon-ui/app-scss/color' as *;
+@use '@moon-ui/app-scss/metric' as *;
+
+// ScheduleModeChooser always follows the Schedule dialog's own .scheduleDateFields section (see
+// index.module.scss), inside that same zeroed-padding dialog body — brings its own full padding
+// (unlike .switcherRow below, which is always followed by ScheduleModalContent's own top padding)
+// since this is the last thing rendered in that branch.
+.chooser {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+}
+
+.chooserTitle {
+  color: var(--text-color);
+}
+
+// Two side-by-side cards — plain flexbox, not grid, matching this package's own convention (see
+// index.module.scss). Wraps on a narrow viewport rather than shrinking either card unreadably.
+.cardRow {
+  display: flex;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+// A plain <button>, not @moon-ui/button's DefaultButton — that component isn't built for a
+// multi-line icon+title+description card, only a label. Bordered rather than filled so neither
+// option reads as pre-selected (this is a real choice, not a default with an alternate).
+.card {
+  flex: 1 1 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $spacing-xs;
+  padding: $spacing-md;
+  border: 1px solid var(--division-color);
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: var(--icon-primary);
+    transform: translateY(-1px);
+  }
+}
+
+.cardIcon {
+  fill: var(--icon-primary);
+}
+
+.cardTitle {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+// Muted, same de-emphasis convention as index.module.scss's own .durationSummary (no dedicated
+// "secondary text" token yet, just reduced opacity on the primary one).
+.cardDescription {
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+// ScheduleModeSwitcher sits above ScheduleModalContent inside that same zeroed-padding dialog body
+// (see index.module.scss's own .noBodyPadding) — ScheduleModalContent brings its own padding, this
+// restores it for just this row. No bottom padding: ScheduleModalContent's own top padding follows
+// right after, doubling up would leave a visibly bigger gap here than anywhere else in the dialog —
+// same reasoning as index.module.scss's own .myReminderDateFields.
+.switcherRow {
+  padding: $spacing-lg $spacing-lg 0;
+  display: flex;
+  justify-content: center;
+}

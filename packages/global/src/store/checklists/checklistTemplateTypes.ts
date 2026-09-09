@@ -87,6 +87,13 @@ export type ChecklistTemplate = {
    * participant still resolves it (see 20260905000000_checklist_templates_soft_delete.sql), just
    * flagged. Absent means not deleted. */
   deletedAt?: string;
+  /** Chosen once a template with field groups first needs a schedule decision — 'general' ignores
+   * every group's own `repeat` and uses this template's own top-level one instead (exactly like a
+   * template with no field groups); 'per_group' unions each active group's own (today's default
+   * behavior). Undefined means no field groups yet, or the owner hasn't chosen — see
+   * scheduleUtils.ts's `hasGroupSchedule`, the single place this gets interpreted. Switchable later
+   * from ChecklistGenericInfo's Schedule modal. */
+  scheduleMode?: 'general' | 'per_group';
   /** Set only on the local, optimistic copy `addChecklistTemplate` writes at create time — never
    * sent to or returned by the server, so it's absent on every DTO-mapped (real) row. A consumer
    * (ChecklistToday's own row) reads this to show a "Creating…" status; it disappears on its own

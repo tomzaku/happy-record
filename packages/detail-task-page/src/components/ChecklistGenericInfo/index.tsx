@@ -8,6 +8,7 @@ import {
   formatDaysOfWeek,
   getActiveFieldGroups,
   getArchivedFieldGroups,
+  hasGroupSchedule,
   mergeEditedFieldGroups,
   getClientTimezone,
   ALL_ICAL_DAYS,
@@ -36,6 +37,7 @@ import {
 } from '@pregnant/create-checklist-page-ui/src/SchedulingGroup/recurrenceConfig';
 import { GroupScheduleList, ScheduleModalContent, WeekDaysPills } from '@pregnant/create-checklist-page-ui';
 import StartEndDateFields from './StartEndDateFields';
+import { ScheduleModeChooser, ScheduleModeSwitcher } from './ScheduleModeFields';
 
 import styles from './index.module.scss';
 
@@ -91,26 +93,15 @@ enum EditModal {
   Tags,
   Archived,
   MyReminder,
-  StartDate,
 }
-
-// Fallback shape for `repeat` when a Start Date edit is the very first schedule-shaped write this
-// template ever gets — a hasFieldGroups template can genuinely have no top-level `repeat` at all
-// (see formatDisplayStartEndDate's own comment) but `startedAt` still needs *some* base object to sit
-// on, since `repeat`'s other fields aren't optional. Every other field here already
-// reads as "unset" (`byday: ALL_ICAL_DAYS` — every day — is exactly what getEffectiveDayOfWeek falls
-// back to on its own, and this template already isn't gated by it if it has field groups).
-const DEFAULT_REPEAT_BASE = { byhour: '8', byminute: '0', byday: ALL_ICAL_DAYS, freq: 'WEEKLY' };
 
 // Fallback shape for `repeat` when calculateRepeat itself returns `undefined` — empty-string
 // "not scheduled" sentinels, matching createTaskUtil.ts's own non-recurring branch (and
-// getEffectiveDayOfWeek/getChecklistTemplateIdsByGivingDate's own reading of `byday: ''`),
-// not DEFAULT_REPEAT_BASE above — that reads as "every day at 8am," which would turn a template
-// with genuinely no template-level schedule into one the moment its Start Date/timezone gets
-// touched. `recurring: false` explicit, not left absent — `isRecurringSchedule`/`occursOnDate`
-// treat absent as `true`, but several other consumers (`useCalendarEvents.ts`'s spanning-bar
-// check, `useChecklists.tsx`'s one-off gate) test `=== false` directly, so an absent value here
-// would read as "still a weekly pattern" to those even though `byday` is empty.
+// getEffectiveDayOfWeek/getChecklistTemplateIdsByGivingDate's own reading of `byday: ''`).
+// `recurring: false` explicit, not left absent — `isRecurringSchedule`/`occursOnDate` treat absent
+// as `true`, but several other consumers (`useCalendarEvents.ts`'s spanning-bar check,
+// `useChecklists.tsx`'s one-off gate) test `=== false` directly, so an absent value here would
+// read as "still a weekly pattern" to those even though `byday` is empty.
 const NO_SCHEDULE_REPEAT_BASE = { byhour: '', byminute: '', byday: '', recurring: false };
 
 // ScheduleModalContent's plain `tempWeeklyHobbies` day picker is unreachable from here —
@@ -164,8 +155,8 @@ const ChecklistGenericInfo = ({
   const [tempEndDay, setTempEndDay] = React.useState(checklistTemplate.repeat?.until || '');
   // Google-Calendar-style "All Day" — on by default (per the user's own note) whenever there's no
   // time already set, so a brand-new schedule starts all-day rather than silently defaulting to
-  // 8am the way DEFAULT_REPEAT_BASE used to. A real boolean (not just `!tempTime`) so toggling it
-  // off and back on within one dialog session doesn't lose whatever time was already picked.
+  // 8am. A real boolean (not just `!tempTime`) so toggling it off and back on within one dialog
+  // session doesn't lose whatever time was already picked.
   const [tempAllDay, setTempAllDay] = React.useState(
     !(checklistTemplate.repeat?.byhour && checklistTemplate.repeat?.byminute),
   );
@@ -211,13 +202,26 @@ const ChecklistGenericInfo = ({
   const [tempFieldGroups, setTempFieldGroups] = React.useState<FieldGroup[]>(
     checklistTemplate.fieldGroups,
   );
+  // Staged General-vs-Per-Group choice for a template with field groups — undefined means "not
+  // decided yet" (shows ScheduleModeChooser) or "no field groups" (irrelevant either way). Only
+  // ever written by the owner's Schedule modal; a participant's My Reminder modal always respects
+  // whatever the owner has already chosen (see hasFieldGroups above).
+  const [tempScheduleMode, setTempScheduleMode] = React.useState<'general' | 'per_group' | undefined>(
+    checklistTemplate.scheduleMode,
+  );
 
   // Once a template has field groups, its own day-of-week is derived from
   // the union of the groups' own schedules (see @dreamer/global's
   // getEffectiveDayOfWeek) rather than edited here — otherwise a group
   // could end up scheduled for a day the template itself never generates a
-  // Checklist instance on, making it silently unreachable.
-  const hasFieldGroups = getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).length > 0;
+  // Checklist instance on, making it silently unreachable. Unless the owner has opted into a
+  // single combined schedule (`scheduleMode: 'general'`, see hasGroupSchedule) — that makes a
+  // field-group template behave exactly like one with none, for every decision below.
+  const hasFieldGroups = hasGroupSchedule(checklistTemplate);
+  // Raw "does it have field groups at all", independent of scheduleMode — used only to decide
+  // whether the Schedule modal needs to ask General-vs-Per-Group at all (see tempScheduleMode
+  // below). Every other decision in this file uses hasFieldGroups (mode-aware) instead.
+  const hasActiveFieldGroups = getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).length > 0;
   const archivedFieldGroups = getArchivedFieldGroups(checklistTemplate.fieldGroups ?? []);
 
   const formatDisplayDays = () => {
@@ -242,20 +246,29 @@ const ChecklistGenericInfo = ({
     return days.map(day => dayNames[day]).join(', ');
   };
 
-  // The merged "Start & End Date" row's own collapsed summary — a real date range plus an
-  // All Day/time suffix, Google-Calendar-style, so an end date (previously buried inside the
-  // Schedule dialog's own Ends section and reported as effectively invisible) is now visible right
-  // here without opening anything.
+  // The merged Schedule row's own first line — a real date range plus an All Day/time suffix,
+  // Google-Calendar-style, so an end date (previously buried inside the Schedule dialog's own Ends
+  // section and reported as effectively invisible) is visible right here without opening anything.
   const formatDisplayStartEndDate = () => {
     if (!checklistTemplate.repeat?.startedAt) {
       // A template with field groups but no template-level `repeat` at all (schedules were only
       // ever set per-group, the template's own Schedule modal never saved) has no start date to
-      // show — but it does have a real schedule, already shown in the Schedule row's description
+      // show — but it does have a real schedule, already shown in the Schedule row's second line
       // via the derived days. "Not set" here read as if nothing were configured at all. See
       // withSyncedRepeat in useChecklistTemplates.tsx for why `repeat` can be entirely absent here.
       return hasFieldGroups ? '' : 'Not set';
     }
     const start = new Date(checklistTemplate.repeat.startedAt).toLocaleDateString();
+    if (hasFieldGroups) {
+      // End Date/Time are per-group here (each group's own row in GroupScheduleList, summarized
+      // in the row's second line via formatDisplayGroupEnds) — the template's own `until`/
+      // byhour/byminute aren't consulted for scheduling in this mode, so showing them here would
+      // just contradict whatever a group's own end/time actually says.
+      return intl.formatMessage(
+        { id: 'checklist-generic-info.starts-on-date', defaultMessage: 'Starts {{date}}' },
+        { date: start },
+      );
+    }
     const end = checklistTemplate.repeat.until
       ? new Date(checklistTemplate.repeat.until).toLocaleDateString()
       : 'No end date';
@@ -286,8 +299,8 @@ const ChecklistGenericInfo = ({
     return '';
   };
 
-  // Template-level only — `until` is dropped here on purpose (it's already shown in the merged
-  // Start & End Date row's own summary above; repeating it here would just be the same date twice).
+  // Template-level only — `until` is dropped here on purpose (it's already shown in this same
+  // row's own first line above; repeating it here would just be the same date twice).
   const formatDisplayCount = () => formatEndsSummary(undefined, checklistTemplate.repeat?.count);
 
   // A field-group template has no single template-level end date (see the mutual-exclusivity rule
@@ -330,37 +343,6 @@ const ChecklistGenericInfo = ({
     setActiveModal(EditModal.None);
   };
 
-  // All Day/Start/End Date/Time is its own top-level row (see the enum's own comment, and
-  // StartEndDateFields), staged independently and writing only those fields into `repeat` —
-  // `byday`/`freq`/`interval`/`count` carry through unchanged from whatever's already there, same
-  // as handleSaveSchedule leaves startedAt/until/byhour/byminute untouched below (both dialogs
-  // stage into this same shared temp* state, so neither Save clobbers what the other one owns).
-  const handleSaveStartEndDate = () => {
-    const [hour = '', minute = ''] = tempAllDay || !tempTime ? ['', ''] : tempTime.split(':');
-    const base = checklistTemplate.repeat ?? DEFAULT_REPEAT_BASE;
-    onUpdate({
-      ...checklistTemplate,
-      repeat: {
-        ...base,
-        startedAt: tempStartDay,
-        until: tempEndDay || undefined,
-        byhour: hour,
-        byminute: minute,
-        timezone: getClientTimezone(),
-        // This dialog never sets a weekday pattern (that's the separate Schedule dialog) — a
-        // template with none defined isn't a weekly recurrence at all, it's a one-time arrangement
-        // bounded by the dates just set here, so it needs `recurring: false` to actually occur on
-        // every day in that range (see rruleUtils.ts's `occursInRange`) rather than nowhere at all.
-        // `recurring` is always derived from whether `base.byday` is set (never a separate
-        // user-facing toggle any more — see recurrenceConfig.ts's `recurrenceValueToExtra`),
-        // written both ways here so a stale value from before this invariant existed self-corrects
-        // the next time Start & End Date is saved, not just the one direction.
-        recurring: !base.byday,
-      },
-    });
-    setActiveModal(EditModal.None);
-  };
-
   const handleSaveSchedule = () => {
     const repeat = calculateRepeat({
       weeklyHobbies: recurrenceValueToDays(tempRecurrence),
@@ -373,11 +355,10 @@ const ChecklistGenericInfo = ({
     // `repeat` is `undefined` when tempRecurrence.frequency is 'off' (a template whose schedule
     // lives entirely on its field groups, with no template-level days of its own — see
     // formatTemplateSchedule's comment elsewhere on this shape) — fall back to the same empty-
-    // string "not scheduled" sentinel createTaskUtil.ts's own non-recurring branch uses, not
-    // DEFAULT_REPEAT_BASE, which would silently turn this into a real daily-8am schedule.
+    // string "not scheduled" sentinel createTaskUtil.ts's own non-recurring branch uses.
     // `until` is explicitly re-applied from tempEndDay (not calculateRepeat's own, which only
-    // ever reflects RecurrencePicker's now-count-only Ends section) since this Save must not
-    // drop whatever the Start & End Date dialog already staged for it.
+    // ever reflects RecurrencePicker's now-count-only Ends section) since this must not drop
+    // whatever the End Date field (StartEndDateFields, same dialog now) already staged for it.
     const finalRepeat = {
       ...(repeat ?? NO_SCHEDULE_REPEAT_BASE),
       startedAt: tempStartDay,
@@ -410,7 +391,7 @@ const ChecklistGenericInfo = ({
       return;
     }
 
-    onUpdate({ ...checklistTemplate, repeat: finalRepeat });
+    onUpdate({ ...checklistTemplate, repeat: finalRepeat, scheduleMode: tempScheduleMode });
   };
 
   // "This and following events" — hands off to the split mutation entirely instead of this
@@ -424,7 +405,7 @@ const ChecklistGenericInfo = ({
     if (scope === 'thisAndFollowing') {
       onSplitSchedule?.(new Date().toISOString(), repeat);
     } else {
-      onUpdate({ ...checklistTemplate, repeat });
+      onUpdate({ ...checklistTemplate, repeat, scheduleMode: tempScheduleMode });
     }
   };
 
@@ -516,6 +497,7 @@ const ChecklistGenericInfo = ({
     setTempRecurrence(repeatToRecurrenceValue(checklistTemplate.repeat, true, false));
     setTempTags(checklistTemplate.tags || []);
     setTempFieldGroups(checklistTemplate.fieldGroups);
+    setTempScheduleMode(checklistTemplate.scheduleMode);
   };
 
   const handleModalClose = () => {
@@ -567,87 +549,59 @@ const ChecklistGenericInfo = ({
           style={{ overflow: 'hidden' }}
         >
           <div className={styles.content}>
-            {/* Start & End Date — All Day/Start/End/Time all live in one dialog now (see
-                StartEndDateFields and handleSaveStartEndDate's own comment), Google-Calendar-
-                style, after a report that the end date was effectively invisible buried inside
-                the Schedule dialog's own Ends section. Still its own row, not bundled into
-                Schedule below (see the `hideStartDate` prop passed to both ScheduleModalContent
-                dialogs further down) — Schedule is "how often," this is "when." */}
-            <SettingsRow
-              logo={<Icon width={24} icon="solar:calendar-mark-line-duotone" />}
-              title={intl.formatMessage({
-                id: 'checklist-generic-info.start-end-date-title',
-                defaultMessage: 'Start & End Date',
-              })}
-              description={
-                formatDisplayStartEndDate() ||
-                intl.formatMessage({
-                  id: 'checklist-generic-info.start-date-description',
-                  defaultMessage: 'The first day this task is active',
-                })
-              }
-              rightComponent={
-                <div className={styles.displayRow}>
-                  {!readOnly && (
-                    <Icon
-                      width={16}
-                      icon="solar:pen-2-line-duotone"
-                      className={styles.editIcon}
-                      onClick={e => {
-                        e.stopPropagation();
-                        resetModalStates();
-                        setActiveModal(EditModal.StartDate);
-                      }}
-                    />
-                  )}
-                </div>
-              }
-              onClick={
-                readOnly
-                  ? undefined
-                  : () => {
-                      resetModalStates();
-                      setActiveModal(EditModal.StartDate);
-                    }
-              }
-            />
-
-            {/* Schedule */}
+            {/* Schedule — Start/End Date and "how often" used to be two separate rows/dialogs
+                (Start & End Date, Schedule), split specifically so a buried end date would stay
+                visible. Merged back into one now: a field-group template's per-group schedules
+                (each with their own end date/time — GroupScheduleList) made the two-row split
+                actively misleading, showing a template-level "No end date" right next to a
+                separately-synthesized real per-group end summary. One row, one dialog — Start
+                Date up top (still template-level, see StartEndDateFields), everything about "how
+                often" below it. */}
             <SettingsRow
               logo={<Icon width={24} icon="solar:calendar-date-line-duotone" />}
               title="Schedule"
               description={
-                // The merged union of every group's own days (WeekDaysPills, read-only summary
-                // — the modal's GroupScheduleList is where each group's own days actually get
-                // edited) rather than a comma-separated list. Time/date-range are dropped here
-                // entirely now — both live in the Start & End Date row above instead (see that
-                // row's own comment); this is purely "how often," not "when."
-                hasFieldGroups ? (
-                  <>
-                    <WeekDaysPills
-                      activeDays={getDaysFromRepeat({
-                        byday: getEffectiveDayOfWeek(checklistTemplate) ?? ALL_ICAL_DAYS,
+                <>
+                  <span>
+                    {formatDisplayStartEndDate() ||
+                      intl.formatMessage({
+                        id: 'checklist-generic-info.start-date-description',
+                        defaultMessage: 'The first day this task is active',
                       })}
-                    />
-                    {formatDisplayGroupEnds() && ` • ${formatDisplayGroupEnds()}`}
-                  </>
-                ) : (
-                  <>
-                    {formatDisplayDays()}
-                    {formatDisplayCount() && ` • ${formatDisplayCount()}`}
-                    {/* Only ever set for a participant who's overridden the owner's default —
-                        see ChecklistTemplate['repeat'].isPersonal's own comment. */}
-                    {checklistTemplate.repeat?.isPersonal && (
-                      <Typography.Text className={styles.personalBadge}>
-                        {' · '}
-                        {intl.formatMessage({
-                          id: 'checklist-generic-info.personal-reminder-badge',
-                          defaultMessage: 'Your reminder',
-                        })}
-                      </Typography.Text>
+                  </span>
+                  <br />
+                  <span>
+                    {/* The merged union of every group's own days (WeekDaysPills, read-only
+                        summary — the modal's GroupScheduleList is where each group's own days
+                        actually get edited) rather than a comma-separated list. */}
+                    {hasFieldGroups ? (
+                      <>
+                        <WeekDaysPills
+                          activeDays={getDaysFromRepeat({
+                            byday: getEffectiveDayOfWeek(checklistTemplate) ?? ALL_ICAL_DAYS,
+                          })}
+                        />
+                        {formatDisplayGroupEnds() && ` • ${formatDisplayGroupEnds()}`}
+                      </>
+                    ) : (
+                      <>
+                        {formatDisplayDays()}
+                        {formatDisplayCount() && ` • ${formatDisplayCount()}`}
+                        {/* Only ever set for a participant who's overridden the owner's default —
+                            see ChecklistTemplate['repeat'].isPersonal's own comment. */}
+                        {checklistTemplate.repeat?.isPersonal && (
+                          <Typography.Text className={styles.personalBadge}>
+                            {' · '}
+                            {intl.formatMessage({
+                              id: 'checklist-generic-info.personal-reminder-badge',
+                              defaultMessage: 'Your reminder',
+                            })}
+                          </Typography.Text>
+                        )}
+                      </>
                     )}
-                  </>
-                )
+                  </span>
+                </>
               }
               rightComponent={
                 <div className={styles.displayRow}>
@@ -791,39 +745,6 @@ const ChecklistGenericInfo = ({
         </motion.div>
       </SettingsCard>
 
-      {/* Start & End Date Edit Modal */}
-      <Dialog
-        visible={activeModal === EditModal.StartDate}
-        onDismiss={handleModalClose}
-        icon="solar:calendar-mark-line-duotone"
-        // Same staged-until-Save shape as every other row here — only commits on this Save
-        // (handleSaveStartEndDate).
-        closeOnOverlayClick={false}
-        title={intl.formatMessage({
-          id: 'checklist-generic-info.edit-start-end-date-title',
-          defaultMessage: 'Edit Start & End Date',
-        })}
-        headerAction={
-          <div className={styles.headerActionsRow}>
-            <Button type="ghost" size="sm" onClick={handleModalClose}>
-              {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
-            </Button>
-            <Button onClick={handleSaveStartEndDate} className={styles.headerSaveButton}>
-              {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
-            </Button>
-          </div>
-        }
-      >
-        <StartEndDateFields
-          startDate={tempStartDay}
-          onStartDateChange={handleStartDateChange}
-          endDate={tempEndDay}
-          onEndDateChange={setTempEndDay}
-          allDay={tempAllDay}
-          onAllDayChange={handleAllDayChange}
-        />
-      </Dialog>
-
       {/* Icon & Color Edit Modal */}
       <Dialog
         visible={activeModal === EditModal.Icon}
@@ -873,30 +794,63 @@ const ChecklistGenericInfo = ({
             <Button type="ghost" size="sm" onClick={handleModalClose}>
               {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button onClick={handleSaveSchedule} className={styles.headerSaveButton}>
+            <Button
+              onClick={handleSaveSchedule}
+              disabled={hasActiveFieldGroups && !tempScheduleMode}
+              className={styles.headerSaveButton}
+            >
               {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
             </Button>
           </div>
         }
-        // ScheduleModalContent already brings its own outer padding (it's shared with
-        // SchedulingGroup's own modal, which has no padding of its own to double up on) — this
-        // drops Dialog's own so the two don't stack.
+        // ScheduleModalContent/StartEndDateFields both bring their own outer padding now (see
+        // .scheduleDateFields' own comment) — this drops Dialog's own so nothing stacks.
         bodyClassName={styles.noBodyPadding}
       >
-        <ScheduleModalContent
-          tempWeeklyHobbies={NOOP_DAYS}
-          setTempWeeklyHobbies={NOOP_SET_DAYS}
-          tempDate={tempStartDay}
-          setTempDate={setTempStartDay}
-          tempTime={tempTime}
-          setTempTime={setTempTime}
-          fieldGroups={tempFieldGroups}
-          onFieldGroupsChange={setTempFieldGroups}
-          hideStartDate
-          showRecurrenceControls
-          tempRecurrence={tempRecurrence}
-          setTempRecurrence={setTempRecurrence}
-        />
+        {/* All Day/Start/End Date/Time — template-level regardless of scheduleMode (see
+            formatDisplayStartEndDate's own comment: startedAt/until still bound *when* a
+            field-group template's own Checklist instances occur at all, on top of whichever days
+            each active group's own schedule contributes). Was its own separate row/dialog,
+            merged back in here — see the Schedule row's own comment on why. */}
+        <div className={styles.scheduleDateFields}>
+          <StartEndDateFields
+            startDate={tempStartDay}
+            onStartDateChange={handleStartDateChange}
+            endDate={tempEndDay}
+            onEndDateChange={setTempEndDay}
+            allDay={tempAllDay}
+            onAllDayChange={handleAllDayChange}
+          />
+        </div>
+        {hasActiveFieldGroups && !tempScheduleMode ? (
+          // Field groups exist and the owner hasn't chosen General vs. Per-Group yet — ask before
+          // showing either editor (see ScheduleModeFields.tsx). Picking one just sets
+          // tempScheduleMode, staying in this same open dialog — Save is disabled above until then.
+          <ScheduleModeChooser onChoose={setTempScheduleMode} />
+        ) : (
+          <>
+            {hasActiveFieldGroups && (
+              <ScheduleModeSwitcher mode={tempScheduleMode ?? 'per_group'} onChange={setTempScheduleMode} />
+            )}
+            <ScheduleModalContent
+              tempWeeklyHobbies={NOOP_DAYS}
+              setTempWeeklyHobbies={NOOP_SET_DAYS}
+              tempDate={tempStartDay}
+              setTempDate={setTempStartDay}
+              tempTime={tempTime}
+              setTempTime={setTempTime}
+              // undefined (not tempFieldGroups) once the owner has chosen 'general' — that's what
+              // makes ScheduleModalContent fall through to its own plain day/time picker branch,
+              // exactly like a template with no field groups, with no changes needed in that file.
+              fieldGroups={tempScheduleMode === 'per_group' ? tempFieldGroups : undefined}
+              onFieldGroupsChange={tempScheduleMode === 'per_group' ? setTempFieldGroups : undefined}
+              hideStartDate
+              showRecurrenceControls
+              tempRecurrence={tempRecurrence}
+              setTempRecurrence={setTempRecurrence}
+            />
+          </>
+        )}
       </Dialog>
 
       {/* My Reminder Modal — a challenge participant's own override, distinct from the Schedule

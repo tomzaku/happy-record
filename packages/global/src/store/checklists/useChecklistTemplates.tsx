@@ -1,11 +1,10 @@
 import React from 'react';
-import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
+import { getEffectiveDayOfWeek, hasGroupSchedule } from '../../utils/scheduleUtils';
 import { occursOnDate } from '../../utils/rruleUtils';
 import { useFieldGroups } from './useFieldGroups';
 import { useChecklistTemplatesQuery } from './useChecklistTemplatesQuery';
 import { useChecklistTemplateMutations } from './useChecklistTemplateMutations';
 import type { ChecklistTemplate } from './checklistTemplateTypes';
-import { getActiveFieldGroups } from './fieldGroupTypes';
 
 export type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTemplateTypes';
 export * from './fieldGroupTypes';
@@ -21,7 +20,7 @@ export { useChecklistTemplateDetail } from './useChecklistTemplateDetail';
 function isTemplateScheduledOnDate(template: ChecklistTemplate | undefined, date: Date): boolean {
   if (!template || template.deletedAt) return false;
   const effectiveByday = getEffectiveDayOfWeek(template);
-  const hasActiveFieldGroups = getActiveFieldGroups(template.fieldGroups ?? []).length > 0;
+  const hasActiveFieldGroups = hasGroupSchedule(template);
   return occursOnDate(
     {
       ...template.repeat,
@@ -118,5 +117,9 @@ export const useChecklistTemplates = () => {
     getRecommendChecklistTemplates,
     getChecklistTemplateIdsByGivingDate,
     isOwnedTemplate,
+    // Exposed for callers that look up one template at a time from the raw `checklistTemplate`
+    // map and need its real `fieldGroups` (useCalendarEvents.ts's own per-day event builder) —
+    // mapping every template via getRecommendChecklistTemplates would be wasteful there.
+    withFieldGroups,
   };
 };
