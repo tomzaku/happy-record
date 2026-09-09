@@ -31,6 +31,30 @@ export async function fetchChecklistById(
   return (data ?? []) as Record<string, unknown>[];
 }
 
+// `id` is the primary key, but `(user_id, checklist_template_id, started_at)` is also unique (see
+// the migration's own `idx_checklists_user_template_started_unique`) — one real row per day,
+// regardless of which id a client happens to compute for it. `services/checklists-service.ts`'s
+// `saveChecklist` uses this to find that row before writing, so a client-generated id that drifts
+// from what's already on file for the exact same slot (an older row from before a since-changed
+// id scheme, a synced write racing this one) reuses the existing id instead of upserting a second
+// row into the same slot and hitting that unique index as a raw constraint violation.
+export async function fetchChecklistBySlot(
+  db: SupabaseClient,
+  userId: string,
+  checklistTemplateId: string,
+  startedAt: string,
+): Promise<{ id: string } | null> {
+  const { data, error } = await db
+    .from('checklists')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('checklist_template_id', checklistTemplateId)
+    .eq('started_at', startedAt)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function upsertChecklist(db: SupabaseClient, userId: string, row: Record<string, unknown>): Promise<void> {
   const { error } = await db.from('checklists').upsert({ user_id: userId, ...row });
   if (error) throw new Error(error.message);

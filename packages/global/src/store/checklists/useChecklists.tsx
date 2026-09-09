@@ -238,8 +238,8 @@ export const useChecklist = () => {
             clientOnly: true,
             title: template.title,
             checklistTemplateId: id,
-            startedAt: new Date(date).toISOString(),
-            endedDate: new Date(date).toISOString(),
+            startedAt: startOfDay(date).toISOString(),
+            endedDate: endOfDay(date).toISOString(),
             // Never synced or reconciled against — this is a throwaway
             // view, not yet a row this device has decided to persist
             // (see updateChecklist's comment on that first-edit moment).

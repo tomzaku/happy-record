@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { startOfDay } from 'date-fns';
+import { startOfDay, endOfDay } from 'date-fns';
 import {
   Checklist,
   checklistInstanceId,
@@ -46,6 +46,7 @@ const DetailTaskPageDesktop = () => {
   } = useChecklistTemplates();
   const {
     addChecklist,
+    updateChecklist,
     getChecklistDetail,
     getChecklistForDateWithoutFetching,
     getAllChecklistWithTemplate,
@@ -144,7 +145,7 @@ const DetailTaskPageDesktop = () => {
       title: checklistTemplate.title,
       checklistTemplateId: id,
       startedAt: startOfDay(new Date()).toISOString(),
-      endedDate: startOfDay(new Date()).toISOString(),
+      endedDate: endOfDay(new Date()).toISOString(),
     });
     setSearchParams(prev => {
       const newParams = new URLSearchParams(prev);
@@ -406,6 +407,7 @@ const DetailTaskPageDesktop = () => {
                     }
                     onDelete={isOwner && checklist ? () => openDelete(checklist.id) : undefined}
                     readOnly={!isOwner}
+                    onUpdateChecklist={isOwner ? updateChecklist : undefined}
                     onUpdateMyReminder={
                       !isOwner && challenge ? repeat => updateMyReminder(id, repeat) : undefined
                     }

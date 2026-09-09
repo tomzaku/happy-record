@@ -68,11 +68,15 @@ describe('createTask — one-off (forever) task', () => {
     expect(addChecklist).toHaveBeenCalledWith(seedChecklist, { skipNetwork: true });
   });
 
-  it('"Single day" (noEndDate: false) seeds endedDate as the same day as startedAt', async () => {
+  it('"Single day" (noEndDate: false) seeds endedDate as the end of startedAt\'s own day', async () => {
     const { addChecklistTemplate, addChecklist } = makeMocks();
     await createTask({ ...baseFormData, noEndDate: false }, addChecklistTemplate as never, addChecklist as never);
     const seedChecklist = addChecklistTemplate.mock.calls[0][2] as { startedAt?: string; endedDate?: string };
-    expect(seedChecklist.endedDate).toBe(seedChecklist.startedAt);
+    expect(seedChecklist.endedDate).toBeDefined();
+    const start = new Date(seedChecklist.startedAt!);
+    const end = new Date(seedChecklist.endedDate!);
+    expect(end.toDateString()).toBe(start.toDateString());
+    expect(end.getTime()).toBeGreaterThan(start.getTime());
   });
 
   it('"No end date" (noEndDate: true) and the no-choice-offered case (undefined) both omit endedDate', async () => {

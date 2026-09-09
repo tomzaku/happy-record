@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Checklist,
   ChecklistTemplate,
   FieldGroup,
   useFieldGroups,
@@ -38,6 +39,13 @@ type Props = {
   onSplitSchedule?: (effectiveFrom: string, newRepeat: NonNullable<ChecklistTemplate['repeat']>) => void;
   readOnly?: boolean;
   onUpdateMyReminder?: (repeat: ChecklistTemplate['repeat'] | null) => void;
+  // The specific day's own Checklist instance, when there is one — same prop
+  // ChecklistGenericInfo itself takes (see that component's own comment). The Start/End Date
+  // fields always seed from — and, on Save, write back to — this row's own `startedAt`/
+  // `endedDate`, never the template's `repeat` (see `initialStartDay` below), so
+  // `onUpdateChecklist` is required for those fields to be editable at all here.
+  checklist?: Checklist;
+  onUpdateChecklist?: (patch: Partial<Checklist> & { id: string }) => void;
   // 'schedule' shows the owner's editor, 'myReminder' the participant's own-override editor,
   // null renders nothing (both Dialogs stay mounted with visible=false either way).
   mode: ScheduleEditMode;
@@ -68,21 +76,32 @@ const ScheduleEditDialogs = ({
   onSplitSchedule,
   readOnly,
   onUpdateMyReminder,
+  checklist,
+  onUpdateChecklist,
   mode,
   onClose,
 }: Props) => {
   const intl = useIntl();
   const { updateFieldGroup, updateMyFieldGroupRepeat } = useFieldGroups();
 
-  const [tempStartDay, setTempStartDay] = React.useState(
-    checklistTemplate.repeat?.startedAt || startOfDay(new Date()).toISOString(),
-  );
+  const hasFieldGroups = hasGroupSchedule(checklistTemplate);
+  const hasActiveFieldGroups = getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).length > 0;
+  // Start/End Date always belong to the checklist row, never `checklistTemplate.repeat` — one
+  // source, not two copies that can drift apart. `repeat.startedAt` (the recurrence's own DTSTART)
+  // is still derived from it on save (see `handleSaveSchedule`'s `finalRepeat.startedAt:
+  // tempStartDay` below), but `repeat.until` is never set from this dialog at all any more —
+  // avoids the exact bug createTaskUtil.ts's own comment describes (a value there sitting on the
+  // template and getting silently reapplied the next time a real weekly pattern is saved).
+  const initialStartDay = () => checklist?.startedAt || startOfDay(new Date()).toISOString();
+  const initialEndDay = () => checklist?.endedDate ?? '';
+
+  const [tempStartDay, setTempStartDay] = React.useState(initialStartDay);
   const [tempTime, setTempTime] = React.useState(
     checklistTemplate.repeat?.byhour && checklistTemplate.repeat?.byminute
       ? `${checklistTemplate.repeat.byhour.padStart(2, '0')}:${checklistTemplate.repeat.byminute.padStart(2, '0')}`
       : '',
   );
-  const [tempEndDay, setTempEndDay] = React.useState(checklistTemplate.repeat?.until || '');
+  const [tempEndDay, setTempEndDay] = React.useState(initialEndDay);
   const [tempAllDay, setTempAllDay] = React.useState(
     !(checklistTemplate.repeat?.byhour && checklistTemplate.repeat?.byminute),
   );
@@ -95,12 +114,9 @@ const ScheduleEditDialogs = ({
   );
   const [pendingScheduleRepeat, setPendingScheduleRepeat] = React.useState<ChecklistTemplate['repeat'] | null>(null);
 
-  const hasFieldGroups = hasGroupSchedule(checklistTemplate);
-  const hasActiveFieldGroups = getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).length > 0;
-
   const resetStagedFields = () => {
-    setTempStartDay(checklistTemplate.repeat?.startedAt || startOfDay(new Date()).toISOString());
-    setTempEndDay(checklistTemplate.repeat?.until || '');
+    setTempStartDay(initialStartDay());
+    setTempEndDay(initialEndDay());
     setTempAllDay(!(checklistTemplate.repeat?.byhour && checklistTemplate.repeat?.byminute));
     setTempTime(
       checklistTemplate.repeat?.byhour && checklistTemplate.repeat?.byminute
@@ -150,7 +166,10 @@ const ScheduleEditDialogs = ({
     const finalRepeat = {
       ...(repeat ?? noScheduleRepeatBase(tempAllDay, tempTime)),
       startedAt: tempStartDay,
-      until: tempEndDay || undefined,
+      // `tempEndDay` is the checklist's own end date, staged here only for editing (see
+      // `initialEndDay` above) and written back to `checklist.endedDate` below — never to
+      // `repeat.until` (see `initialStartDay`'s own comment on why).
+      until: undefined,
       timezone: getClientTimezone(),
     };
 
@@ -161,6 +180,9 @@ const ScheduleEditDialogs = ({
           updateFieldGroup(group);
         }
       });
+    }
+    if (checklist) {
+      onUpdateChecklist?.({ id: checklist.id, startedAt: tempStartDay, endedDate: tempEndDay || undefined });
     }
     onClose();
 

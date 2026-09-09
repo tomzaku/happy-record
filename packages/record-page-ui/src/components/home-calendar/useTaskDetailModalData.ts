@@ -1,5 +1,5 @@
 import React from 'react';
-import { startOfDay } from 'date-fns';
+import { startOfDay, endOfDay } from 'date-fns';
 import {
   useChecklist,
   useChecklistTemplates,
@@ -87,7 +87,7 @@ export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
       title: template.title,
       checklistTemplateId: data.checklistTemplateId,
       startedAt: startOfDay(data.date).toISOString(),
-      endedDate: startOfDay(data.date).toISOString(),
+      endedDate: endOfDay(data.date).toISOString(),
     });
   }, [data, template, relevantGroups.length, checklist, addChecklist, deterministicId]);
 
@@ -116,6 +116,7 @@ export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
     markCompleted,
     setCalendarColor,
     updateChecklistTemplate,
+    updateChecklist,
     splitChecklistTemplate,
     updateMyReminder,
     // Whether *this device* owns the template, not just whether it's synced locally — a joined

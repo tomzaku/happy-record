@@ -3,7 +3,13 @@
 // thin pass-through rather than a `checkPermission`-bearing access-service, but `api/` still
 // never queries the DB directly: it always goes through this layer.
 
-import { fetchChecklistById, fetchChecklists, removeChecklist, upsertChecklist } from '../repository/checklists-repository.ts';
+import {
+  fetchChecklistById,
+  fetchChecklistBySlot,
+  fetchChecklists,
+  removeChecklist,
+  upsertChecklist,
+} from '../repository/checklists-repository.ts';
 import { recordChecklistLog } from '../../../shared/checklistLogs.ts';
 import type { Ctx } from '../api/checklists-context.ts';
 
@@ -19,28 +25,38 @@ export function getChecklistById({ db, userId }: Ctx, id: string): Promise<Recor
 }
 
 export async function saveChecklist({ db, userId }: Ctx, row: Record<string, unknown>): Promise<void> {
+  // `id` is the primary key, but one real row per (user, template, day) is also a real constraint
+  // (`idx_checklists_user_template_started_unique`) — a client-generated id that drifts from
+  // what's already on file for this exact slot (an older row from before a since-changed id
+  // scheme, a synced write racing this one) would otherwise upsert a second row into the same slot
+  // and hit that unique index as a raw, uncaught constraint violation. Look the slot up first and
+  // write through its existing id when there is one, so a same-day resave always converges on one
+  // row no matter which id the client sent.
+  const existingSlot = await fetchChecklistBySlot(db, userId, row.checklist_template_id as string, row.started_at as string);
+  const finalRow = existingSlot && existingSlot.id !== row.id ? { ...row, id: existingSlot.id } : row;
+
   // This route is a full-row upsert reused for creating a new day's instance, editing one, and
   // checking/unchecking it done (a completedAt patch merged client-side, then re-posted whole —
   // see useChecklists.tsx's own updateChecklist). Only a genuine transition of completed_at
   // (null->set, or set->null for an uncheck) counts as loggable — reading the prior value first is
   // what keeps a later, unrelated resave of an already-completed checklist from re-logging "done"
   // every time.
-  const [previous] = await fetchChecklistById(db, userId, row.id as string);
+  const [previous] = await fetchChecklistById(db, userId, finalRow.id as string);
   const previousCompletedAt = previous?.completed_at ?? null;
 
-  await upsertChecklist(db, userId, row);
+  await upsertChecklist(db, userId, finalRow);
 
-  if (!previousCompletedAt && row.completed_at) {
+  if (!previousCompletedAt && finalRow.completed_at) {
     await recordChecklistLog(db, userId, {
-      checklistTemplateId: row.checklist_template_id as string,
-      checklistId: row.id as string,
+      checklistTemplateId: finalRow.checklist_template_id as string,
+      checklistId: finalRow.id as string,
       action: 'update',
       detail: 'completed',
     });
-  } else if (previousCompletedAt && !row.completed_at) {
+  } else if (previousCompletedAt && !finalRow.completed_at) {
     await recordChecklistLog(db, userId, {
-      checklistTemplateId: row.checklist_template_id as string,
-      checklistId: row.id as string,
+      checklistTemplateId: finalRow.checklist_template_id as string,
+      checklistId: finalRow.id as string,
       action: 'update',
       detail: 'uncompleted',
     });

@@ -84,6 +84,10 @@ type Props = {
    * (no edit affordance) in both those cases, same as before this existed.
    */
   onUpdateMyReminder?: (repeat: ChecklistTemplate['repeat'] | null) => void;
+  // Required for a one-off task's Schedule dialog to be able to save an edited End Date at all —
+  // see ScheduleEditDialogs' own `isOneOffTask`, which writes there instead of `repeat.until`.
+  // Undefined/no-op for a recurring or field-group template, which never calls this.
+  onUpdateChecklist?: (patch: Partial<Checklist> & { id: string }) => void;
   // Extra rows rendered in this same card, after Archived Groups and before Delete Task
   // (the one destructive row stays last on purpose) — CardShare is the one caller today,
   // so Share reads as part of General Settings instead of a second card floating below it.
@@ -108,6 +112,7 @@ const ChecklistGenericInfo = ({
   onDelete,
   readOnly,
   onUpdateMyReminder,
+  onUpdateChecklist,
   children,
 }: Props) => {
   const intl = useIntl();
@@ -372,7 +377,7 @@ const ChecklistGenericInfo = ({
                     {formatDisplayStartEndDate() ||
                       intl.formatMessage({
                         id: 'checklist-generic-info.start-date-description',
-                        defaultMessage: 'The first day this task is active',
+                        defaultMessage: 'Start of the task',
                       })}
                   </span>
                   <br />
@@ -589,6 +594,8 @@ const ChecklistGenericInfo = ({
         onSplitSchedule={onSplitSchedule}
         readOnly={readOnly}
         onUpdateMyReminder={onUpdateMyReminder}
+        checklist={checklist}
+        onUpdateChecklist={onUpdateChecklist}
         mode={
           activeModal === EditModal.Schedule ? 'schedule' : activeModal === EditModal.MyReminder ? 'myReminder' : null
         }

@@ -100,6 +100,19 @@
           ]
         }
       },
+      "packages/app-component/calendar-view": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@fullcalendar/core@^6.1.21",
+            "npm:@fullcalendar/daygrid@^6.1.21",
+            "npm:@fullcalendar/interaction@^6.1.21",
+            "npm:@fullcalendar/multimonth@^6.1.21",
+            "npm:@fullcalendar/react@^6.1.21",
+            "npm:@fullcalendar/timegrid@^6.1.21",
+            "npm:@moon-ui/icon@1"
+          ]
+        }
+      },
       "packages/app-component/header": {
         "packageJson": {
           "dependencies": [
@@ -135,7 +148,9 @@
       "packages/checklist-template-shared-page-ui": {
         "packageJson": {
           "dependencies": [
-            "npm:@moon-ui/note-editor@1"
+            "npm:@moon-ui/note-editor@1",
+            "npm:@moon-ui/provider@1",
+            "npm:mathjs@13"
           ]
         }
       },
@@ -186,6 +201,7 @@
             "npm:@moon-ui/button@1",
             "npm:@moon-ui/card@1",
             "npm:@moon-ui/icon@1",
+            "npm:@moon-ui/provider@1",
             "npm:@moon-ui/typography@1",
             "npm:@types/react-dom@18",
             "npm:@types/react@18",
@@ -255,8 +271,16 @@
       "packages/moon-ui/drawer": {
         "packageJson": {
           "dependencies": [
+            "npm:@moon-ui/provider@1",
             "npm:@react-spring/web@^10.1.2",
             "npm:@types/react-motion@^0.0.40"
+          ]
+        }
+      },
+      "packages/moon-ui/dropdown": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@moon-ui/provider@1"
           ]
         }
       },
@@ -288,6 +312,7 @@
             "npm:@dreamer/translation@1",
             "npm:@moon-ui/division@1",
             "npm:@moon-ui/icon@1",
+            "npm:@moon-ui/provider@1",
             "npm:@moon-ui/typography@1",
             "npm:@react-spring/web@^10.1.2",
             "npm:@use-gesture/react@^10.3.1",
@@ -365,6 +390,13 @@
         "packageJson": {
           "dependencies": [
             "npm:@types/react-motion@^0.0.40"
+          ]
+        }
+      },
+      "packages/moon-ui/select": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@moon-ui/provider@1"
           ]
         }
       },
@@ -447,6 +479,7 @@
       "packages/record-page-ui": {
         "packageJson": {
           "dependencies": [
+            "npm:@dreamer/calendar-view@1",
             "npm:@nghiavuive/lunar_date_vi@^2.0.1",
             "npm:@tony801015/chinese-lunar@~0.20.2",
             "npm:date-fns@^4.1.0",
@@ -543,6 +576,7 @@
             "npm:@dreamer/global@1",
             "npm:@dreamer/music-controller-mobile@1",
             "npm:@dreamer/translation@1",
+            "npm:@moon-ui/provider@1",
             "npm:@playwright/test@^1.54.2",
             "npm:@tanstack/react-query@5",
             "npm:@types/react-dom@^18.2.0",

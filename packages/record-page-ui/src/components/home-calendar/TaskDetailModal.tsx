@@ -46,6 +46,7 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
     markCompleted,
     setCalendarColor,
     updateChecklistTemplate,
+    updateChecklist,
     splitChecklistTemplate,
     updateMyReminder,
     isOwnedTemplate,
@@ -195,6 +196,8 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
           onSplitSchedule={isOwner ? (from, repeat) => splitChecklistTemplate(template, from, repeat) : undefined}
           onUpdateMyReminder={!isOwner ? repeat => updateMyReminder(template.id, repeat) : undefined}
           readOnly={!isOwner}
+          checklist={checklist}
+          onUpdateChecklist={isOwner ? updateChecklist : undefined}
           mode={scheduleEditOpen ? (isOwner ? 'schedule' : 'myReminder') : null}
           onClose={() => setScheduleEditOpen(false)}
         />

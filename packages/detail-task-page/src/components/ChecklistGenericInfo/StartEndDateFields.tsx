@@ -97,7 +97,7 @@ const StartEndDateFields = ({
           title={intl.formatMessage({ id: 'checklist-generic-info.start-date-title', defaultMessage: 'Start Date' })}
           description={intl.formatMessage({
             id: 'checklist-generic-info.start-date-description',
-            defaultMessage: 'The first day this task is active',
+            defaultMessage: 'Start of the task',
           })}
           rightComponent={
             <DateField
@@ -115,7 +115,7 @@ const StartEndDateFields = ({
         title={intl.formatMessage({ id: 'checklist-generic-info.end-date-title', defaultMessage: 'End Date' })}
         description={intl.formatMessage({
           id: 'checklist-generic-info.end-date-description',
-          defaultMessage: 'Stops generating after this day',
+          defaultMessage: 'End of the task',
         })}
         rightComponent={
           <div className={styles.endDateRow}>

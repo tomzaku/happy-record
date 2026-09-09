@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { endOfDay } from 'date-fns';
 import { useChecklist, useChecklistTemplates, getClientTimezone, type Checklist } from '@dreamer/global';
 import { calculateRepeat } from './calculateRepeat';
 import { FormState } from './CoreChecklistForm';
@@ -92,11 +93,13 @@ export const createTask = async (
         // `noEndDate` is a real three-way signal, not a plain boolean default: `false` (a caller
         // that offers the choice and defaults it to "Single day," e.g. AddInlineTask) means this
         // task runs for exactly 1 day from its own start — whatever day that is, not necessarily
-        // today (see AddInlineTask's own `date` prop), so its last day is that same start day;
-        // `undefined` (every caller that doesn't offer this choice yet — CreateChecklistForm,
-        // create-task-modal) keeps the old behavior of no defined end at all, same as `true`
-        // (explicitly "no end date").
-        endedDate: noEndDate === false ? effectiveStartedAt : undefined,
+        // today (see AddInlineTask's own `date` prop), so its last day is that same start day —
+        // `endOfDay`, not the same instant as `startedAt` (already that day's own start-of-day —
+        // see `localDateStringToISO`), so the two aren't identical timestamps for a same-day
+        // range; `undefined` (every caller that doesn't offer this choice yet —
+        // CreateChecklistForm, create-task-modal) keeps the old behavior of no defined end at
+        // all, same as `true` (explicitly "no end date").
+        endedDate: noEndDate === false ? endOfDay(new Date(effectiveStartedAt)).toISOString() : undefined,
         updatedAt: new Date().toISOString(),
       };
 
