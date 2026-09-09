@@ -113,11 +113,11 @@ const LeaderboardCard = ({
                             {intl.formatMessage({ id: 'ChallengeDashboard.score-tooltip-title', defaultMessage: 'Average % across every target' })}
                           </Typography.Text>
                           {targetBreakdown.map(t => (
-                            <div key={t.fieldId} className={styles.scoreTooltipRow}>
+                            <div key={t.id} className={styles.scoreTooltipRow}>
                               <span className={styles.scoreTooltipRowTitle}>{t.title}</span>
                               <span className={styles.scoreTooltipRowValue}>
-                                {t.contributed} / {t.target} {t.unit} — {Math.round(t.pct)}%
-                                {t.contributed > t.target
+                                {t.contributed} / {t.goal} {t.unit} — {Math.round(t.pct)}%
+                                {t.contributed > t.goal
                                   ? ` (${intl.formatMessage({ id: 'ChallengeDashboard.capped', defaultMessage: 'capped' })})`
                                   : ''}
                               </span>

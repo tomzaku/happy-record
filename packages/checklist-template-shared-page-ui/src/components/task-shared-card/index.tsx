@@ -20,7 +20,7 @@ type Props = {
    * doesn't render as a bare empty section while the real list is still in flight. */
   fieldsLoading?: boolean;
   /** Undefined while the challenge row is still loading (same "not there yet" gap as everywhere
-   * else this page reads it) — `startDate`/`fieldTargets` just don't render until it lands. */
+   * else this page reads it) — `startDate`/`targets` just don't render until it lands. */
   challenge?: Challenge;
 };
 const allDays = [
@@ -52,9 +52,13 @@ const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading, challen
   if (!checklistTemplate) return null;
   const visibleFields = showAllFields ? fields : fields.slice(0, COLLAPSED_FIELD_COUNT);
   const hiddenFieldCount = fields.length - visibleFields.length;
-  const widgetTargets = fields
-    .filter(f => !!challenge?.fieldTargets[f.id])
-    .map(f => ({ fieldId: f.id, icon: f.icon, title: f.title, target: challenge!.fieldTargets[f.id], unit: f.unit }));
+  const widgetTargets = (challenge?.targets ?? []).map(t => ({
+    id: t.id,
+    icon: t.icon,
+    title: t.title,
+    goal: t.goal,
+    unit: t.unit,
+  }));
   return (
     <div className={styles.container}>
       <TitleWidget

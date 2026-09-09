@@ -2,8 +2,8 @@
 // (targets are all-time, not scoped to this range — see services/challenges-service.ts's own
 // getTargets). `completions` is sparse (completed days only); the client fills the grid.
 // `ranking` is participants sorted by completions-in-range descending. `targets` is one entry per
-// field the owner set a goal for (`challenge.fieldTargets`), each with every participant's real
-// contributed total.
+// owner-defined formula (`challenge.targets`), each with every participant's real contributed
+// total (see services/challenges-service.ts's own getTargets).
 //
 // `compose(checkCanReadDashboard, core)` — two visibility tiers, replicated from what used to be
 // two separate RLS checks on two different tables (see

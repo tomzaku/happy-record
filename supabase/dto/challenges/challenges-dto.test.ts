@@ -122,7 +122,7 @@ Deno.test('toChallenge: maps start_date/end_date/is_public_listing onto the clie
     owner_id: 'u1',
     share_records: true,
     comments_enabled: false,
-    field_targets: {},
+    targets: [],
     theme: 'classic',
     background_image_url: null,
     greeting_text: 'Come crush this with me!',
@@ -152,6 +152,49 @@ Deno.test('toChallenge: maps start_date/end_date/is_public_listing onto the clie
   assertEquals(challenge.pageBackgroundLayout, 'glass');
   assertEquals(challenge.pageBackgroundImageUrl, 'https://example.com/bg.jpg');
   assertEquals(challenge.glassOpacity, 30);
+});
+
+Deno.test('fromChallenge: keeps a valid target with a formula referencing its own declared variables', () => {
+  const row = fromChallenge({
+    ...validEntry,
+    targets: [
+      {
+        id: 'target-1',
+        title: 'Push-ups',
+        unit: 'reps',
+        icon: 'solar:flag-bold',
+        goal: 10000,
+        formula: 'sets1 * standard_reps + sets2 * diamond_reps',
+        variables: { sets1: 'f1', standard_reps: 'f2', sets2: 'f3', diamond_reps: 'f4' },
+      },
+    ],
+  });
+  assertEquals(row.targets.length, 1);
+  assertEquals(row.targets[0].formula, 'sets1 * standard_reps + sets2 * diamond_reps');
+  assertEquals(row.targets[0].variables, { sets1: 'f1', standard_reps: 'f2', sets2: 'f3', diamond_reps: 'f4' });
+});
+
+Deno.test('fromChallenge: drops a target whose formula fails to parse', () => {
+  const row = fromChallenge({
+    ...validEntry,
+    targets: [{ id: 't1', title: 'Bad', goal: 100, formula: 'sets *', variables: { sets: 'f1' } }],
+  });
+  assertEquals(row.targets, []);
+});
+
+Deno.test('fromChallenge: drops a target whose formula references an undeclared variable', () => {
+  const row = fromChallenge({
+    ...validEntry,
+    targets: [{ id: 't1', title: 'Bad', goal: 100, formula: 'sets * reps', variables: { sets: 'f1' } }],
+  });
+  assertEquals(row.targets, []);
+});
+
+Deno.test('fromChallenge: drops a target with no positive goal, no title, or no variables', () => {
+  const base = { id: 't1', title: 'X', goal: 100, formula: 'sets', variables: { sets: 'f1' } };
+  assertEquals(fromChallenge({ ...validEntry, targets: [{ ...base, goal: 0 }] }).targets, []);
+  assertEquals(fromChallenge({ ...validEntry, targets: [{ ...base, title: '' }] }).targets, []);
+  assertEquals(fromChallenge({ ...validEntry, targets: [{ ...base, variables: {} }] }).targets, []);
 });
 
 Deno.test('toChallenge: is_public_listing defaults to false when absent', () => {

@@ -74,12 +74,12 @@ export function fetchChallengeDashboard(
   completions: { userId: string; date: string }[];
   ranking: { userId: string; count: number }[];
   targets: {
-    fieldId: string;
+    id: string;
     title: string;
     unit: string;
     /** The field's own Iconify icon — see useRecordField.tsx's `RecordField.icon`. */
     icon: string;
-    target: number;
+    goal: number;
     contributions: { userId: string; total: number }[];
   }[];
   /**
@@ -108,7 +108,7 @@ export function saveChallenge(challenge: {
   checklistTemplateId: string;
   shareRecords: boolean;
   commentsEnabled: boolean;
-  fieldTargets: Record<string, number>;
+  targets: Challenge['targets'];
   theme: Challenge['theme'];
   backgroundImageUrl: Challenge['backgroundImageUrl'];
   greetingText: Challenge['greetingText'];

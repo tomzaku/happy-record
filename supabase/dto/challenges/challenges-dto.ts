@@ -2,6 +2,85 @@
 // packages/global/src/store/challenge/useChallenge.tsx for the client shape
 // this mirrors.
 
+import { create, all } from 'npm:mathjs@13';
+
+// Restricted instance used only to *validate* a submitted formula parses and only references its
+// own declared variables — see 20260909010000_challenge_target_formulas.sql. `import`/
+// `createUnit` disabled per mathjs's own hardening guide for untrusted expressions (they can
+// otherwise redefine functions); the actual per-submission evaluation happens in
+// challenges-service.ts's getTargets, against its own identically-restricted instance.
+const math = create(all, {});
+math.import(
+  {
+    import: () => {
+      throw new Error('Function import is disabled');
+    },
+    createUnit: () => {
+      throw new Error('Function createUnit is disabled');
+    },
+  },
+  { override: true },
+);
+
+const VARIABLE_NAME_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+const MAX_TARGETS = 20;
+const MAX_VARIABLES_PER_TARGET = 20;
+
+export type ChallengeTarget = {
+  id: string;
+  title: string;
+  unit: string;
+  icon: string;
+  goal: number;
+  formula: string;
+  variables: Record<string, string>;
+};
+
+/** Sanitizes one raw `targets` array entry into a `ChallengeTarget`, or `null` if it isn't a
+ * usable one — same "drop the bad entry, don't throw" convention `fromChallenge` already uses for
+ * `theme`/`greetingText`/etc. A formula that fails to parse, or references a name not in
+ * `variables`, drops the whole target rather than saving something `getTargets` can't evaluate. */
+function sanitizeTarget(entry: unknown): ChallengeTarget | null {
+  if (!entry || typeof entry !== 'object') return null;
+  const e = entry as Record<string, unknown>;
+
+  const id = typeof e.id === 'string' && e.id ? e.id : null;
+  const title = typeof e.title === 'string' ? e.title.trim().slice(0, 100) : '';
+  if (!id || !title) return null;
+
+  const goal = typeof e.goal === 'number' && Number.isFinite(e.goal) && e.goal > 0 ? e.goal : null;
+  if (!goal) return null;
+
+  if (!e.variables || typeof e.variables !== 'object') return null;
+  const variables: Record<string, string> = {};
+  for (const [name, fieldId] of Object.entries(e.variables as Record<string, unknown>)) {
+    if (!VARIABLE_NAME_RE.test(name) || typeof fieldId !== 'string' || !fieldId) continue;
+    variables[name] = fieldId;
+    if (Object.keys(variables).length >= MAX_VARIABLES_PER_TARGET) break;
+  }
+  if (!Object.keys(variables).length) return null;
+
+  const formula = typeof e.formula === 'string' ? e.formula.trim().slice(0, 500) : '';
+  if (!formula) return null;
+  try {
+    const node = math.parse(formula);
+    const usedNames = new Set<string>();
+    node.traverse(n => {
+      if (n.type === 'SymbolNode') usedNames.add((n as unknown as { name: string }).name);
+    });
+    for (const name of usedNames) {
+      if (!(name in variables)) return null;
+    }
+  } catch {
+    return null;
+  }
+
+  const unit = typeof e.unit === 'string' ? e.unit.trim().slice(0, 20) : '';
+  const icon = typeof e.icon === 'string' ? e.icon.trim().slice(0, 100) : '';
+
+  return { id, title, unit, icon, goal, formula, variables };
+}
+
 // 'dark' — see 20260906080000_challenge_theme_dark.sql — designed to sit on top of the owner's
 // own dark pageBackgroundImageUrl (translucent card surfaces + light text, not classic/ignite/
 // playful's opaque white card).
@@ -41,9 +120,8 @@ export function toChallenge(r: Record<string, unknown>) {
     ownerId: r.owner_id as string,
     shareRecords: !!r.share_records,
     commentsEnabled: !!r.comments_enabled,
-    // Keyed by the challenge's own (the owner's) field id — see the
-    // 20260825000000_challenge_targets.sql migration.
-    fieldTargets: (r.field_targets as Record<string, number>) ?? {},
+    // Owner-defined formula per target — see 20260909010000_challenge_target_formulas.sql.
+    targets: (r.targets as ChallengeTarget[]) ?? [],
     // See 20260825010000_challenge_theme.sql / 20260906080000_challenge_theme_dark.sql — the
     // DB's own CHECK constraint is the real guarantee this is always one of the four; the cast
     // here is just so the client type isn't a bare `string`.
@@ -91,14 +169,12 @@ export function fromChallenge(e: Record<string, unknown>) {
     throw new Error('Missing checklistTemplateId.');
   }
 
-  let fieldTargets: Record<string, number> = {};
-  if (e.fieldTargets && typeof e.fieldTargets === 'object') {
-    for (const [fieldId, target] of Object.entries(e.fieldTargets as Record<string, unknown>)) {
-      if (typeof target === 'number' && Number.isFinite(target) && target > 0) {
-        fieldTargets[fieldId] = target;
-      }
-    }
-  }
+  const targets: ChallengeTarget[] = Array.isArray(e.targets)
+    ? (e.targets as unknown[])
+        .map(sanitizeTarget)
+        .filter((t): t is ChallengeTarget => t !== null)
+        .slice(0, MAX_TARGETS)
+    : [];
 
   // Falls back to 'classic' rather than throwing — the DB's CHECK
   // constraint is the actual guard against garbage, and a client build
@@ -177,7 +253,7 @@ export function fromChallenge(e: Record<string, unknown>) {
     checklist_template_id: e.checklistTemplateId,
     share_records: !!e.shareRecords,
     comments_enabled: !!e.commentsEnabled,
-    field_targets: fieldTargets,
+    targets,
     theme,
     background_image_url: backgroundImageUrl,
     greeting_text: greetingText,

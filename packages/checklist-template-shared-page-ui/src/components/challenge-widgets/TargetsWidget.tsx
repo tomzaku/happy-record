@@ -6,10 +6,10 @@ import type { TargetsWidgetLayout } from '@dreamer/global';
 import styles from './TargetsWidget.module.scss';
 
 export type TargetsWidgetItem = {
-  fieldId: string;
+  id: string;
   icon: string;
   title: string;
-  target: number;
+  goal: number;
   unit?: string;
 };
 
@@ -36,10 +36,10 @@ const TargetsWidget = ({ layout, targets }: Props) => {
         {label}
         <div className={styles.row}>
           {targets.map(t => (
-            <div key={t.fieldId} className={styles.tile}>
+            <div key={t.id} className={styles.tile}>
               <Icon width={18} icon={t.icon} className={styles.tileIcon} />
               <div className={styles.tileValue}>
-                {t.target}
+                {t.goal}
                 {t.unit ? ` ${t.unit}` : ''}
               </div>
               <div className={styles.tileCaption}>{t.title}</div>
@@ -56,10 +56,10 @@ const TargetsWidget = ({ layout, targets }: Props) => {
         {label}
         <div className={styles.combined}>
           {targets.map(t => (
-            <div key={t.fieldId} className={styles.combinedRow}>
+            <div key={t.id} className={styles.combinedRow}>
               <Icon width={16} icon={t.icon} className={styles.tileIcon} />
               <span>
-                {t.title}: {t.target}
+                {t.title}: {t.goal}
                 {t.unit ? ` ${t.unit}` : ''}
               </span>
             </div>
@@ -75,12 +75,12 @@ const TargetsWidget = ({ layout, targets }: Props) => {
       {label}
       <div className={styles.list}>
         {targets.map(t => (
-          <div key={t.fieldId} className={styles.listRow}>
+          <div key={t.id} className={styles.listRow}>
             <Icon width={16} icon={t.icon} className={styles.tileIcon} />
             <div>
               <div className={styles.listTitle}>{t.title}</div>
               <div className={styles.listGoal}>
-                Goal: {t.target}
+                Goal: {t.goal}
                 {t.unit ? ` ${t.unit}` : ''}
               </div>
             </div>

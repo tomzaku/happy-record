@@ -45,7 +45,7 @@ export const useChallengeDashboardData = (id: string | undefined, userId: string
     if (!dashboard) return [];
     return rankChallengeParticipants({ ranking: dashboard.ranking, targets: dashboard.targets, streaksByUser });
   }, [dashboard, streaksByUser]);
-  const hasChallengeTargets = !!dashboard?.targets.some(t => t.target > 0);
+  const hasChallengeTargets = !!dashboard?.targets.some(t => t.goal > 0);
 
   const me = dashboard?.participants.find(p => p.userId === userId);
   // Only a participant leaves — the owner has no "leave" of their own

@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@moon-ui/note-editor": "^1.0.0",
-    "@moon-ui/provider": "^1.0.0"
+    "@moon-ui/provider": "^1.0.0",
+    "mathjs": "^13.0.0"
   }
 }

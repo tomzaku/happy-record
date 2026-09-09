@@ -18,7 +18,6 @@ import Button from '@moon-ui/button';
 import Checkbox from '@moon-ui/checkbox';
 import Input from '@moon-ui/input';
 import Icon from '@moon-ui/icon/Icon';
-import List from '@moon-ui/list';
 import DatePicker from '@moon-ui/date-picker';
 import Slider from '@moon-ui/slider';
 import {
@@ -27,6 +26,7 @@ import {
   CHALLENGE_THEMES,
   CHALLENGE_THEME_SWATCH,
   Challenge,
+  ChallengeTarget,
   ChallengeThemeId,
   GREETING_WIDGET_LAYOUTS,
   GreetingWidgetLayout,
@@ -48,6 +48,7 @@ import GreetingWidget from '../challenge-widgets/GreetingWidget';
 import TargetsWidget from '../challenge-widgets/TargetsWidget';
 import ButtonWidget from '../challenge-widgets/ButtonWidget';
 import TitleWidget from '../challenge-widgets/TitleWidget';
+import TargetFormulaEditor from './TargetFormulaEditor';
 import styles from './ChallengeConfigForm.module.scss';
 
 const START_LAYOUT_LABELS: Record<StartWidgetLayout, string> = {
@@ -153,7 +154,7 @@ const ChallengeConfigForm = ({
   );
   const [startDate, setStartDate] = React.useState(challenge.startDate);
   const [startWidgetLayout, setStartWidgetLayout] = React.useState<StartWidgetLayout>(challenge.startWidgetLayout);
-  const [fieldTargets, setFieldTargets] = React.useState<Record<string, number>>(challenge.fieldTargets);
+  const [targets, setTargets] = React.useState<ChallengeTarget[]>(challenge.targets);
   const [targetsWidgetLayout, setTargetsWidgetLayout] = React.useState<TargetsWidgetLayout>(
     challenge.targetsWidgetLayout,
   );
@@ -170,14 +171,6 @@ const ChallengeConfigForm = ({
   // '' means open-ended (null on the wire) — same convention as startDate/endDate elsewhere in
   // this app's date fields.
   const [endDate, setEndDate] = React.useState(challenge.endDate ?? '');
-  // Which fields show a target row at all — not the same as "has a positive number in
-  // fieldTargets": a field just added via "+ Add target" shows an empty row before the owner has
-  // typed a number for it, so this needs its own state rather than being derived from
-  // fieldTargets' own keys. Seeded from whatever already has a target set.
-  const [visibleTargetFieldIds, setVisibleTargetFieldIds] = React.useState<string[]>(() =>
-    Object.keys(challenge.fieldTargets),
-  );
-  const [addingTarget, setAddingTarget] = React.useState(false);
   // Previews exactly what visitors will see — same hook TaskSharedCard uses for the real page,
   // fed this form's own in-progress `startDate` rather than the saved one.
   const startCountdown = useChallengeStartCountdown(startDate);
@@ -191,7 +184,7 @@ const ChallengeConfigForm = ({
     setGreetingWidgetLayout(challenge.greetingWidgetLayout);
     setStartDate(challenge.startDate);
     setStartWidgetLayout(challenge.startWidgetLayout);
-    setFieldTargets(challenge.fieldTargets);
+    setTargets(challenge.targets);
     setTargetsWidgetLayout(challenge.targetsWidgetLayout);
     setButtonWidgetLayout(challenge.buttonWidgetLayout);
     setTitleWidgetLayout(challenge.titleWidgetLayout);
@@ -200,8 +193,6 @@ const ChallengeConfigForm = ({
     setGlassOpacity(challenge.glassOpacity);
     setCommentsEnabled(challenge.commentsEnabled);
     setEndDate(challenge.endDate ?? '');
-    setVisibleTargetFieldIds(Object.keys(challenge.fieldTargets));
-    setAddingTarget(false);
   }, [challenge]);
 
   // `shareRecords`/`ownerDisplayName`/`ownerAvatarUrl` aren't editable here — they ride through
@@ -226,7 +217,7 @@ const ChallengeConfigForm = ({
     pageBackgroundImageUrl: pageBackgroundImageUrl.trim() || null,
     glassOpacity,
     startDate,
-    fieldTargets,
+    targets,
   });
 
   // Every edit reports the current draft upward immediately, so the page behind the drawer
@@ -249,48 +240,19 @@ const ChallengeConfigForm = ({
     pageBackgroundImageUrl,
     glassOpacity,
     startDate,
-    fieldTargets,
+    targets,
     commentsEnabled,
     endDate,
   ]);
 
-  const handleTargetChange = (fieldId: string, value: string) => {
-    const next = { ...fieldTargets };
-    if (value.trim() === '') {
-      delete next[fieldId];
-    } else {
-      const num = Number(value);
-      if (Number.isFinite(num) && num > 0) next[fieldId] = num;
-    }
-    setFieldTargets(next);
-  };
-
-  const handleAddTarget = (fieldId: string) => {
-    setVisibleTargetFieldIds(prev => [...prev, fieldId]);
-    setAddingTarget(false);
-  };
-
-  const handleRemoveTarget = (fieldId: string) => {
-    setVisibleTargetFieldIds(prev => prev.filter(id => id !== fieldId));
-    setFieldTargets(prev => {
-      const next = { ...prev };
-      delete next[fieldId];
-      return next;
-    });
-  };
-
   const handleSave = () => onSave(buildOptions());
 
-  const visibleTargetFields = numberFields.filter(f => visibleTargetFieldIds.includes(f.id));
-  const fieldsAvailableToAdd = numberFields.filter(f => !visibleTargetFieldIds.includes(f.id));
-
   // Same shape TargetsWidget expects — built from this form's own in-progress state, not the
-  // saved challenge, so the preview below tracks every edit live. Independent of
-  // visibleTargetFieldIds: a row added but not yet given a number just doesn't show up here,
-  // same as it wouldn't show up on the real page either.
-  const targetsPreview = numberFields
-    .filter(f => !!fieldTargets[f.id])
-    .map(f => ({ fieldId: f.id, icon: f.icon, title: f.title, target: fieldTargets[f.id], unit: f.unit }));
+  // saved challenge, so the preview below tracks every edit live. A target with no title or no
+  // positive goal yet just doesn't show up here, same as it wouldn't show up on the real page.
+  const targetsPreview = targets
+    .filter(t => !!t.title && t.goal > 0)
+    .map(t => ({ id: t.id, icon: t.icon, title: t.title, goal: t.goal, unit: t.unit }));
 
   return (
     <div className={styles.form}>
@@ -341,72 +303,7 @@ const ChallengeConfigForm = ({
                   Target / Goal
                 </Typography.Title>
 
-                {!!visibleTargetFields.length && (
-                  <div className={styles.targetsCard}>
-                    {visibleTargetFields.map((field, index) => (
-                      <div
-                        key={field.id}
-                        className={cx(
-                          styles.targetRow,
-                          index === visibleTargetFields.length - 1 && styles.targetRowLast,
-                        )}
-                      >
-                        <List.ItemMeta
-                          noPaddingHorizontal
-                          className={styles.targetItemMeta}
-                          logo={
-                            <div className={styles.targetIconBadge}>
-                              <Icon width={18} icon={field.icon} />
-                            </div>
-                          }
-                          title={field.title}
-                        />
-                        <Input
-                          value={fieldTargets[field.id] ?? ''}
-                          border="dash"
-                          type="number"
-                          placeholder="No target"
-                          onChange={e => handleTargetChange(field.id, e.target.value)}
-                          className={styles.targetInput}
-                          classes={{ input: styles.targetInputField }}
-                          suffix={field.unit || undefined}
-                          renderRightInput={() => <></>}
-                        />
-                        <Icon
-                          width={18}
-                          icon="material-symbols:close-rounded"
-                          className={styles.removeTargetIcon}
-                          onClick={() => handleRemoveTarget(field.id)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {!!fieldsAvailableToAdd.length &&
-                  (addingTarget ? (
-                    <div className={styles.addTargetList}>
-                      {fieldsAvailableToAdd.map(field => (
-                        <button
-                          key={field.id}
-                          type="button"
-                          className={styles.addTargetOption}
-                          onClick={() => handleAddTarget(field.id)}
-                        >
-                          <Icon width={16} icon={field.icon} />
-                          {field.title}
-                        </button>
-                      ))}
-                      <button type="button" className={styles.addTargetCancel} onClick={() => setAddingTarget(false)}>
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button type="button" className={styles.addTargetButton} onClick={() => setAddingTarget(true)}>
-                      <Icon width={16} icon="material-symbols:add-rounded" />
-                      Add target
-                    </button>
-                  ))}
+                <TargetFormulaEditor targets={targets} numberFields={numberFields} onChange={setTargets} />
               </div>
             </>
           )}

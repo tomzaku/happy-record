@@ -232,23 +232,32 @@ export async function fetchForkedFields(
   return (data ?? []) as { id: string; copied_from_id: string }[];
 }
 
-export async function fetchChecklistRecordTotals(
+export type ChecklistRecordRow = {
+  submission_id: string | null;
+  field_id: string;
+  user_id: string;
+  value_number: number | null;
+};
+
+/** `submission_id` is what lets getTargets know which field values were recorded together in one
+ * Submit click — needed to evaluate a formula that combines more than one field. */
+export async function fetchChecklistRecordRows(
   db: SupabaseClient,
   fieldIds: string[],
   visibleUserIds: string[],
   since: string,
   limit: number,
-): Promise<{ field_id: string; user_id: string; value_number: number | null }[]> {
+): Promise<ChecklistRecordRow[]> {
   if (!fieldIds.length || !visibleUserIds.length) return [];
   const { data, error } = await db
     .from('checklist_records')
-    .select('field_id, user_id, value_number')
+    .select('submission_id, field_id, user_id, value_number')
     .in('field_id', fieldIds)
     .in('user_id', visibleUserIds)
     .gte('created_at', since)
     .limit(limit);
   if (error) throw new Error(error.message);
-  return (data ?? []) as { field_id: string; user_id: string; value_number: number | null }[];
+  return (data ?? []) as ChecklistRecordRow[];
 }
 
 export type FieldTypeRow = { id: string; type: string };

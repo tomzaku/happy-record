@@ -353,6 +353,65 @@
   }
 }
 
+.targetFormulaList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.targetFormulaCard {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  border: 1px solid var(--division-color);
+  border-radius: 8px;
+  background: var(--background);
+}
+
+.targetFormulaHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.targetFormulaFieldsRow {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.variableList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xxs;
+}
+
+.variableRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.variableSelect {
+  flex: 1;
+  min-width: 0;
+}
+
+.variableNameInput {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.formulaLegend {
+  font-size: toRem(12px);
+  color: var(--text-description-color);
+}
+
+.formulaError {
+  font-size: toRem(12px);
+  color: #e5484d;
+}
+
 .footer {
   flex-shrink: 0;
   display: flex;

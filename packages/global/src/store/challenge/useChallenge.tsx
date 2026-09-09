@@ -56,6 +56,25 @@ export const PAGE_BACKGROUND_LAYOUTS = ['solid', 'glass'] as const;
 export type PageBackgroundLayout = (typeof PAGE_BACKGROUND_LAYOUTS)[number];
 
 /**
+ * An owner-defined shared goal — `formula` is a mathjs expression (e.g. `"sets1 * standard_reps +
+ * sets2 * diamond_reps"`) evaluated server-side against `variables` (identifier -> field id),
+ * once per submission (see supabase/functions/challenges/services/challenges-service.ts's own
+ * getTargets) so a formula only combines values that were actually recorded together. `title`/
+ * `unit` are owner-typed (no single field to borrow them from once it's a formula); `icon` is
+ * auto-derived client-side from the first declared variable's own field — see
+ * TargetFormulaEditor.tsx. Mirrors supabase/dto/challenges/challenges-dto.ts's own type.
+ */
+export type ChallengeTarget = {
+  id: string;
+  title: string;
+  unit: string;
+  icon: string;
+  goal: number;
+  formula: string;
+  variables: Record<string, string>;
+};
+
+/**
  * Turns a shared checklist template into something joinable. Every challenge shows the peer
  * completion grid (packages/global/src/store/challenge/useChallengeParticipants) to everyone who
  * joins; `commentsEnabled` separately gates the flat thread
@@ -71,15 +90,8 @@ export type Challenge = {
    * row saved before this, doesn't need a shape change. */
   shareRecords: boolean;
   commentsEnabled: boolean;
-  /**
-   * A shared, collective goal per number field — `{ [fieldId]: target }`,
-   * keyed by the owner's own field id (never a participant's forked copy —
-   * see useJoinChallenge.tsx and the challenge_targets migration). Owner-only
-   * to set, "before or after share" (CardShare). Text fields are out of
-   * scope on purpose — no sensible numeric goal for one; the streak
-   * grid/ranking already covers "did they contribute" for those.
-   */
-  fieldTargets: Record<string, number>;
+  /** Owner-only to set, "before or after share" (CardShare) — see `ChallengeTarget` above. */
+  targets: ChallengeTarget[];
   /** Owner-picked in CardShare; applied by the shared page for every visitor, not just participants. */
   theme: ChallengeThemeId;
   /**
@@ -158,7 +170,7 @@ type SetChallengeOptionsArgs = {
   options: {
     shareRecords: boolean;
     commentsEnabled: boolean;
-    fieldTargets: Record<string, number>;
+    targets: ChallengeTarget[];
     theme: ChallengeThemeId;
     backgroundImageUrl: string | null;
     greetingText: string | null;
@@ -267,7 +279,7 @@ export const useChallenge = () => {
       updatedAt: new Date().toISOString(),
       shareRecords: options.shareRecords,
       commentsEnabled: options.commentsEnabled,
-      fieldTargets: options.fieldTargets,
+      targets: options.targets,
       theme: options.theme,
       backgroundImageUrl: options.backgroundImageUrl,
       greetingText: options.greetingText,

@@ -1,12 +1,12 @@
 import { Challenge, ChallengeParticipant } from '@dreamer/global';
 
 export type Target = {
-  fieldId: string;
+  id: string;
   title: string;
   unit: string;
   /** The field's own Iconify icon — see useRecordField.tsx's `RecordField.icon`. */
   icon: string;
-  target: number;
+  goal: number;
   contributions: { userId: string; total: number }[];
 };
 

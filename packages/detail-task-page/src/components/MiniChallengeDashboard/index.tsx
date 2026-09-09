@@ -125,7 +125,7 @@ const MiniChallengeDashboard = ({ challengeId, userId, onLeaveChallenge }: Props
             // one-line `title` answers "why" without building the same
             // thing twice).
             const scoreTitle = targetBreakdown
-              .map(t => `${t.title}: ${t.contributed}/${t.target} ${t.unit} (${Math.round(t.pct)}%)`)
+              .map(t => `${t.title}: ${t.contributed}/${t.goal} ${t.unit} (${Math.round(t.pct)}%)`)
               .join(' · ');
             return (
               <li key={rankedUserId} className={styles.rankRow} data-you={isYou}>

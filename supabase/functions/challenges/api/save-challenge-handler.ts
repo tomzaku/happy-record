@@ -1,8 +1,11 @@
 // `POST /challenges { challenge }` — owner-only upsert, always enrolls the owner as a
 // participant too — `challenge.ownerDisplayName`/`ownerAvatarUrl`, if given, become that
 // participant row's name/photo (neither is a `challenges` column; omit either on a re-save that
-// isn't touching it and the stored one is left alone). `challenge.fieldTargets` is
-// `{ [fieldId]: target }`, keyed by the owner's own field ids. `challenge.theme` is one of
+// isn't touching it and the stored one is left alone). `challenge.targets` is an array of
+// owner-defined `{ id, title, unit, icon, goal, formula, variables }` — `formula` is a mathjs
+// expression over `variables` (identifier -> field id), sanitized/validated in
+// dto/challenges/challenges-dto.ts's `sanitizeTarget` (an entry that doesn't parse, or references
+// an undeclared variable, is dropped rather than 400ing the whole save). `challenge.theme` is one of
 // CHALLENGE_THEMES (dto/challenges/challenges-dto.ts), falls back to 'classic' if omitted/invalid.
 // `challenge.backgroundImageUrl` is a plain http(s) URL (an already-hosted photo, not an upload)
 // shown as a small decorative corner accent on desktop (never the full page background — see

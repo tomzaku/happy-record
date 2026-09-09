@@ -36,16 +36,16 @@ const TargetsCard = ({ dashboard, userId }: { dashboard: Dashboard; userId: stri
           {dashboard.targets.map(t => {
             const contributors = t.contributions.filter(c => c.total > 0);
             const total = contributors.reduce((sum, c) => sum + c.total, 0);
-            const pct = t.target > 0 ? Math.min(100, (total / t.target) * 100) : 0;
+            const pct = t.goal > 0 ? Math.min(100, (total / t.goal) * 100) : 0;
             return (
-              <div key={t.fieldId} className={styles.target}>
+              <div key={t.id} className={styles.target}>
                 <div className={styles.targetHeader}>
                   <div className={styles.targetTitleRow}>
                     {!!t.icon && <Icon icon={t.icon} width={16} className={styles.targetIcon} />}
                     <Typography.Text className={styles.targetTitle}>{t.title}</Typography.Text>
                   </div>
                   <Typography.Text className={styles.targetProgress}>
-                    {total} / {t.target} {t.unit}
+                    {total} / {t.goal} {t.unit}
                   </Typography.Text>
                 </div>
                 <div className={styles.targetTrack}>

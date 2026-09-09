@@ -28,7 +28,7 @@ const StreaksCard = ({
   const { theme } = usePomodoroGlobalConfig();
   const isDark = theme === Theme.Dark;
   // Which series the "Breakdown by participant" chart is showing —
-  // 'checkins' or a target's own fieldId. Tabs instead of a grouped bar so
+  // 'checkins' or a target's own id. Tabs instead of a grouped bar so
   // each metric reads at full width instead of getting squeezed 4-wide.
   const [metricTab, setMetricTab] = React.useState('checkins');
 

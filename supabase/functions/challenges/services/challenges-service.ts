@@ -4,13 +4,14 @@
 // build-up, the owner-auto-enroll a save does) lives, between `api/` and
 // `repository/challenges-repository.ts`.
 
+import { create, all } from 'npm:mathjs@13';
 import { toChallenge } from '../../../dto/challenges/challenges-dto.ts';
 import { toChallengeParticipant } from '../../../dto/challenge-participants/challenge-participants-dto.ts';
 import { fetchFieldIdsReferencedByTemplate } from '../../../shared/fieldGroupFields.ts';
 import {
   fetchChallengeByTemplateId,
   fetchChallengesByIds,
-  fetchChecklistRecordTotals,
+  fetchChecklistRecordRows,
   fetchChecklistsForUsersInRange,
   fetchFieldsMetaForUser,
   fetchFieldTypesByIds,
@@ -30,6 +31,22 @@ import {
 } from '../repository/challenges-repository.ts';
 import type { Ctx } from '../api/challenges-context.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+
+// Same restricted instance the DTO's own sanitizeTarget validates against — `import`/`createUnit`
+// disabled per mathjs's hardening guide, since `formula` is an owner-typed string evaluated here
+// against real submitted data.
+const math = create(all, {});
+math.import(
+  {
+    import: () => {
+      throw new Error('Function import is disabled');
+    },
+    createUnit: () => {
+      throw new Error('Function createUnit is disabled');
+    },
+  },
+  { override: true },
+);
 
 const MAX_ROWS = 5000;
 const MAX_PARTICIPANTS = 500;
@@ -288,40 +305,45 @@ export async function getChallengeByTemplate({ db, userId }: Ctx, templateId: st
 }
 
 type Target = {
-  fieldId: string;
+  id: string;
   title: string;
   unit: string;
   /** The field's own Iconify icon (see useRecordField.tsx) — the targets card renders it next to the title. */
   icon: string;
-  target: number;
+  goal: number;
   contributions: { userId: string; total: number }[];
 };
 
 /**
- * A shared goal per number field, with a per-person breakdown — since the challenge's own
- * `startDate`, not scoped to the dashboard's from/to range (a collective goal accumulates over
+ * A shared goal per owner-defined formula, with a per-person breakdown — since the challenge's
+ * own `startDate`, not scoped to the dashboard's from/to range (a collective goal accumulates over
  * the challenge's whole life, not just the visible window). Contributions recorded before
- * `startDate` never count, even if they're on the exact same field the challenge now targets —
- * a participant who was already tracking that field solo shouldn't get a head start. Re-anchors
- * automatically if the owner edits `startDate` later (see `ChallengeConfigForm.tsx`): every
- * dashboard read recomputes this from the row's current value, nothing is cached or denormalized
- * per-participant that a start-date change would leave stale. Only fields with a target ever get
- * their real values read here, via what
- * used to be the peer-read policies the 20260825000000_challenge_targets.sql migration added — an
- * untargeted field (a personal note, a number field with no goal set) is never touched.
+ * `startDate` never count, even if they're on a field the challenge now targets — a participant
+ * who was already tracking that field solo shouldn't get a head start. Re-anchors automatically if
+ * the owner edits `startDate` later (see `ChallengeConfigForm.tsx`): every dashboard read
+ * recomputes this from the row's current value, nothing is cached or denormalized per-participant
+ * that a start-date change would leave stale.
+ *
+ * `target.variables` maps a mathjs identifier to a field id — `target.formula` is evaluated once
+ * per *submission* (every field a Submit click wrote shares one `checklist_records.submission_id`
+ * — see CLAUDE.md), so `sets * reps` only multiplies values that were actually recorded together.
+ * A submission missing one of the formula's declared fields (the owner filled in one field group
+ * but not another that same click) is skipped entirely rather than treating the missing value as
+ * 0 — an incomplete submission shouldn't silently zero out the whole term. `title`/`unit`/`icon`
+ * live directly on the stored target now (no field metadata lookup needed — see
+ * `sanitizeTarget`'s own comment), since a formula spanning several fields has no single field to
+ * borrow them from.
  *
  * Joining a challenge no longer forks the template or its fields (see useJoinChallenge.tsx) —
- * every participant, owner included, records against the exact same field id a target is keyed
- * by, so attribution is just "whoever's `user_id` is actually on the row." The one wrinkle:
- * `resolveFieldId` still resolves a *pre-existing* fork's id back to the target it counts toward,
- * so a participant who joined before that change shipped doesn't lose their already-recorded
- * contributions — nothing new ever creates a fork to resolve here.
+ * every participant, owner included, records against the exact same field id a target's own
+ * `variables` map references, so attribution is just "whoever's `user_id` is actually on the row."
+ * The one wrinkle: `resolveFieldId` still resolves a *pre-existing* fork's id back to the field it
+ * counts toward, so a participant who joined before that change shipped doesn't lose their
+ * already-recorded contributions — nothing new ever creates a fork to resolve here.
  *
  * `visibleUserIds` is the dashboard's own share_records-gated id list, already narrowed to just
  * the caller when sharing is off — reused here rather than the full roster for the
- * fork-resolution and contribution-totals queries below, replicating the old "Challenge
- * participants can resolve peers' targeted field forks"/"...see peers' targeted contributions"
- * policies' own `share_records = true` gate.
+ * fork-resolution and contribution-totals queries below.
  */
 async function getTargets(
   db: SupabaseClient,
@@ -329,52 +351,74 @@ async function getTargets(
   participants: ReturnType<typeof toChallengeParticipant>[],
   visibleUserIds: string[],
 ): Promise<Target[]> {
-  const targetFieldIds = Object.keys(challenge.fieldTargets);
+  const targets = challenge.targets;
+  if (!targets.length) return [];
+
+  const targetFieldIds = [...new Set(targets.flatMap(t => Object.values(t.variables)))];
   if (!targetFieldIds.length) return [];
 
-  // fieldMeta (title/unit/icon) — scoped to the *challenge owner's* own-or-public visibility, not
-  // the viewer's: `challenge.fieldTargets` is always keyed by the owner's own field ids (see
-  // save-challenge-handler.ts's own doc comment), so a target field a participant doesn't own and
-  // that isn't public would otherwise come back with a blank title/unit/icon for everyone but the
-  // owner — every participant needs to read this metadata to make sense of their own target
-  // progress, the same peer-read grant the 20260825000000_challenge_targets.sql migration's own
-  // RLS policy gave before this moved off RLS.
-  const [fieldRows, forkedFieldRows] = await Promise.all([
-    fetchFieldsMetaForUser(db, targetFieldIds, challenge.ownerId),
-    fetchForkedFields(db, visibleUserIds, targetFieldIds),
-  ]);
-
-  const fieldMeta = new Map<string, { title: string; unit: string; icon: string }>();
-  for (const row of fieldRows) {
-    fieldMeta.set(row.id, { title: row.title, unit: row.unit ?? '', icon: row.icon ?? '' });
-  }
-  // A legacy fork's id -> the target id it counts toward.
+  const forkedFieldRows = await fetchForkedFields(db, visibleUserIds, targetFieldIds);
+  // A legacy fork's id -> the field id it counts toward.
   const resolveFieldId = new Map<string, string>();
   for (const row of forkedFieldRows) {
     resolveFieldId.set(row.id, row.copied_from_id);
   }
 
   const resolvedFieldIds = [...new Set([...targetFieldIds, ...resolveFieldId.keys()])];
-  const recordRows = await fetchChecklistRecordTotals(db, resolvedFieldIds, visibleUserIds, challenge.startDate, MAX_ROWS);
+  const recordRows = await fetchChecklistRecordRows(db, resolvedFieldIds, visibleUserIds, challenge.startDate, MAX_ROWS);
 
-  const totals = new Map<string, number>(); // `${targetFieldId}:${userId}` -> sum
+  // One entry per real submission: who submitted it, and each targeted field's own numeric value
+  // recorded in it — the scope a target's formula gets evaluated against.
+  const submissions = new Map<string, { userId: string; values: Map<string, number> }>();
   for (const row of recordRows) {
-    if (typeof row.value_number !== 'number') continue;
-    const targetFieldId = resolveFieldId.get(row.field_id) ?? row.field_id;
-    const key = `${targetFieldId}:${row.user_id}`;
-    totals.set(key, (totals.get(key) ?? 0) + row.value_number);
+    if (typeof row.value_number !== 'number' || !row.submission_id) continue;
+    const fieldId = resolveFieldId.get(row.field_id) ?? row.field_id;
+    if (!submissions.has(row.submission_id)) {
+      submissions.set(row.submission_id, { userId: row.user_id, values: new Map() });
+    }
+    submissions.get(row.submission_id)!.values.set(fieldId, row.value_number);
   }
 
-  return targetFieldIds.map(fieldId => ({
-    fieldId,
-    title: fieldMeta.get(fieldId)?.title ?? '',
-    unit: fieldMeta.get(fieldId)?.unit ?? '',
-    icon: fieldMeta.get(fieldId)?.icon ?? '',
-    target: challenge.fieldTargets[fieldId],
-    contributions: participants
-      .map(p => ({ userId: p.userId, total: totals.get(`${fieldId}:${p.userId}`) ?? 0 }))
-      .sort((a, b) => b.total - a.total),
-  }));
+  return targets.map(target => {
+    const compiled = math.compile(target.formula);
+    const totals = new Map<string, number>(); // userId -> sum
+
+    for (const { userId, values } of submissions.values()) {
+      const scope: Record<string, number> = {};
+      let complete = true;
+      for (const [name, fieldId] of Object.entries(target.variables)) {
+        const value = values.get(fieldId);
+        if (value === undefined) {
+          complete = false;
+          break;
+        }
+        scope[name] = value;
+      }
+      if (!complete) continue;
+
+      let result: unknown;
+      try {
+        result = compiled.evaluate(scope);
+      } catch {
+        continue;
+      }
+      // Guards a divide-by-zero (Infinity/NaN) from corrupting the running total.
+      if (typeof result === 'number' && Number.isFinite(result)) {
+        totals.set(userId, (totals.get(userId) ?? 0) + result);
+      }
+    }
+
+    return {
+      id: target.id,
+      title: target.title,
+      unit: target.unit,
+      icon: target.icon,
+      goal: target.goal,
+      contributions: participants
+        .map(p => ({ userId: p.userId, total: totals.get(p.userId) ?? 0 }))
+        .sort((a, b) => b.total - a.total),
+    };
+  });
 }
 
 type Attachment = {

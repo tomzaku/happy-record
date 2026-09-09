@@ -50,12 +50,12 @@ export function computeStreaksByUser(completions: { userId: string; date: string
 
 /** One target's contribution to a participant's overall `targetPct` — the "why" behind that number. */
 export type ChallengeRankTargetBreakdown = {
-  fieldId: string;
+  id: string;
   title: string;
   unit: string;
   /** Real total contributed — not capped, unlike `pct`, so an overachieved target still shows its real number. */
   contributed: number;
-  target: number;
+  goal: number;
   /** Capped at 100 — the exact per-target number `targetPct` itself is the average of. */
   pct: number;
 };
@@ -76,10 +76,10 @@ export function rankChallengeParticipants({
   streaksByUser,
 }: {
   ranking: { userId: string; count: number }[];
-  targets: { fieldId: string; title: string; unit: string; target: number; contributions: { userId: string; total: number }[] }[];
+  targets: { id: string; title: string; unit: string; goal: number; contributions: { userId: string; total: number }[] }[];
   streaksByUser: Map<string, number>;
 }): ChallengeRankEntry[] {
-  const activeTargets = targets.filter(t => t.target > 0);
+  const activeTargets = targets.filter(t => t.goal > 0);
   const hasTargets = activeTargets.length > 0;
 
   // Every target's `contributions` already has a zero-filled entry for
@@ -90,11 +90,11 @@ export function rankChallengeParticipants({
   const breakdownByUser = new Map<string, ChallengeRankTargetBreakdown[]>();
   for (const t of activeTargets) {
     for (const c of t.contributions) {
-      const pct = Math.min(100, (c.total / t.target) * 100);
+      const pct = Math.min(100, (c.total / t.goal) * 100);
       pctSumByUser.set(c.userId, (pctSumByUser.get(c.userId) ?? 0) + pct);
       breakdownByUser.set(c.userId, [
         ...(breakdownByUser.get(c.userId) ?? []),
-        { fieldId: t.fieldId, title: t.title, unit: t.unit, contributed: c.total, target: t.target, pct },
+        { id: t.id, title: t.title, unit: t.unit, contributed: c.total, goal: t.goal, pct },
       ]);
     }
   }

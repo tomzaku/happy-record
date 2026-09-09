@@ -17,6 +17,7 @@ import { useRecordField } from '@dreamer/global/src/store/record-field';
 import { useGetChecklistTemplateApi } from '@dreamer/global/src/hook/checklist-template/useGetChecklistTemplateApi';
 import type {
   ButtonWidgetLayout,
+  ChallengeTarget,
   ChallengeThemeId,
   ChecklistTemplate,
   GreetingWidgetLayout,
@@ -33,7 +34,7 @@ import type { RecordField } from '@dreamer/global/src/store/record-field';
 export type ChallengeConfigOptions = {
   shareRecords: boolean;
   commentsEnabled: boolean;
-  fieldTargets: Record<string, number>;
+  targets: ChallengeTarget[];
   theme: ChallengeThemeId;
   backgroundImageUrl: string | null;
   greetingText: string | null;

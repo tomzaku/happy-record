@@ -96,7 +96,7 @@ const CardShare = ({ checklistTemplate }: CardShareProps) => {
         // you need the old toggle).
         shareRecords: true,
         commentsEnabled: false,
-        fieldTargets: {},
+        targets: [],
         theme: 'classic',
         backgroundImageUrl: null,
         greetingText: null,

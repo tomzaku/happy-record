@@ -38,7 +38,7 @@ export const buildMetricTabs = (dashboard: Dashboard, intl: TranslationContextPr
       byUser: new Map(dashboard.ranking.map(r => [r.userId, r.count])),
     },
     ...dashboard.targets.map(t => ({
-      key: t.fieldId,
+      key: t.id,
       label: t.title,
       unit: t.unit,
       byUser: new Map(t.contributions.map(c => [c.userId, c.total])),
