@@ -11,6 +11,7 @@ import { Icon } from '@moon-ui/icon/Icon';
 import { useIsMobile, isRecurringSchedule } from '@dreamer/global';
 import ChecklistFieldGroupAdd from '@dreamer/detail-task-page/src/components/ChecklistFieldGroupAdd';
 import ScheduleEditDialogs from '@dreamer/detail-task-page/src/components/ChecklistGenericInfo/ScheduleEditDialogs';
+import { SettingsRow } from '@dreamer/detail-task-page/src/components/SettingsCard';
 import FieldGroupNotePreview from '@happy-record/checklist-template-shared-page-ui/src/components/task-shared-card/FieldGroupNotePreview';
 import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
 import { formatTemplateSchedule, getScheduledTimeLabel } from '../checklist-day/checklistDayHelpers';
@@ -78,6 +79,21 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
   const groupsWithNotes = relevantGroups.filter(group => group.noteId);
   const showSubmit = Boolean(template && checklist && relevantGroups.length > 0);
 
+  // Same start/end date the Schedule row shows in ChecklistGenericInfo's General Settings card
+  // (formatDisplayStartEndDate there) — the checklist instance's own `startedAt`/`endedDate`, not
+  // just the day this calendar event happens to be rendered on, so editing schedule from here
+  // shows exactly what the edit dialog is actually about to change. Falls back to the event's own
+  // date while `checklist` hasn't loaded yet (same brief window ChecklistFieldGroupAdd already
+  // tolerates elsewhere in this modal).
+  const formatDisplayStartEndDate = () => {
+    if (!checklist?.startedAt) return format(data.date, 'EEEE, MMM d');
+    const start = new Date(checklist.startedAt).toLocaleDateString();
+    const end = checklist.endedDate
+      ? new Date(checklist.endedDate).toLocaleDateString()
+      : intl.formatMessage({ id: 'home-calendar.no-end-date', defaultMessage: 'No end date' });
+    return `${start} – ${end}${timeLabel ? ` · ${timeLabel}` : ''}`;
+  };
+
   const content = (
     <>
       <div className={styles.header}>
@@ -93,7 +109,6 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
           <TaskOptionsMenu
             colorValue={template?.calendarColor}
             onColorChange={setCalendarColor}
-            onEditScheduleClick={() => setScheduleEditOpen(true)}
             onRemoveClick={() => eventChecklistId && openDelete(eventChecklistId)}
           />
           <Button type="primary" size="sm" className={styles.viewButton} onClick={() => onViewDetails(data)}>
@@ -105,17 +120,31 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
 
       <div className={cx(styles.body, showSubmit && styles.twoColumn)}>
         <div className={styles.info}>
-          <div className={styles.row}>
-            <Icon width={16} icon="solar:calendar-line-duotone" className={styles.rowIcon} />
-            <Typography.Text>
-              {format(data.date, 'EEEE, MMM d')}
-              {timeLabel ? ` • ${timeLabel}` : ''}
-            </Typography.Text>
-          </div>
-          <div className={styles.row}>
-            <Icon width={16} icon="solar:repeat-line-duotone" className={styles.rowIcon} />
-            <Typography.Text>{formatTemplateSchedule(template)}</Typography.Text>
-          </div>
+          {/* Same click-to-edit "Schedule" field ChecklistGenericInfo's General Settings card
+              shows on the full detail page — a pencil for the owner, a bell for a challenge
+              participant setting their own reminder on top of the shared schedule (see
+              ScheduleEditDialogs below, which already picks the right mode from `isOwner`).
+              Replaces the old always-visible "Edit schedule" row in TaskOptionsMenu's "⋮" menu —
+              editing the schedule now happens right where it's shown, not behind an extra menu. */}
+          <SettingsRow
+            logo={<Icon width={16} icon="solar:calendar-line-duotone" className={styles.rowIcon} />}
+            title={intl.formatMessage({ id: 'home-calendar.schedule-title', defaultMessage: 'Schedule' })}
+            description={
+              <>
+                <span>{formatDisplayStartEndDate()}</span>
+                <br />
+                <span>{formatTemplateSchedule(template)}</span>
+              </>
+            }
+            rightComponent={
+              <Icon
+                width={16}
+                icon={isOwner ? 'solar:pen-2-line-duotone' : 'solar:bell-bing-line-duotone'}
+                className={styles.editIcon}
+              />
+            }
+            onClick={() => setScheduleEditOpen(true)}
+          />
           <div className={styles.row}>
             <Icon
               width={16}

@@ -9,20 +9,20 @@ type Props = {
   /** The template's own `calendarColor` — undefined means "never picked one." */
   colorValue: string | undefined;
   onColorChange: (color: string | undefined) => void;
-  onEditScheduleClick: () => void;
   onRemoveClick: () => void;
 };
 
 const AUTOMATIC = 'automatic';
 
 // A single "⋮" menu next to View details — holds this modal's own per-template actions (change
-// calendar color, edit schedule, remove) behind one icon instead of several always-visible
-// controls cluttering the header. Change-color is a manual pick from the same fixed 10-swatch
-// palette every unset template already falls back into automatically (DEFAULT_PALETTE/hashColor,
-// useCalendarEvents.ts), so a chosen color never looks out of place next to an automatic one; Edit
-// schedule opens the same Schedule/My Reminder editor ChecklistGenericInfo uses on the full detail
-// page (TaskDetailModal's own ScheduleEditDialogs); Remove opens the same This/This-and-following/
-// All scope confirm (DeleteTaskModal) checklist-day's own delete flow uses.
+// calendar color, remove) behind one icon instead of several always-visible controls cluttering
+// the header. Change-color is a manual pick from the same fixed 10-swatch palette every unset
+// template already falls back into automatically (DEFAULT_PALETTE/hashColor, useCalendarEvents.ts),
+// so a chosen color never looks out of place next to an automatic one; Remove opens the same
+// This/This-and-following/All scope confirm (DeleteTaskModal) checklist-day's own delete flow
+// uses. Editing the schedule itself now lives on the Schedule row in TaskDetailModal's own info
+// column (same click-to-edit affordance ChecklistGenericInfo's General Settings card uses), not
+// here.
 //
 // The 11 color options (Automatic + 10 swatches) are one single DropdownItem, not 11 — Dropdown
 // renders each item as its own full-width `<button>` row, one per line, which read as an
@@ -34,7 +34,7 @@ const AUTOMATIC = 'automatic';
 // handlers. `item.onClick` itself stays a no-op: the delegated handler already ran (fired during
 // the bubble phase, before Dropdown's own wrapping button's `close(); item.onClick();` sees the
 // same click), so the menu still closes right after a pick, same as any other item.
-const TaskOptionsMenu = ({ colorValue, onColorChange, onEditScheduleClick, onRemoveClick }: Props) => {
+const TaskOptionsMenu = ({ colorValue, onColorChange, onRemoveClick }: Props) => {
   const intl = useIntl();
 
   const handleColorGridClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -69,12 +69,6 @@ const TaskOptionsMenu = ({ colorValue, onColorChange, onEditScheduleClick, onRem
         </div>
       ),
       onClick: () => {},
-    },
-    {
-      key: 'schedule',
-      label: intl.formatMessage({ id: 'home-calendar.edit-schedule', defaultMessage: 'Edit schedule' }),
-      icon: 'solar:calendar-date-line-duotone',
-      onClick: onEditScheduleClick,
     },
     {
       key: 'remove',

@@ -138,6 +138,12 @@
   color: var(--text-description-color);
 }
 
+.editIcon {
+  cursor: pointer;
+  color: var(--text-description-color);
+  transition: color 0.2s ease;
+}
+
 // Capped and scrollable, same as the challenge invite page's own note list
 // (task-shared-card's `.notesList`) — a long note (or several groups' worth) shouldn't push the
 // footer out of view. 300px is the single-column fallback (mobile, or no `.submit` beside it to
