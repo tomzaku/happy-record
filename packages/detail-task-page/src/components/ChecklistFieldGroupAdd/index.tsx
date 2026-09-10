@@ -407,7 +407,7 @@ const ChecklistFieldGroupAdd = ({
                   });
                 }}
                 border="dash"
-                className={styles.input}
+                classes={{ wrapper: styles.input }}
                 type="number"
                 // Only ever set via a group's own override (see getEffectiveFieldDisplay
                 // in ChecklistFieldGroup) — a field has no placeholder of its own.

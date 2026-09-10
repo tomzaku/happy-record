@@ -164,7 +164,7 @@ const ChecklistDayRow = ({
               className={styles.challengeBadge}
               width={16}
               height={16}
-              icon="solar:cup-star-bold-duotone"
+              icon="lucide:goal"
               title={intl.formatMessage({ id: 'ChecklistToday.challenge-badge', defaultMessage: 'Challenge' })}
             />
           )}
