@@ -1,5 +1,5 @@
 import React from 'react';
-import { useChecklist, useChecklistTemplates } from '@dreamer/global';
+import { useChecklist, useChecklistTemplates, getActiveFieldGroups, isFieldGroupActiveOnDay } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
 import { motion } from 'framer-motion';
@@ -10,6 +10,8 @@ import { useIntl } from '@dreamer/translation';
 import { format } from 'date-fns';
 import styles from './ChecklistDay.desktop.module.scss';
 import { formatTemplateSchedule, getScheduledTimeLabel } from './checklistDayHelpers';
+import ChecklistDayRowSubmit from './ChecklistDayRowSubmit';
+import ChecklistDayRowTitle from './ChecklistDayRowTitle';
 
 type Props = {
   id: string;
@@ -69,131 +71,131 @@ const ChecklistDayRow = ({
   // "Creating…" status rather than hiding it.
   const isCreating = Boolean(currentChecklistTemplate?.isClient);
 
+  // Whether this row has anything to expand into — a field-group task with at least one group
+  // actually due on `date` (a multi-group template's other groups, scheduled on other days,
+  // don't count — see isFieldGroupActiveOnDay's own doc comment). A plain check/uncheck task has
+  // nothing more to show than the checkbox already in the row header, so it gets no expand button
+  // at all rather than an expand area that would always render empty.
+  const hasQuickSubmit =
+    getActiveFieldGroups(currentChecklistTemplate?.fieldGroups ?? []).filter(group =>
+      isFieldGroupActiveOnDay(group.repeat, date),
+    ).length > 0;
+  // Expanded by default — see ChecklistDayRowSubmit for what actually renders here.
+  const [expanded, setExpanded] = React.useState(true);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -24 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -24 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      className={cx(
-        styles.taskRow,
-        completed && styles.taskRowDone,
-        id === focusedTaskId && styles.taskRowFocused,
-        isCreating && styles.taskRowPending,
-      )}
-      onClick={() => {
-        if (isCreating) return;
-        setFocusedTaskId(id);
-        navigate(
-          `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
-        );
-      }}
-      onMouseEnter={() => setHoveredTaskId(id)}
-      onMouseLeave={() => setHoveredTaskId(current => (current === id ? null : current))}
-    >
-      {id === hoveredTaskId && (
-        <motion.div
-          className={styles.taskHoverBg}
-          layoutId="taskHoverBg"
-          transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 0.5 }}
-        />
-      )}
-      <div onClick={e => e.stopPropagation()} className={styles.rowCheckbox}>
-        {isCreating ? (
-          <Icon width={20} icon="svg-spinners:180-ring" />
-        ) : (
-          <Checkbox
-            defaultChecked={completed}
-            className={styles.checkbox}
-            style={{ accentColor: color }}
-            onChange={event => {
-              event.stopPropagation();
-              updateChecklist({
-                ...currentChecklist,
-                completedAt: event.target.checked ? new Date().toISOString() : undefined,
-              });
-            }}
+    <div className={styles.taskRowContainer}>
+      <motion.div
+        initial={{ opacity: 0, x: -24 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -24 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className={cx(
+          styles.taskRow,
+          completed && styles.taskRowDone,
+          id === focusedTaskId && styles.taskRowFocused,
+          isCreating && styles.taskRowPending,
+        )}
+        onClick={() => {
+          if (isCreating) return;
+          setFocusedTaskId(id);
+          navigate(
+            `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}${currentChecklist.clientOnly ? '' : `&checklistId=${currentChecklist.id}`}`,
+          );
+        }}
+        onMouseEnter={() => setHoveredTaskId(id)}
+        onMouseLeave={() => setHoveredTaskId(current => (current === id ? null : current))}
+      >
+        {id === hoveredTaskId && (
+          <motion.div
+            className={styles.taskHoverBg}
+            layoutId="taskHoverBg"
+            transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 0.5 }}
           />
         )}
-      </div>
-      <Icon
-        className={styles.rowIcon}
-        width={20}
-        height={20}
-        color={color}
-        icon={currentChecklistTemplate?.avatar.name || 'solar:settings-linear'}
-      />
-      <div className={styles.rowInfo}>
-        <div className={styles.rowTitleLine}>
-          {isEditingTitle ? (
-            <input
-              autoFocus
-              className={styles.rowTitleInput}
-              value={editingTitleValue}
-              onClick={event => event.stopPropagation()}
-              onChange={event => setEditingTitleValue(event.target.value)}
-              onBlur={commitEditingTitle}
-              onKeyDown={event => {
+        <div onClick={e => e.stopPropagation()} className={styles.rowCheckbox}>
+          {isCreating ? (
+            <Icon width={20} icon="svg-spinners:180-ring" />
+          ) : (
+            <Checkbox
+              defaultChecked={completed}
+              className={styles.checkbox}
+              style={{ accentColor: color }}
+              onChange={event => {
                 event.stopPropagation();
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  commitEditingTitle();
-                } else if (event.key === 'Escape') {
-                  event.preventDefault();
-                  cancelEditingTitle();
-                }
+                updateChecklist({
+                  ...currentChecklist,
+                  completedAt: event.target.checked ? new Date().toISOString() : undefined,
+                });
               }}
             />
-          ) : (
-            <>
-              <Typography.Text className={styles.rowTitle}>{title}</Typography.Text>
-              <button
-                type="button"
-                className={styles.rowEditButton}
-                onClick={event => {
-                  event.stopPropagation();
-                  startEditingTitle(id, title);
-                }}
-                aria-label={intl.formatMessage({ id: 'ChecklistToday.edit-title', defaultMessage: 'Edit title' })}
-              >
-                <Icon width={14} icon="solar:pen-2-line-duotone" />
-              </button>
-              <button
-                type="button"
-                className={styles.rowDeleteButton}
-                onClick={event => {
-                  event.stopPropagation();
-                  openDelete(id);
-                }}
-                aria-label={intl.formatMessage({
-                  id: 'ChecklistToday.delete-task-label',
-                  defaultMessage: 'Delete task',
-                })}
-              >
-                <Icon width={14} icon="solar:trash-bin-minimalistic-2-line-duotone" />
-              </button>
-            </>
           )}
         </div>
-        <Typography.Text className={styles.rowSubtitle}>
-          {isCreating
-            ? intl.formatMessage({ id: 'ChecklistToday.creating', defaultMessage: 'Creating…' })
-            : formatTemplateSchedule(currentChecklistTemplate)}
-        </Typography.Text>
-      </div>
-      <div className={styles.rowEnd}>
-        {currentChecklistTemplate?.visibility === 'public' && (
-          <Icon
-            className={styles.challengeBadge}
-            width={16}
-            height={16}
-            icon="solar:cup-star-bold-duotone"
-            title={intl.formatMessage({ id: 'ChecklistToday.challenge-badge', defaultMessage: 'Challenge' })}
-          />
-        )}
-        {timeLabel && <Typography.Text className={styles.rowTime}>{timeLabel}</Typography.Text>}
-      </div>
-    </motion.div>
+        <Icon
+          className={styles.rowIcon}
+          width={20}
+          height={20}
+          color={color}
+          icon={currentChecklistTemplate?.avatar.name || 'solar:settings-linear'}
+        />
+        <div className={styles.rowInfo}>
+          <div className={styles.rowTitleLine}>
+            <ChecklistDayRowTitle
+              id={id}
+              title={title}
+              isEditingTitle={isEditingTitle}
+              editingTitleValue={editingTitleValue}
+              setEditingTitleValue={setEditingTitleValue}
+              startEditingTitle={startEditingTitle}
+              commitEditingTitle={commitEditingTitle}
+              cancelEditingTitle={cancelEditingTitle}
+              openDelete={openDelete}
+            />
+          </div>
+          <Typography.Text className={styles.rowSubtitle}>
+            {isCreating
+              ? intl.formatMessage({ id: 'ChecklistToday.creating', defaultMessage: 'Creating…' })
+              : formatTemplateSchedule(currentChecklistTemplate)}
+          </Typography.Text>
+        </div>
+        <div className={styles.rowEnd}>
+          {currentChecklistTemplate?.visibility === 'public' && (
+            <Icon
+              className={styles.challengeBadge}
+              width={16}
+              height={16}
+              icon="solar:cup-star-bold-duotone"
+              title={intl.formatMessage({ id: 'ChecklistToday.challenge-badge', defaultMessage: 'Challenge' })}
+            />
+          )}
+          {timeLabel && <Typography.Text className={styles.rowTime}>{timeLabel}</Typography.Text>}
+          {hasQuickSubmit && (
+            <button
+              type="button"
+              className={styles.rowExpandButton}
+              onClick={event => {
+                event.stopPropagation();
+                setExpanded(current => !current);
+              }}
+              aria-label={
+                expanded
+                  ? intl.formatMessage({ id: 'ChecklistToday.collapse-task', defaultMessage: 'Collapse' })
+                  : intl.formatMessage({ id: 'ChecklistToday.expand-task', defaultMessage: 'Expand' })
+              }
+            >
+              <Icon
+                width={16}
+                icon="solar:alt-arrow-down-linear"
+                className={cx(styles.rowExpandIcon, expanded && styles.rowExpandIconOpen)}
+              />
+            </button>
+          )}
+        </div>
+      </motion.div>
+      {hasQuickSubmit && expanded && (
+        <ChecklistDayRowSubmit checklistTemplateId={currentChecklist.checklistTemplateId} date={date} />
+      )}
+    </div>
   );
 };
 

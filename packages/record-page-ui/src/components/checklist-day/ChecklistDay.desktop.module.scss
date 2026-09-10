@@ -96,6 +96,17 @@
   flex-direction: column;
 }
 
+// Wraps one row's clickable header line (.taskRow) plus its own expanded content
+// (ChecklistDayRowSubmit, below), so the divider between rows sits after whichever of those is
+// actually showing rather than always right under the header line.
+.taskRowContainer {
+  border-bottom: 1px solid var(--division-color);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
 .taskRow {
   position: relative;
   // Establishes a local stacking context so `.taskHoverBg`'s negative
@@ -109,11 +120,6 @@
   gap: $spacing-md;
   padding: 14px 4px;
   cursor: pointer;
-  border-bottom: 1px solid var(--division-color);
-
-  &:last-child {
-    border-bottom: none;
-  }
 
   &.taskRowDone {
     .rowTitle {
@@ -281,6 +287,66 @@
 .challengeBadge {
   flex-shrink: 0;
   color: var(--almanac-badge-ink);
+}
+
+.rowExpandButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-description-color);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--surface-secondary);
+    color: var(--text-color);
+  }
+}
+
+.rowExpandIcon {
+  transition: transform 0.15s ease;
+}
+
+// Points up once expanded (the row's content already showing below) instead of down (more to
+// reveal) — same "rotate to say what happens next" any accordion chevron uses.
+.rowExpandIconOpen {
+  transform: rotate(180deg);
+}
+
+// A row's own expanded content, below its header line (ChecklistDayRowSubmit) — each field group
+// gets its own column, side by side, rather than stacked one after another, so a multi-group
+// task's check-ins (Push/Diamond/Wide push-ups, say) submit independently without the row growing
+// tall. Left padding roughly aligns the grid under .rowInfo, past the checkbox/icon the header
+// line has that this content doesn't repeat.
+.rowExpandedGroups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: $spacing-md;
+  padding: 0 4px $spacing-lg 46px;
+  cursor: default;
+}
+
+.rowExpandedGroupColumn {
+  min-width: 0;
+  padding: $spacing-md;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: var(--surface-secondary);
+}
+
+.rowExpandedGroupTitle {
+  display: block;
+  margin-bottom: $spacing-sm;
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .emptyContainer {

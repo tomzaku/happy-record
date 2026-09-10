@@ -300,6 +300,7 @@ const ChecklistFieldGroupAdd = ({
                   key={recordField.id}
                   logo={<Icon width={24} icon={recordField.icon} />}
                   title={recordField.title}
+                  noPaddingHorizontal={compact}
                   rightComponent={
                     <>
                       <Typography.Title
@@ -326,6 +327,7 @@ const ChecklistFieldGroupAdd = ({
                   <List.ItemMeta
                     logo={<Icon width={24} icon={recordField.icon} />}
                     title={recordField.title}
+                    noPaddingHorizontal={compact}
                   />
                   <NoteEditor
                     key={latestRecord.id}
@@ -347,6 +349,7 @@ const ChecklistFieldGroupAdd = ({
                   <List.ItemMeta
                     logo={<Icon width={24} icon={recordField.icon} />}
                     title={recordField.title}
+                    noPaddingHorizontal={compact}
                   />
                   <MediaFieldPreview kind={recordField.type} mediaId={latestRecord.value} />
                 </React.Fragment>
@@ -365,6 +368,7 @@ const ChecklistFieldGroupAdd = ({
                   key={latestRecord.id}
                   logo={<Icon width={24} icon={recordField.icon} />}
                   title={recordField.title}
+                  noPaddingHorizontal={compact}
                   rightComponent={
                     <Typography.Text>
                       {formatFieldValueForDisplay(
@@ -389,6 +393,7 @@ const ChecklistFieldGroupAdd = ({
           key={field.id}
           logo={<Icon width={24} icon={field.icon} />}
           title={field.title}
+          noPaddingHorizontal={compact}
           rightComponent={
             <>
               <Input
@@ -417,6 +422,7 @@ const ChecklistFieldGroupAdd = ({
           <List.ItemMeta
             logo={<Icon width={24} icon={field.icon} />}
             title={field.title}
+            noPaddingHorizontal={compact}
           />
           {/* No title input here — a note entry's title is derived server-side from its own
               content when none is given (see _shared/notes.ts's deriveTitle), not typed in. */}
@@ -435,6 +441,7 @@ const ChecklistFieldGroupAdd = ({
           key={field.id}
           logo={<Icon width={24} icon={field.icon} />}
           title={field.title}
+          noPaddingHorizontal={compact}
           rightComponent={
             <>
               {field.type === 'text' && (
@@ -502,7 +509,11 @@ const ChecklistFieldGroupAdd = ({
         };
         return (
           <div key={`${field.id}-${newNoteKey}`} className={styles.selectField}>
-            <List.ItemMeta logo={<Icon width={24} icon={field.icon} />} title={field.title} />
+            <List.ItemMeta
+              logo={<Icon width={24} icon={field.icon} />}
+              title={field.title}
+              noPaddingHorizontal={compact}
+            />
             <div className={styles.optionList}>
               {(field.options ?? []).map(option => (
                 <label key={option} className={styles.optionRow}>
@@ -525,7 +536,11 @@ const ChecklistFieldGroupAdd = ({
       })}
       {mediaFields.map(field => (
         <div key={`${field.id}-${newNoteKey}`} className={styles.mediaField}>
-          <List.ItemMeta logo={<Icon width={24} icon={field.icon} />} title={field.title} />
+          <List.ItemMeta
+            logo={<Icon width={24} icon={field.icon} />}
+            title={field.title}
+            noPaddingHorizontal={compact}
+          />
           <MediaFieldInput
             kind={field.type as 'photo' | 'video'}
             value={textFieldRecord[field.id]}

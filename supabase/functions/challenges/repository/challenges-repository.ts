@@ -123,7 +123,7 @@ export async function fetchTemplateVisibilities(db: SupabaseClient, ids: string[
 
 export async function fetchTemplatesMeta(db: SupabaseClient, ids: string[]): Promise<Record<string, unknown>[]> {
   if (!ids.length) return [];
-  const { data, error } = await db.from('checklist_templates').select('id, title, avatar').in('id', ids);
+  const { data, error } = await db.from('checklist_templates').select('id, title, avatar, deleted_at').in('id', ids);
   if (error) throw new Error(error.message);
   return (data ?? []) as Record<string, unknown>[];
 }

@@ -163,22 +163,33 @@ export async function listMyChallenges({ db, userId }: Ctx) {
   const publicTemplateIds = new Set(joinedTemplates.filter(t => t.visibility === 'public').map(t => t.id));
   const joinedRows = joinedRowsAll.filter(r => publicTemplateIds.has(r.checklist_template_id as string));
 
-  const allRows = [...ownedRowsArr, ...joinedRows];
-  if (!allRows.length) return [];
+  const allRowsWithTemplate = [...ownedRowsArr, ...joinedRows];
+  if (!allRowsWithTemplate.length) return [];
 
-  const templateIds = [...new Set(allRows.map(r => r.checklist_template_id as string))];
-  // Safe with no further check: every id in `templateIds` is either the caller's own or was just
-  // confirmed public above. Every participant row across every one of these challenges, just to
-  // count them — every id in `allRows` is a challenge the caller legitimately owns or has joined
-  // (participant-count visibility was never gated tighter than that anyway — see
-  // checkCanReadDashboard's own comment on roster vs. peer-data visibility), so this needs no
-  // further check either.
-  const [templateRows, rosterRows] = await Promise.all([
-    fetchTemplatesMeta(db, templateIds),
-    fetchParticipantChallengeIds(db, allRows.map(r => r.id as string), MAX_ROWS),
+  const templateIdsWithTemplate = [...new Set(allRowsWithTemplate.map(r => r.checklist_template_id as string))];
+  // Safe with no further check: every id in `templateIdsWithTemplate` is either the caller's own
+  // or was just confirmed public above. Every participant row across every one of these
+  // challenges, just to count them — every id in `allRowsWithTemplate` is a challenge the caller
+  // legitimately owns or has joined (participant-count visibility was never gated tighter than
+  // that anyway — see checkCanReadDashboard's own comment on roster vs. peer-data visibility), so
+  // this needs no further check either.
+  const [templateRowsWithDeleted, rosterRows] = await Promise.all([
+    fetchTemplatesMeta(db, templateIdsWithTemplate),
+    fetchParticipantChallengeIds(db, allRowsWithTemplate.map(r => r.id as string), MAX_ROWS),
   ]);
 
-  const templateById = new Map(templateRows.map(r => [r.id as string, r]));
+  // A soft-deleted template (deleteTemplate's own `deleted_at` — the row itself stays, so the
+  // queries above would otherwise keep resolving a title/avatar for it forever) must stop
+  // surfacing its challenge here, for the owner and every participant alike — same "the thing
+  // this challenge is about is gone" reasoning the detail page's own template-deleted banner
+  // already applies, just enforced here instead of relying on the client to notice `deleted_at`.
+  const deletedTemplateIds = new Set(
+    templateRowsWithDeleted.filter(r => r.deleted_at).map(r => r.id as string),
+  );
+  const allRows = allRowsWithTemplate.filter(r => !deletedTemplateIds.has(r.checklist_template_id as string));
+  if (!allRows.length) return [];
+
+  const templateById = new Map(templateRowsWithDeleted.map(r => [r.id as string, r]));
   const participantCountByChallenge = new Map<string, number>();
   for (const row of rosterRows) {
     participantCountByChallenge.set(row.challenge_id, (participantCountByChallenge.get(row.challenge_id) ?? 0) + 1);

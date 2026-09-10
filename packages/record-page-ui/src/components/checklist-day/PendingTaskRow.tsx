@@ -16,16 +16,18 @@ import { PendingInlineTask } from '../AddInlineTask';
 const PendingTaskRow = ({ task }: { task: PendingInlineTask }) => {
   const intl = useIntl();
   return (
-    <div className={cx(styles.taskRow, styles.taskRowPending)}>
-      <div className={styles.rowCheckbox}>
-        <Icon width={20} icon="svg-spinners:180-ring" />
-      </div>
-      <Icon className={styles.rowIcon} width={20} height={20} color="#8A8A8A" icon="solar:settings-linear" />
-      <div className={styles.rowInfo}>
-        <Typography.Text className={styles.rowTitle}>{task.title}</Typography.Text>
-        <Typography.Text className={styles.rowSubtitle}>
-          {intl.formatMessage({ id: 'ChecklistToday.creating', defaultMessage: 'Creating…' })}
-        </Typography.Text>
+    <div className={styles.taskRowContainer}>
+      <div className={cx(styles.taskRow, styles.taskRowPending)}>
+        <div className={styles.rowCheckbox}>
+          <Icon width={20} icon="svg-spinners:180-ring" />
+        </div>
+        <Icon className={styles.rowIcon} width={20} height={20} color="#8A8A8A" icon="solar:settings-linear" />
+        <div className={styles.rowInfo}>
+          <Typography.Text className={styles.rowTitle}>{task.title}</Typography.Text>
+          <Typography.Text className={styles.rowSubtitle}>
+            {intl.formatMessage({ id: 'ChecklistToday.creating', defaultMessage: 'Creating…' })}
+          </Typography.Text>
+        </div>
       </div>
     </div>
   );
