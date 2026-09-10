@@ -1,4 +1,5 @@
 import React from 'react';
+import { ToastProvider } from '@moon-ui/toast';
 import styles from './MoonProvider.module.scss';
 
 type Props = {
@@ -17,10 +18,18 @@ type Props = {
  * portal-based moon-ui component (Modal, Drawer, Select's own dropdown, ...) escapes into (see
  * `getMoonPortalRoot` in `./portalRoot`) instead of each hand-wiring its own differently-named
  * div here.
+ *
+ * `<ToastProvider>` wraps `children` the same way — the one always-mounted piece behind
+ * `@moon-ui/toast`'s imperative `showToast()` (built on notistack's own `enqueueSnackbar`, which
+ * binds itself to whichever `SnackbarProvider` is mounted). So any module anywhere
+ * (`packages/global/src/lib/api.ts` calls it on a real server error, see that file's own comment)
+ * can raise a toast without the app shell needing to remember to mount anything itself.
  */
 const MoonProvider = ({ theme, children }: Props) => (
   <div className={styles.container} data-theme={theme}>
-    <div className={styles.body}>{children}</div>
+    <ToastProvider>
+      <div className={styles.body}>{children}</div>
+    </ToastProvider>
     <div id="moon-ui-portal-root" />
   </div>
 );

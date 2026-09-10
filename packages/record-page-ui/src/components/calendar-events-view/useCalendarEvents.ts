@@ -1,5 +1,5 @@
 import React from 'react';
-import { eachDayOfInterval, format } from 'date-fns';
+import { eachDayOfInterval } from 'date-fns';
 import type { CalendarEvent, CalendarRange } from '@dreamer/calendar-view';
 import {
   useChecklist,
@@ -7,6 +7,7 @@ import {
   hasGroupSchedule,
   getActiveFieldGroups,
   isFieldGroupActiveOnDay,
+  movedOccurrenceOnDate,
   Checklist,
 } from '@dreamer/global';
 
@@ -236,8 +237,13 @@ export const useCalendarEvents = (
         // "This event only" (a `MODIFIED` schedule_exceptions row — ScheduleEditDialogs' own
         // edit-scope prompt) overrides just this one day's own start moment, without touching the
         // series' normal `byhour`/`byminute` — see checklistTemplateTypes.ts's own
-        // `modifiedOccurrences` doc comment.
-        const modifiedStart = template?.repeat?.modifiedOccurrences?.[format(day, 'yyyy-MM-dd')];
+        // `modifiedOccurrences` doc comment. `movedOccurrenceOnDate` (not a direct
+        // `modifiedOccurrences[dateKey]` read) is the reverse lookup this needs: the map is keyed
+        // by the occurrence's own *original* day, so `day` here — which, by the time this task is
+        // even in `checklist` for this iteration, `occursOnDate` has already recognized as either
+        // this occurrence's normal day or its relocated one — only ever matches as some entry's
+        // own *value*, never its key.
+        const modifiedStart = movedOccurrenceOnDate(template?.repeat, day);
 
         if (!hasActiveFieldGroups && (template?.repeat?.byhour || modifiedStart)) {
           const start = new Date(modifiedStart ?? day);

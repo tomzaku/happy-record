@@ -61,15 +61,26 @@ export type ChecklistTemplate = {
      * `deleteOccurrence`/`restoreOccurrence` instead (packages/global/src/store/checklists/
      * scheduleExceptionsApi.ts), which invalidate this template's own query afterward. */
     exceptionDates?: string[];
-    /** `YYYY-MM-DD` date -> the overridden moment (a full ISO instant) for that one occurrence,
-     * from a `MODIFIED`-type `schedule_exceptions` row — Google Calendar's "this event" scope on
-     * an edit: the occurrence still happens on the same day, just at a different time, without
-     * touching the rest of the series. Read-only, server-embedded (see supabase/shared/
-     * schedules.ts's `toRepeat`) — never send back on a write; add one via `useChecklistTemplates()`'s
-     * `modifyOccurrence` (packages/global/src/store/checklists/scheduleExceptionsApi.ts) instead,
-     * same as `exceptionDates`' own `deleteOccurrence`/`restoreOccurrence`. Consulted by
-     * `occurrenceSeed` (useChecklists.tsx) when a fresh instance is created, and by the calendar's
-     * own event rendering (useCalendarEvents.ts), in place of `byhour`/`byminute` for that date. */
+    /** `YYYY-MM-DD` (the occurrence's own *original* day) -> the overridden moment (a full ISO
+     * instant, which may fall on a different calendar day entirely), from a `MODIFIED`-type
+     * `schedule_exceptions` row — Google Calendar's "this event" scope on an edit: this one
+     * occurrence moves to a different day and/or time, without touching the rest of the series.
+     * Read-only, server-embedded (see supabase/shared/schedules.ts's `toRepeat`) — never send
+     * back on a write; add one via `useChecklistTemplates()`'s `modifyOccurrence` (packages/
+     * global/src/store/checklists/scheduleExceptionsApi.ts) instead, same as `exceptionDates`'
+     * own `deleteOccurrence`/`restoreOccurrence`.
+     *
+     * Read in *both* directions, never as a plain same-key lookup — `rruleUtils.ts`'s
+     * `occursOnDate`/`list` exclude a day that's a *key* here (its own occurrence moved away) and
+     * include a day that's some entry's own *value* (an occurrence landed there) even when the
+     * recurrence rule alone wouldn't otherwise match it; `movedOccurrenceOnDate` (same file) is
+     * the reverse (by-value) lookup `occurrenceSeed` (useChecklists.tsx) and the calendar's own
+     * event-time rendering (useCalendarEvents.ts) both need to find what landed on a given day —
+     * a direct `modifiedOccurrences[dateKey]` read only ever finds an occurrence moving *away*
+     * from that day, never one arriving at it (the bug behind week/day calendar views missing a
+     * relocated occurrence whenever its original day fell outside their own, narrower visible
+     * range — month view "worked" only because its wider range usually still happened to include
+     * the original day too). */
     modifiedOccurrences?: Record<string, string>;
     /** Set only for a challenge participant's own row, distinct from the owner's default
      * (_shared/repeats.ts's `pickRepeat`) — seeded from the owner's schedule at join time

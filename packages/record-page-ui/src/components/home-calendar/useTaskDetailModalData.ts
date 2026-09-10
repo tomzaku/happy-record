@@ -75,18 +75,26 @@ export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
     return map;
   }, [relevantGroups, fields]);
 
-  // `ChecklistFieldGroupAdd` needs a real Checklist row to attach records to — same deterministic-
-  // id upsert detail-task-page's own mount effect does (index.desktop.tsx), scoped here to only
-  // fire once there's actually a field group to submit into. `addChecklist`'s identity churns on
-  // every write to the checklist store (see index.desktop.tsx's own comment on issue #185), so
-  // this needs the same "already creating this exact id" guard that effect uses, or a re-render
+  // A real Checklist row is needed whether or not there's a field group to submit into —
+  // `ChecklistFieldGroupAdd` needs one to attach records to, but a plain check/uncheck-only task
+  // (no field groups at all) needs one too, for `markCompleted` below and for the Schedule row's
+  // own date display (TaskDetailModal.tsx's `formatDisplayStartEndDate`) to have a real
+  // `startedAt`/`endedDate` to read. This used to gate on `relevantGroups.length > 0` ("only fire
+  // once there's actually a field group to submit into"), which left a plain task's occurrence
+  // with no row — and so no end date, and a silently no-op "mark complete" (see `markCompleted`'s
+  // own `if (!checklist) return`) — on any day not already materialized by some other page first
+  // (ChecklistToday creating *today's* row is why only the very first occurrence ever looked
+  // right). Same deterministic-id upsert detail-task-page's own mount effect does
+  // (index.desktop.tsx), unconditionally there too. `addChecklist`'s identity churns on every
+  // write to the checklist store (see index.desktop.tsx's own comment on issue #185), so this
+  // still needs the same "already creating this exact id" guard that effect uses, or a re-render
   // mid-flight re-fires it unboundedly.
   const deterministicId = data ? checklistInstanceId(data.checklistTemplateId, data.date) : undefined;
   const checklistId = data?.checklistId ?? deterministicId;
   const checklist = checklistId ? getChecklistDetail(checklistId) : undefined;
   const creatingIdRef = React.useRef<string>();
   React.useEffect(() => {
-    if (!data || !template || relevantGroups.length === 0 || checklist) return;
+    if (!data || !template || checklist) return;
     if (creatingIdRef.current === deterministicId) return;
     creatingIdRef.current = deterministicId;
     addChecklist({
@@ -95,7 +103,7 @@ export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
       checklistTemplateId: data.checklistTemplateId,
       ...occurrenceSeed(template, data.date),
     });
-  }, [data, template, relevantGroups.length, checklist, addChecklist, deterministicId]);
+  }, [data, template, checklist, addChecklist, deterministicId]);
 
   const markCompleted = () => {
     if (!checklist) return;

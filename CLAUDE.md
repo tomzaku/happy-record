@@ -57,6 +57,18 @@ RLS policies and `auth.uid()` are Postgres/Supabase-specific — this app wants 
 the database later without rewriting an authorization model that only exists as SQL, and without
 every new access rule requiring a migration.
 
+**A new table's migration doesn't write a `create policy` at all anymore** — `alter table
+<name> enable row level security;` only, no matching policy. Earlier tables (`checklist_logs`,
+`challenge_reactions`, ...) still carry a `using (auth.uid() = user_id) with check (auth.uid() =
+user_id)` policy written *after* the app-layer pivot, purely for documentation/consistency with
+what came before — that was itself reconsidered as one more thing living in SQL that the real rule
+already lives in `services/`. Leave RLS *enabled* (a harmless fail-safe: if a bug ever reintroduced
+a JWT-scoped client query somewhere, enabled-with-no-policy denies it by default rather than
+silently returning every row), just don't write the policy body. Don't backfill this onto
+already-shipped tables' own migrations either — same "database gets reset, not migrated forward
+[locally]; a live remote table needs a real corrective migration, not an edit to an applied one"
+reasoning as everywhere else schema changes happen after the fact.
+
 The replacement, in `supabase/shared/authorize.ts`:
 
 - **`admin()`** — a memoized service-role client. Bypasses RLS entirely. Every resource's route
@@ -598,7 +610,9 @@ file imports it" bar as `tasks-page-ui`/`pomodoro-mobile`/`pregnant-page-ui` bef
   the enforcement layer (`supabase/migrations/20260820010000_init_checklists.sql`'s
   `using (auth.uid() = user_id) with check (auth.uid() = user_id)` shape, etc.) — those policies
   are inert leftovers now, not load-bearing; see "Authorization: app layer, not RLS" below for why
-  and the actual pattern a new resource follows.
+  and the actual pattern a new resource follows. A **new** table's own migration doesn't add a
+  matching `create policy` at all — `enable row level security` alone (see that section's own note
+  on why even the old carried-forward policies stopped being worth writing on new tables too).
 - **Every table gets `updated_at timestamptz not null default now()`, and every write sets it
   explicitly** in the row-mapping function (`fromX`) — Postgres only fills a column default on
   insert, never on update, so an upsert that doesn't set it leaves a stale value. It's not

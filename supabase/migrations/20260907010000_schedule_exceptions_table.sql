@@ -59,11 +59,10 @@ create table if not exists schedule_exceptions (
   )
 );
 
+-- Enabled, no matching policy — see CLAUDE.md's "Authorization: app layer, not RLS": a new
+-- table's own migration doesn't get a `create policy` any more, just this fail-safe. Real
+-- enforcement is schedule-exceptions-service.ts deriving every write's `schedule_id` from
+-- `ctx.userId`, never trusting one from the client.
 alter table schedule_exceptions enable row level security;
-
-create policy "Users can manage their own schedule exceptions"
-  on schedule_exceptions for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
 
 create index if not exists idx_schedule_exceptions_schedule_id on schedule_exceptions (schedule_id);

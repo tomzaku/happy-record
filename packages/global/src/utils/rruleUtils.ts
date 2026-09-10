@@ -28,6 +28,28 @@ const toUTCEndOfDay = (date: Date): Date =>
 const toDateKey = (date: Date): string =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
+/**
+ * The overridden moment landing on `date` from some *other* day's own `MODIFIED` exception, if
+ * any — "this event moved here." `repeat.modifiedOccurrences` is keyed by the occurrence's own
+ * *original* day (`{ originalDayKey: overrideISO }` — see checklistTemplateTypes.ts's own doc
+ * comment), so recognizing "what's scheduled *on* `date`" needs the reverse: is `date` some
+ * entry's own *value*, not its key. Every caller that wants to know what to actually show on a
+ * given day (occursOnDate/list below, occurrenceSeed in useChecklists.tsx, the calendar's own
+ * event-time rendering in useCalendarEvents.ts) needs this reverse lookup, not a direct key read
+ * — a direct `modifiedOccurrences[dateKey]` read only ever finds an occurrence that moved *away*
+ * from `date`, never one that moved *onto* it. `undefined` when nothing landed on this day.
+ */
+export function movedOccurrenceOnDate(
+  repeat: { modifiedOccurrences?: Record<string, string> } | undefined,
+  date: Date,
+): string | undefined {
+  const dateKey = toDateKey(date);
+  for (const overrideIso of Object.values(repeat?.modifiedOccurrences ?? {})) {
+    if (toDateKey(new Date(overrideIso)) === dateKey) return overrideIso;
+  }
+  return undefined;
+}
+
 export type RepeatLike = {
   byday?: string;
   byhour?: string;
@@ -56,6 +78,13 @@ export type RepeatLike = {
    * a real `byday` match and the one-time-arrangement date range. Server-embedded (see
    * `supabase/shared/schedules.ts`'s `toRepeat`) — the client never fetches these separately. */
   exceptionDates?: string[];
+  /** `YYYY-MM-DD` (the occurrence's own *original* day) -> the overridden moment (a full ISO
+   * instant), from a `MODIFIED`-type `schedule_exceptions` row — "this event only," moved to a
+   * different day/time without touching the rest of the series. Checked in *both* directions by
+   * `occursOnDate`/`list` below: a day that's a *key* here no longer recurs at its own normal
+   * time (its occurrence moved elsewhere); a day that's some entry's own *value* recurs even if
+   * the recurrence rule alone wouldn't otherwise match it (see `movedOccurrenceOnDate` above). */
+  modifiedOccurrences?: Record<string, string>;
 };
 
 /**
@@ -116,7 +145,16 @@ export function buildRule(repeat: RepeatLike | undefined, anchorDate: Date): RRu
  */
 export function occursOnDate(repeat: RepeatLike | undefined, date: Date): boolean {
   if (!repeat) return false;
-  if (repeat.exceptionDates?.includes(toDateKey(date))) return false;
+  const dateKey = toDateKey(date);
+  // A `MODIFIED` occurrence relocated onto this day from elsewhere ("this event only," moved to a
+  // different day) counts as scheduled here even when the recurrence rule alone wouldn't
+  // otherwise match this day — checked first, same as `exceptionDates` below, so it wins
+  // regardless of what the rule itself says about this day.
+  if (movedOccurrenceOnDate(repeat, date)) return true;
+  if (repeat.exceptionDates?.includes(dateKey)) return false;
+  // This day's own occurrence relocated elsewhere (it's the *origin* key of a `MODIFIED`
+  // exception) — it no longer happens here at its normal time.
+  if (repeat.modifiedOccurrences?.[dateKey]) return false;
   const rule = buildRule(repeat, date);
   if (!rule) return false;
   return rule.between(toUTCMidnight(date), toUTCEndOfDay(date), true).length > 0;
@@ -126,11 +164,15 @@ export function occursOnDate(repeat: RepeatLike | undefined, date: Date): boolea
  * Every calendar day in `[from, to]` this schedule recurs on, ascending — `rrule`'s own
  * `between()` does the real work (same as `occursOnDate` above, just handed a wider window
  * instead of one day) for both schedule shapes `buildRule` covers, not a day-by-day walk
- * re-deriving what the library already computes. `exceptionDates` is filtered afterward — same
- * "wins over a real match" rule `occursOnDate` applies per-day. `includingFrom`/`includingTo`
- * (both default `true`) drop the matching boundary day when `false` — same shape as the server's
- * own `supabase/shared/rruleUtils.ts` `list`, for a caller that wants only one edge open (e.g.
- * paging a range one day past wherever the previous page ended, without re-including that day).
+ * re-deriving what the library already computes. `exceptionDates`/`modifiedOccurrences` are
+ * applied afterward, same "wins over a real match" rules `occursOnDate` applies per-day: a
+ * naturally-matching day drops out if it's deleted or relocated elsewhere, and a `MODIFIED`
+ * occurrence's own destination day is added even when the rule alone wouldn't have matched it
+ * (normalized to midnight, same as every other returned day — this only answers "which calendar
+ * days," not "at what time"). `includingFrom`/`includingTo` (both default `true`) drop the
+ * matching boundary day when `false` — same shape as the server's own
+ * `supabase/shared/rruleUtils.ts` `list`, for a caller that wants only one edge open (e.g. paging
+ * a range one day past wherever the previous page ended, without re-including that day).
  */
 export function list(
   repeat: RepeatLike | undefined,
@@ -139,13 +181,22 @@ export function list(
   opts: { includingFrom?: boolean; includingTo?: boolean } = {},
 ): Date[] {
   const rule = buildRule(repeat, from);
-  if (!rule) return [];
   const { includingFrom = true, includingTo = true } = opts;
   const oneDayMs = 24 * 60 * 60 * 1000;
   const start = new Date(toUTCMidnight(from).getTime() + (includingFrom ? 0 : oneDayMs));
   const end = new Date(toUTCEndOfDay(to).getTime() - (includingTo ? 0 : oneDayMs));
   if (start > end) return [];
-  return rule.between(start, end, true).filter(d => !repeat?.exceptionDates?.includes(toDateKey(d)));
+
+  const natural = rule ? rule.between(start, end, true) : [];
+  const kept = natural.filter(d => {
+    const key = toDateKey(d);
+    return !repeat?.exceptionDates?.includes(key) && !repeat?.modifiedOccurrences?.[key];
+  });
+  const movedIn = Object.values(repeat?.modifiedOccurrences ?? {})
+    .map(iso => toUTCMidnight(new Date(iso)))
+    .filter(d => d.getTime() >= start.getTime() && d.getTime() <= end.getTime());
+
+  return [...kept, ...movedIn].sort((a, b) => a.getTime() - b.getTime());
 }
 
 const SHORT_DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

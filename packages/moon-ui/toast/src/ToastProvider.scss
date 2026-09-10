@@ -1,0 +1,42 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+// A plain (non-module) stylesheet on purpose: notistack renders its own stable classNames (see
+// notistack's own `classes.ts` — `notistack-MuiContent`, `notistack-MuiContent-{variant}`, ...)
+// rather than taking a `className`/`classes` prop per snack these days, and overriding those
+// global names directly is notistack's own documented way to reskin it without reimplementing
+// the stacking/transition/auto-dismiss logic it already has — a CSS Module's hashed local names
+// would never match them. Above every other z-index in this design system (see metric.scss's own
+// `$toast-z-index`) — a toast reports something regardless of whatever's already open (a modal, a
+// dropdown, a tooltip), so it can't render underneath any of them.
+.notistack-SnackbarContainer {
+  z-index: $toast-z-index !important;
+}
+
+.notistack-MuiContent {
+  background: var(--card-background) !important;
+  color: var(--text-color) !important;
+  box-shadow: 0 8px 25px var(--card-shadow) !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  padding: $spacing-md $spacing-lg !important;
+}
+
+// No dedicated error/danger/success theme tokens exist yet (see SettingsCard/ChecklistGenericInfo's
+// own hardcoded #ff4d4f for the same reason) — matching the same ad hoc palette this app already
+// uses for status color elsewhere (event.done's #27ae60, DEFAULT_PALETTE's #eb5757) rather than
+// inventing a new token pair just for this component.
+.notistack-MuiContent-error {
+  border-left: 4px solid #eb5757 !important;
+}
+
+.notistack-MuiContent-success {
+  border-left: 4px solid #27ae60 !important;
+}
+
+.notistack-MuiContent-info {
+  border-left: 4px solid #2f6fed !important;
+}
+
+.notistack-MuiContent-warning {
+  border-left: 4px solid #feb000 !important;
+}

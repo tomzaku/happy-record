@@ -23,6 +23,7 @@
 // — almost every call should be quiet, with the local store as the fallback.
 
 import { clearInvalidSession, ensureSession, supabase } from './supabase';
+import { showToast } from '@moon-ui/toast';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -134,14 +135,29 @@ async function send<T>(method: Method, path: string, body: unknown, opts: Option
   return data as T;
 }
 
-/** `quiet` turns any failure into a null, with one line in the console. */
+/** `quiet` turns any failure into a null, with one line in the console — plus a toast when the
+ * failure means something's actually wrong, not just "offline" or "this browser's session needs
+ * a silent refresh":
+ * - status `0` is unreachable (offline, DNS, CORS, timeout) — this app's own deliberate "degrade,
+ *   don't break" story for connectivity (see CLAUDE.md's "What this still doesn't solve"), not a
+ *   server problem, so it stays silent.
+ * - status `401` self-heals on its own (`send()` above already clears the dead session and starts
+ *   re-establishing one) — surfacing it here would flash a confusing "not signed in" toast during
+ *   what's meant to be an invisible recovery.
+ * - anything else reached the server and got a real error back — the whole point of `quiet` was
+ *   "there's a local fallback to render," not "nobody needs to know this failed," and a caller
+ *   with no local fallback for this exact write (a schedule edit, say) had nothing else telling
+ *   the user it didn't actually save. */
 async function run<T>(method: Method, path: string, body: unknown, opts: Options): Promise<T | null> {
   if (!opts.quiet) return await send<T>(method, path, body, opts);
   try {
     return await send<T>(method, path, body, opts);
   } catch (err) {
-    const status = err instanceof ApiError && err.status ? ` ${err.status}` : '';
-    console.warn(`[dreamer] ${method} ${path}${status}:`, err instanceof Error ? err.message : err);
+    const status = err instanceof ApiError ? err.status : undefined;
+    console.warn(`[dreamer] ${method} ${path}${status ? ` ${status}` : ''}:`, err instanceof Error ? err.message : err);
+    if (status !== 0 && status !== 401) {
+      showToast(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    }
     return null;
   }
 }

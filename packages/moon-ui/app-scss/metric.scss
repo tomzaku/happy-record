@@ -16,6 +16,10 @@ $tooltip-z-index: 11000;
 
 $video-z-index: 12000;
 
+// Above everything else — a toast reports something happened regardless of whatever's currently
+// open (a modal, a dropdown, a tooltip), so it needs to stay visible over all of them.
+$toast-z-index: 13000;
+
 /* Margin or Padding */
 $spacing-xl: 22px;
 $spacing-lg: 16px;

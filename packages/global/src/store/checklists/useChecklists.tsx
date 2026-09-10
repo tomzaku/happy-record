@@ -5,6 +5,7 @@ import { useFieldGroups } from './useFieldGroups';
 import { v4, v5 as uuidv5 } from 'uuid';
 import { startOfDay, endOfDay, addDays, format } from 'date-fns';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
+import { movedOccurrenceOnDate } from '../../utils/rruleUtils';
 import { getActiveFieldGroups } from './fieldGroupTypes';
 
 // Backend — see CLAUDE.md's "online-first data layer". Every call is quiet:
@@ -88,13 +89,18 @@ export function checklistInstanceId(checklistTemplateId: string, date: Date): st
 //
 // `modifiedOccurrences` (a `MODIFIED`-type `schedule_exceptions` override — "this event only" in
 // the Schedule dialog's own edit-scope prompt) wins over the template's own `byhour`/`byminute`
-// when this exact date has one: the whole point of that scope is a fresh instance of this one day
-// landing on the overridden moment instead of the series' normal time.
+// when `date` is where some other day's occurrence actually landed: the whole point of that scope
+// is a fresh instance of that relocated day landing on the overridden moment instead of whatever
+// the series' normal time would otherwise be. `movedOccurrenceOnDate` (rruleUtils.ts) is the
+// reverse lookup this needs — the map itself is keyed by the occurrence's *original* day, not by
+// where it moved to, so a direct `modifiedOccurrences[dateKey]` read here would only ever find an
+// occurrence that moved *away* from `date` (which, by the time this runs, `occursOnDate` has
+// already excluded from being "scheduled" here at all — see that function's own comment).
 export function occurrenceSeed(
   template: { repeat?: { byhour?: string; byminute?: string; modifiedOccurrences?: Record<string, string> } } | undefined,
   date: Date,
 ): { startedAt: string; endedDate?: string } {
-  const override = template?.repeat?.modifiedOccurrences?.[format(date, 'yyyy-MM-dd')];
+  const override = movedOccurrenceOnDate(template?.repeat, date);
   if (override) return { startedAt: override };
 
   const { byhour, byminute } = template?.repeat ?? {};

@@ -1,5 +1,5 @@
 {
-  "name": "@moon-ui/provider",
+  "name": "@moon-ui/toast",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.tsx",
@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@moon-ui/toast": "1.0.0"
+    "notistack": "^3.0.1"
   }
 }

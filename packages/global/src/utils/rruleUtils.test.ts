@@ -1,4 +1,4 @@
-import { occursOnDate, nextOccurrenceLabel, list } from './rruleUtils';
+import { occursOnDate, nextOccurrenceLabel, list, movedOccurrenceOnDate } from './rruleUtils';
 
 // Every date below is constructed via Date.UTC so it lines up exactly with occursOnDate's own
 // UTC-midnight-of-calendar-day comparison, regardless of the machine's local timezone running
@@ -99,6 +99,35 @@ describe('occursOnDate', () => {
     expect(occursOnDate(repeat, utcDate(2026, 9, 10))).toBe(false); // ditto — still before UNTIL-less end
     expect(occursOnDate(repeat, utcDate(2026, 9, 15))).toBe(true); // next week's own start day
   });
+
+  it('modifiedOccurrences: a relocated occurrence is scheduled on its new day, not its old one — "this event only" moved to a different day (the bug behind week/day view missing a moved occurrence whose original day fell outside their narrower visible range)', () => {
+    const repeat = {
+      byday: 'MO,WE,FR',
+      startedAt: utcDate(2026, 9, 4).toISOString(),
+      modifiedOccurrences: { '2026-09-09': utcDate(2026, 9, 10, 9).toISOString() }, // Wednesday moved to Thursday
+    };
+    expect(occursOnDate(repeat, utcDate(2026, 9, 9))).toBe(false); // Wednesday — relocated away
+    expect(occursOnDate(repeat, utcDate(2026, 9, 10))).toBe(true); // Thursday — not normally scheduled, but the occurrence landed here
+    expect(occursOnDate(repeat, utcDate(2026, 9, 11))).toBe(true); // Friday — untouched
+  });
+});
+
+describe('movedOccurrenceOnDate', () => {
+  it("finds the overridden moment landing on a day, keyed by the map's own value — not its key", () => {
+    const override = utcDate(2026, 9, 10, 9).toISOString();
+    const repeat = { modifiedOccurrences: { '2026-09-09': override } };
+    expect(movedOccurrenceOnDate(repeat, utcDate(2026, 9, 10))).toBe(override);
+  });
+
+  it("undefined for the occurrence's own original day — that's where it moved *away* from, not where it landed", () => {
+    const repeat = { modifiedOccurrences: { '2026-09-09': utcDate(2026, 9, 10).toISOString() } };
+    expect(movedOccurrenceOnDate(repeat, utcDate(2026, 9, 9))).toBeUndefined();
+  });
+
+  it('undefined with no modifiedOccurrences at all', () => {
+    expect(movedOccurrenceOnDate(undefined, utcDate(2026, 9, 9))).toBeUndefined();
+    expect(movedOccurrenceOnDate({}, utcDate(2026, 9, 9))).toBeUndefined();
+  });
 });
 
 describe('nextOccurrenceLabel', () => {
@@ -148,6 +177,32 @@ describe('list', () => {
 
   it('agrees with occursOnDate for every day in the range, including exceptionDates and interval', () => {
     const repeat = { byday: 'TU,TH,SU', interval: 2, startedAt: utcDate(2026, 9, 8).toISOString(), exceptionDates: ['2026-09-10'] };
+    const from = utcDate(2026, 9, 1);
+    const to = utcDate(2026, 9, 30);
+    const matched = list(repeat, from, to);
+    for (let d = new Date(from); d <= to; d = new Date(d.getTime() + 24 * 60 * 60 * 1000)) {
+      const inList = matched.some(m => m.getTime() === d.getTime());
+      expect(inList).toBe(occursOnDate(repeat, d));
+    }
+  });
+
+  it('modifiedOccurrences: a relocated occurrence appears on its new day and disappears from its old one', () => {
+    const repeat = {
+      byday: 'WE',
+      modifiedOccurrences: { '2026-09-09': utcDate(2026, 9, 10).toISOString() }, // Wednesday moved to Thursday
+    };
+    // Wednesdays in September 2026: 2, 9, 16, 23, 30 — 9 relocates out, 10 (Thursday) comes in.
+    expect(list(repeat, utcDate(2026, 9, 1), utcDate(2026, 9, 30)).map(d => d.toISOString())).toEqual(
+      [2, 10, 16, 23, 30].map(day => utcDate(2026, 9, day).toISOString()),
+    );
+  });
+
+  it('agrees with occursOnDate for every day in the range, including modifiedOccurrences', () => {
+    const repeat = {
+      byday: 'TU,TH,SU',
+      startedAt: utcDate(2026, 9, 8).toISOString(),
+      modifiedOccurrences: { '2026-09-10': utcDate(2026, 9, 12).toISOString() },
+    };
     const from = utcDate(2026, 9, 1);
     const to = utcDate(2026, 9, 30);
     const matched = list(repeat, from, to);
