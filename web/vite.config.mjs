@@ -36,6 +36,8 @@ export default defineConfig(({ command }) => ({
     VitePWA({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3,woff2}'],
+        // Default is 2 MiB; the main JS bundle alone is ~2.9 MB.
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: '*.mp3',
