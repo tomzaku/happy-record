@@ -57,13 +57,16 @@ export const PAGE_BACKGROUND_LAYOUTS = ['solid', 'glass'] as const;
 export type PageBackgroundLayout = (typeof PAGE_BACKGROUND_LAYOUTS)[number];
 
 /**
- * An owner-defined shared goal — `formula` is a mathjs expression (e.g. `"sets1 * standard_reps +
- * sets2 * diamond_reps"`) evaluated server-side against `variables` (identifier -> field id),
- * once per submission (see supabase/functions/challenges/services/challenges-service.ts's own
- * getTargets) so a formula only combines values that were actually recorded together. `title`/
- * `unit` are owner-typed (no single field to borrow them from once it's a formula); `icon` is
- * auto-derived client-side from the first declared variable's own field — see
- * TargetFormulaEditor.tsx. Mirrors supabase/dto/challenges/challenges-dto.ts's own type.
+ * An owner-defined shared goal — `formula` is a mathjs expression (e.g. `"push_ups +
+ * wide_push_ups"`) evaluated server-side once per participant (see
+ * supabase/functions/challenges/services/challenges-service.ts's own getTargets), against each
+ * `variables` field's own `value_number` summed across every one of that user's submissions in
+ * range — not scoped to any single submission, so a formula can freely combine fields logged in
+ * different field groups/Submit clicks. A variable the user never recorded at all falls back to
+ * `variableDefaults[name]` if the owner set one, else `0` — see TargetFormulaEditor.tsx's own
+ * per-row "⋮" menu for where that's set. `title`/`unit` are owner-typed (no single field to
+ * borrow them from once it's a formula); `icon` is auto-derived client-side from the first
+ * declared variable's own field. Mirrors supabase/dto/challenges/challenges-dto.ts's own type.
  */
 export type ChallengeTarget = {
   id: string;
@@ -73,6 +76,10 @@ export type ChallengeTarget = {
   goal: number;
   formula: string;
   variables: Record<string, string>;
+  /** Per-variable fallback for a user who never recorded that field at all — keyed by the same
+   * name as `variables`. Omitted (or missing a given name) means "use 0", the same as before this
+   * existed. */
+  variableDefaults?: Record<string, number>;
 };
 
 /**

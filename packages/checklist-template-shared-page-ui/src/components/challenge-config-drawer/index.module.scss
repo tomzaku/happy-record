@@ -1,12 +1,17 @@
 @use '@moon-ui/app-scss/metric' as *;
 
 // Desktop shell — same right-side slide-in panel as focus-zone-modal-ui's
-// MusicDrawerDesktop.module.scss.
+// MusicDrawerDesktop.module.scss. Uses $modal-z-index rather than that sibling's own hardcoded
+// 99999 — this drawer hosts a real @moon-ui/dropdown (TargetFormulaEditor's per-variable "⋮"
+// menu), and Dropdown portals into the very same getMoonPortalRoot() this drawer does, so both
+// land as DOM siblings there. $dropdown-z-index (10500, see metric.scss's own comment on why) is
+// deliberately above $modal-z-index for exactly this case — a 99999 panel would still paint over
+// a 10501 dropdown menu, rendering it open but invisible underneath.
 .overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
-  z-index: 99999;
+  z-index: $modal-z-index;
 }
 
 .panel {
@@ -20,7 +25,7 @@
   flex-direction: column;
   background: var(--drawer-background);
   box-shadow: -8px 0 24px rgba(0, 0, 0, 0.2);
-  z-index: 99999;
+  z-index: $modal-z-index;
 }
 
 .header {
@@ -46,9 +51,12 @@
 }
 
 // Mobile shell — the page's own @moon-ui/drawer bottom sheet; its `.container` is full-viewport
-// width with no built-in max-height, so this caps it and lets the form's own `.body` scroll.
+// width with no built-in max-height, so this caps it and lets the form's own `.body` scroll. Same
+// $modal-z-index reasoning as `.panel`/`.overlay` above — this overrides Drawer's own default
+// $drawer-z-index (1000) specifically so it stays under $dropdown-z-index too, not just above the
+// rest of the page.
 .mobileDrawerContainer {
-  z-index: 99999;
+  z-index: $modal-z-index;
 }
 
 .mobilePanel {

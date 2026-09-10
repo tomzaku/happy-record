@@ -34,6 +34,9 @@ export type ChallengeTarget = {
   goal: number;
   formula: string;
   variables: Record<string, string>;
+  /** Per-variable fallback for a user who never recorded that field — see getTargets. Omitted
+   * (or missing a given name) means "use 0". */
+  variableDefaults?: Record<string, number>;
 };
 
 /** Sanitizes one raw `targets` array entry into a `ChallengeTarget`, or `null` if it isn't a
@@ -78,7 +81,27 @@ function sanitizeTarget(entry: unknown): ChallengeTarget | null {
   const unit = typeof e.unit === 'string' ? e.unit.trim().slice(0, 20) : '';
   const icon = typeof e.icon === 'string' ? e.icon.trim().slice(0, 100) : '';
 
-  return { id, title, unit, icon, goal, formula, variables };
+  // Only a name that's still a real variable can carry a fallback — a stale entry left over from
+  // a renamed/removed variable is dropped rather than carried forward as dead weight.
+  const variableDefaults: Record<string, number> = {};
+  if (e.variableDefaults && typeof e.variableDefaults === 'object') {
+    for (const [name, value] of Object.entries(e.variableDefaults as Record<string, unknown>)) {
+      if (name in variables && typeof value === 'number' && Number.isFinite(value)) {
+        variableDefaults[name] = value;
+      }
+    }
+  }
+
+  return {
+    id,
+    title,
+    unit,
+    icon,
+    goal,
+    formula,
+    variables,
+    ...(Object.keys(variableDefaults).length ? { variableDefaults } : {}),
+  };
 }
 
 // 'dark' — see 20260906080000_challenge_theme_dark.sql — designed to sit on top of the owner's

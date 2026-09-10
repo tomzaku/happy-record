@@ -10,6 +10,7 @@ import Typography from '@moon-ui/typography';
 import Input from '@moon-ui/input';
 import Select from '@moon-ui/select';
 import Icon from '@moon-ui/icon/Icon';
+import Dropdown from '@moon-ui/dropdown';
 import { parse } from 'mathjs';
 import { uniqueId, type ChallengeTarget } from '@dreamer/global';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
@@ -54,17 +55,51 @@ function validateFormula(formula: string, variables: Record<string, string>): st
 
 const emptyTarget = (): ChallengeTarget => ({ id: uniqueId(), title: '', unit: '', icon: '', goal: 0, variables: {}, formula: '' });
 
+// Carries a variable's own fallback along when it gets renamed (a plain rename, or the re-name a
+// field swap does) — same slot in the formula, just under a new name. `undefined` in means "no
+// defaults ever set for this target," which stays `undefined` out (nothing to touch).
+function renameDefaultsKey(
+  defaults: Record<string, number> | undefined,
+  oldName: string,
+  newName: string,
+): Record<string, number> | undefined {
+  if (!defaults || !(oldName in defaults)) return defaults;
+  const { [oldName]: value, ...rest } = defaults;
+  return { ...rest, [newName]: value };
+}
+
 const TargetFormulaEditor = ({ targets, numberFields, onChange }: Props) => {
   const fieldOptions = numberFields.map(f => ({ label: f.title, value: f.id }));
+  // Which variable rows currently show their fallback-value input — keyed by `${targetId}:${name}`
+  // since more than one target/row can have it open at once.
+  const [expandedFallback, setExpandedFallback] = React.useState<Set<string>>(new Set());
+  const fallbackKey = (targetId: string, name: string) => `${targetId}:${name}`;
+  const toggleFallback = (key: string) =>
+    setExpandedFallback(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   const updateTarget = (id: string, patch: Partial<ChallengeTarget>) =>
     onChange(targets.map(t => (t.id === id ? { ...t, ...patch } : t)));
 
   // Re-derives `icon` from whichever field the first declared variable now points at — the only
   // metadata a formula can still reasonably borrow from a single field once it spans several.
-  const updateVariables = (target: ChallengeTarget, variables: Record<string, string>) => {
+  // `variableDefaults` left `undefined` means "don't touch" — only rename/remove ever need to
+  // actually rewrite it, addVariable/a plain field swap-with-no-rename leave it alone.
+  const updateVariables = (
+    target: ChallengeTarget,
+    variables: Record<string, string>,
+    variableDefaults?: Record<string, number>,
+  ) => {
     const icon = numberFields.find(f => f.id === Object.values(variables)[0])?.icon ?? '';
-    updateTarget(target.id, { variables, icon });
+    updateTarget(target.id, {
+      variables,
+      icon,
+      ...(variableDefaults !== undefined ? { variableDefaults } : {}),
+    });
   };
 
   const addVariable = (target: ChallengeTarget) => {
@@ -82,7 +117,7 @@ const TargetFormulaEditor = ({ targets, numberFields, onChange }: Props) => {
     const rest = { ...target.variables };
     delete rest[oldName];
     const name = field ? slugifyVariableName(field.title, new Set(Object.keys(rest))) : oldName;
-    updateVariables(target, { ...rest, [name]: fieldId });
+    updateVariables(target, { ...rest, [name]: fieldId }, renameDefaultsKey(target.variableDefaults, oldName, name));
   };
 
   const renameVariable = (target: ChallengeTarget, oldName: string, raw: string) => {
@@ -91,13 +126,25 @@ const TargetFormulaEditor = ({ targets, numberFields, onChange }: Props) => {
     if (!newName || newName === oldName || newName in target.variables) return;
     const next: Record<string, string> = {};
     for (const [name, fieldId] of Object.entries(target.variables)) next[name === oldName ? newName : name] = fieldId;
-    updateVariables(target, next);
+    updateVariables(target, next, renameDefaultsKey(target.variableDefaults, oldName, newName));
   };
 
   const removeVariable = (target: ChallengeTarget, name: string) => {
     const next = { ...target.variables };
     delete next[name];
-    updateVariables(target, next);
+    const nextDefaults = target.variableDefaults ? { ...target.variableDefaults } : undefined;
+    if (nextDefaults) delete nextDefaults[name];
+    updateVariables(target, next, nextDefaults);
+  };
+
+  // The fallback used in the target's formula when a participant never recorded this field at all
+  // (see challenges-service.ts's getTargets) — blank clears it back to the implicit 0.
+  const setVariableDefault = (target: ChallengeTarget, name: string, raw: string) => {
+    const value = raw === '' ? undefined : Number(raw);
+    const defaults = { ...(target.variableDefaults ?? {}) };
+    if (value === undefined || !Number.isFinite(value)) delete defaults[name];
+    else defaults[name] = value;
+    updateTarget(target.id, { variableDefaults: defaults });
   };
 
   const removeTarget = (id: string) => onChange(targets.filter(t => t.id !== id));
@@ -160,32 +207,66 @@ const TargetFormulaEditor = ({ targets, numberFields, onChange }: Props) => {
                     .map(([, otherFieldId]) => otherFieldId),
                 );
                 const rowOptions = fieldOptions.filter(o => !usedBySiblings.has(o.value));
+                const key = fallbackKey(target.id, name);
+                const isFallbackOpen = expandedFallback.has(key);
+                const fallbackValue = target.variableDefaults?.[name];
                 return (
-                  <div key={name} className={styles.variableRow}>
-                    <Select
-                      options={rowOptions}
-                      value={fieldId}
-                      onChange={(option, { close }) => {
-                        changeVariableField(target, name, option.value);
-                        close();
-                      }}
-                      classes={{ container: styles.variableSelect }}
-                    />
-                    <Input
-                      value={name}
-                      border="dash"
-                      onChange={e => renameVariable(target, name, e.target.value)}
-                      className={styles.variableNameInput}
-                      classes={{ input: styles.targetInputField }}
-                      renderRightInput={() => <></>}
-                    />
-                    <Icon
-                      width={16}
-                      icon="material-symbols:close-rounded"
-                      className={styles.removeTargetIcon}
-                      onClick={() => removeVariable(target, name)}
-                    />
-                  </div>
+                  <React.Fragment key={name}>
+                    <div className={styles.variableRow}>
+                      <Select
+                        options={rowOptions}
+                        value={fieldId}
+                        onChange={(option, { close }) => {
+                          changeVariableField(target, name, option.value);
+                          close();
+                        }}
+                        classes={{ container: styles.variableSelect }}
+                      />
+                      <Input
+                        value={name}
+                        border="dash"
+                        onChange={e => renameVariable(target, name, e.target.value)}
+                        className={styles.variableNameInput}
+                        classes={{ input: styles.targetInputField }}
+                        renderRightInput={() => <></>}
+                      />
+                      <Dropdown
+                        trigger={<Icon icon="solar:menu-dots-bold" width={16} />}
+                        triggerClassName={styles.variableMenuTrigger}
+                        triggerAriaLabel={`${name} options`}
+                        items={[
+                          {
+                            label: isFallbackOpen ? 'Hide fallback value' : 'Set fallback value',
+                            icon: 'solar:widget-add-linear',
+                            onClick: () => toggleFallback(key),
+                          },
+                          {
+                            label: 'Remove',
+                            icon: 'material-symbols:close-rounded',
+                            danger: true,
+                            onClick: () => removeVariable(target, name),
+                          },
+                        ]}
+                      />
+                    </div>
+                    {isFallbackOpen && (
+                      <div className={styles.variableFallbackRow}>
+                        <Typography.Text className={styles.variableFallbackLabel}>
+                          If not submitted, {name} =
+                        </Typography.Text>
+                        <Input
+                          type="number"
+                          value={fallbackValue === undefined ? '' : String(fallbackValue)}
+                          border="dash"
+                          placeholder="0"
+                          onChange={e => setVariableDefault(target, name, e.target.value)}
+                          className={styles.variableFallbackInput}
+                          classes={{ input: styles.targetInputField }}
+                          renderRightInput={() => <></>}
+                        />
+                      </div>
+                    )}
+                  </React.Fragment>
                 );
               })}
               {!!availableFields.length && (
@@ -206,7 +287,11 @@ const TargetFormulaEditor = ({ targets, numberFields, onChange }: Props) => {
             {!!Object.keys(target.variables).length && (
               <Typography.Text className={styles.formulaLegend}>
                 {Object.entries(target.variables)
-                  .map(([name, fieldId]) => `${name} = ${numberFields.find(f => f.id === fieldId)?.title ?? '?'}`)
+                  .map(([name, fieldId]) => {
+                    const label = `${name} = ${numberFields.find(f => f.id === fieldId)?.title ?? '?'}`;
+                    const fallback = target.variableDefaults?.[name];
+                    return fallback === undefined ? label : `${label} (else ${fallback})`;
+                  })
                   .join(' · ')}
               </Typography.Text>
             )}

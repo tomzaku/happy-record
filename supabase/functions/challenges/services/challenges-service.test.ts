@@ -5,7 +5,7 @@
 // down: an owner who deletes a shared template kept seeing it in their own challenge list.
 
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { listMyChallenges } from './challenges-service.ts';
+import { getTargets, listMyChallenges } from './challenges-service.ts';
 import { fakeSupabase } from '../../../shared/testSupport/fakeSupabase.ts';
 
 Deno.test('listMyChallenges: drops an owned challenge whose template was soft-deleted', async () => {
@@ -41,4 +41,84 @@ Deno.test('listMyChallenges: keeps an owned challenge whose template is not dele
   assertEquals(result.length, 1);
   assertEquals(result[0].id, 'c1');
   assertEquals(result[0].title, 'Still here');
+});
+
+// A formula combining fields that a user logs in separate field-group Submit clicks — so no
+// single `checklist_records.submission_id` ever carries all of them — used to always total 0 for
+// every participant, since getTargets required the whole formula's variables on one submission.
+// Sum-then-combine (each field summed per user first, formula evaluated once against those totals)
+// is what actually fixes this.
+Deno.test('getTargets: sums a formula\'s fields independently, not only when co-submitted', async () => {
+  const challenge = {
+    startDate: '2026-01-01T00:00:00.000Z',
+    targets: [
+      {
+        id: 't1',
+        title: 'Total push up',
+        unit: 'reps',
+        icon: 'mdi:arm-flex',
+        goal: 5000,
+        formula: 'push_ups + wide_push_ups + diamond_push_ups',
+        variables: { push_ups: 'field-push', wide_push_ups: 'field-wide', diamond_push_ups: 'field-diamond' },
+      },
+    ],
+  } as never;
+  const participants = [{ userId: 'u1' }, { userId: 'u2' }] as never;
+
+  const db = fakeSupabase({
+    fields: [{ data: [], error: null }], // fetchForkedFields: no legacy forks
+    checklist_records: [
+      {
+        data: [
+          // u1: three separate Submit clicks, one field each — never co-submitted.
+          { field_id: 'field-push', user_id: 'u1', value_number: 10 },
+          { field_id: 'field-wide', user_id: 'u1', value_number: 5 },
+          { field_id: 'field-diamond', user_id: 'u1', value_number: 2 },
+          // u2: never logged diamond_push_ups at all.
+          { field_id: 'field-push', user_id: 'u2', value_number: 20 },
+          { field_id: 'field-wide', user_id: 'u2', value_number: 3 },
+        ],
+        error: null,
+      },
+    ],
+  });
+
+  const result = await getTargets(db, challenge, participants, ['u1', 'u2']);
+
+  assertEquals(result.length, 1);
+  const contributions = new Map(result[0].contributions.map(c => [c.userId, c.total]));
+  assertEquals(contributions.get('u1'), 17);
+  assertEquals(contributions.get('u2'), 23);
+});
+
+// The owner can override the implicit "never recorded = 0" fallback per variable
+// (TargetFormulaEditor.tsx's own per-row fallback input) — a user with no rows for that field
+// should use the configured value instead of 0.
+Deno.test('getTargets: a variable never recorded falls back to variableDefaults, not always 0', async () => {
+  const challenge = {
+    startDate: '2026-01-01T00:00:00.000Z',
+    targets: [
+      {
+        id: 't1',
+        title: 'Total',
+        unit: 'reps',
+        icon: '',
+        goal: 100,
+        formula: 'push_ups + wide_push_ups',
+        variables: { push_ups: 'field-push', wide_push_ups: 'field-wide' },
+        variableDefaults: { wide_push_ups: 5 },
+      },
+    ],
+  } as never;
+  const participants = [{ userId: 'u1' }] as never;
+
+  const db = fakeSupabase({
+    fields: [{ data: [], error: null }],
+    checklist_records: [
+      { data: [{ field_id: 'field-push', user_id: 'u1', value_number: 10 }], error: null }, // never recorded wide_push_ups
+    ],
+  });
+
+  const result = await getTargets(db, challenge, participants, ['u1']);
+  assertEquals(result[0].contributions[0], { userId: 'u1', total: 15 });
 });

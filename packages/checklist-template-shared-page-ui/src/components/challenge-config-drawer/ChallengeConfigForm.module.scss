@@ -402,6 +402,32 @@
   flex-shrink: 0;
 }
 
+.variableMenuTrigger {
+  color: var(--text-description-color);
+
+  &:hover {
+    color: var(--text-color);
+  }
+}
+
+.variableFallbackRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding-left: $spacing-md;
+}
+
+.variableFallbackLabel {
+  font-size: toRem(12px);
+  color: var(--text-description-color);
+  flex-shrink: 0;
+}
+
+.variableFallbackInput {
+  width: 90px;
+  flex-shrink: 0;
+}
+
 .formulaLegend {
   font-size: toRem(12px);
   color: var(--text-description-color);

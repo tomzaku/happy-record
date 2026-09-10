@@ -335,15 +335,21 @@ type Target = {
  * recomputes this from the row's current value, nothing is cached or denormalized per-participant
  * that a start-date change would leave stale.
  *
- * `target.variables` maps a mathjs identifier to a field id — `target.formula` is evaluated once
- * per *submission* (every field a Submit click wrote shares one `checklist_records.submission_id`
- * — see CLAUDE.md), so `sets * reps` only multiplies values that were actually recorded together.
- * A submission missing one of the formula's declared fields (the owner filled in one field group
- * but not another that same click) is skipped entirely rather than treating the missing value as
- * 0 — an incomplete submission shouldn't silently zero out the whole term. `title`/`unit`/`icon`
- * live directly on the stored target now (no field metadata lookup needed — see
- * `sanitizeTarget`'s own comment), since a formula spanning several fields has no single field to
- * borrow them from.
+ * `target.variables` maps a mathjs identifier to a field id — each variable's `value_number` is
+ * summed across every one of a user's own submissions in range *first*, then `target.formula` is
+ * evaluated once per user against those per-field totals. This used to require every variable to
+ * land on the same `checklist_records.submission_id` (one Submit click), so a formula combining
+ * fields from different field groups — logged in separate clicks — could never find one submission
+ * with all of them and always totaled 0 for everyone, even with real recorded data. Sum-then-
+ * combine fixes that for an additive formula like `push_ups + wide_push_ups + diamond_push_ups`,
+ * at the cost of no longer pairing values from the *same* submission for a multiplicative one —
+ * `sets * reps` now multiplies two independently-summed totals rather than true per-submission
+ * pairs, so a user who logs `sets=3` once and `reps=10` on five separate unrelated occasions gets
+ * `3 * 50`, not five real `sets * reps` products summed. A field never recorded at all contributes
+ * `target.variableDefaults[name]` to its term if the owner set one (TargetFormulaEditor.tsx's own
+ * per-row "⋮" menu), else `0` — same fallback as before this existed. `title`/`unit`/`icon` live
+ * directly on the stored target now (no field metadata lookup needed — see `sanitizeTarget`'s own
+ * comment), since a formula spanning several fields has no single field to borrow them from.
  *
  * Joining a challenge no longer forks the template or its fields (see useJoinChallenge.tsx) —
  * every participant, owner included, records against the exact same field id a target's own
@@ -356,7 +362,7 @@ type Target = {
  * the caller when sharing is off — reused here rather than the full roster for the
  * fork-resolution and contribution-totals queries below.
  */
-async function getTargets(
+export async function getTargets(
   db: SupabaseClient,
   challenge: ReturnType<typeof toChallenge>,
   participants: ReturnType<typeof toChallengeParticipant>[],
@@ -378,34 +384,28 @@ async function getTargets(
   const resolvedFieldIds = [...new Set([...targetFieldIds, ...resolveFieldId.keys()])];
   const recordRows = await fetchChecklistRecordRows(db, resolvedFieldIds, visibleUserIds, challenge.startDate, MAX_ROWS);
 
-  // One entry per real submission: who submitted it, and each targeted field's own numeric value
-  // recorded in it — the scope a target's formula gets evaluated against.
-  const submissions = new Map<string, { userId: string; values: Map<string, number> }>();
+  // Each targeted field's own numeric value, summed per user across every submission in range —
+  // the scope a target's formula gets evaluated against, one evaluation per user.
+  const userFieldTotals = new Map<string, Map<string, number>>(); // userId -> fieldId -> sum
   for (const row of recordRows) {
-    if (typeof row.value_number !== 'number' || !row.submission_id) continue;
+    if (typeof row.value_number !== 'number') continue;
     const fieldId = resolveFieldId.get(row.field_id) ?? row.field_id;
-    if (!submissions.has(row.submission_id)) {
-      submissions.set(row.submission_id, { userId: row.user_id, values: new Map() });
+    if (!userFieldTotals.has(row.user_id)) {
+      userFieldTotals.set(row.user_id, new Map());
     }
-    submissions.get(row.submission_id)!.values.set(fieldId, row.value_number);
+    const fieldTotals = userFieldTotals.get(row.user_id)!;
+    fieldTotals.set(fieldId, (fieldTotals.get(fieldId) ?? 0) + row.value_number);
   }
 
   return targets.map(target => {
     const compiled = math.compile(target.formula);
-    const totals = new Map<string, number>(); // userId -> sum
 
-    for (const { userId, values } of submissions.values()) {
+    const totals = new Map<string, number>(); // userId -> formula result
+    for (const [userId, fieldTotals] of userFieldTotals) {
       const scope: Record<string, number> = {};
-      let complete = true;
       for (const [name, fieldId] of Object.entries(target.variables)) {
-        const value = values.get(fieldId);
-        if (value === undefined) {
-          complete = false;
-          break;
-        }
-        scope[name] = value;
+        scope[name] = fieldTotals.get(fieldId) ?? target.variableDefaults?.[name] ?? 0;
       }
-      if (!complete) continue;
 
       let result: unknown;
       try {
@@ -415,7 +415,7 @@ async function getTargets(
       }
       // Guards a divide-by-zero (Infinity/NaN) from corrupting the running total.
       if (typeof result === 'number' && Number.isFinite(result)) {
-        totals.set(userId, (totals.get(userId) ?? 0) + result);
+        totals.set(userId, result);
       }
     }
 

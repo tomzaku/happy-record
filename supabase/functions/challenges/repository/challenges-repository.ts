@@ -233,14 +233,13 @@ export async function fetchForkedFields(
 }
 
 export type ChecklistRecordRow = {
-  submission_id: string | null;
   field_id: string;
   user_id: string;
   value_number: number | null;
 };
 
-/** `submission_id` is what lets getTargets know which field values were recorded together in one
- * Submit click — needed to evaluate a formula that combines more than one field. */
+/** Feeds getTargets' per-user, per-field sums — a target's formula evaluates against each user's
+ * own totals, not any single submission. */
 export async function fetchChecklistRecordRows(
   db: SupabaseClient,
   fieldIds: string[],
@@ -251,7 +250,7 @@ export async function fetchChecklistRecordRows(
   if (!fieldIds.length || !visibleUserIds.length) return [];
   const { data, error } = await db
     .from('checklist_records')
-    .select('submission_id, field_id, user_id, value_number')
+    .select('field_id, user_id, value_number')
     .in('field_id', fieldIds)
     .in('user_id', visibleUserIds)
     .gte('created_at', since)

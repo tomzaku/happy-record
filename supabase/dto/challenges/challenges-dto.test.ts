@@ -197,6 +197,31 @@ Deno.test('fromChallenge: drops a target with no positive goal, no title, or no 
   assertEquals(fromChallenge({ ...validEntry, targets: [{ ...base, variables: {} }] }).targets, []);
 });
 
+Deno.test('fromChallenge: keeps a numeric variableDefaults entry for a still-declared variable', () => {
+  const row = fromChallenge({
+    ...validEntry,
+    targets: [
+      {
+        id: 't1',
+        title: 'Push-ups',
+        goal: 100,
+        formula: 'push_ups + wide_push_ups',
+        variables: { push_ups: 'f1', wide_push_ups: 'f2' },
+        variableDefaults: { push_ups: 5, wide_push_ups: 'not-a-number', stale_name: 3 },
+      },
+    ],
+  });
+  assertEquals(row.targets[0].variableDefaults, { push_ups: 5 });
+});
+
+Deno.test('fromChallenge: omits variableDefaults entirely when none of it survives sanitization', () => {
+  const row = fromChallenge({
+    ...validEntry,
+    targets: [{ id: 't1', title: 'Push-ups', goal: 100, formula: 'push_ups', variables: { push_ups: 'f1' } }],
+  });
+  assertEquals('variableDefaults' in row.targets[0], false);
+});
+
 Deno.test('toChallenge: is_public_listing defaults to false when absent', () => {
   const challenge = toChallenge({
     id: 'c1',
