@@ -22,6 +22,7 @@ import {
   fetchParticipantChallengeIds,
   fetchParticipantDisplay,
   fetchParticipantsForChallenge,
+  fetchParticipantsForChallenges,
   fetchPublicChallenges,
   fetchSubmissionsForUsersInRange,
   fetchTemplateVisibilities,
@@ -52,6 +53,9 @@ const MAX_ROWS = 5000;
 const MAX_PARTICIPANTS = 500;
 const MAX_MY_CHALLENGES = 200;
 const DEFAULT_RANGE_DAYS = 30;
+// How many participants listMyChallenges samples per challenge for its own stacked-avatar
+// preview — the card's own `participantCount` still carries the real total.
+const MAX_AVATAR_SAMPLE = 4;
 
 const daysBetween = (a: string, b: string) => Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
 
@@ -169,13 +173,13 @@ export async function listMyChallenges({ db, userId }: Ctx) {
   const templateIdsWithTemplate = [...new Set(allRowsWithTemplate.map(r => r.checklist_template_id as string))];
   // Safe with no further check: every id in `templateIdsWithTemplate` is either the caller's own
   // or was just confirmed public above. Every participant row across every one of these
-  // challenges, just to count them — every id in `allRowsWithTemplate` is a challenge the caller
-  // legitimately owns or has joined (participant-count visibility was never gated tighter than
-  // that anyway — see checkCanReadDashboard's own comment on roster vs. peer-data visibility), so
-  // this needs no further check either.
+  // challenges, count *and* a small identity sample (for the list card's own stacked-avatar
+  // preview) — every id in `allRowsWithTemplate` is a challenge the caller legitimately owns or has
+  // joined (this visibility was never gated tighter than that anyway — see checkCanReadDashboard's
+  // own comment on roster vs. peer-data visibility), so this needs no further check either.
   const [templateRowsWithDeleted, rosterRows] = await Promise.all([
     fetchTemplatesMeta(db, templateIdsWithTemplate),
-    fetchParticipantChallengeIds(db, allRowsWithTemplate.map(r => r.id as string), MAX_ROWS),
+    fetchParticipantsForChallenges(db, allRowsWithTemplate.map(r => r.id as string), MAX_ROWS),
   ]);
 
   // A soft-deleted template (deleteTemplate's own `deleted_at` — the row itself stays, so the
@@ -190,9 +194,10 @@ export async function listMyChallenges({ db, userId }: Ctx) {
   if (!allRows.length) return [];
 
   const templateById = new Map(templateRowsWithDeleted.map(r => [r.id as string, r]));
-  const participantCountByChallenge = new Map<string, number>();
+  const participantsByChallenge = new Map<string, typeof rosterRows>();
   for (const row of rosterRows) {
-    participantCountByChallenge.set(row.challenge_id, (participantCountByChallenge.get(row.challenge_id) ?? 0) + 1);
+    if (!participantsByChallenge.has(row.challenge_id)) participantsByChallenge.set(row.challenge_id, []);
+    participantsByChallenge.get(row.challenge_id)!.push(row);
   }
 
   const challengeIdsByTemplateId = new Map<string, string[]>();
@@ -204,10 +209,21 @@ export async function listMyChallenges({ db, userId }: Ctx) {
   }
   const myContribution = await myContributionByChallenge(db, userId, challengeIdsByTemplateId);
 
-  const challenges = allRows.map(row => {
-    const challenge = toChallenge(row);
+  // Parsed once here, reused both by the target-summaries fetch below and the final map — avoids
+  // running `toChallenge` twice per row.
+  const parsedChallenges = allRows.map(row => toChallenge(row));
+  const targetsByChallenge = new Map(
+    await Promise.all(
+      parsedChallenges
+        .filter(c => c.targets.length > 0)
+        .map(async c => [c.id, await myTargetSummaries(db, c, userId)] as const),
+    ),
+  );
+
+  const challenges = parsedChallenges.map(challenge => {
     const template = templateById.get(challenge.checklistTemplateId) as Record<string, unknown> | undefined;
     const contribution = myContribution.get(challenge.id);
+    const participants = participantsByChallenge.get(challenge.id) ?? [];
     return {
       id: challenge.id,
       checklistTemplateId: challenge.checklistTemplateId,
@@ -216,7 +232,19 @@ export async function listMyChallenges({ db, userId }: Ctx) {
       isOwner: challenge.ownerId === userId,
       shareRecords: challenge.shareRecords,
       commentsEnabled: challenge.commentsEnabled,
-      participantCount: participantCountByChallenge.get(challenge.id) ?? 0,
+      backgroundImageUrl: challenge.backgroundImageUrl,
+      pageBackgroundImageUrl: challenge.pageBackgroundImageUrl,
+      participantCount: participants.length,
+      // Earliest-joined first (owner included, since every owner is auto-enrolled) — just a
+      // preview sample for the card's stacked avatars, not the full roster; participantCount above
+      // carries the real total.
+      participants: participants.slice(0, MAX_AVATAR_SAMPLE).map(p => ({
+        userId: p.user_id,
+        displayName: p.display_name ?? '',
+        ...(p.avatar_url ? { avatarUrl: p.avatar_url } : {}),
+      })),
+      // Empty when this challenge defines no shared goal — see myTargetSummaries.
+      targets: targetsByChallenge.get(challenge.id) ?? [],
       // Over the last DEFAULT_RANGE_DAYS days — 0/0 rather than absent for a challenge this
       // caller genuinely hasn't touched yet, so the client never has to distinguish "no effort"
       // from "still loading."
@@ -430,6 +458,21 @@ export async function getTargets(
         .sort((a, b) => b.total - a.total),
     };
   });
+}
+
+/** listMyChallenges' own lighter target read — the caller's own total toward each of this
+ * challenge's targets, for the "My Challenges" list card (goal/progress, not the full dashboard
+ * breakdown). Reuses `getTargets` with a single-participant roster and `visibleUserIds: [userId]`
+ * rather than a real one-user-only variant: that scopes every query in `getTargets` down to just
+ * this caller's own rows regardless of `shareRecords` (my own data is always visible to me), which
+ * is also the cheapest version of the same query `getTargets` already runs — no separate query
+ * shape to maintain. Called once per listed challenge that actually has targets, in parallel (see
+ * listMyChallenges) — fine for the handful of challenges one person is realistically in; would need
+ * batching if that ever stopped being true. */
+async function myTargetSummaries(db: SupabaseClient, challenge: ReturnType<typeof toChallenge>, userId: string) {
+  if (!challenge.targets.length) return [];
+  const targets = await getTargets(db, challenge, [{ userId } as ReturnType<typeof toChallengeParticipant>], [userId]);
+  return targets.map(t => ({ id: t.id, title: t.title, unit: t.unit, icon: t.icon, goal: t.goal, myTotal: t.contributions[0]?.total ?? 0 }));
 }
 
 type Attachment = {

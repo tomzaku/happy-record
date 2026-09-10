@@ -1,0 +1,219 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+// The challenge's own backgroundImageUrl/pageBackgroundImageUrl as a hero banner — a plain
+// icon+title header (same shape this card had before) when neither is set, so a challenge with no
+// photo doesn't render an empty gray box.
+.banner {
+  position: relative;
+  height: 84px;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--input-background);
+  display: flex;
+  align-items: flex-end;
+}
+
+.bannerScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.bannerContent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  width: 100%;
+}
+
+.banner[data-has-image='true'] .cardTitle,
+.banner[data-has-image='true'] .roleBadge {
+  color: #fff;
+}
+
+.banner[data-has-image='true'] .roleBadge {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.banner[data-has-image='true'] .roleBadge[data-owner='true'] {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+// `--card-background` is a generic theme surface color — light in light mode, which is why a
+// white icon (only forced white when `data-has-image` — see ChallengeCard.tsx) went invisible on
+// it: the badge itself never switched to something a white icon actually contrasts against. Same
+// translucent-white-on-photo treatment as `.roleBadge` above once there's a real image behind it;
+// the plain themed background stays for the no-image fallback header, where the icon is themed
+// too and already contrasts against it.
+.cardIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--card-background, var(--background));
+}
+
+.banner[data-has-image='true'] .cardIcon {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.cardTitleCol {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardTitle {
+  font-weight: 700;
+  font-size: toRem(15px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Owner vs. joined.
+.roleBadge {
+  align-self: flex-start;
+  font-size: toRem(11px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+  background: var(--input-background);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.roleBadge[data-owner='true'] {
+  color: #2a78d6;
+  background: rgba(42, 120, 214, 0.12);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg $spacing-lg;
+}
+
+.avatarStack {
+  display: flex;
+  align-items: center;
+}
+
+.avatarStack > * + * {
+  margin-left: -8px;
+}
+
+.avatarOverflow {
+  margin-left: $spacing-xs;
+  font-size: toRem(11px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.targetList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.targetRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.targetLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: toRem(12px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.targetName {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.targetValue {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.targetBar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--input-background);
+  overflow: hidden;
+}
+
+.targetBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2a78d6, #0f8f8f);
+}
+
+.statRow {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--division-color);
+  padding-top: $spacing-sm;
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+
+  & + & {
+    border-left: 1px solid var(--division-color);
+  }
+}
+
+.statValue {
+  font-weight: 800;
+  font-size: toRem(18px);
+}
+
+.statLabel {
+  font-size: toRem(11px);
+  color: var(--text-color-secondary, var(--text-color));
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: toRem(12px);
+  color: var(--text-color-secondary, var(--text-color));
+}

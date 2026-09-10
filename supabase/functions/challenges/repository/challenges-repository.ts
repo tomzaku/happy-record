@@ -143,6 +143,36 @@ export async function fetchParticipantChallengeIds(
   return (data ?? []) as { challenge_id: string }[];
 }
 
+export type ParticipantSampleRow = {
+  challenge_id: string;
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  joined_at: string;
+};
+
+/** Same rows `fetchParticipantChallengeIds` counts, plus enough per-participant identity for a
+ * stacked-avatar preview — listMyChallenges' own caller groups these by `challenge_id` and slices
+ * each group to its own small on-card sample. Only ever called for challenges the caller already
+ * owns or has joined (see listMyChallenges' own comment on why that needs no further visibility
+ * check) — `listPublicChallenges` still uses the count-only `fetchParticipantChallengeIds` instead,
+ * since a stranger browsing "Discover" hasn't joined yet and shouldn't see who else has. */
+export async function fetchParticipantsForChallenges(
+  db: SupabaseClient,
+  challengeIds: string[],
+  limit: number,
+): Promise<ParticipantSampleRow[]> {
+  if (!challengeIds.length) return [];
+  const { data, error } = await db
+    .from('challenge_participants')
+    .select('challenge_id, user_id, display_name, avatar_url, joined_at')
+    .in('challenge_id', challengeIds)
+    .order('joined_at')
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ParticipantSampleRow[];
+}
+
 export type ChecklistRangeRow = { id: string; user_id: string; checklist_template_id: string; started_at: string; completed_at: string | null };
 
 export async function fetchChecklistsForUsersInRange(

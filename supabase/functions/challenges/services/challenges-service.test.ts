@@ -28,7 +28,7 @@ Deno.test('listMyChallenges: keeps an owned challenge whose template is not dele
     challenges: [{ data: [{ id: 'c1', checklist_template_id: 't1', owner_id: 'u1' }], error: null }],
     challenge_participants: [
       { data: [], error: null }, // fetchMyParticipantRows
-      { data: [], error: null }, // fetchParticipantChallengeIds
+      { data: [], error: null }, // fetchParticipantsForChallenges
     ],
     checklist_templates: [
       { data: [{ id: 't1', title: 'Still here', avatar: {}, deleted_at: null }], error: null }, // fetchTemplatesMeta
@@ -41,6 +41,82 @@ Deno.test('listMyChallenges: keeps an owned challenge whose template is not dele
   assertEquals(result.length, 1);
   assertEquals(result[0].id, 'c1');
   assertEquals(result[0].title, 'Still here');
+});
+
+// The list card wants a background image, a small avatar sample, and the caller's own total
+// toward each target — all without a separate GET /challenges/:id dashboard fetch per card.
+Deno.test('listMyChallenges: carries backgroundImageUrl, a participant sample, and myTotal per target', async () => {
+  const db = fakeSupabase({
+    challenges: [
+      {
+        data: [
+          {
+            id: 'c1',
+            checklist_template_id: 't1',
+            owner_id: 'u1',
+            background_image_url: 'https://example.com/corner.png',
+            page_background_image_url: 'https://example.com/full.png',
+            start_date: '2026-01-01T00:00:00.000Z',
+            targets: [
+              {
+                id: 'target-1',
+                title: 'Total push up',
+                unit: 'reps',
+                icon: 'mdi:arm-flex',
+                goal: 100,
+                formula: 'push_ups',
+                variables: { push_ups: 'field-push' },
+              },
+            ],
+          },
+        ],
+        error: null,
+      },
+    ],
+    challenge_participants: [
+      { data: [], error: null }, // fetchMyParticipantRows
+      {
+        data: [
+          { challenge_id: 'c1', user_id: 'u1', display_name: 'Tri Le', avatar_url: 'https://example.com/me.png', joined_at: '2026-01-01T00:00:00.000Z' },
+          { challenge_id: 'c1', user_id: 'u2', display_name: 'Tom Le', avatar_url: null, joined_at: '2026-01-02T00:00:00.000Z' },
+        ],
+        error: null,
+      }, // fetchParticipantsForChallenges
+    ],
+    checklist_templates: [{ data: [{ id: 't1', title: 'Push-ups', avatar: {}, deleted_at: null }], error: null }],
+    checklists: [{ data: [], error: null }],
+    submissions: [{ data: [], error: null }],
+    fields: [{ data: [], error: null }], // fetchForkedFields (myTargetSummaries -> getTargets)
+    checklist_records: [{ data: [{ field_id: 'field-push', user_id: 'u1', value_number: 12 }], error: null }],
+  });
+
+  const result = await listMyChallenges({ db, userId: 'u1' } as never);
+  assertEquals(result.length, 1);
+  const row = result[0];
+  assertEquals(row.backgroundImageUrl, 'https://example.com/corner.png');
+  assertEquals(row.pageBackgroundImageUrl, 'https://example.com/full.png');
+  assertEquals(row.participantCount, 2);
+  assertEquals(row.participants, [
+    { userId: 'u1', displayName: 'Tri Le', avatarUrl: 'https://example.com/me.png' },
+    { userId: 'u2', displayName: 'Tom Le' },
+  ]);
+  assertEquals(row.targets, [{ id: 'target-1', title: 'Total push up', unit: 'reps', icon: 'mdi:arm-flex', goal: 100, myTotal: 12 }]);
+});
+
+Deno.test('listMyChallenges: targets is empty for a challenge with no shared goals defined', async () => {
+  const db = fakeSupabase({
+    challenges: [{ data: [{ id: 'c1', checklist_template_id: 't1', owner_id: 'u1' }], error: null }],
+    challenge_participants: [
+      { data: [], error: null }, // fetchMyParticipantRows
+      { data: [], error: null }, // fetchParticipantsForChallenges
+    ],
+    checklist_templates: [{ data: [{ id: 't1', title: 'No targets', avatar: {}, deleted_at: null }], error: null }],
+    checklists: [{ data: [], error: null }],
+    submissions: [{ data: [], error: null }],
+  });
+
+  const result = await listMyChallenges({ db, userId: 'u1' } as never);
+  assertEquals(result[0].targets, []);
 });
 
 // A formula combining fields that a user logs in separate field-group Submit clicks — so no

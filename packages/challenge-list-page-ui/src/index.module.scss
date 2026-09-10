@@ -200,12 +200,19 @@
   color: var(--text-color-secondary, var(--text-color));
 }
 
-// ─── Loading skeleton — mirrors .card/.cardHeader/.statRow above so the swap
-// from skeleton to real content lands with no layout jump. ───
+// ─── Loading skeleton — roughly mirrors ChallengeCard's own banner + body shape so the swap
+// from skeleton to real content doesn't jump the whole page height. ───
 
 .skeletonCard {
   display: flex;
   flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.skeletonBody {
+  display: flex;
+  flex-direction: column;
   gap: $spacing-sm;
-  padding: $spacing-lg;
+  padding: $spacing-md $spacing-lg $spacing-lg;
 }

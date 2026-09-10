@@ -21,7 +21,7 @@
   padding: 12px;
   border-radius: 16px;
   background: var(--card-background);
-  border: 1px solid var(--card-border);
+  border: 0;
 
   @include media.media('<=tablet') {
     width: 100%;

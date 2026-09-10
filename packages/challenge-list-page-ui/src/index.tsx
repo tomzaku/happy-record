@@ -13,18 +13,21 @@ import {
 import { AppShell } from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
-import Button from '@moon-ui/button';
 import { Icon } from '@moon-ui/icon/Icon';
 import Skeleton from '@moon-ui/skeleton';
+import ChallengeCard from './components/ChallengeCard';
+import DiscoverCard from './components/DiscoverCard';
 import styles from './index.module.scss';
 
 /**
- * "My Challenges" — every challenge the signed-in user owns or has joined, one card each,
- * showing their *own* effort (check-ins + current streak over the last 30 days) rather than the
- * full peer leaderboard that lives on the per-challenge dashboard (`/challenge/:id`,
- * challenge-dashboard-page-ui) — this page answers "which challenges am I in and how am I
- * doing," that one answers "how is the whole group doing on this one." Tapping a card goes to
- * that full dashboard.
+ * "My Challenges" — every challenge the signed-in user owns or has joined, one card each
+ * (ChallengeCard) showing the challenge's own background image, a preview of who's joined, and
+ * the caller's *own* progress — a per-target goal bar when the challenge defines shared goals, or
+ * check-ins/streak over the last 30 days otherwise — rather than the full peer leaderboard that
+ * lives on the per-challenge dashboard (`/challenge/:id`, challenge-dashboard-page-ui) — this page
+ * answers "which challenges am I in and how am I doing," that one answers "how is the whole group
+ * doing on this one." Tapping a card goes to that full dashboard. All of this comes back in one
+ * `listMyChallenges` read (see challenges-service.ts) — no extra per-card fetch.
  *
  * One own fetch on mount (getMyChallenges) — not marked quiet (see challengesApi.ts), so a real
  * failure shows the same explicit error state challenge-dashboard-page-ui uses, rather than an
@@ -80,13 +83,6 @@ const ChallengeListPageUi = () => {
     }
   };
 
-  const renderStat = (value: number, label: string) => (
-    <div className={styles.stat}>
-      <Typography.Text className={styles.statValue}>{value}</Typography.Text>
-      <Typography.Text className={styles.statLabel}>{label}</Typography.Text>
-    </div>
-  );
-
   let body: React.ReactNode;
   if (error) {
     body = (
@@ -99,20 +95,16 @@ const ChallengeListPageUi = () => {
     );
   } else if (!challenges) {
     // Same skeleton-shape-mirrors-real-card idea as challenge-dashboard-page-ui's own loading
-    // state — three placeholder cards (a plausible small roster), each lining up with `.card`/
-    // `.cardHeader`/`.statRow` above so there's no layout jump once the real list lands.
+    // state — three placeholder cards (a plausible small roster), each roughly lining up with
+    // ChallengeCard's own banner + body shape so there's no big layout jump once the real list
+    // lands (an exact pixel match isn't worth chasing here — this is a loading placeholder).
     body = (
       <div className={styles.grid}>
         {[0, 1, 2].map(i => (
           <Card key={i} className={styles.skeletonCard}>
-            <div className={styles.cardHeader}>
-              <Skeleton circle width={40} height={40} />
-              <div className={styles.cardTitleCol}>
-                <Skeleton width={120} height={14} />
-                <Skeleton width={70} height={12} />
-              </div>
-            </div>
-            <div className={styles.statRow}>
+            <Skeleton width="100%" height={84} />
+            <div className={styles.skeletonBody}>
+              <Skeleton width="100%" height={24} />
               <Skeleton width="100%" height={32} />
             </div>
           </Card>
@@ -138,53 +130,7 @@ const ChallengeListPageUi = () => {
     body = (
       <div className={styles.grid}>
         {challenges.map(challenge => (
-          <Card
-            key={challenge.id}
-            className={styles.card}
-            onClick={() => navigate(`/challenge/${challenge.id}`)}
-          >
-            <div className={styles.cardHeader}>
-              <div className={styles.cardIcon}>
-                <Icon
-                  width={22}
-                  icon={challenge.avatar?.name || 'solar:checklist-minimalistic-linear'}
-                  color={challenge.avatar?.color || '#607d8b'}
-                />
-              </div>
-              <div className={styles.cardTitleCol}>
-                <Typography.Text className={styles.cardTitle}>
-                  {challenge.title ||
-                    intl.formatMessage({ id: 'ChallengeList.untitled', defaultMessage: 'Untitled task' })}
-                </Typography.Text>
-                <span className={styles.roleBadge} data-owner={challenge.isOwner}>
-                  {challenge.isOwner
-                    ? intl.formatMessage({ id: 'ChallengeList.role-owner', defaultMessage: 'Yours' })
-                    : intl.formatMessage({ id: 'ChallengeList.role-joined', defaultMessage: 'Joined' })}
-                </span>
-              </div>
-            </div>
-
-            <div className={styles.statRow}>
-              {renderStat(
-                challenge.myCheckins,
-                intl.formatMessage({ id: 'ChallengeList.stat-checkins', defaultMessage: 'check-ins (30d)' }),
-              )}
-              {renderStat(
-                challenge.myStreak,
-                intl.formatMessage({ id: 'ChallengeList.stat-streak', defaultMessage: 'day streak' }),
-              )}
-            </div>
-
-            <div className={styles.cardFooter}>
-              <span>
-                {intl.formatMessage(
-                  { id: 'ChallengeDashboard.member-count', defaultMessage: '{{count}} joined' },
-                  { count: challenge.participantCount },
-                )}
-              </span>
-              <Icon icon="solar:alt-arrow-right-linear" width={16} />
-            </div>
-          </Card>
+          <ChallengeCard key={challenge.id} challenge={challenge} onClick={() => navigate(`/challenge/${challenge.id}`)} />
         ))}
       </div>
     );
@@ -217,83 +163,17 @@ const ChallengeListPageUi = () => {
               {intl.formatMessage({ id: 'ChallengeList.discover-title', defaultMessage: 'Discover' })}
             </Typography.Title>
             <div className={styles.grid}>
-              {publicChallenges.map(row => {
-                const summary = reactions[row.id];
-                return (
-                  <Card
-                    key={row.id}
-                    className={styles.card}
-                    onClick={() => navigate(`/challenge/${row.id}`)}
-                  >
-                    <div className={styles.cardHeader}>
-                      <div className={styles.cardIcon}>
-                        <Icon
-                          width={22}
-                          icon={row.avatar?.name || 'solar:checklist-minimalistic-linear'}
-                          color={row.avatar?.color || '#607d8b'}
-                        />
-                      </div>
-                      <div className={styles.cardTitleCol}>
-                        <Typography.Text className={styles.cardTitle}>
-                          {row.title ||
-                            intl.formatMessage({ id: 'ChallengeList.untitled', defaultMessage: 'Untitled task' })}
-                        </Typography.Text>
-                        <span className={styles.dateRange}>
-                          {new Date(row.startDate).toLocaleDateString()}
-                          {row.endDate ? ` – ${new Date(row.endDate).toLocaleDateString()}` : ''}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={styles.reactionRow}>
-                      <button
-                        type="button"
-                        className={styles.reactionButton}
-                        data-active={summary?.myReaction === 'like'}
-                        onClick={e => {
-                          e.stopPropagation();
-                          setMyReaction(row.id, 'like');
-                        }}
-                      >
-                        <Icon icon="solar:like-linear" width={16} />
-                        {summary?.likes ?? 0}
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.reactionButton}
-                        data-active={summary?.myReaction === 'dislike'}
-                        onClick={e => {
-                          e.stopPropagation();
-                          setMyReaction(row.id, 'dislike');
-                        }}
-                      >
-                        <Icon icon="solar:dislike-linear" width={16} />
-                        {summary?.dislikes ?? 0}
-                      </button>
-                    </div>
-
-                    <div className={styles.cardFooter}>
-                      <span>
-                        {intl.formatMessage(
-                          { id: 'ChallengeDashboard.member-count', defaultMessage: '{{count}} joined' },
-                          { count: row.participantCount },
-                        )}
-                      </span>
-                      {/* A plain wrapping div takes the stopPropagation — Button's own onClick is
-                          `() => void`, no event to stop it with (see CardShare's identical
-                          buttons, which never need to). */}
-                      <div onClick={e => e.stopPropagation()}>
-                        <Button size="sm" disabled={joiningId === row.id} onClick={() => handleJoin(row)}>
-                          {joiningId === row.id && (
-                            <Icon icon="svg-spinners:180-ring-with-bg" width={14} className={styles.buttonSpinner} />
-                          )}
-                          {intl.formatMessage({ id: 'ChallengeList.join-button', defaultMessage: 'Join' })}
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
+              {publicChallenges.map(row => (
+                <DiscoverCard
+                  key={row.id}
+                  row={row}
+                  reactionSummary={reactions[row.id]}
+                  joining={joiningId === row.id}
+                  onReact={type => setMyReaction(row.id, type)}
+                  onJoin={() => handleJoin(row)}
+                  onClick={() => navigate(`/challenge/${row.id}`)}
+                />
+              ))}
             </div>
           </div>
         )}

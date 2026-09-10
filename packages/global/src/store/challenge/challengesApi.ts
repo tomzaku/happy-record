@@ -20,7 +20,16 @@ export type MyChallengeRow = {
   isOwner: boolean;
   shareRecords: boolean;
   commentsEnabled: boolean;
+  backgroundImageUrl: string | null;
+  pageBackgroundImageUrl: string | null;
   participantCount: number;
+  /** Up to 4 participants, earliest-joined first (owner included) — a preview sample for a
+   * stacked-avatar row, not the full roster. Use `participantCount` for the real total. */
+  participants: { userId: string; displayName: string; avatarUrl?: string }[];
+  /** This challenge's own shared goals, each already carrying the caller's own total toward it
+   * (`myTotal`) — see challenges-service.ts's myTargetSummaries. Empty when the challenge defines
+   * no targets. */
+  targets: { id: string; title: string; unit: string; icon: string; goal: number; myTotal: number }[];
   myCheckins: number;
   myStreak: number;
   createdAt: string;
