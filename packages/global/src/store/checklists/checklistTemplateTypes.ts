@@ -61,6 +61,16 @@ export type ChecklistTemplate = {
      * `deleteOccurrence`/`restoreOccurrence` instead (packages/global/src/store/checklists/
      * scheduleExceptionsApi.ts), which invalidate this template's own query afterward. */
     exceptionDates?: string[];
+    /** `YYYY-MM-DD` date -> the overridden moment (a full ISO instant) for that one occurrence,
+     * from a `MODIFIED`-type `schedule_exceptions` row — Google Calendar's "this event" scope on
+     * an edit: the occurrence still happens on the same day, just at a different time, without
+     * touching the rest of the series. Read-only, server-embedded (see supabase/shared/
+     * schedules.ts's `toRepeat`) — never send back on a write; add one via `useChecklistTemplates()`'s
+     * `modifyOccurrence` (packages/global/src/store/checklists/scheduleExceptionsApi.ts) instead,
+     * same as `exceptionDates`' own `deleteOccurrence`/`restoreOccurrence`. Consulted by
+     * `occurrenceSeed` (useChecklists.tsx) when a fresh instance is created, and by the calendar's
+     * own event rendering (useCalendarEvents.ts), in place of `byhour`/`byminute` for that date. */
+    modifiedOccurrences?: Record<string, string>;
     /** Set only for a challenge participant's own row, distinct from the owner's default
      * (_shared/repeats.ts's `pickRepeat`) — seeded from the owner's schedule at join time
      * (challenge-participants-service.ts's `seedReminderFromOwner`), so it reads "personal"

@@ -54,6 +54,17 @@ Deno.test('saveScheduleException: two different callers against the same templat
   assertEquals(db.upserts[1].schedule_id, 'ct:shared-template:caller-2');
 });
 
+Deno.test('saveScheduleException: MODIFIED forwards overrideStartedAt onto the row', async () => {
+  const db = capturingDb();
+  await saveScheduleException(
+    { db, userId: 'caller-1' } as never,
+    { checklistTemplateId: 'template-a', date: '2026-09-08', type: 'MODIFIED', overrideStartedAt: '2026-09-08T09:30:00.000Z' },
+  );
+  assertEquals(db.upserts.length, 1);
+  assertEquals(db.upserts[0].type, 'MODIFIED');
+  assertEquals(db.upserts[0].override_started_at, '2026-09-08T09:30:00.000Z');
+});
+
 Deno.test('deleteScheduleException: derives the same schedule_id shape, scoped to ctx.userId', async () => {
   const db = capturingDb();
   await deleteScheduleException(

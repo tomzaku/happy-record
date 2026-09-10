@@ -43,6 +43,7 @@ const DetailTaskPageDesktop = () => {
     updateMyReminder,
     deleteChecklistTemplate,
     deleteOccurrence,
+    modifyOccurrence,
   } = useChecklistTemplates();
   const {
     addChecklist,
@@ -403,6 +404,9 @@ const DetailTaskPageDesktop = () => {
                       isOwner
                         ? (effectiveFrom, newRepeat) => splitChecklistTemplate(checklistTemplate, effectiveFrom, newRepeat)
                         : undefined
+                    }
+                    onModifyOccurrence={
+                      isOwner ? (date, overrideStartedAt) => modifyOccurrence(id, date, overrideStartedAt) : undefined
                     }
                     onDelete={isOwner && checklist ? () => openDelete(checklist.id) : undefined}
                     readOnly={!isOwner}

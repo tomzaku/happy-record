@@ -9,7 +9,11 @@ import {
   removeChecklistTemplate as removeChecklistTemplateApi,
   saveChecklistTemplate,
 } from './checklistTemplatesApi';
-import { deleteOccurrence as deleteOccurrenceApi, restoreOccurrence as restoreOccurrenceApi } from './scheduleExceptionsApi';
+import {
+  deleteOccurrence as deleteOccurrenceApi,
+  restoreOccurrence as restoreOccurrenceApi,
+  modifyOccurrence as modifyOccurrenceApi,
+} from './scheduleExceptionsApi';
 import type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTemplateTypes';
 import type { Checklist } from './useChecklists';
 
@@ -60,6 +64,15 @@ function withExceptionDate(template: ChecklistTemplate, date: string, present: b
   const next = present ? (current.includes(date) ? current : [...current, date].sort()) : current.filter(d => d !== date);
   const { exceptionDates: _drop, ...restRepeat } = template.repeat;
   return { ...template, repeat: next.length > 0 ? { ...restRepeat, exceptionDates: next } : restRepeat };
+}
+
+// Same idea as withExceptionDate above, for a `MODIFIED` exception's own `overrideStartedAt`
+// instead of a plain skip — deterministic from the two inputs (no server-computed value to wait
+// on), so this is a real optimistic write too.
+function withModifiedOccurrence(template: ChecklistTemplate, date: string, overrideStartedAt: string): ChecklistTemplate {
+  if (!template.repeat) return template;
+  const next = { ...(template.repeat.modifiedOccurrences ?? {}), [date]: overrideStartedAt };
+  return { ...template, repeat: { ...template.repeat, modifiedOccurrences: next } };
 }
 
 type Deps = {
@@ -177,6 +190,37 @@ export function useChecklistTemplateMutations({
       // can otherwise render before `exceptionDates` lands, synthesizing a phantom row for today.
       if (previousFromAll) writeTemplateIfPresent(queryClient, allKey, id, withExceptionDate(previousFromAll, date, present));
       if (previousFromId) writeTemplate(queryClient, idKey, withExceptionDate(previousFromId, date, present));
+      await queryClient.cancelQueries({ queryKey: allKey });
+      await queryClient.cancelQueries({ queryKey: idKey });
+      return { previousFromAll, previousFromId };
+    },
+    onError: (_error, { id }, context) => {
+      const idKey = checklistTemplatesKeys.byId(id, userId);
+      writeTemplateIfPresent(queryClient, allKey, id, context?.previousFromAll);
+      writeTemplate(queryClient, idKey, context?.previousFromId ?? null);
+    },
+  });
+
+  // Overrides one occurrence's own start moment (`schedule_exceptions` `MODIFIED`) — "this event
+  // only" in the Schedule dialog's edit-scope prompt (ScheduleEditDialogs.tsx's own
+  // handleConfirmScheduleScope). Same shape as exceptionMutation above: `withModifiedOccurrence`
+  // already computes the exact resulting `modifiedOccurrences`, so this is genuinely optimistic,
+  // not an invalidate-and-refetch.
+  const modifyOccurrenceMutation = useMutation<
+    { ok: true } | null,
+    Error,
+    { id: string; date: string; overrideStartedAt: string },
+    RollbackContext
+  >({
+    mutationFn: ({ id, date, overrideStartedAt }) => modifyOccurrenceApi(id, date, overrideStartedAt),
+    onMutate: async ({ id, date, overrideStartedAt }) => {
+      const idKey = checklistTemplatesKeys.byId(id, userId);
+      const previousFromAll = queryClient.getQueryData<ChecklistTemplatesMap>(allKey)?.[id];
+      const previousFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
+      if (previousFromAll) {
+        writeTemplateIfPresent(queryClient, allKey, id, withModifiedOccurrence(previousFromAll, date, overrideStartedAt));
+      }
+      if (previousFromId) writeTemplate(queryClient, idKey, withModifiedOccurrence(previousFromId, date, overrideStartedAt));
       await queryClient.cancelQueries({ queryKey: allKey });
       await queryClient.cancelQueries({ queryKey: idKey });
       return { previousFromAll, previousFromId };
@@ -310,6 +354,14 @@ export function useChecklistTemplateMutations({
   const restoreOccurrence = (id: string, date: string) =>
     exceptionMutation.mutateAsync({ id, date, present: false }).catch(() => null);
 
+  /** Google Calendar's "this event" edit scope — overrides one occurrence's own start moment
+   * without touching the rest of the series (`schedule_exceptions` `MODIFIED`, see
+   * modifyOccurrenceMutation above). `date` is the occurrence's own calendar day (the one being
+   * edited), `overrideStartedAt` the new moment. Never rejects, same quiet-write convention as
+   * deleteOccurrence/restoreOccurrence above. */
+  const modifyOccurrence = (id: string, date: string, overrideStartedAt: string) =>
+    modifyOccurrenceMutation.mutateAsync({ id, date, overrideStartedAt }).catch(() => null);
+
   return {
     addChecklistTemplate,
     updateChecklistTemplate,
@@ -318,5 +370,6 @@ export function useChecklistTemplateMutations({
     updateMyReminder,
     deleteOccurrence,
     restoreOccurrence,
+    modifyOccurrence,
   };
 }

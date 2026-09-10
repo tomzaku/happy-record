@@ -11,11 +11,12 @@ import {
 } from '@dreamer/global';
 import Dialog from '@moon-ui/modal/src/Dialog';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
+import Radio from '@moon-ui/radio';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
 import { Day } from '@dreamer/tasks-page-common';
-import { startOfDay } from 'date-fns';
+import { startOfDay, format } from 'date-fns';
 import { calculateRepeat } from '@pregnant/create-checklist-page-ui/src/calculateRepeat';
 import {
   repeatToRecurrenceValue,
@@ -30,6 +31,10 @@ import styles from './index.module.scss';
 
 export type ScheduleEditMode = 'schedule' | 'myReminder' | null;
 
+// The edit-scope prompt's own three choices — see DeleteTaskModal.tsx's own identically-shaped
+// `Scope`, whose doc comment already called this out as the "future fourth option" this fills in.
+type ScheduleScope = 'thisEvent' | 'thisAndFollowing' | 'all';
+
 type Props = {
   checklistTemplate: ChecklistTemplate;
   onUpdate: (template: ChecklistTemplate) => void;
@@ -37,6 +42,12 @@ type Props = {
   // undefined here just means this caller has nothing to split into (see that component's own
   // comment on the exact gate `handleSaveSchedule` below applies).
   onSplitSchedule?: (effectiveFrom: string, newRepeat: NonNullable<ChecklistTemplate['repeat']>) => void;
+  // The edit-scope prompt's third, least-drastic option — "This event," alongside "This and
+  // following"/"All events" (see handleConfirmScheduleScope below). Undefined means there's
+  // nothing to scope a single-occurrence edit to (a non-owner, or a caller with no
+  // `modifyOccurrence` wired up yet), same "omit the affordance rather than let it silently no-op"
+  // gate `onSplitSchedule` itself already follows.
+  onModifyOccurrence?: (date: string, overrideStartedAt: string) => void;
   readOnly?: boolean;
   onUpdateMyReminder?: (repeat: ChecklistTemplate['repeat'] | null) => void;
   // The specific day's own Checklist instance, when there is one — same prop
@@ -74,6 +85,7 @@ const ScheduleEditDialogs = ({
   checklistTemplate,
   onUpdate,
   onSplitSchedule,
+  onModifyOccurrence,
   readOnly,
   onUpdateMyReminder,
   checklist,
@@ -126,6 +138,7 @@ const ScheduleEditDialogs = ({
     checklistTemplate.scheduleMode,
   );
   const [pendingScheduleRepeat, setPendingScheduleRepeat] = React.useState<ChecklistTemplate['repeat'] | null>(null);
+  const [scheduleScope, setScheduleScope] = React.useState<ScheduleScope>('thisAndFollowing');
 
   const resetStagedFields = () => {
     setTempStartDay(initialStartDay());
@@ -220,6 +233,10 @@ const ScheduleEditDialogs = ({
 
     const wasAlreadyRecurring = !!checklistTemplate.repeat?.byday && !hasFieldGroups;
     if (onSplitSchedule && wasAlreadyRecurring) {
+      // Least-drastic option first, when there's a real single occurrence to scope it to (same
+      // gate the picker below applies to actually offering it) — the option most edits probably
+      // want, same reasoning DeleteTaskModal's own scope picker defaults to "This event."
+      setScheduleScope(onModifyOccurrence && checklist ? 'thisEvent' : 'thisAndFollowing');
       setPendingScheduleRepeat(finalRepeat);
       return;
     }
@@ -227,11 +244,22 @@ const ScheduleEditDialogs = ({
     onUpdate({ ...checklistTemplate, repeat: finalRepeat, scheduleMode: tempScheduleMode });
   };
 
-  const handleConfirmScheduleScope = (scope: 'thisAndFollowing' | 'all') => {
+  const handleConfirmScheduleScope = () => {
     if (!pendingScheduleRepeat) return;
     const repeat = pendingScheduleRepeat;
     setPendingScheduleRepeat(null);
-    if (scope === 'thisAndFollowing') {
+    if (scheduleScope === 'thisEvent' && checklist) {
+      // "This event" — the occurrence keeps its own place in the series (still generated,
+      // still counted), just at the moment `tempStartDay` staged, via a `MODIFIED`
+      // schedule_exceptions row (see checklistTemplateTypes.ts's own `modifiedOccurrences` doc
+      // comment) rather than touching `checklistTemplate.repeat` at all. `checklist.startedAt`'s
+      // own calendar day — not `tempStartDay`'s, in case the Start Date field itself got edited
+      // too — is the occurrence actually being overridden; `tempStartDay` is the new moment.
+      onModifyOccurrence?.(format(new Date(checklist.startedAt), 'yyyy-MM-dd'), tempStartDay);
+      // Same immediate write-back isOneOffTask's own save already does — reflects the change on
+      // this exact row right away rather than waiting on a refetch to pick up the exception.
+      onUpdateChecklist?.({ id: checklist.id, startedAt: tempStartDay, endedDate: tempEndDay || undefined });
+    } else if (scheduleScope === 'thisAndFollowing') {
       // The occurrence actually being viewed, not "right now" — this page can be open on a past
       // or future day (see initialStartDay's own comment on why Start/End Date already read from
       // this same row), and the whole point of "This and following" is splitting relative to
@@ -422,7 +450,12 @@ const ScheduleEditDialogs = ({
       </Dialog>
 
       {/* Google-Calendar-style edit-scope prompt — only ever shown by handleSaveSchedule, for an
-          already-recurring template (see its own comment on the exact gate). */}
+          already-recurring template (see its own comment on the exact gate). A segmented `Radio`
+          inside WarningModal's own `content` slot, not three footer buttons — WarningModal only
+          ever has room for one middle ("tertiary") action alongside Cancel/primary, not two; same
+          picker shape as DeleteTaskModal's own delete-scope prompt, whose doc comment already
+          called out "This event" (a single-occurrence edit) as the reason this needed to scale to
+          a third option in the first place. */}
       <WarningModal
         visible={!!pendingScheduleRepeat}
         title={intl.formatMessage({
@@ -430,28 +463,58 @@ const ScheduleEditDialogs = ({
           defaultMessage: 'Edit recurring task',
         })}
         content={
-          <Typography.Text>
-            {intl.formatMessage({
-              id: 'checklist-generic-info.edit-scope-message',
-              defaultMessage: 'This task repeats. Apply this change to:',
-            })}
-          </Typography.Text>
+          <>
+            <Typography.Text>
+              {intl.formatMessage({
+                id: 'checklist-generic-info.edit-scope-message',
+                defaultMessage: 'This task repeats. Apply this change to:',
+              })}
+            </Typography.Text>
+            <div className={styles.scopePicker}>
+              <Radio
+                isButton
+                options={[
+                  // Only offered when there's a real single occurrence to scope it to — same gate
+                  // handleSaveSchedule itself already applies when picking the default scope.
+                  ...(onModifyOccurrence && checklist
+                    ? [
+                        {
+                          label: intl.formatMessage({
+                            id: 'checklist-generic-info.edit-scope-this',
+                            defaultMessage: 'This event',
+                          }),
+                          value: 'thisEvent',
+                        },
+                      ]
+                    : []),
+                  {
+                    label: intl.formatMessage({
+                      id: 'checklist-generic-info.edit-scope-following',
+                      defaultMessage: 'This and following',
+                    }),
+                    value: 'thisAndFollowing',
+                  },
+                  {
+                    label: intl.formatMessage({
+                      id: 'checklist-generic-info.edit-scope-all',
+                      defaultMessage: 'All events',
+                    }),
+                    value: 'all',
+                  },
+                ]}
+                value={scheduleScope}
+                onChangeValue={(v: ScheduleScope) => setScheduleScope(v)}
+              />
+            </div>
+          </>
         }
         secondaryButtonText={intl.formatMessage({
           id: 'checklist-generic-info.edit-scope-cancel',
           defaultMessage: 'Cancel',
         })}
         secondaryButtonClick={handleCancelScheduleScope}
-        tertiaryButtonText={intl.formatMessage({
-          id: 'checklist-generic-info.edit-scope-following',
-          defaultMessage: 'This and following',
-        })}
-        tertiaryButtonOnClick={() => handleConfirmScheduleScope('thisAndFollowing')}
-        primaryButtonText={intl.formatMessage({
-          id: 'checklist-generic-info.edit-scope-all',
-          defaultMessage: 'All events',
-        })}
-        primaryButtonOnClick={() => handleConfirmScheduleScope('all')}
+        primaryButtonText={intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+        primaryButtonOnClick={handleConfirmScheduleScope}
       />
     </>
   );

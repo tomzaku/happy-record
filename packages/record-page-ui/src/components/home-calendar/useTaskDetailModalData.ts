@@ -17,8 +17,15 @@ import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
 // layout (see CLAUDE.md's ~200-line-per-file guideline; this pairs with useDeleteTaskFlow.ts's
 // own hook/component split in checklist-day).
 export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
-  const { checklistTemplate, withFieldGroups, updateChecklistTemplate, splitChecklistTemplate, updateMyReminder, isOwnedTemplate } =
-    useChecklistTemplates();
+  const {
+    checklistTemplate,
+    withFieldGroups,
+    updateChecklistTemplate,
+    splitChecklistTemplate,
+    updateMyReminder,
+    modifyOccurrence,
+    isOwnedTemplate,
+  } = useChecklistTemplates();
   const { getChecklistDetail, addChecklist, updateChecklist } = useChecklist();
   const { getAllRecordFields, getRecordFieldsByTemplateId } = useRecordField();
 
@@ -118,6 +125,7 @@ export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
     updateChecklist,
     splitChecklistTemplate,
     updateMyReminder,
+    modifyOccurrence,
     // Whether *this device* owns the template, not just whether it's synced locally — a joined
     // challenge's template lands in the same `checklistTemplate` map (see withFieldGroups above),
     // so this is what tells "my own task" from "one I joined" for the Schedule vs. My Reminder

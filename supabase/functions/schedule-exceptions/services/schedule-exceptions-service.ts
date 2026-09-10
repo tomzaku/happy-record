@@ -12,10 +12,14 @@ import type { Ctx } from '../api/schedule-exceptions-context.ts';
 
 export function saveScheduleException(
   { db, userId }: Ctx,
-  args: { checklistTemplateId: string; date: string; type: ExceptionType },
+  args: { checklistTemplateId: string; date: string; type: ExceptionType; overrideStartedAt?: string },
 ): Promise<void> {
   const scheduleId = rowId({ userId, checklistTemplateId: args.checklistTemplateId });
-  return saveException(db, scheduleId, userId, { date: args.date, type: args.type });
+  return saveException(db, scheduleId, userId, {
+    date: args.date,
+    type: args.type,
+    overrideStartedAt: args.overrideStartedAt,
+  });
 }
 
 export function deleteScheduleException(

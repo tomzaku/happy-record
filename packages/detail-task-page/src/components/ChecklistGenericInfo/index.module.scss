@@ -149,3 +149,9 @@
   display: flex;
   justify-content: center;
 }
+
+// The edit-scope prompt's own Radio picker — same layout as DeleteTaskModal's own `.scopePicker`.
+.scopePicker {
+  display: flex;
+  margin-top: $spacing-md;
+}

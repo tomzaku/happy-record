@@ -38,6 +38,7 @@ const DetailTaskPageMobile = () => {
     updateMyReminder,
     deleteChecklistTemplate,
     deleteOccurrence,
+    modifyOccurrence,
   } = useChecklistTemplates();
   const {
     addChecklist,
@@ -283,6 +284,9 @@ const DetailTaskPageMobile = () => {
           isOwner
             ? (effectiveFrom, newRepeat) => splitChecklistTemplate(checklistTemplate, effectiveFrom, newRepeat)
             : undefined
+        }
+        onModifyOccurrence={
+          isOwner ? (date, overrideStartedAt) => modifyOccurrence(id, date, overrideStartedAt) : undefined
         }
         onDelete={isOwner ? () => openDelete(checklist.id) : undefined}
         readOnly={!isOwner}

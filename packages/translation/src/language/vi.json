@@ -142,6 +142,7 @@
   "checklist-generic-info.edit-schedule-title": "Chỉnh Sửa Lịch Trình",
   "checklist-generic-info.edit-scope-title": "Chỉnh sửa việc lặp lại",
   "checklist-generic-info.edit-scope-message": "Việc này lặp lại. Áp dụng thay đổi cho:",
+  "checklist-generic-info.edit-scope-this": "Sự kiện này",
   "checklist-generic-info.edit-scope-following": "Từ đây trở đi",
   "checklist-generic-info.edit-scope-all": "Tất cả",
   "checklist-generic-info.edit-scope-cancel": "Hủy",

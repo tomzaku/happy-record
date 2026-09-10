@@ -27,9 +27,11 @@ type Props = {
 // today/all choice: "This event" / "This and following events" / "All events", picked via a
 // segmented `Radio` inside WarningModal's own `content` slot rather than a third footer button —
 // WarningModal only ever has room for one middle ("tertiary") action alongside Cancel/primary, not
-// two, and this scales to a future fourth option (single-occurrence *edit*, once that surface
-// exists — see the `schedule_exceptions.MODIFIED` type reserved for it) without another redesign.
-// A one-time task only ever has the one meaningful action, so the picker is skipped entirely.
+// two. This same shape now also backs the Schedule dialog's own edit-scope prompt
+// (ScheduleEditDialogs.tsx's own `handleConfirmScheduleScope`) — single-occurrence *edit*, via the
+// `schedule_exceptions.MODIFIED` type this file's own `handleDeleteToday` already showed the
+// `DELETED` half of. A one-time task only ever has the one meaningful action, so the picker is
+// skipped entirely.
 const DeleteTaskModal = ({
   visible,
   taskTitle,

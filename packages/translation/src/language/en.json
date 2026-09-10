@@ -203,6 +203,7 @@
   "checklist-generic-info.edit-scope-cancel": "Cancel",
   "checklist-generic-info.edit-scope-following": "This and following",
   "checklist-generic-info.edit-scope-message": "This task repeats. Apply this change to:",
+  "checklist-generic-info.edit-scope-this": "This event",
   "checklist-generic-info.edit-scope-title": "Edit recurring task",
   "checklist-generic-info.edit-tags-title": "Edit Tags",
   "checklist-generic-info.end-date-description": "End of the task",

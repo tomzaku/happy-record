@@ -5,10 +5,11 @@
 // `override_started_at` is a real typed column (one timestamptz, matching `schedules.started_at`'s
 // own shape) rather than a jsonb blob or a separate date/hour/minute split.
 //
-// No dedicated resource/edge function yet, same as `schedules` itself (see schedules.ts's own
-// header) — nothing calls these outside this file's own tests today. `type: 'MODIFIED'` is
-// accepted and stored (`overrideStartedAt`) but nothing reads it back yet; only `DELETED` has real
-// behavior once something wires this into occurrence matching (rruleUtils.ts's EXDATE support).
+// Served by the `schedule-exceptions` edge function (`supabase/functions/schedule-exceptions/`).
+// `type: 'DELETED'` skips the occurrence entirely (rruleUtils.ts's EXDATE-style `exceptionDates`);
+// `type: 'MODIFIED'` keeps the occurrence but overrides its own start moment
+// (`overrideStartedAt`) — schedules.ts's `toRepeat` surfaces both back to the client, as
+// `repeat.exceptionDates`/`repeat.modifiedOccurrences` respectively.
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 

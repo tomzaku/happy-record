@@ -1,5 +1,5 @@
 import React from 'react';
-import { eachDayOfInterval } from 'date-fns';
+import { eachDayOfInterval, format } from 'date-fns';
 import type { CalendarEvent, CalendarRange } from '@dreamer/calendar-view';
 import {
   useChecklist,
@@ -233,10 +233,16 @@ export const useCalendarEvents = (
           } satisfies CalendarEventData,
         };
 
-        if (!hasActiveFieldGroups && template?.repeat?.byhour) {
-          const start = new Date(day);
-          start.setHours(Number(template.repeat.byhour), Number(template.repeat.byminute), 0, 0);
-          events.push({ ...base, start, end: computeEventEnd(day, start, template.repeat.until) });
+        // "This event only" (a `MODIFIED` schedule_exceptions row — ScheduleEditDialogs' own
+        // edit-scope prompt) overrides just this one day's own start moment, without touching the
+        // series' normal `byhour`/`byminute` — see checklistTemplateTypes.ts's own
+        // `modifiedOccurrences` doc comment.
+        const modifiedStart = template?.repeat?.modifiedOccurrences?.[format(day, 'yyyy-MM-dd')];
+
+        if (!hasActiveFieldGroups && (template?.repeat?.byhour || modifiedStart)) {
+          const start = new Date(modifiedStart ?? day);
+          if (!modifiedStart) start.setHours(Number(template!.repeat!.byhour), Number(template!.repeat!.byminute), 0, 0);
+          events.push({ ...base, start, end: computeEventEnd(day, start, template?.repeat?.until) });
         } else {
           events.push({ ...base, start: day, allDay: true });
         }

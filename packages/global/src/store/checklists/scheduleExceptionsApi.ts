@@ -23,10 +23,27 @@ export function deleteOccurrence(checklistTemplateId: string, date: string): Pro
   );
 }
 
-/** Restores a previously-skipped occurrence — idempotent, same as every other DELETE route here. */
+/** Restores a previously-skipped or previously-modified occurrence to its normal, unmodified
+ * schedule — idempotent, same as every other DELETE route here. */
 export function restoreOccurrence(checklistTemplateId: string, date: string): Promise<{ ok: true } | null> {
   return request.delete(
     `/schedule-exceptions/${encodeURIComponent(compositeId(checklistTemplateId, date))}`,
+    { quiet: true },
+  );
+}
+
+/** Overrides one occurrence's own start moment without touching the rest of the series —
+ * Google Calendar's "this event" edit scope. `date` is the calendar day (`YYYY-MM-DD`) this
+ * template's schedule would otherwise have matched (the occurrence being edited, not the new
+ * time); `overrideStartedAt` is the new moment, a full ISO instant. */
+export function modifyOccurrence(
+  checklistTemplateId: string,
+  date: string,
+  overrideStartedAt: string,
+): Promise<{ ok: true } | null> {
+  return request.post(
+    '/schedule-exceptions',
+    { checklistTemplateId, date, type: 'MODIFIED', overrideStartedAt },
     { quiet: true },
   );
 }

@@ -66,6 +66,7 @@ export const useChecklistTemplates = () => {
     updateMyReminder,
     deleteOccurrence,
     restoreOccurrence,
+    modifyOccurrence,
   } = useChecklistTemplateMutations({
     userId,
     queryClient,
@@ -110,6 +111,7 @@ export const useChecklistTemplates = () => {
     updateMyReminder,
     deleteOccurrence,
     restoreOccurrence,
+    modifyOccurrence,
     selectedChecklistTemplates,
     updateSelectedChecklistTemplate,
     selectChecklistTemplate,

@@ -85,10 +85,18 @@ export function checklistInstanceId(checklistTemplateId: string, date: Date): st
 // no-schedule template — a timed one's real `endedDate` needs the template's own `duration`,
 // which only the server (checklists-service.ts's saveChecklist) can fill in; deliberately absent
 // here rather than guessed at, so that server-side fill-in actually runs (see its own gate).
+//
+// `modifiedOccurrences` (a `MODIFIED`-type `schedule_exceptions` override — "this event only" in
+// the Schedule dialog's own edit-scope prompt) wins over the template's own `byhour`/`byminute`
+// when this exact date has one: the whole point of that scope is a fresh instance of this one day
+// landing on the overridden moment instead of the series' normal time.
 export function occurrenceSeed(
-  template: { repeat?: { byhour?: string; byminute?: string } } | undefined,
+  template: { repeat?: { byhour?: string; byminute?: string; modifiedOccurrences?: Record<string, string> } } | undefined,
   date: Date,
 ): { startedAt: string; endedDate?: string } {
+  const override = template?.repeat?.modifiedOccurrences?.[format(date, 'yyyy-MM-dd')];
+  if (override) return { startedAt: override };
+
   const { byhour, byminute } = template?.repeat ?? {};
   if (!byhour || !byminute) {
     return { startedAt: startOfDay(date).toISOString(), endedDate: endOfDay(date).toISOString() };

@@ -50,6 +50,7 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
     updateChecklist,
     splitChecklistTemplate,
     updateMyReminder,
+    modifyOccurrence,
     isOwnedTemplate,
   } = useTaskDetailModalData(data);
   const [scheduleEditOpen, setScheduleEditOpen] = React.useState(false);
@@ -223,6 +224,7 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
           checklistTemplate={template}
           onUpdate={updateChecklistTemplate}
           onSplitSchedule={isOwner ? (from, repeat) => splitChecklistTemplate(template, from, repeat) : undefined}
+          onModifyOccurrence={isOwner ? (date, overrideStartedAt) => modifyOccurrence(template.id, date, overrideStartedAt) : undefined}
           onUpdateMyReminder={!isOwner ? repeat => updateMyReminder(template.id, repeat) : undefined}
           readOnly={!isOwner}
           checklist={checklist}

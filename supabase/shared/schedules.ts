@@ -77,15 +77,25 @@ export function rowId(owner: Owner): string {
  *
  * `exceptions` is optional and separate from `row` on purpose — a caller that hasn't fetched this
  * schedule's own `schedule_exceptions` yet (nothing outside checklist-templates/field-groups does
- * today) still gets a valid repeat object, just with no `exceptionDates`, rather than being forced
- * to thread an empty array through every call site. Only `DELETED`-type exceptions ever surface
- * here — `MODIFIED` has no client-visible shape yet (see scheduleExceptions.ts's own comment). */
+ * today) still gets a valid repeat object, just with no `exceptionDates`/`modifiedOccurrences`,
+ * rather than being forced to thread an empty array through every call site. */
 export function toRepeat(row: Row | undefined, exceptions?: ScheduleException[]): Record<string, unknown> | undefined {
   const hasAny = !!row && [row.byday, row.byhour, row.byminute, row.started_at]
     .some(v => v !== null && v !== undefined);
   if (!hasAny) return undefined;
 
   const exceptionDates = (exceptions ?? []).filter(e => e.type === 'DELETED').map(e => e.date);
+  // `date` -> the single overridden moment for that one occurrence ("this event only" — see
+  // ChecklistGenericInfo's Schedule dialog and its own edit-scope prompt) — a `MODIFIED` row
+  // never changes *whether* the schedule recurs that day (occursOnDate/list still match it
+  // normally), only *when*. Consulted client-side by occurrenceSeed (useChecklists.tsx) and the
+  // calendar's own event rendering (useCalendarEvents.ts) in place of `byhour`/`byminute` for that
+  // one date.
+  const modifiedOccurrences = Object.fromEntries(
+    (exceptions ?? [])
+      .filter((e): e is ScheduleException & { overrideStartedAt: string } => e.type === 'MODIFIED' && !!e.overrideStartedAt)
+      .map(e => [e.date, e.overrideStartedAt]),
+  );
 
   return {
     byminute: row!.byminute != null ? String(row!.byminute) : '',
@@ -100,6 +110,7 @@ export function toRepeat(row: Row | undefined, exceptions?: ScheduleException[])
     ...(row!.freq ? { freq: row!.freq as string } : {}),
     ...(row!.duration != null ? { durationMs: row!.duration as number } : {}),
     ...(exceptionDates.length > 0 ? { exceptionDates } : {}),
+    ...(Object.keys(modifiedOccurrences).length > 0 ? { modifiedOccurrences } : {}),
     // Not-null with a `default true` at the column level (see the migration), so this always has
     // a real value — spelled as `!== false` (not `?? true`) so an explicit `false` on the row
     // survives even if some future caller ever passes a nullish placeholder through by mistake.
