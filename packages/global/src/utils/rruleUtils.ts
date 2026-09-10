@@ -192,9 +192,21 @@ export function list(
     const key = toDateKey(d);
     return !repeat?.exceptionDates?.includes(key) && !repeat?.modifiedOccurrences?.[key];
   });
+  // A relocated occurrence can land on a day this same series already naturally recurs on (moving
+  // a Monday onto a day that's normally a Wednesday occurrence too), or two different relocated
+  // occurrences can land on the same day — either way that day must only appear once, or a caller
+  // building one calendar event per returned day (useCalendarEvents.ts) renders it twice. See
+  // rruleUtils.test.ts's own "does not duplicate a day" cases.
+  const seenKeys = new Set(kept.map(toDateKey));
   const movedIn = Object.values(repeat?.modifiedOccurrences ?? {})
     .map(iso => toUTCMidnight(new Date(iso)))
-    .filter(d => d.getTime() >= start.getTime() && d.getTime() <= end.getTime());
+    .filter(d => {
+      if (d.getTime() < start.getTime() || d.getTime() > end.getTime()) return false;
+      const key = toDateKey(d);
+      if (seenKeys.has(key)) return false;
+      seenKeys.add(key);
+      return true;
+    });
 
   return [...kept, ...movedIn].sort((a, b) => a.getTime() - b.getTime());
 }

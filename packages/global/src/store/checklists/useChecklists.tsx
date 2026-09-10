@@ -505,6 +505,16 @@ export const useChecklist = () => {
     [computeChecklistsForDate],
   );
 
+  // Every already-fetched/local row for one template, unscoped by date — what
+  // useCalendarEvents.ts's own one-off-task path reads instead of a template-repeat-driven
+  // `list()` (see templateOccurrences.ts's own comment on why a one-off template's real
+  // occurrences live on its Checklist rows, not `repeat.until`). Pure local read, no fetch —
+  // the caller's own `ensureChecklistsFetched` already covers that.
+  const getChecklistsForTemplate = React.useCallback(
+    (checklistTemplateId: string): Checklist[] => Object.values(checklist).filter(c => c.checklistTemplateId === checklistTemplateId),
+    [checklist],
+  );
+
   // Async and awaited (unlike the other read functions here) — its one
   // consumer (EditChecklistForm's "delete every instance of this template")
   // is a one-shot action that needs the real, complete list this tick, not
@@ -569,6 +579,7 @@ export const useChecklist = () => {
     getChecklistForDateWithoutFetching,
     ensureChecklistsFetched,
     getAllChecklistWithTemplate,
+    getChecklistsForTemplate,
     addChecklist,
     getChecklistDetail,
     deleteChecklist,

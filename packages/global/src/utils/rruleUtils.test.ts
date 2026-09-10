@@ -197,6 +197,36 @@ describe('list', () => {
     );
   });
 
+  // Regression: a live report of duplicated events on the calendar. A relocated occurrence can
+  // land on a day the series already naturally recurs on — e.g. a Mon/Wed template with its
+  // Monday occurrence moved onto a Wednesday — and the old code appended that day a *second*
+  // time (once from the natural match, once from `movedIn`) instead of recognizing it was
+  // already there. useCalendarEvents.ts builds one calendar event per returned day, so a
+  // duplicated day meant a duplicated event.
+  it('a relocated occurrence landing on an already-naturally-scheduled day is not duplicated', () => {
+    const repeat = {
+      byday: 'MO,WE',
+      // Monday 2026-09-07 moved onto Wednesday 2026-09-09, which the series already recurs on.
+      modifiedOccurrences: { '2026-09-07': utcDate(2026, 9, 9).toISOString() },
+    };
+    const result = list(repeat, utcDate(2026, 9, 1), utcDate(2026, 9, 16));
+    expect(result.map(d => d.toISOString())).toEqual(
+      [2, 9, 14, 16].map(day => utcDate(2026, 9, day).toISOString()),
+    );
+  });
+
+  it('two different relocated occurrences landing on the same day are not duplicated either', () => {
+    const repeat = {
+      byday: 'MO,TU',
+      modifiedOccurrences: {
+        '2026-09-07': utcDate(2026, 9, 10).toISOString(), // Monday -> Thursday
+        '2026-09-08': utcDate(2026, 9, 10).toISOString(), // Tuesday -> the same Thursday
+      },
+    };
+    const result = list(repeat, utcDate(2026, 9, 1), utcDate(2026, 9, 16));
+    expect(result.filter(d => d.toISOString() === utcDate(2026, 9, 10).toISOString())).toHaveLength(1);
+  });
+
   it('agrees with occursOnDate for every day in the range, including modifiedOccurrences', () => {
     const repeat = {
       byday: 'TU,TH,SU',

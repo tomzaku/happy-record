@@ -1,41 +1,13 @@
 import React from 'react';
-import { getEffectiveDayOfWeek, hasGroupSchedule } from '../../utils/scheduleUtils';
-import { occursOnDate } from '../../utils/rruleUtils';
 import { useFieldGroups } from './useFieldGroups';
 import { useChecklistTemplatesQuery } from './useChecklistTemplatesQuery';
 import { useChecklistTemplateMutations } from './useChecklistTemplateMutations';
+import { isTemplateScheduledOnDate, listTemplateOccurrences } from './templateOccurrences';
 import type { ChecklistTemplate } from './checklistTemplateTypes';
 
 export type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTemplateTypes';
 export * from './fieldGroupTypes';
 export { useChecklistTemplateDetail } from './useChecklistTemplateDetail';
-
-// Not scheduled once deleted, regardless of what its own repeat says. The day-of-week itself is
-// derived from field-group schedules when there are any — never the template's own stored
-// `repeat.byday`, which is only a display convenience and can be stale — combined with the
-// template's own `startedAt`/`until`/`interval`/`count` (groups don't carry those, so the
-// template's own is the only sensible source). `occursOnDate` already respects `startedAt`
-// (DTSTART) and `until` (UNTIL) natively, so there's no separate window pre-check needed here
-// anymore.
-function isTemplateScheduledOnDate(template: ChecklistTemplate | undefined, date: Date): boolean {
-  if (!template || template.deletedAt) return false;
-  const effectiveByday = getEffectiveDayOfWeek(template);
-  const hasActiveFieldGroups = hasGroupSchedule(template);
-  return occursOnDate(
-    {
-      ...template.repeat,
-      byday: effectiveByday,
-      // A field-group-driven template's real schedule lives on each active group's own `repeat`
-      // (that's exactly what `effectiveByday` already merges in above) — a top-level
-      // `repeat.recurring: false` (e.g. left over from before groups existed, or set by the
-      // Start/End Date dialog for its own, unrelated reason — see that dialog's own comment) must
-      // not short-circuit this into "every day in the date range" instead of respecting each
-      // group's actual days.
-      ...(hasActiveFieldGroups ? { recurring: true } : {}),
-    },
-    date,
-  );
-}
 
 /**
  * Composes the read side (useChecklistTemplatesQuery) and write side
@@ -101,6 +73,16 @@ export const useChecklistTemplates = () => {
     [selectedChecklistTemplates, checklistTemplate, withFieldGroups],
   );
 
+  // Range form of the same day-matching — useCalendarEvents.ts's own event generation, one
+  // `list()` call per template instead of testing every day against every template.
+  const getTemplateOccurrencesInRange = React.useCallback(
+    (id: string, from: Date, to: Date): Date[] => {
+      const raw = checklistTemplate[id];
+      return listTemplateOccurrences(raw && withFieldGroups(raw), from, to);
+    },
+    [checklistTemplate, withFieldGroups],
+  );
+
   return {
     checklistTemplate,
     templatesLoading,
@@ -118,6 +100,7 @@ export const useChecklistTemplates = () => {
     deselectChecklistTemplate,
     getRecommendChecklistTemplates,
     getChecklistTemplateIdsByGivingDate,
+    getTemplateOccurrencesInRange,
     isOwnedTemplate,
     // Exposed for callers that look up one template at a time from the raw `checklistTemplate`
     // map and need its real `fieldGroups` (useCalendarEvents.ts's own per-day event builder) —
