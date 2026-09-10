@@ -34,8 +34,15 @@ type Props = {
   onDateClick?: (date: Date) => void;
   /** Localized "Today" button label — this package has no i18n of its own. */
   todayLabel?: string;
+  /** Rendered at the very start of the toolbar, to the left of the Today button — typically a
+   * menu toggle for `panelSlot` below (this package has no panel of its own). */
+  menuSlot?: React.ReactNode;
   /** Rendered on the right of the toolbar, next to the nav controls — typically the host app's own Day/Week/Month/Year switcher. */
   rightSlot?: React.ReactNode;
+  /** Rendered to the left of the calendar grid itself, below the toolbar — a host-app-owned side
+   * panel (e.g. a quick date picker) that only pushes the grid over, never the toolbar/`menuSlot`
+   * above it, so the button that opens it doesn't shift when it does. */
+  panelSlot?: React.ReactNode;
   className?: string;
 };
 
@@ -55,7 +62,9 @@ const Calendar = ({
   onEventClick,
   onDateClick,
   todayLabel = 'Today',
+  menuSlot,
   rightSlot,
+  panelSlot,
   className,
 }: Props) => {
   const calendarRef = React.useRef<FullCalendar>(null);
@@ -181,6 +190,7 @@ const Calendar = ({
     <div className={cx(styles.container, className)}>
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
+          {menuSlot}
           <button type="button" className={styles.todayButton} onClick={() => calendarRef.current?.getApi().today()}>
             {todayLabel}
           </button>
@@ -204,44 +214,47 @@ const Calendar = ({
         </div>
         {rightSlot}
       </div>
-      {/* Month/year's own grid cells want a tall, fixed min-height (room for a
-          day number + up to 3 event chips); week/day's all-day row reuses that
-          exact same cell renderer and must NOT inherit it, or it balloons to a
-          month cell's height for a row that only ever holds one line of chips.
-          FullCalendar gives every view root a `fc-<type>-view` class, but that
-          name isn't a stable part of its public API — gating on our own
-          `view` prop here instead of guessing at that class is what actually
-          scopes the CSS rule reliably. */}
-      <div className={cx(styles.fcRoot, isGridView && styles.fcRootGrid)}>
-        <FullCalendar
-          ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, multiMonthPlugin, interactionPlugin]}
-          initialView={FC_VIEW_NAME[view]}
-          initialDate={currentDate}
-          headerToolbar={false}
-          firstDay={1}
-          fixedWeekCount={false}
-          height={view === 'week' || view === 'day' ? 700 : 'auto'}
-          dayMaxEvents={3}
-          // Completed tasks sink to the bottom of each day's event list —
-          // `done` first, everything else falling back to FullCalendar's own
-          // default ordering (its default `eventOrder` value, minus `start`
-          // since these are otherwise unsorted all-day chips as often as
-          // timed events).
-          eventOrder="done,start,-duration,allDay,title"
-          allDaySlot={hasAllDayEvents}
-          allDayText=""
-          displayEventEnd={false}
-          nowIndicator
-          slotMinTime="06:00:00"
-          slotMaxTime="23:00:00"
-          events={fcEvents}
-          eventContent={renderEventContent}
-          dayHeaderContent={renderDayHeaderContent}
-          datesSet={handleDatesSet}
-          dateClick={handleDateClick}
-          eventClick={handleEventClick}
-        />
+      <div className={styles.body}>
+        {panelSlot}
+        {/* Month/year's own grid cells want a tall, fixed min-height (room for a
+            day number + up to 3 event chips); week/day's all-day row reuses that
+            exact same cell renderer and must NOT inherit it, or it balloons to a
+            month cell's height for a row that only ever holds one line of chips.
+            FullCalendar gives every view root a `fc-<type>-view` class, but that
+            name isn't a stable part of its public API — gating on our own
+            `view` prop here instead of guessing at that class is what actually
+            scopes the CSS rule reliably. */}
+        <div className={cx(styles.fcRoot, isGridView && styles.fcRootGrid)}>
+          <FullCalendar
+            ref={calendarRef}
+            plugins={[dayGridPlugin, timeGridPlugin, multiMonthPlugin, interactionPlugin]}
+            initialView={FC_VIEW_NAME[view]}
+            initialDate={currentDate}
+            headerToolbar={false}
+            firstDay={1}
+            fixedWeekCount={false}
+            height={view === 'week' || view === 'day' ? 700 : 'auto'}
+            dayMaxEvents={3}
+            // Completed tasks sink to the bottom of each day's event list —
+            // `done` first, everything else falling back to FullCalendar's own
+            // default ordering (its default `eventOrder` value, minus `start`
+            // since these are otherwise unsorted all-day chips as often as
+            // timed events).
+            eventOrder="done,start,-duration,allDay,title"
+            allDaySlot={hasAllDayEvents}
+            allDayText=""
+            displayEventEnd={false}
+            nowIndicator
+            slotMinTime="06:00:00"
+            slotMaxTime="23:00:00"
+            events={fcEvents}
+            eventContent={renderEventContent}
+            dayHeaderContent={renderDayHeaderContent}
+            datesSet={handleDatesSet}
+            dateClick={handleDateClick}
+            eventClick={handleEventClick}
+          />
+        </div>
       </div>
     </div>
   );

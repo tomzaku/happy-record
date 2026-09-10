@@ -8,6 +8,7 @@ import WeeklyProgressCard from './components/WeeklyProgressCard';
 import HomeViewSwitcher, { HomeViewMode } from './components/home-view-switcher';
 import switcherStyles from './components/view-switcher/index.module.scss';
 import HomeCalendar from './components/home-calendar';
+import ChallengeQuickSubmit from './components/challenge-quick-submit';
 // import MusicAudioPlayer from '@pregnant/music-audio-player';
 import styles from './index.mobile.module.scss';
 import AppHeader from '@dreamer/header';
@@ -49,6 +50,7 @@ const TaskListPage = () => {
       <AppHeader />
 
       <div className={styles.body}>
+        <ChallengeQuickSubmit />
         <div className={styles.viewSwitcherContainer}>
           <HomeViewSwitcher value={viewMode} onChange={setViewMode} />
         </div>

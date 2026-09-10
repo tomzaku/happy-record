@@ -16,7 +16,9 @@ type Props = {
   onEventClick?: (event: CalendarEvent) => void;
   onDateClick?: (date: Date) => void;
   todayLabel?: string;
+  menuSlot?: React.ReactNode;
   rightSlot?: React.ReactNode;
+  panelSlot?: React.ReactNode;
   className?: string;
 };
 
@@ -36,7 +38,9 @@ const CalendarEventsView = ({
   onEventClick,
   onDateClick,
   todayLabel,
+  menuSlot,
   rightSlot,
+  panelSlot,
   className,
 }: Props) => {
   const [range, setRange] = React.useState<CalendarRange | null>(null);
@@ -52,7 +56,9 @@ const CalendarEventsView = ({
       onDateClick={onDateClick}
       onEventClick={onEventClick}
       todayLabel={todayLabel}
+      menuSlot={menuSlot}
       rightSlot={rightSlot}
+      panelSlot={panelSlot}
       className={className}
     />
   );

@@ -1,5 +1,12 @@
 import React from 'react';
-import { computeStreaksByUser, rankChallengeParticipants, useChallenge, useChecklistTemplateDetail } from '@dreamer/global';
+import {
+  computeStreaksByUser,
+  rankChallengeParticipants,
+  useChallenge,
+  useChallengeParticipants,
+  useChecklistTemplateDetail,
+  useSession,
+} from '@dreamer/global';
 import { RANGE_DAYS } from '../lib/dashboardMath';
 import { Dashboard } from '../types';
 
@@ -51,6 +58,31 @@ export const useChallengeDashboardData = (id: string | undefined, userId: string
   // Only a participant leaves — the owner has no "leave" of their own
   // challenge (they'd delete/unshare it via CardShare instead).
   const isOwner = !!dashboard?.challenge && dashboard.challenge.ownerId === userId;
+
+  // Self-heals a participant row stuck showing "Anonymous" from before `useSession.ts` learned to
+  // read a `linkIdentity`-only Google name off `identities[].identity_data` instead of just
+  // `user_metadata` — `joinChallenge`'s upsert is exactly the "re-save my current name/photo" call
+  // needed, same shape as the very first join. Re-joining the owner's own auto-enrolled row here
+  // too, since it also just gets `ownerDisplayName`/`ownerAvatarUrl` written once, at share time.
+  const { displayName, avatarUrl } = useSession();
+  const { joinChallenge } = useChallengeParticipants();
+  React.useEffect(() => {
+    if (!dashboard?.challenge || !me || !displayName) return;
+    if (me.displayName === displayName && me.avatarUrl === avatarUrl) return;
+    const challengeId = dashboard.challenge.id;
+    joinChallenge(challengeId, displayName, me.checklistTemplateId, avatarUrl)
+      .then(({ participant: updated }) => {
+        setDashboard(prev =>
+          prev
+            ? { ...prev, participants: prev.participants.map(p => (p.userId === updated.userId ? updated : p)) }
+            : prev,
+        );
+      })
+      .catch(() => {
+        // Best-effort repair — the leaderboard just keeps showing the stale name until a future
+        // visit tries again, same as any other quiet background sync in this app.
+      });
+  }, [dashboard, me, displayName, avatarUrl, joinChallenge]);
 
   // The breadcrumb back to the task this challenge is for. A real per-id
   // query, so this stays correct if the template's title changes after this

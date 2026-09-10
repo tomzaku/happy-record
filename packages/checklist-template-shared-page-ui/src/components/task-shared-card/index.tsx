@@ -22,6 +22,15 @@ type Props = {
   /** Undefined while the challenge row is still loading (same "not there yet" gap as everywhere
    * else this page reads it) — `startDate`/`targets` just don't render until it lands. */
   challenge?: Challenge;
+  /** Only ever passed by index.mobile.tsx — mobile has no separate outer `.sheet` the way
+   * index.desktop.module.scss does, so this card is the one surface the "glass" page-background
+   * layout has to apply to there. Desktop's own usage leaves this unset, keeping its inner card
+   * always opaque (`--ct-inner-bg`) since its outer `.sheet`/`.sheetGlass` already carries the
+   * glass treatment. */
+  glass?: boolean;
+  /** Same `pageBackgroundLayout`/`glassOpacity` glass tint as index.desktop.tsx's own `.sheet`
+   * — only meaningful when `glass` is true. */
+  glassOpacity?: number;
 };
 const allDays = [
   { label: 'M', value: Day.Mon },
@@ -43,7 +52,7 @@ const allDays = [
 // `.intro` comment).
 const COLLAPSED_FIELD_COUNT = 2;
 
-const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading, challenge }: Props) => {
+const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading, challenge, glass, glassOpacity }: Props) => {
   const days = getDaysFromRepeat(checklistTemplate?.repeat);
   const [showAllFields, setShowAllFields] = useState(false);
   // "Starts in 2d 6h" while upcoming, "Started Sep 10, 2026" once it's passed — ticks live, see
@@ -60,7 +69,10 @@ const TaskSharedCard = ({ checklistTemplate, fields = [], fieldsLoading, challen
     unit: t.unit,
   }));
   return (
-    <div className={styles.container}>
+    <div
+      className={cx(styles.container, glass && styles.containerGlass)}
+      style={glass ? { background: `rgba(var(--ct-glass-tint-rgb), ${(glassOpacity ?? 12) / 100})` } : undefined}
+    >
       <TitleWidget
         layout={challenge?.titleWidgetLayout ?? 'row'}
         icon={checklistTemplate.avatar?.name}

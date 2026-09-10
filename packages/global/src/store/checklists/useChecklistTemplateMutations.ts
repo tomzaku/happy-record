@@ -93,6 +93,7 @@ type Deps = {
   allKey: QueryKey;
   checklistTemplate: ChecklistTemplatesMap;
   markTemplateIdKnown: (id: string) => void;
+  unmarkTemplateIdKnown: (id: string) => void;
   selectChecklistTemplate: (id: string) => void;
   deselectChecklistTemplate: (id: string) => void;
 };
@@ -105,6 +106,7 @@ export function useChecklistTemplateMutations({
   allKey,
   checklistTemplate,
   markTemplateIdKnown,
+  unmarkTemplateIdKnown,
   selectChecklistTemplate,
   deselectChecklistTemplate,
 }: Deps) {
@@ -353,6 +355,11 @@ export function useChecklistTemplateMutations({
   const deleteChecklistTemplate = (id: string) => {
     removeTemplateMutation.mutate(id);
     deselectChecklistTemplate(id);
+    // Must happen after the mutation's onMutate has a chance to patch `allKey`/`idKey` (it reads
+    // `checklistTemplate`/cache synchronously off the query client, not off `knownTemplateIds`),
+    // but before the next render re-evaluates the per-id fallback query's `enabled` guard —
+    // synchronous here is early enough either way. See unmarkTemplateIdKnown's own comment.
+    unmarkTemplateIdKnown(id);
   };
 
   /** Sets (or clears, `null`) the *caller's own* reminder — safe even for a template the caller

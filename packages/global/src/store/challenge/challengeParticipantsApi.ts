@@ -18,6 +18,10 @@ export function joinChallengeApi(participant: {
   return request.post('/challenge-participants', { participant });
 }
 
-export function leaveChallengeApi(challengeId: string): Promise<{ ok: true } | null> {
-  return request.delete('/challenge-participants', { quiet: true, params: { challengeId } });
+/** Not quiet, same reasoning as joinChallengeApi above — leaving is a deliberate click too, and a
+ * silent failure here would leave the caller's own local cleanup (deleteChecklistTemplate)
+ * running unconditionally, undoing itself the moment the template's still-`public` row gets
+ * re-fetched, with nothing to explain why to whoever's asking "why is this still on my list." */
+export function leaveChallengeApi(challengeId: string): Promise<{ ok: true }> {
+  return request.delete('/challenge-participants', { params: { challengeId } });
 }

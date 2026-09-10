@@ -47,7 +47,7 @@ export const useChallengeParticipants = () => {
   };
 
   const leaveChallenge = (challengeId: string) => {
-    if (!userId) return Promise.resolve(null);
+    if (!userId) return Promise.reject(new Error('Not signed in.'));
     return leaveChallengeApi(challengeId);
   };
 

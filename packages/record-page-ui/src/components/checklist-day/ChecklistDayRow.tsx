@@ -172,11 +172,6 @@ const ChecklistDayRow = ({
               >
                 <Icon width={14} icon="solar:trash-bin-minimalistic-2-line-duotone" />
               </button>
-              {currentChecklistTemplate?.visibility === 'public' && (
-                <span className={styles.publicBadge}>
-                  {intl.formatMessage({ id: 'ChecklistToday.public-badge', defaultMessage: 'Public' })}
-                </span>
-              )}
             </>
           )}
         </div>
@@ -186,7 +181,18 @@ const ChecklistDayRow = ({
             : formatTemplateSchedule(currentChecklistTemplate)}
         </Typography.Text>
       </div>
-      {timeLabel && <Typography.Text className={styles.rowTime}>{timeLabel}</Typography.Text>}
+      <div className={styles.rowEnd}>
+        {currentChecklistTemplate?.visibility === 'public' && (
+          <Icon
+            className={styles.challengeBadge}
+            width={16}
+            height={16}
+            icon="solar:cup-star-bold-duotone"
+            title={intl.formatMessage({ id: 'ChecklistToday.challenge-badge', defaultMessage: 'Challenge' })}
+          />
+        )}
+        {timeLabel && <Typography.Text className={styles.rowTime}>{timeLabel}</Typography.Text>}
+      </div>
     </motion.div>
   );
 };

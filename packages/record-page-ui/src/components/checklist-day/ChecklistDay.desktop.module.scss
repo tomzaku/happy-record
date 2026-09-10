@@ -269,15 +269,18 @@
   color: var(--text-description-color);
 }
 
+.rowEnd {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
 // Covers both "I shared this" and "I joined this" — a participant's merged-in
 // copy carries the owner's real `visibility`, since joining never forks it.
-.publicBadge {
-  font-size: 11px;
-  font-weight: 600;
+.challengeBadge {
+  flex-shrink: 0;
   color: var(--almanac-badge-ink);
-  background: var(--almanac-badge-bg);
-  padding: 2px $spacing-xs;
-  border-radius: 4px;
 }
 
 .emptyContainer {

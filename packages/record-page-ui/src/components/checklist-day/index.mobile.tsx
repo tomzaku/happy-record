@@ -146,17 +146,21 @@ const ChecklistDay = ({
           <Typography.Text className={styles.title}>
             {currentChecklistTemplate?.title}
           </Typography.Text>
-          {/* Same badge as ChecklistDay.desktop.tsx's own — mobile just
-              never got it, not a deliberate omission. */}
-          {currentChecklistTemplate?.visibility === 'public' && (
-            <span className={styles.publicBadge}>
-              {intl.formatMessage({
-                id: 'ChecklistToday.public-badge',
-                defaultMessage: 'Public',
-              })}
-            </span>
-          )}
         </div>
+        {/* Same badge as ChecklistDay.desktop.tsx's own — mobile just
+            never got it, not a deliberate omission. */}
+        {currentChecklistTemplate?.visibility === 'public' && (
+          <Icon
+            className={styles.challengeBadge}
+            width={18}
+            height={18}
+            icon="solar:cup-star-bold-duotone"
+            title={intl.formatMessage({
+              id: 'ChecklistToday.challenge-badge',
+              defaultMessage: 'Challenge',
+            })}
+          />
+        )}
         <Checkbox
           defaultChecked={Boolean(currentChecklist?.completedAt)}
           className={styles.checkbox}

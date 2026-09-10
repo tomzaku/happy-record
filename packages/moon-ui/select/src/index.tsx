@@ -86,7 +86,13 @@ const Select = <T extends SelectOption>({
   // most floating-UI popovers make rather than repositioning on every scroll tick.
   useEffect(() => {
     if (!isOpen) return;
-    const handleScroll = () => close();
+    const handleScroll = (event: Event) => {
+      // Capture-phase `window` listener sees every scroll in the document, including the
+      // options list's own `overflow-y: auto` — without this guard, scrolling the list itself
+      // immediately closed it.
+      if (optionsRef.current && optionsRef.current.contains(event.target as Node)) return;
+      close();
+    };
     window.addEventListener('scroll', handleScroll, true);
     window.addEventListener('resize', handleScroll);
     return () => {

@@ -1,0 +1,94 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  width: 100%;
+  padding: $spacing-md $spacing-lg;
+  margin-bottom: $spacing-sm;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-description-color);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--almanac-accent);
+  cursor: pointer;
+}
+
+// A vertical stack, not a horizontal scroller — this widget now lives in the home page's own
+// right column (index.desktop.tsx) / at the top of the mobile body, both single-column contexts
+// already sized (index.desktop.module.scss's own `.desktopBody` grid-template-columns) for
+// ChecklistFieldGroupAdd's own field rows to fit without wrapping (see `.itemCard` below).
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.itemCard {
+  width: 100%;
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.itemHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  cursor: pointer;
+}
+
+.itemBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: var(--icon-primary);
+}
+
+.itemTitle {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemChevron {
+  flex-shrink: 0;
+  color: var(--text-description-color);
+}
+
+.plainRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.plainLabel {
+  color: var(--text-description-color);
+}

@@ -7,6 +7,7 @@ import WeeklyProgressCard from './components/WeeklyProgressCard';
 import HomeViewSwitcher, { HomeViewMode } from './components/home-view-switcher';
 import switcherStyles from './components/view-switcher/index.module.scss';
 import HomeCalendar from './components/home-calendar';
+import ChallengeQuickSubmit from './components/challenge-quick-submit';
 // import MusicAudioPlayer from '@pregnant/music-audio-player';
 import { DesktopDrawer } from '@dreamer/header';
 import styles from './index.desktop.module.scss';
@@ -54,7 +55,13 @@ const TaskListPage = () => {
             for "today" — see useChecklists.tsx's `ensureChecklistsFetched`. */}
         {viewMode === 'list' && (
           <div className={styles.rightCalendar}>
-            <WeeklyProgressCard />
+            {/* Top of the column, ahead of MiniMonthCalendar's own wide range fetch below (see
+                the fetch-ordering comment above) — its own per-challenge single-checklist
+                reads/writes (useChallengeQuickSubmitList → useTaskDetailModalData) may now fire a
+                redundant single-day fetch MiniMonthCalendar's own wide one would otherwise have
+                already covered; harmless (same last-write-wins merge every scoped fetch here
+                already relies on), just not the free win the old bottom placement was. */}
+            <ChallengeQuickSubmit />
             <div className={styles.rightPanelHeader}>
               <Typography.Text className={styles.rightPanelLabel}>
                 {intl.formatMessage({ id: 'right-panel-switcher.title', defaultMessage: 'History' })}
@@ -99,6 +106,10 @@ const TaskListPage = () => {
                 <RecentHistory />
               )}
             </Card>
+
+            {/* Bottom of the column — the "This week" dashboard-mini glance, least urgent of the
+                three once ChallengeQuickSubmit sits above it. */}
+            <WeeklyProgressCard />
           </div>
         )}
 

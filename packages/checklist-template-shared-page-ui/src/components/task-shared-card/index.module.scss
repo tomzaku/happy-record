@@ -8,6 +8,13 @@
   padding: $spacing-lg;
 }
 
+// Mobile-only glass variant (see index.tsx's own `glass` prop comment) — mirrors
+// index.desktop.module.scss's `.sheetGlass`: blur added, background overridden inline by the
+// caller, border stays `--ct-inner-border` from `.container` above.
+.containerGlass {
+  backdrop-filter: blur(20px);
+}
+
 .dayContainer {
   display: flex;
   gap: $spacing-sm;

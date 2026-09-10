@@ -7,7 +7,6 @@
 }
 
 .desktopContainer {
-  height: 100vh;
   display: flex;
   position: relative;
   // Fills the gap around `.almanacScope`'s own rounded top-left corner
@@ -19,7 +18,10 @@
 
 .desktopBody {
   display: grid;
-  grid-template-columns: 1fr 350px;
+  // Widened from 350px — ChallengeQuickSubmit now lives in this column too (see
+  // index.desktop.tsx), and its own field-group rows need real room past ~380px or the value
+  // input crowds the field's label into an overlapping wrap (see that widget's own comment).
+  grid-template-columns: 1fr 480px;
   gap: $spacing-lg;
   flex: 1;
   overflow: hidden;

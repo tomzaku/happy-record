@@ -188,6 +188,9 @@ const ScheduleEditDialogs = ({
 
   const handleStartDateChange = (iso: string) => {
     setTempStartDay(iso);
+    if (tempEndDay && new Date(tempEndDay) < new Date(iso)) {
+      setTempEndDay(iso);
+    }
     if (!tempAllDay) {
       const d = new Date(iso);
       setTempTime(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);

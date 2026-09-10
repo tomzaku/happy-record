@@ -30,6 +30,7 @@ export const useChecklistTemplates = () => {
     deselectChecklistTemplate,
     isOwnedTemplate,
     markTemplateIdKnown,
+    unmarkTemplateIdKnown,
   } = useChecklistTemplatesQuery();
   const {
     addChecklistTemplate,
@@ -46,6 +47,7 @@ export const useChecklistTemplates = () => {
     allKey,
     checklistTemplate,
     markTemplateIdKnown,
+    unmarkTemplateIdKnown,
     selectChecklistTemplate,
     deselectChecklistTemplate,
   });

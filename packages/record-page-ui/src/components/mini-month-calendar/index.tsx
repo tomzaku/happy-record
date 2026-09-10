@@ -24,6 +24,11 @@ type Props = {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   selectedTag?: string;
+  /** Hide the header's own "Today" button — for a consumer (e.g. `HomeCalendar`'s quick-jump
+   * `dayPanel`) that already sits next to another Today button (the calendar toolbar's own),
+   * where a second one right beside it is redundant. Defaults to shown, matching every other
+   * consumer of this panel. */
+  showTodayButton?: boolean;
 };
 
 const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -32,7 +37,7 @@ const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 // distinct from CalendarDialogDesktop (a full modal "jump to a date"
 // picker reused elsewhere) since this one also needs to show which days
 // have anything recorded (the small dot), which that dialog never needed.
-const MiniMonthCalendar = ({ currentDate, onDateChange, selectedTag }: Props) => {
+const MiniMonthCalendar = ({ currentDate, onDateChange, selectedTag, showTodayButton = true }: Props) => {
   const intl = useIntl();
   const { ensureChecklistsFetched, getChecklistForDateWithoutFetching } = useChecklist();
   const [visibleMonth, setVisibleMonth] = React.useState(() => startOfMonth(currentDate));
@@ -93,13 +98,15 @@ const MiniMonthCalendar = ({ currentDate, onDateChange, selectedTag }: Props) =>
           {format(visibleMonth, 'MMMM yyyy')}
         </Typography.Text>
         <div className={styles.headerLeft}>
-          <button
-            type="button"
-            className={styles.todayButton}
-            onClick={() => onDateChange(todayStart)}
-          >
-            {intl.formatMessage({ id: 'mini-month-calendar.today', defaultMessage: 'Today' })}
-          </button>
+          {showTodayButton && (
+            <button
+              type="button"
+              className={styles.todayButton}
+              onClick={() => onDateChange(todayStart)}
+            >
+              {intl.formatMessage({ id: 'mini-month-calendar.today', defaultMessage: 'Today' })}
+            </button>
+          )}
         <Icon
           onClick={() => setVisibleMonth(prev => addMonths(prev, 1))}
           width={16}

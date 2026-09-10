@@ -18,6 +18,12 @@ import { clearInvalidSession, ensureSession, supabase } from '../lib/supabase';
  */
 const SYNCED_DATA_KEYS = [
   'selected_checklist_templates',
+  // `useChecklistTemplatesQuery.ts`'s own reconciliation bookkeeping for the key above — must
+  // clear alongside it, not survive on its own, or the next identity's real templates would all
+  // read as "already seen" (nothing left in `selected_checklist_templates` to match) and never get
+  // auto-reselected, leaving every one of them silently invisible on the calendar until a manual
+  // fix — exactly the bug that reconciliation exists to self-heal in the first place.
+  'seen_checklist_template_ids',
   // Not yet written by anything real (`useUser.ts` is only read by the
   // local-storage-editor debug tool today) — listed anyway so it can never
   // survive a sign-out and leak into the next identity the way `fields.id`
@@ -283,6 +289,17 @@ export const useSession = () => {
     return error?.message ?? null;
   };
 
+  // GoTrue only merges a provider's profile into the top-level `user_metadata` on a real sign-in
+  // (`signInWithOAuth`) — `linkIdentity` (the path every first-time joiner actually goes through,
+  // see `signInWithGoogle` above) leaves `user_metadata` untouched and puts the profile only in
+  // that identity's own `identity_data`. Reading `user_metadata` alone left every participant who
+  // linked Google from an anonymous session with an empty name/photo on the leaderboard, even
+  // though they were genuinely signed in — confirmed against a live row: `identities[].identity_data`
+  // had the real name while `user_metadata` didn't, so the row got upserted with an empty name.
+  const googleIdentityData = session?.user.identities?.find(i => i.provider === 'google')?.identity_data as
+    | Record<string, unknown>
+    | undefined;
+
   return {
     /** True once the initial session check (and anonymous sign-in) has settled. */
     ready,
@@ -292,21 +309,23 @@ export const useSession = () => {
     /** Set once a real identity (Google, email, ...) is linked. */
     email: session?.user.email,
     /**
-     * The name Google itself already gave us on sign-in — GoTrue puts it in
-     * `user_metadata` as `full_name` (or `name`, depending on provider/flow;
-     * kept as a fallback rather than assumed). `undefined` for an anonymous
-     * session, same as `email` above — there's still no other name concept
-     * in this app (see CLAUDE.md), so anything that used to ask the user to
-     * type their own name (CardShare's old "Your name, shown on the
-     * dashboard" input) should prefer this instead of asking again.
+     * The name Google itself already gave us on sign-in. `user_metadata` has it after a real
+     * `signInWithOAuth` login; a `linkIdentity` never populates `user_metadata` at all, so this
+     * falls back to the linked Google identity's own `identity_data` (see comment above).
+     * `undefined` for an anonymous session, same as `email` above — there's still no other name
+     * concept in this app (see CLAUDE.md), so anything that used to ask the user to type their
+     * own name (CardShare's old "Your name, shown on the dashboard" input) should prefer this
+     * instead of asking again.
      */
-    displayName: (session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name) as
-      | string
-      | undefined,
-    /** Same idea as `displayName` — GoTrue puts Google's profile photo in `user_metadata` as `avatar_url` (or `picture`). */
-    avatarUrl: (session?.user.user_metadata?.avatar_url ?? session?.user.user_metadata?.picture) as
-      | string
-      | undefined,
+    displayName: (session?.user.user_metadata?.full_name ??
+      session?.user.user_metadata?.name ??
+      googleIdentityData?.full_name ??
+      googleIdentityData?.name) as string | undefined,
+    /** Same idea as `displayName` — GoTrue puts Google's profile photo in `user_metadata` as `avatar_url` (or `picture`), or, after a `linkIdentity`, only in the identity's own `identity_data`. */
+    avatarUrl: (session?.user.user_metadata?.avatar_url ??
+      session?.user.user_metadata?.picture ??
+      googleIdentityData?.avatar_url ??
+      googleIdentityData?.picture) as string | undefined,
     signInWithGoogle,
     signOut,
     /** Whether a backend is configured at all — independent of `session`. */

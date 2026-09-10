@@ -1,6 +1,52 @@
+@use 'include-media/dist/include-media' as media;
+
 .rightSlot {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+// Same shape as record-page-ui's own right-column `.calendarPanel` (a mini month calendar,
+// flex-column) — toggled from the toolbar's menu button instead of always shown, since calendar
+// mode already uses the full page width for the grid itself. Rendered via `Calendar`'s own
+// `panelSlot` (see `@dreamer/calendar-view`), sitting beside its `.fcRoot` below the toolbar —
+// not a sibling of the toolbar itself — so opening it never shifts the menu button that toggles it.
+.dayPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 240px;
+  flex-shrink: 0;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+
+  @include media.media('<=tablet') {
+    width: 100%;
+  }
+}
+
+.menuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 4px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--icon-color);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
+}
+
+.menuButtonActive {
+  background: var(--surface-secondary);
+  color: var(--text-color);
 }

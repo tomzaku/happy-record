@@ -20,7 +20,9 @@ const ChecklistTemplateSharedPageMobile = () => {
     defaultGreetingText,
     greetingWidgetLayout,
     buttonWidgetLayout,
+    pageBackgroundLayout,
     pageBackgroundImageUrl,
+    glassOpacity,
     themeId,
     backgroundImageUrl,
     challenge,
@@ -90,11 +92,17 @@ const ChecklistTemplateSharedPageMobile = () => {
           Complete this checklist together and see who keeps the streak alive.
         </Typography.Text>
 
+        {/* Owner-customizable via the config widget's own "Page background" layout picker
+            (solid/glass) — see index.desktop.tsx's own comment. Mobile has no separate outer
+            `.sheet` to apply this to, so it's passed through to TaskSharedCard's own card instead
+            (see that component's `glass` prop comment). */}
         <TaskSharedCard
           checklistTemplate={checklistTemplate}
           fields={fields}
           fieldsLoading={fieldsLoading}
           challenge={previewChallenge}
+          glass={pageBackgroundLayout === 'glass'}
+          glassOpacity={glassOpacity}
         />
         {/* Owner's optional CardShare photo — see theme.ts's useApplyChallengeTheme
             for why desktop instead paints this as a .hero background. */}

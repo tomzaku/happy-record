@@ -24,8 +24,22 @@
   --cv-weekend-bg: color-mix(in srgb, white 6%, transparent);
 }
 
+// Wraps `panelSlot` and `.fcRoot` side by side, below the toolbar — kept as its own row so an
+// open `panelSlot` only pushes the grid over, never the toolbar/`menuSlot` button above it.
+// `flex-wrap` lets a narrow-viewport `panelSlot` (the host app switches it to `width: 100%` below
+// its own breakpoint) drop to its own row above the grid instead of squeezing it to nothing —
+// this package has no media queries of its own to gate that on.
+.body {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
 .fcRoot {
   width: 100%;
+  min-width: 0;
+  flex: 1;
 }
 
 // Month/year's own grid cells want a tall, fixed min-height (room for a day
