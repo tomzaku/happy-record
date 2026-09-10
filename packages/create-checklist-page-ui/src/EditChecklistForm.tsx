@@ -11,22 +11,16 @@ import { startOfDay } from 'date-fns';
 import styles from './index.module.scss';
 
 const EditChecklistForm = () => {
-  const { checklistTemplate, deleteChecklistTemplate, isOwnedTemplate } =
-    useChecklistTemplates();
+  const { checklistTemplate, deleteChecklistTemplate } = useChecklistTemplates();
   const { getAllChecklistWithTemplate, deleteChecklist } = useChecklist();
   const { id } = useParams<{ id: string }>();
   const { updateChecklistTemplate } = useChecklistTemplates();
-  // `fieldGroups` isn't part of the template's own row anymore — a schedule edit made via
-  // GroupScheduleList (the only thing this form's own fieldGroups field ever changes; see that
-  // component's own doc comment) is its own write now, one row at a time. `getFieldGroups` is
-  // what actually resolves the template's real, current groups (`checklistTemplate[id]` alone
-  // never carries them) — merged onto `template` below so every read in this component sees them.
-  const { getFieldGroups, updateFieldGroup } = useFieldGroups();
-  const rawTemplate = checklistTemplate[id || ''];
-  const template = rawTemplate && {
-    ...rawTemplate,
-    fieldGroups: getFieldGroups(rawTemplate.id, isOwnedTemplate(rawTemplate.id)),
-  };
+  // A schedule edit made via GroupScheduleList (the only thing this form's own fieldGroups field
+  // ever changes; see that component's own doc comment) is its own write, one row at a time —
+  // `updateFieldGroup` below is for that. `checklistTemplate[id]` already carries its real,
+  // current groups embedded (checklist-templates-dto.ts), no separate read needed.
+  const { updateFieldGroup } = useFieldGroups();
+  const template = checklistTemplate[id || ''];
   const navigate = useNavigate();
   const intl = useIntl();
   const onSubmit = ({

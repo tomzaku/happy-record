@@ -21,18 +21,22 @@ export function repeatOwnerOf(r: Record<string, unknown>): RepeatOwner {
  * one place. `exceptionsBySchedule` is keyed by the *resolved* schedule row's own id (not the
  * template id — a template can resolve to either the owner's row or the caller's own override,
  * each with its own, separate exceptions), so it's only looked up after `pickRepeat` decides
- * which row actually won. */
+ * which row actually won. `fieldGroupsByTemplate` is the batched read from
+ * `shared/fieldGroups.ts`, keyed by template id — embedded directly on the wire now (see
+ * `toChecklistTemplate`) rather than left for the client to fetch as a separate resource. */
 export function resolveTemplate(
   r: Record<string, unknown>,
   repeatsByTemplate: Record<string, Record<string, unknown>[]>,
   userId: string,
   exceptionsBySchedule: Record<string, ScheduleException[]> = {},
+  fieldGroupsByTemplate: Record<string, Record<string, unknown>[]> = {},
 ) {
   const ownerId = r.user_id as string;
   const repeatRow = pickRepeat(repeatsByTemplate[r.id as string], userId, ownerId);
   const isPersonalOverride = !!repeatRow && repeatRow.user_id === userId && userId !== ownerId;
   const exceptions = repeatRow ? exceptionsBySchedule[repeatRow.id as string] : undefined;
-  return toChecklistTemplate(r, repeatRow, isPersonalOverride, exceptions);
+  const fieldGroups = fieldGroupsByTemplate[r.id as string] ?? [];
+  return toChecklistTemplate(r, repeatRow, isPersonalOverride, exceptions, ownerId === userId, fieldGroups);
 }
 
 /** For `GET /:id` — loads the row (there's nothing to authorize without it) and decides whether

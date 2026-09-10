@@ -215,6 +215,7 @@
       "packages/global": {
         "packageJson": {
           "dependencies": [
+            "npm:@moon-ui/toast@1.0.0",
             "npm:@supabase/supabase-js@2.50.0",
             "npm:@tanstack/react-query@5",
             "npm:@types/react-motion@^0.0.40",
@@ -386,6 +387,13 @@
           ]
         }
       },
+      "packages/moon-ui/provider": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@moon-ui/toast@1.0.0"
+          ]
+        }
+      },
       "packages/moon-ui/radio": {
         "packageJson": {
           "dependencies": [
@@ -404,6 +412,13 @@
         "packageJson": {
           "dependencies": [
             "npm:rc-slider@^11.1.8"
+          ]
+        }
+      },
+      "packages/moon-ui/toast": {
+        "packageJson": {
+          "dependencies": [
+            "npm:notistack@^3.0.1"
           ]
         }
       },

@@ -40,7 +40,7 @@ export const useCalendarEvents = (
   searchQuery?: string,
 ): CalendarEvent[] => {
   const { getChecklistsForTemplate, ensureChecklistsFetched } = useChecklist();
-  const { checklistTemplate, withFieldGroups, selectedChecklistTemplates, getTemplateOccurrencesInRange } =
+  const { checklistTemplate, selectedChecklistTemplates, getTemplateOccurrencesInRange } =
     useChecklistTemplates();
 
   React.useEffect(() => {
@@ -65,9 +65,8 @@ export const useCalendarEvents = (
     // else here dedupes a template's own events, so one would otherwise render twice.
     const templateIds = checklistTemplateId ? [checklistTemplateId] : [...new Set(selectedChecklistTemplates)];
     for (const id of templateIds) {
-      const rawTemplate = checklistTemplate[id];
-      if (!rawTemplate) continue;
-      const template = withFieldGroups(rawTemplate);
+      const template = checklistTemplate[id];
+      if (!template) continue;
       if (selectedTag !== 'all' && !(template.tags ?? []).includes(selectedTag)) continue;
 
       const hasActiveFieldGroups = hasGroupSchedule(template);
@@ -181,7 +180,6 @@ export const useCalendarEvents = (
     range,
     getChecklistsForTemplate,
     checklistTemplate,
-    withFieldGroups,
     selectedChecklistTemplates,
     getTemplateOccurrencesInRange,
     selectedTag,

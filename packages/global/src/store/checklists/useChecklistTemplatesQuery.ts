@@ -99,9 +99,13 @@ export function useChecklistTemplatesQuery() {
   const deselectChecklistTemplate = (id: string) =>
     updateSelectedChecklistTemplate(prev => prev.filter(templateId => templateId !== id));
 
-  // A template found here is definitely owned — lets getFieldGroups trust an empty "all mine"
-  // field-groups result as a real zero instead of refetching (see its own `isOwned`).
-  const isOwnedTemplate = React.useCallback((id: string) => !!allTemplates?.[id], [allTemplates]);
+  // Not mere presence in `allTemplates` — that map holds both owned and joined-challenge templates
+  // now (listOwnedAndJoinedTemplates), so presence alone can't tell them apart. `isOwner` is a
+  // real, server-set field (toChecklistTemplate) for exactly this; getFieldGroups trusts it to
+  // decide whether an empty "all mine" field-groups result is a real zero or means "go fetch this
+  // template's groups for real" (a joined template's groups belong to the sharer, never in "all
+  // mine" at all).
+  const isOwnedTemplate = React.useCallback((id: string) => !!allTemplates?.[id]?.isOwner, [allTemplates]);
 
   return {
     userId,

@@ -1,5 +1,4 @@
 import React from 'react';
-import { useFieldGroups } from './useFieldGroups';
 import { useChecklistTemplatesQuery } from './useChecklistTemplatesQuery';
 import { useChecklistTemplateMutations } from './useChecklistTemplateMutations';
 import { isTemplateScheduledOnDate, listTemplateOccurrences } from './templateOccurrences';
@@ -12,11 +11,13 @@ export { useChecklistTemplateDetail } from './useChecklistTemplateDetail';
 /**
  * Composes the read side (useChecklistTemplatesQuery) and write side
  * (useChecklistTemplateMutations) into the one public hook every consumer actually calls, and
- * adds the pieces that need both: merging in field groups, and the schedule-matching read
- * functions the home page's calendar uses.
+ * adds the schedule-matching read functions the home page's calendar uses. `fieldGroups` is a
+ * real column on the wire again (see checklist-templates-dto.ts's own header comment) — every
+ * `checklistTemplate[id]` already carries its real, current groups, so there's no merge step
+ * here anymore (there used to be one, `withFieldGroups`, back when it was its own resource fetched
+ * separately; see git history if you need the old shape).
  */
 export const useChecklistTemplates = () => {
-  const { getFieldGroups } = useFieldGroups();
   const {
     userId,
     queryClient,
@@ -49,38 +50,22 @@ export const useChecklistTemplates = () => {
     deselectChecklistTemplate,
   });
 
-  // `field-groups` isn't a column on this row anymore — every read function below merges
-  // `getFieldGroups(id)` onto the object it returns.
-  const withFieldGroups = React.useCallback(
-    (template: ChecklistTemplate): ChecklistTemplate => ({
-      ...template,
-      fieldGroups: getFieldGroups(template.id, isOwnedTemplate(template.id)),
-    }),
-    [getFieldGroups, isOwnedTemplate],
-  );
-
   const getRecommendChecklistTemplates = React.useCallback(
-    (): ChecklistTemplate[] => Object.values(checklistTemplate).map(withFieldGroups),
-    [checklistTemplate, withFieldGroups],
+    (): ChecklistTemplate[] => Object.values(checklistTemplate),
+    [checklistTemplate],
   );
 
   const getChecklistTemplateIdsByGivingDate = React.useCallback(
     ({ date }: { date: Date } = { date: new Date() }) =>
-      selectedChecklistTemplates.filter(id => {
-        const raw = checklistTemplate[id];
-        return isTemplateScheduledOnDate(raw && withFieldGroups(raw), date);
-      }),
-    [selectedChecklistTemplates, checklistTemplate, withFieldGroups],
+      selectedChecklistTemplates.filter(id => isTemplateScheduledOnDate(checklistTemplate[id], date)),
+    [selectedChecklistTemplates, checklistTemplate],
   );
 
   // Range form of the same day-matching — useCalendarEvents.ts's own event generation, one
   // `list()` call per template instead of testing every day against every template.
   const getTemplateOccurrencesInRange = React.useCallback(
-    (id: string, from: Date, to: Date): Date[] => {
-      const raw = checklistTemplate[id];
-      return listTemplateOccurrences(raw && withFieldGroups(raw), from, to);
-    },
-    [checklistTemplate, withFieldGroups],
+    (id: string, from: Date, to: Date): Date[] => listTemplateOccurrences(checklistTemplate[id], from, to),
+    [checklistTemplate],
   );
 
   return {
@@ -102,9 +87,5 @@ export const useChecklistTemplates = () => {
     getChecklistTemplateIdsByGivingDate,
     getTemplateOccurrencesInRange,
     isOwnedTemplate,
-    // Exposed for callers that look up one template at a time from the raw `checklistTemplate`
-    // map and need its real `fieldGroups` (useCalendarEvents.ts's own per-day event builder) —
-    // mapping every template via getRecommendChecklistTemplates would be wasteful there.
-    withFieldGroups,
   };
 };

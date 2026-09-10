@@ -19,7 +19,6 @@ import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
 export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
   const {
     checklistTemplate,
-    withFieldGroups,
     updateChecklistTemplate,
     splitChecklistTemplate,
     updateMyReminder,
@@ -29,18 +28,12 @@ export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
   const { getChecklistDetail, addChecklist, updateChecklist } = useChecklist();
   const { getAllRecordFields, getRecordFieldsByTemplateId } = useRecordField();
 
-  const rawTemplate = data ? checklistTemplate[data.checklistTemplateId] : undefined;
-  // `withFieldGroups` always returns a brand-new spread object (see useChecklistTemplates.tsx's
-  // own definition) — calling it unmemoized here made `template` a new reference every render
-  // regardless of whether `rawTemplate` actually changed, which cascaded into every memo below it
-  // (`activeGroups` → `relevantGroups` → `fieldsByGroup`) recomputing every render too, and fed
-  // ChecklistFieldGroupAdd a new `fields` array every render — refiring its own reload effect
-  // forever. Every other derived value here is already memoed against real inputs; this one
-  // wasn't.
-  const template = React.useMemo(
-    () => (rawTemplate ? withFieldGroups(rawTemplate) : undefined),
-    [rawTemplate, withFieldGroups],
-  );
+  // `fieldGroups` is a real column on the wire again (checklist-templates-dto.ts) — the template
+  // already carries its real, current groups, no separate merge step needed (there used to be
+  // one, `withFieldGroups`, whose own unmemoized spread was what made `template` churn a new
+  // reference every render regardless of whether the underlying data actually changed; see git
+  // history if you need the old shape).
+  const template = data ? checklistTemplate[data.checklistTemplateId] : undefined;
 
   // `getRecordFieldsByTemplateId` guards on an empty templateId itself, safe to call
   // unconditionally even while the modal is closed (`data` undefined).
@@ -135,8 +128,8 @@ export const useTaskDetailModalData = (data: CalendarEventData | undefined) => {
     updateMyReminder,
     modifyOccurrence,
     // Whether *this device* owns the template, not just whether it's synced locally — a joined
-    // challenge's template lands in the same `checklistTemplate` map (see withFieldGroups above),
-    // so this is what tells "my own task" from "one I joined" for the Schedule vs. My Reminder
+    // challenge's template lands in the same `checklistTemplate` map too, so this is what tells
+    // "my own task" from "one I joined" for the Schedule vs. My Reminder
     // choice below (same check detail-task-page's own index.desktop.tsx/index.mobile.tsx make via
     // `!challenge || challenge.ownerId === userId` — this modal has no `challenge` object in scope,
     // so `isOwnedTemplate` is the simpler equivalent).

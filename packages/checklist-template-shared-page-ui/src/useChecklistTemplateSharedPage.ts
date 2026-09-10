@@ -130,12 +130,13 @@ export function useChecklistTemplateSharedPage() {
   // challenge row at all is joinable.
   const isChallenge = !!challenge;
   const navigate = useNavigate();
-  const { getChecklistTemplateOnly, getFieldsAndGroups } = useGetChecklistTemplateApi();
+  const { getChecklistTemplateOnly, getFields } = useGetChecklistTemplateApi();
 
-  // Split so the page can render the template's own headline/card the moment it's in, instead of
-  // waiting on fields/fieldGroups too — those two are a separate, slower round trip (see
-  // useGetChecklistTemplateApi.tsx's own comment) and TaskSharedCard renders perfectly well with
-  // `fields` still empty, showing its own small spinner in their place meanwhile.
+  // Split so the page can render the template's own headline/card the moment it's in (already
+  // carrying its real `fieldGroups`, embedded on the wire — see useGetChecklistTemplateApi.tsx's
+  // own comment), instead of waiting on `fields` too — a separate, slower round trip, and
+  // TaskSharedCard renders perfectly well with `fields` still empty, showing its own small
+  // spinner in their place meanwhile.
   // `fields: undefined` means "still loading," told apart from "loaded, genuinely none."
   const [checklistTemplate, setChecklistTemplate] = React.useState<ChecklistTemplate | null>(null);
   const [fields, setFields] = React.useState<RecordField[] | undefined>(undefined);
@@ -242,11 +243,10 @@ export function useChecklistTemplateSharedPage() {
       if (cancelled) return;
       setChecklistTemplate(template);
       if (!template) return;
-      // Fired only once the template itself is in — fieldGroups/fields aren't gated on anything
-      // else, but there's no id to fetch them by until this resolves.
-      getFieldsAndGroups(template.id).then(({ fields: fetchedFields, fieldGroups }) => {
+      // `fields` aren't gated on anything else, but there's no id to fetch them by until this
+      // resolves — `template.fieldGroups` is already real, no separate fetch needed for those.
+      getFields(template.id).then(({ fields: fetchedFields }) => {
         if (cancelled) return;
-        setChecklistTemplate(prev => (prev ? { ...prev, fieldGroups } : prev));
         setFields(fetchedFields);
       });
     });

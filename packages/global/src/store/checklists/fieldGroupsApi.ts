@@ -1,20 +1,12 @@
-// Thin typed client for the `field-groups` edge function — one exported function per route.
-// Quiet throughout: a failure resolves to null, and useFieldGroups.tsx's own in-memory state is
-// the fallback.
+// Thin typed client for the `field-groups` edge function's write routes — one exported function
+// per route. Quiet throughout: a failure resolves to null, and useFieldGroupMutations.ts's own
+// optimistic write is the fallback. No client-side read function here anymore: `GET
+// /field-groups`/`GET /field-groups?checklistTemplateId=` still exist server-side, but a
+// `ChecklistTemplate` already carries its own real `fieldGroups` embedded on every read
+// (checklist-templates-dto.ts) — nothing client-side fetches this resource directly by itself now.
 
 import { request } from '../../lib/api';
 import type { FieldGroup } from './fieldGroupTypes';
-
-/** `checklistTemplateId` omitted → every group across all of the caller's templates (see the
- * edge function's own comment on why that's needed at all). */
-export function fetchFieldGroups(
-  opts: { checklistTemplateId?: string } = {},
-): Promise<{ fieldGroups: FieldGroup[] } | null> {
-  return request.get('/field-groups', {
-    quiet: true,
-    params: { checklistTemplateId: opts.checklistTemplateId },
-  });
-}
 
 export function saveFieldGroup(fieldGroup: FieldGroup): Promise<{ ok: true } | null> {
   return request.post('/field-groups', { fieldGroup }, { quiet: true });

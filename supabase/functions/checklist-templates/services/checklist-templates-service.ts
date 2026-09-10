@@ -6,6 +6,7 @@
 
 import { fetchRepeats, saveRepeat } from '../../../shared/schedules.ts';
 import { fetchExceptionsForSchedules } from '../../../shared/scheduleExceptions.ts';
+import { fetchFieldGroupsByTemplates } from '../../../shared/fieldGroups.ts';
 import { recordChecklistLog } from '../../../shared/checklistLogs.ts';
 import {
   fetchJoinedTemplateIds,
@@ -38,16 +39,21 @@ export async function listOwnedAndJoinedTemplates({ db, userId }: Ctx) {
   const rows = [...ownedRows, ...visibleJoinedRows];
   const repeats = await fetchRepeats(db, 'checklistTemplateId', rows.map(repeatOwnerOf), userId);
   const exceptions = await fetchExceptionsForSchedules(db, scheduleIdsOf(repeats));
+  // Same owner/visibility facts as `repeatOwnerOf` above — a field group's own schedule is only
+  // surfaced to a non-owner viewer when its *template* is public, same rule as everything else on
+  // this row, so `fetchFieldGroupsByTemplates` (shared/fieldGroups.ts) takes the identical shape.
+  const fieldGroups = await fetchFieldGroupsByTemplates(db, userId, rows.map(repeatOwnerOf));
   // resolveTemplate's viewer/owner resolution actually matters here now: a joined row's `user_id`
   // is the sharer, not the caller, so a personal reminder override (`schedules.user_id === userId`)
   // has to win over the owner's own schedule.
-  return rows.map(r => resolveTemplate(r, repeats, userId, exceptions));
+  return rows.map(r => resolveTemplate(r, repeats, userId, exceptions, fieldGroups));
 }
 
 export async function getTemplateWithRepeat({ db, userId }: Ctx, row: Record<string, unknown>) {
   const repeats = await fetchRepeats(db, 'checklistTemplateId', [repeatOwnerOf(row)], userId);
   const exceptions = await fetchExceptionsForSchedules(db, scheduleIdsOf(repeats));
-  return resolveTemplate(row, repeats, userId, exceptions);
+  const fieldGroups = await fetchFieldGroupsByTemplates(db, userId, [repeatOwnerOf(row)]);
+  return resolveTemplate(row, repeats, userId, exceptions, fieldGroups);
 }
 
 // Every schedule row's own id, across every template's own list (owner's default + any

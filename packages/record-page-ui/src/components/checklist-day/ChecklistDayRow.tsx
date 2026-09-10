@@ -1,5 +1,5 @@
 import React from 'react';
-import { useChecklist, useChecklistTemplates, useFieldGroups } from '@dreamer/global';
+import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
 import { motion } from 'framer-motion';
@@ -16,8 +16,6 @@ type Props = {
   date: Date;
   checklist: ReturnType<typeof useChecklist>['checklist'];
   checklistTemplate: ReturnType<typeof useChecklistTemplates>['checklistTemplate'];
-  getFieldGroups: ReturnType<typeof useFieldGroups>['getFieldGroups'];
-  isOwnedTemplate: ReturnType<typeof useChecklistTemplates>['isOwnedTemplate'];
   focusedTaskId: string | null;
   hoveredTaskId: string | null;
   setFocusedTaskId: (id: string | null) => void;
@@ -41,8 +39,6 @@ const ChecklistDayRow = ({
   date,
   checklist,
   checklistTemplate,
-  getFieldGroups,
-  isOwnedTemplate,
   focusedTaskId,
   hoveredTaskId,
   setFocusedTaskId,
@@ -59,14 +55,7 @@ const ChecklistDayRow = ({
 }: Props) => {
   const intl = useIntl();
   const currentChecklist = checklist[id];
-  const rawTemplate = checklistTemplate[currentChecklist.checklistTemplateId];
-  // `fieldGroups` isn't a column on the template row anymore (see useFieldGroups.tsx) —
-  // `checklistTemplate[id]` alone never carries it, so this merges in the real, current groups
-  // directly rather than trusting a stale (or perpetually empty) copy.
-  const currentChecklistTemplate = rawTemplate && {
-    ...rawTemplate,
-    fieldGroups: getFieldGroups(rawTemplate.id, isOwnedTemplate(rawTemplate.id)),
-  };
+  const currentChecklistTemplate = checklistTemplate[currentChecklist.checklistTemplateId];
   const completed = Boolean(currentChecklist?.completedAt);
   const color = currentChecklistTemplate?.avatar.color || '#8A8A8A';
   const timeLabel = completed

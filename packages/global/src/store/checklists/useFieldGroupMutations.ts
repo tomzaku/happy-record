@@ -1,22 +1,68 @@
 import { v4 } from 'uuid';
 import { useMutation, type QueryClient, type QueryKey } from '@tanstack/react-query';
-import { fieldGroupsKeys } from './fieldGroupsKeys';
+import { checklistTemplatesKeys } from './checklistTemplatesKeys';
 import { patchFieldGroupRepeat, saveFieldGroup } from './fieldGroupsApi';
-import { writeGroup, writeGroupIfPresent, type FieldGroupsMap } from './fieldGroupsCache';
+import type { ChecklistTemplate, ChecklistTemplatesMap } from './checklistTemplateTypes';
 import type { FieldGroup } from './fieldGroupTypes';
 
+// Snapshots (and reverts) one specific group, never the whole template — two sibling groups on
+// the same template can each be mid-save at once, and a template is one shared cache entry now
+// (checklist-templates-dto.ts), not each group's own independent row the way the old separate
+// field-groups resource had. A stale whole-template snapshot taken when group A's write started
+// would, on A's own rollback, wipe out group B's write that had already landed in between — this
+// is that exact "whole-map snapshot rolling back over a sibling write" bug, just one level deeper
+// than the template-level version useChecklistTemplateMutations.ts/useTags.tsx already guard
+// against, since here the *shared object* being patched is one level down from the cache entry
+// itself.
 type RollbackContext = {
-  previousFromAll: FieldGroup | undefined;
-  previousFromTemplate: FieldGroup | undefined;
+  previousGroupFromAll: FieldGroup | undefined;
+  previousGroupFromId: FieldGroup | undefined;
 };
 
-type Deps = { userId: string | undefined; queryClient: QueryClient; allKey: QueryKey };
+type Deps = { userId: string | undefined; queryClient: QueryClient };
 
-/** The write side of field-groups — see useFieldGroups.tsx, which composes this with the read
- * side. */
-export function useFieldGroupMutations({ userId, queryClient, allKey }: Deps) {
-  // Per-entity rollback (see useTags.tsx). Writes both the bulk "all mine" cache (if loaded) and
-  // this group's own `byTemplate` cache, so whichever one a reader looks through reflects it.
+// Same two tiny cache-writing helpers useChecklistTemplateMutations.ts has its own copies of —
+// not imported from there on purpose: that file pulls in checklistTemplatesApi.ts's own
+// `@supabase/supabase-js` chain, which this file otherwise has no reason to depend on.
+function writeTemplate(queryClient: QueryClient, key: QueryKey, template: ChecklistTemplate | null) {
+  queryClient.setQueryData(key, template);
+}
+
+function writeTemplateIfPresent(queryClient: QueryClient, key: QueryKey, id: string, template: ChecklistTemplate | undefined) {
+  queryClient.setQueryData<ChecklistTemplatesMap>(key, prev => {
+    if (!prev) return prev;
+    const next = { ...prev };
+    if (template) next[id] = template;
+    else delete next[id];
+    return next;
+  });
+}
+
+function withGroup(template: ChecklistTemplate, group: FieldGroup): ChecklistTemplate {
+  const index = template.fieldGroups.findIndex(g => g.id === group.id);
+  const fieldGroups =
+    index >= 0
+      ? template.fieldGroups.map((g, i) => (i === index ? group : g))
+      : [...template.fieldGroups, group];
+  return { ...template, fieldGroups };
+}
+
+function withoutGroup(template: ChecklistTemplate, groupId: string): ChecklistTemplate {
+  return { ...template, fieldGroups: template.fieldGroups.filter(g => g.id !== groupId) };
+}
+
+// The inverse of whatever `withGroup`/an in-place edit just did to this one group — restore its
+// previous version if it had one, or drop it entirely if this write was the one that created it.
+// Always reads `template` fresh (the caller's current cache read, not a value captured back in
+// `onMutate`), so a sibling group's write that landed in between is never touched.
+function revertGroup(template: ChecklistTemplate, groupId: string, previousGroup: FieldGroup | undefined): ChecklistTemplate {
+  return previousGroup ? withGroup(template, previousGroup) : withoutGroup(template, groupId);
+}
+
+/** The write side of field-groups — see useFieldGroups.tsx, which is just this. */
+export function useFieldGroupMutations({ userId, queryClient }: Deps) {
+  const allKey = checklistTemplatesKeys.all(userId);
+
   const saveFieldGroupMutation = useMutation<{ ok: true }, Error, FieldGroup, RollbackContext>({
     mutationFn: async group => {
       const result = await saveFieldGroup(group);
@@ -24,19 +70,25 @@ export function useFieldGroupMutations({ userId, queryClient, allKey }: Deps) {
       return result;
     },
     onMutate: async group => {
-      const byTemplateKey = fieldGroupsKeys.byTemplate(group.checklistTemplateId, userId);
+      const idKey = checklistTemplatesKeys.byId(group.checklistTemplateId, userId);
       await queryClient.cancelQueries({ queryKey: allKey });
-      await queryClient.cancelQueries({ queryKey: byTemplateKey });
-      const previousFromAll = queryClient.getQueryData<FieldGroupsMap>(allKey)?.[group.id];
-      const previousFromTemplate = queryClient.getQueryData<FieldGroupsMap>(byTemplateKey)?.[group.id];
-      writeGroupIfPresent(queryClient, allKey, group.id, group);
-      writeGroup(queryClient, byTemplateKey, group.id, group);
-      return { previousFromAll, previousFromTemplate };
+      await queryClient.cancelQueries({ queryKey: idKey });
+      const templateFromAll = queryClient.getQueryData<ChecklistTemplatesMap>(allKey)?.[group.checklistTemplateId];
+      const templateFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
+      const previousGroupFromAll = templateFromAll?.fieldGroups.find(g => g.id === group.id);
+      const previousGroupFromId = templateFromId?.fieldGroups.find(g => g.id === group.id);
+      if (templateFromAll) writeTemplateIfPresent(queryClient, allKey, group.checklistTemplateId, withGroup(templateFromAll, group));
+      if (templateFromId) writeTemplate(queryClient, idKey, withGroup(templateFromId, group));
+      return { previousGroupFromAll, previousGroupFromId };
     },
     onError: (_error, group, context) => {
-      const byTemplateKey = fieldGroupsKeys.byTemplate(group.checklistTemplateId, userId);
-      writeGroupIfPresent(queryClient, allKey, group.id, context?.previousFromAll);
-      writeGroup(queryClient, byTemplateKey, group.id, context?.previousFromTemplate);
+      const idKey = checklistTemplatesKeys.byId(group.checklistTemplateId, userId);
+      const currentFromAll = queryClient.getQueryData<ChecklistTemplatesMap>(allKey)?.[group.checklistTemplateId];
+      const currentFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
+      if (currentFromAll) {
+        writeTemplateIfPresent(queryClient, allKey, group.checklistTemplateId, revertGroup(currentFromAll, group.id, context?.previousGroupFromAll));
+      }
+      if (currentFromId) writeTemplate(queryClient, idKey, revertGroup(currentFromId, group.id, context?.previousGroupFromId));
     },
   });
 
@@ -52,23 +104,36 @@ export function useFieldGroupMutations({ userId, queryClient, allKey }: Deps) {
       return result;
     },
     onMutate: async ({ fieldGroupId, checklistTemplateId, repeat }) => {
-      const byTemplateKey = fieldGroupsKeys.byTemplate(checklistTemplateId, userId);
+      const idKey = checklistTemplatesKeys.byId(checklistTemplateId, userId);
       await queryClient.cancelQueries({ queryKey: allKey });
-      await queryClient.cancelQueries({ queryKey: byTemplateKey });
-      const previousFromAll = queryClient.getQueryData<FieldGroupsMap>(allKey)?.[fieldGroupId];
-      const previousFromTemplate = queryClient.getQueryData<FieldGroupsMap>(byTemplateKey)?.[fieldGroupId];
+      await queryClient.cancelQueries({ queryKey: idKey });
+      const templateFromAll = queryClient.getQueryData<ChecklistTemplatesMap>(allKey)?.[checklistTemplateId];
+      const templateFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
+      const previousGroupFromAll = templateFromAll?.fieldGroups.find(g => g.id === fieldGroupId);
+      const previousGroupFromId = templateFromId?.fieldGroups.find(g => g.id === fieldGroupId);
       const updatedAt = new Date().toISOString();
-      const applyRepeat = (existing: FieldGroup | undefined) =>
-        existing && { ...existing, repeat: repeat ?? undefined, updatedAt };
-      writeGroupIfPresent(queryClient, allKey, fieldGroupId, applyRepeat(previousFromAll) || undefined);
-      writeGroupIfPresent(queryClient, byTemplateKey, fieldGroupId, applyRepeat(previousFromTemplate) || undefined);
-      return { previousFromAll, previousFromTemplate };
+      if (templateFromAll && previousGroupFromAll) {
+        writeTemplateIfPresent(
+          queryClient,
+          allKey,
+          checklistTemplateId,
+          withGroup(templateFromAll, { ...previousGroupFromAll, repeat: repeat ?? undefined, updatedAt }),
+        );
+      }
+      if (templateFromId && previousGroupFromId) {
+        writeTemplate(queryClient, idKey, withGroup(templateFromId, { ...previousGroupFromId, repeat: repeat ?? undefined, updatedAt }));
+      }
+      return { previousGroupFromAll, previousGroupFromId };
     },
     onError: (_error, { fieldGroupId, checklistTemplateId }, context) => {
-      const byTemplateKey = fieldGroupsKeys.byTemplate(checklistTemplateId, userId);
-      if (context?.previousFromAll) writeGroupIfPresent(queryClient, allKey, fieldGroupId, context.previousFromAll);
-      if (context?.previousFromTemplate) {
-        writeGroupIfPresent(queryClient, byTemplateKey, fieldGroupId, context.previousFromTemplate);
+      const idKey = checklistTemplatesKeys.byId(checklistTemplateId, userId);
+      const currentFromAll = queryClient.getQueryData<ChecklistTemplatesMap>(allKey)?.[checklistTemplateId];
+      const currentFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
+      if (currentFromAll && context?.previousGroupFromAll) {
+        writeTemplateIfPresent(queryClient, allKey, checklistTemplateId, withGroup(currentFromAll, context.previousGroupFromAll));
+      }
+      if (currentFromId && context?.previousGroupFromId) {
+        writeTemplate(queryClient, idKey, withGroup(currentFromId, context.previousGroupFromId));
       }
     },
   });

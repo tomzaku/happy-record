@@ -32,7 +32,7 @@ const mockMergeRecordFields = jest.fn();
 const mockGetChecklistTemplateOnly = jest
   .fn()
   .mockResolvedValue({ id: 'template-1', title: 'Gym', fieldGroups: [], records: [], tags: [] });
-const mockGetFieldsAndGroups = jest.fn().mockResolvedValue({ fields: [], fieldGroups: [] });
+const mockGetFields = jest.fn().mockResolvedValue({ fields: [] });
 
 jest.mock('react-router-dom', () => ({
   useParams: () => ({ id: 'template-1' }),
@@ -67,7 +67,7 @@ jest.mock('@dreamer/global/src/store/record-field', () => ({
 jest.mock('@dreamer/global/src/hook/checklist-template/useGetChecklistTemplateApi', () => ({
   useGetChecklistTemplateApi: () => ({
     getChecklistTemplateOnly: mockGetChecklistTemplateOnly,
-    getFieldsAndGroups: mockGetFieldsAndGroups,
+    getFields: mockGetFields,
   }),
 }));
 
@@ -86,7 +86,7 @@ beforeEach(() => {
   mockSignInWithGoogle.mockClear();
   mockGetRecordFieldsByIds.mockClear();
   mockGetChecklistTemplateOnly.mockClear();
-  mockGetFieldsAndGroups.mockClear();
+  mockGetFields.mockClear();
 });
 
 describe('isOwner', () => {

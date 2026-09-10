@@ -33,21 +33,6 @@ jest.mock('../../hook/useSession', () => ({
   useSession: () => ({ userId: mockUserId, ready: true }),
 }));
 
-// useFieldGroups.tsx transitively imports fieldGroupsApi.ts -> lib/api.ts -> lib/supabase.ts ->
-// @supabase/supabase-js, which fails to transform under this repo's current jest config — same
-// pre-existing issue useChecklistTemplates.test.tsx already works around (see its own comment).
-// Mocked here too so this file can actually run at all, not just so its own field-group
-// coverage below has something to call.
-const mockGetFieldGroups = jest.fn((_checklistTemplateId: string, _isOwned?: boolean): unknown[] => []);
-jest.mock('./useFieldGroups', () => ({
-  useFieldGroups: () => ({
-    getFieldGroups: mockGetFieldGroups,
-    allGroupsSettled: true,
-    fieldGroupList: {},
-  }),
-  useFieldGroupsForTemplate: () => ({ fieldGroups: [], isLoading: false }),
-}));
-
 jest.mock('./checklistsApi', () => ({
   fetchChecklists: jest.fn().mockResolvedValue({ checklists: [] }),
   fetchChecklistById: jest.fn().mockResolvedValue({ checklists: [] }),

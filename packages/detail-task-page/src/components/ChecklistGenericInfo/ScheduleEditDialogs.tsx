@@ -101,6 +101,17 @@ const ScheduleEditDialogs = ({
 
   const hasFieldGroups = hasGroupSchedule(checklistTemplate);
   const hasActiveFieldGroups = getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).length > 0;
+  // A group created with a real schedule already attached (e.g. "Add with AI", which always
+  // proposes a byday/byhour/byminute per group) has nothing ambiguous left to ask about — undefined
+  // `scheduleMode` already means per-group everywhere else in the app (see
+  // ChecklistTemplate.scheduleMode's own comment, "today's default behavior"). Only a template
+  // whose active groups have no schedule data at all yet is the genuine first-time case
+  // `ScheduleModeChooser` exists for.
+  const groupsHaveRealSchedule = getActiveFieldGroups(checklistTemplate.fieldGroups ?? []).some(
+    group => !!group.repeat?.byday,
+  );
+  const defaultScheduleMode = (mode: 'general' | 'per_group' | undefined) =>
+    mode ?? (groupsHaveRealSchedule ? 'per_group' : undefined);
   // A one-off task (`repeat.recurring === false`, no field groups) has no real series — its own
   // Start/End Date live on its one real Checklist instance instead, never `repeat` at all (`until`
   // is deliberately never set on `repeat` for this shape — see createTaskUtil.ts's own comment on
@@ -138,7 +149,7 @@ const ScheduleEditDialogs = ({
   );
   const [tempFieldGroups, setTempFieldGroups] = React.useState<FieldGroup[]>(checklistTemplate.fieldGroups);
   const [tempScheduleMode, setTempScheduleMode] = React.useState<'general' | 'per_group' | undefined>(
-    checklistTemplate.scheduleMode,
+    defaultScheduleMode(checklistTemplate.scheduleMode),
   );
   const [pendingScheduleRepeat, setPendingScheduleRepeat] = React.useState<ChecklistTemplate['repeat'] | null>(null);
   const [scheduleScope, setScheduleScope] = React.useState<ScheduleScope>('thisAndFollowing');
@@ -154,7 +165,7 @@ const ScheduleEditDialogs = ({
     );
     setTempRecurrence(repeatToRecurrenceValue(checklistTemplate.repeat, true, true));
     setTempFieldGroups(checklistTemplate.fieldGroups);
-    setTempScheduleMode(checklistTemplate.scheduleMode);
+    setTempScheduleMode(defaultScheduleMode(checklistTemplate.scheduleMode));
   };
 
   // Re-stages from the live template every time this opens — mirrors ChecklistGenericInfo's own

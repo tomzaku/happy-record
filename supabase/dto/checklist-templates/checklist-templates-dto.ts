@@ -7,11 +7,16 @@
 // columns). `flagId`/`flag_id` is the exception: a real foreign key into `flags` (see
 // 20260821030000_flags.sql) — one flag groups many templates, unlike `tags`. The deprecated
 // `records: string[]` field is dropped: it's unused in the client type already
-// (`@deprecated use groups instead`) and never makes it to the wire here. `fieldGroups` isn't
-// handled here at all anymore — it's the `field-groups` resource now (see
-// 20260829010000_notes_note_id_ownership.sql), fetched separately and merged onto the client
-// object by useChecklistTemplates.tsx, not embedded in this row. `repeat` moved the same way, one
-// migration later — see 20260830000000_repeats_table.sql, table renamed to `schedules` by
+// (`@deprecated use groups instead`) and never makes it to the wire here. `fieldGroups` is still
+// its own table (`field_groups`, see 20260829010000_notes_note_id_ownership.sql) and its own
+// resource for writes (`field-groups`'s POST/PATCH routes), but embedded here on every read again
+// — `toChecklistTemplate`'s caller batches the matching rows via `shared/fieldGroups.ts` and
+// passes them in, the same way it already does for `repeat` below. A joined challenge's own
+// groups belong to the sharer, never the caller, so a client-side "fetch my own separately and
+// merge" step could only ever resolve them for the template's owner — embedding server-side,
+// where the caller's real read permissions for the row are already being evaluated, is what makes
+// a participant's copy of a shared template actually carry its groups too. `repeat` moved the
+// same way, one migration later — see 20260830000000_repeats_table.sql, table renamed to `schedules` by
 // 20260907000000_repeats_rename_to_schedules.sql — except it's still embedded in this
 // row on the wire: `toChecklistTemplate`'s caller (checklist-templates/services and api) fetches the
 // matching `schedules` row itself and passes it in, so the client-facing shape never changed.
@@ -41,6 +46,8 @@ export function toChecklistTemplate(
   repeatRow: Record<string, unknown> | undefined,
   isPersonalOverride: boolean,
   exceptions?: ScheduleException[],
+  isOwner?: boolean,
+  fieldGroups?: Record<string, unknown>[],
 ) {
   const repeat = toRepeat(repeatRow, exceptions);
   return {
@@ -53,6 +60,12 @@ export function toChecklistTemplate(
     tags: (r.tags as string[]) ?? [],
     visibility: (r.visibility as string) ?? 'private',
     updatedAt: r.updated_at as string,
+    // Own row vs a joined challenge's — the client can't tell those apart from mere presence in
+    // its own "all mine" fetch, since that list includes both (listOwnedAndJoinedTemplates). See
+    // useChecklistTemplatesQuery.ts's own `isOwnedTemplate`.
+    isOwner: !!isOwner,
+    // See this file's own header comment on why this is embedded again.
+    fieldGroups: fieldGroups ?? [],
     ...(r.flag_id ? { flagId: r.flag_id as string } : {}),
     ...(r.copied_from_id ? { copiedFromId: r.copied_from_id as string } : {}),
     ...(r.split_from_id ? { splitFromId: r.split_from_id as string } : {}),

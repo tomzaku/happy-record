@@ -5,18 +5,28 @@
 //
 // `fields` (the group's own field-ids-plus-overrides list) and `activeTabs` round-trip as given —
 // config the server never filters on, not relational data (see the migration's own comment on why
-// only identity/note/ordering are real columns). `repeat` moved out the same way `fieldGroups`
-// itself did, one migration later — see `schedules` (20260830000000_repeats_table.sql, renamed by
-// 20260907000000_repeats_rename_to_schedules.sql) — except it's still embedded in this row on the
-// wire: `toFieldGroup`'s caller (field-groups/services and api) fetches the matching `schedules`
-// row itself and passes it in, so the client-facing shape never changed.
+// only identity/note/ordering are real columns) — except each entry of `fields` is normalized to
+// `{ fieldId, overrides? }` here, server-side, rather than left for every client read path to
+// remember to do (a row saved before `FieldGroupField` existed still has plain id strings there).
+// `repeat` moved out the same way `fieldGroups` itself did, one migration later — see `schedules`
+// (20260830000000_repeats_table.sql, renamed by 20260907000000_repeats_rename_to_schedules.sql) —
+// except it's still embedded in this row on the wire: `toFieldGroup`'s caller (field-groups/
+// services and api, and now checklist-templates/services too — see that resource's own dto)
+// fetches the matching `schedules` row itself and passes it in, so the client-facing shape never
+// changed.
+
+function normalizeFields(fields: unknown): Record<string, unknown>[] {
+  return ((fields as unknown[]) ?? []).map(f =>
+    typeof f === 'string' ? { fieldId: f } : (f as Record<string, unknown>),
+  );
+}
 
 export function toFieldGroup(r: Record<string, unknown>, repeat: Record<string, unknown> | undefined) {
   return {
     id: r.id as string,
     checklistTemplateId: r.checklist_template_id as string,
     title: r.title as string,
-    fields: (r.fields as unknown[]) ?? [],
+    fields: normalizeFields(r.fields),
     position: (r.position as number) ?? 0,
     ...(r.note_id ? { noteId: r.note_id as string } : {}),
     ...(r.default_tab !== null && r.default_tab !== undefined ? { defaultTab: r.default_tab as number } : {}),

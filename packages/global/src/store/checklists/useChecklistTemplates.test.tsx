@@ -19,23 +19,6 @@ jest.mock('../../hook/useSession', () => ({
   useSession: () => ({ userId: mockUserId, ready: true }),
 }));
 
-// useFieldGroups.tsx transitively imports fieldGroupsApi.ts -> lib/api.ts -> lib/supabase.ts ->
-// @supabase/supabase-js, which fails to transform under this repo's current jest config (the
-// same pre-existing issue that already breaks useChecklists.test.tsx on a clean checkout —
-// confirmed unrelated to this migration). Mocking the whole hook here — useChecklistTemplates.tsx
-// calls it directly, not just its types — keeps that chain from ever loading.
-const mockGetFieldGroups = jest.fn((_checklistTemplateId: string, _isOwned?: boolean): unknown[] => []);
-jest.mock('./useFieldGroups', () => ({
-  useFieldGroups: () => ({
-    getFieldGroups: mockGetFieldGroups,
-    allGroupsSettled: true,
-    fieldGroupList: {},
-  }),
-  // useChecklistTemplateDetail's own subscribed fallback fetch (see useChecklistTemplateDetail.tsx)
-  // — stubbed to "nothing fetched," same as every other network call in this test file.
-  useFieldGroupsForTemplate: () => ({ fieldGroups: [], isLoading: false }),
-}));
-
 // No real network — every call resolves to "nothing fetched," so tests
 // exercise this hook's own local state, not a scoped-fetch merge, unless a
 // test overrides one of these for itself.
@@ -505,11 +488,15 @@ describe('deleteOccurrence / restoreOccurrence', () => {
 });
 
 describe('useChecklistTemplateDetail', () => {
-  it('fetches and returns one template by id, merging in fresh field groups', async () => {
+  it('fetches and returns one template by id, fieldGroups embedded straight from the response', async () => {
     mockFetchChecklistTemplateById.mockResolvedValueOnce({
-      templates: [{ ...baseTemplate('template-detail-1'), createdAt: 'now', updatedAt: 'now' }],
+      templates: [{
+        ...baseTemplate('template-detail-1'),
+        createdAt: 'now',
+        updatedAt: 'now',
+        fieldGroups: [{ id: 'group-1', checklistTemplateId: 'template-detail-1', title: 'Push', fields: [], position: 0, updatedAt: 'now' }],
+      }],
     });
-    mockGetFieldGroups.mockReturnValueOnce([{ id: 'group-1', checklistTemplateId: 'template-detail-1', title: 'Push', fields: [], position: 0, updatedAt: 'now' }]);
 
     const { result } = renderHook(() => useChecklistTemplateDetail('template-detail-1'), {
       wrapper: createWrapper(),

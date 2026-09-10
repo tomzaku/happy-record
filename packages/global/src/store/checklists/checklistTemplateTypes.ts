@@ -3,6 +3,13 @@ import type { FieldGroup } from './fieldGroupTypes';
 export type ChecklistTemplate = {
   id: string;
   title: string;
+  /** True only for the caller's own row, false for a joined challenge's — set server-side
+   * (`toChecklistTemplate`) by comparing the row's real owner against the caller, since
+   * `listOwnedAndJoinedTemplates` returns both shapes in the same "all mine" list and mere
+   * presence there no longer means ownership. See `useChecklistTemplatesQuery.ts`'s own
+   * `isOwnedTemplate`. Absent (falsy) on the local optimistic copy `addChecklistTemplate` writes
+   * at create time, same as every other server-only field — real for every DTO-mapped row. */
+  isOwner?: boolean;
   repeat?: {
     byminute: string;
     byhour: string;

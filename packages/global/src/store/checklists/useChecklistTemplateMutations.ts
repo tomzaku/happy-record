@@ -269,6 +269,11 @@ export function useChecklistTemplateMutations({
       updatedAt: new Date().toISOString(),
       // Cleared the moment the real row lands — see saveTemplateMutation's own `onSuccess` above.
       isClient: true,
+      // Unambiguous — this device just created it. Set explicitly rather than left absent: the
+      // real DTO-mapped row won't overwrite this optimistic copy in the "all mine" cache until the
+      // server round-trip lands (writeTemplateIfPresent), and `isOwnedTemplate` trusts this field
+      // now, not mere presence in that cache (see ChecklistTemplate['isOwner']'s own comment).
+      isOwner: true,
     });
     selectChecklistTemplate(id);
     // Optimistic — `saved` lets a rare caller (useJoinChallenge.tsx forking a template then

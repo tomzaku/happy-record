@@ -3,8 +3,9 @@
 // fetch (checklist-templates-service.ts's `listOwnedAndJoinedTemplates`), `byId` is one template
 // by its own id (own, or anyone's if `visibility: 'public'`) — used when `all` hasn't been fetched
 // yet, or for a template `all` genuinely can't see (unshared after this caller joined it). See
-// useChecklistTemplateDetail.tsx, the real per-id consumer of `byId`, and fieldGroupsKeys.ts for
-// the same shape one resource over.
+// useChecklistTemplateDetail.tsx, the real per-id consumer of `byId`. A row under either key
+// carries its own `fieldGroups` embedded (checklist-templates-dto.ts) — no sibling key/resource
+// for those anymore.
 
 export const checklistTemplatesKeys = {
   all: (userId: string | undefined) => ['checklist-templates', userId, 'all'] as const,

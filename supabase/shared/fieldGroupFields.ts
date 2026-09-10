@@ -10,8 +10,8 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 /** A field id out of a `field_groups.fields` jsonb array element — either the current
  * `{ fieldId, overrides? }` shape or a legacy plain id string (a row saved before that shape
- * existed — see useChecklistTemplates.tsx's own normalizeFieldGroupFields, the client-side
- * equivalent of this same tolerance). */
+ * existed — see `dto/field-groups/field-groups-dto.ts`'s own `normalizeFields`, the same
+ * tolerance applied when a group's own `fields` array is returned on the wire). */
 function fieldIdOf(entry: unknown): string | undefined {
   if (typeof entry === 'string') return entry;
   if (entry && typeof entry === 'object' && typeof (entry as { fieldId?: unknown }).fieldId === 'string') {

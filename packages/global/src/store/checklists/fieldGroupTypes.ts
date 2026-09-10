@@ -7,15 +7,9 @@ export type FieldGroupField = {
   overrides?: FieldOverrides;
 };
 
-// A group saved before this shipped still has `fields` as plain RecordField id strings — every
-// fetched group goes through this (see useFieldGroups.tsx).
-export const normalizeFieldGroupFields = (
-  fields: (string | FieldGroupField)[] | undefined | null,
-): FieldGroupField[] => (fields ?? []).map(f => (typeof f === 'string' ? { fieldId: f } : f));
-
-/** A real row in `field_groups` (20260829010000_notes_note_id_ownership.sql), not jsonb embedded
- * in `checklist_templates.field_groups` — see useFieldGroups.tsx for the store this is
- * fetched/written through. */
+/** A real row in `field_groups` (20260829010000_notes_note_id_ownership.sql) — embedded onto its
+ * parent `ChecklistTemplate.fieldGroups` on every read again (checklist-templates-dto.ts), though
+ * still its own table and its own resource for writes; see useFieldGroups.tsx for those. */
 export type FieldGroup = {
   id: string;
   checklistTemplateId: string;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useChecklist, useChecklistTemplates, useFieldGroups, isRecurringSchedule } from '@dreamer/global';
+import { useChecklist, useChecklistTemplates, isRecurringSchedule } from '@dreamer/global';
 import styles from './ChecklistDay.desktop.module.scss';
 import { useNavigate } from 'react-router-dom';
 import { AddInlineTaskHandle, PendingInlineTask } from '../AddInlineTask';
@@ -27,12 +27,10 @@ const ChecklistDayDesktop = ({
   const {
     checklistTemplate,
     templatesLoading,
-    isOwnedTemplate,
     deleteChecklistTemplate,
     updateChecklistTemplate,
     deleteOccurrence,
   } = useChecklistTemplates();
-  const { getFieldGroups } = useFieldGroups();
   const navigate = useNavigate();
 
   // `getChecklistByGivingDate` is itself a `useCallback` chain rooted in
@@ -178,8 +176,6 @@ const ChecklistDayDesktop = ({
       date={date}
       checklist={checklist}
       checklistTemplate={checklistTemplate}
-      getFieldGroups={getFieldGroups}
-      isOwnedTemplate={isOwnedTemplate}
       focusedTaskId={focusedTaskId}
       hoveredTaskId={hoveredTaskId}
       setFocusedTaskId={setFocusedTaskId}
