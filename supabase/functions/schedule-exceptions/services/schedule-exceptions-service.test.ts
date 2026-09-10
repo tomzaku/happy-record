@@ -32,36 +32,43 @@ Deno.test('saveScheduleException: derives schedule_id from ctx.userId, not any c
   const db = capturingDb();
   await saveScheduleException(
     { db, userId: 'caller-1' } as never,
-    { checklistTemplateId: 'template-a', date: '2026-09-08', type: 'DELETED' },
+    { checklistTemplateId: 'template-a', occurrenceStartedAt: '2026-09-08T08:00:00.000Z', type: 'DELETED' },
   );
   assertEquals(db.upserts.length, 1);
   assertEquals(db.upserts[0].schedule_id, 'ct:template-a:caller-1');
   assertEquals(db.upserts[0].user_id, 'caller-1');
-  assertEquals(db.upserts[0].id, 'ct:template-a:caller-1:2026-09-08');
+  assertEquals(db.upserts[0].id, 'ct:template-a:caller-1:2026-09-08T08:00:00.000Z');
 });
 
 Deno.test('saveScheduleException: two different callers against the same template id land on two different rows', async () => {
   const db = capturingDb();
   await saveScheduleException(
     { db, userId: 'caller-1' } as never,
-    { checklistTemplateId: 'shared-template', date: '2026-09-08', type: 'DELETED' },
+    { checklistTemplateId: 'shared-template', occurrenceStartedAt: '2026-09-08T08:00:00.000Z', type: 'DELETED' },
   );
   await saveScheduleException(
     { db, userId: 'caller-2' } as never,
-    { checklistTemplateId: 'shared-template', date: '2026-09-08', type: 'DELETED' },
+    { checklistTemplateId: 'shared-template', occurrenceStartedAt: '2026-09-08T08:00:00.000Z', type: 'DELETED' },
   );
   assertEquals(db.upserts[0].schedule_id, 'ct:shared-template:caller-1');
   assertEquals(db.upserts[1].schedule_id, 'ct:shared-template:caller-2');
 });
 
-Deno.test('saveScheduleException: MODIFIED forwards overrideStartedAt onto the row', async () => {
+Deno.test('saveScheduleException: MODIFIED forwards overrideStartedAt and timezone onto the row', async () => {
   const db = capturingDb();
   await saveScheduleException(
     { db, userId: 'caller-1' } as never,
-    { checklistTemplateId: 'template-a', date: '2026-09-08', type: 'MODIFIED', overrideStartedAt: '2026-09-08T09:30:00.000Z' },
+    {
+      checklistTemplateId: 'template-a',
+      occurrenceStartedAt: '2026-09-08T08:00:00.000Z',
+      type: 'MODIFIED',
+      timezone: 'Asia/Ho_Chi_Minh',
+      overrideStartedAt: '2026-09-08T09:30:00.000Z',
+    },
   );
   assertEquals(db.upserts.length, 1);
   assertEquals(db.upserts[0].type, 'MODIFIED');
+  assertEquals(db.upserts[0].timezone, 'Asia/Ho_Chi_Minh');
   assertEquals(db.upserts[0].override_started_at, '2026-09-08T09:30:00.000Z');
 });
 
@@ -69,7 +76,7 @@ Deno.test('deleteScheduleException: derives the same schedule_id shape, scoped t
   const db = capturingDb();
   await deleteScheduleException(
     { db, userId: 'caller-1' } as never,
-    { checklistTemplateId: 'template-a', date: '2026-09-08' },
+    { checklistTemplateId: 'template-a', occurrenceStartedAt: '2026-09-08T08:00:00.000Z' },
   );
-  assertEquals(db.eqCalls, [['id', 'ct:template-a:caller-1:2026-09-08']]);
+  assertEquals(db.eqCalls, [['id', 'ct:template-a:caller-1:2026-09-08T08:00:00.000Z']]);
 });

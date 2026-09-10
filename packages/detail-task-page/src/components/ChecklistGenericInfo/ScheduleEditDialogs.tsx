@@ -16,7 +16,7 @@ import Button from '@moon-ui/button/src/DefaultButton';
 import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
 import { Day } from '@dreamer/tasks-page-common';
-import { startOfDay, format } from 'date-fns';
+import { startOfDay } from 'date-fns';
 import { calculateRepeat } from '@pregnant/create-checklist-page-ui/src/calculateRepeat';
 import {
   repeatToRecurrenceValue,
@@ -46,8 +46,11 @@ type Props = {
   // following"/"All events" (see handleConfirmScheduleScope below). Undefined means there's
   // nothing to scope a single-occurrence edit to (a non-owner, or a caller with no
   // `modifyOccurrence` wired up yet), same "omit the affordance rather than let it silently no-op"
-  // gate `onSplitSchedule` itself already follows.
-  onModifyOccurrence?: (date: string, overrideStartedAt: string) => void;
+  // gate `onSplitSchedule` itself already follows. `occurrenceStartedAt` is the occurrence's own
+  // exact, unmodified moment (`checklist.startedAt`) — not just its calendar day, since a plain
+  // day can't tell two same-day occurrences of a schedule apart (see the `schedule_exceptions`
+  // table's own migration); `overrideStartedAt` is the new moment.
+  onModifyOccurrence?: (occurrenceStartedAt: string, overrideStartedAt: string) => void;
   readOnly?: boolean;
   onUpdateMyReminder?: (repeat: ChecklistTemplate['repeat'] | null) => void;
   // The specific day's own Checklist instance, when there is one — same prop
@@ -252,10 +255,12 @@ const ScheduleEditDialogs = ({
       // "This event" — the occurrence keeps its own place in the series (still generated,
       // still counted), just at the moment `tempStartDay` staged, via a `MODIFIED`
       // schedule_exceptions row (see checklistTemplateTypes.ts's own `modifiedOccurrences` doc
-      // comment) rather than touching `checklistTemplate.repeat` at all. `checklist.startedAt`'s
-      // own calendar day — not `tempStartDay`'s, in case the Start Date field itself got edited
-      // too — is the occurrence actually being overridden; `tempStartDay` is the new moment.
-      onModifyOccurrence?.(format(new Date(checklist.startedAt), 'yyyy-MM-dd'), tempStartDay);
+      // comment) rather than touching `checklistTemplate.repeat` at all. `checklist.startedAt` —
+      // not `tempStartDay`, in case the Start Date field itself got edited too — is the
+      // occurrence's own exact moment being overridden (a plain calendar day can't tell two
+      // same-day occurrences apart, see the `schedule_exceptions` table's own migration);
+      // `tempStartDay` is the new moment.
+      onModifyOccurrence?.(checklist.startedAt, tempStartDay);
       // Same immediate write-back isOneOffTask's own save already does — reflects the change on
       // this exact row right away rather than waiting on a refetch to pick up the exception.
       onUpdateChecklist?.({ id: checklist.id, startedAt: tempStartDay, endedDate: tempEndDay || undefined });

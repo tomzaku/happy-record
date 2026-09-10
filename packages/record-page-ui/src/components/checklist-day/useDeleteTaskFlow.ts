@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, endOfDay, subDays } from 'date-fns';
+import { endOfDay, subDays } from 'date-fns';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 
 type Params = {
@@ -62,19 +62,24 @@ export const useDeleteTaskFlow = ({
     }
   };
 
-  // "This event" — Google Calendar's own EXDATE: skip just this one calendar day, leaving the
-  // rest of the series untouched. The exception alone is enough to hide it — `occursOnDate`
+  // "This event" — Google Calendar's own EXDATE: skip just this one occurrence, leaving the rest
+  // of the series untouched. The exception alone is enough to hide it — `occursOnDate`
   // (rruleUtils.ts) checks `exceptionDates` before either matching branch, so this day's own
   // template id never even reaches `scheduledChecklists`'/`nonScheduledChecklists`' own lookups
-  // again once the invalidated query refetches. Also removes the local row when one was already
-  // materialized (not `clientOnly`) — not required for correctness, just hygiene, same as
-  // `handleDeleteAll` below already does for the whole series.
+  // again once the invalidated query refetches. `currentChecklist.startedAt` (not `date`/`format`)
+  // is what actually identifies the occurrence server-side now — a plain calendar day can't tell
+  // two same-day occurrences of a schedule apart (see the `schedule_exceptions` table's own
+  // migration) — a `clientOnly` placeholder's own `startedAt` is still a deterministic stand-in
+  // for the same real moment, so this works identically whether or not today's row has actually
+  // been materialized yet. Also removes the local row when one was already materialized (not
+  // `clientOnly`) — not required for correctness, just hygiene, same as `handleDeleteAll` below
+  // already does for the whole series.
   const handleDeleteToday = () => {
     if (!deletingTaskId) return;
     const currentChecklist = checklist[deletingTaskId];
     finishDelete();
     if (!currentChecklist) return;
-    deleteOccurrence(currentChecklist.checklistTemplateId, format(date, 'yyyy-MM-dd'));
+    deleteOccurrence(currentChecklist.checklistTemplateId, currentChecklist.startedAt);
     if (!currentChecklist.clientOnly) deleteChecklist(deletingTaskId);
   };
 

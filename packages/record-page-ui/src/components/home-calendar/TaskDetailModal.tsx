@@ -224,7 +224,11 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
           checklistTemplate={template}
           onUpdate={updateChecklistTemplate}
           onSplitSchedule={isOwner ? (from, repeat) => splitChecklistTemplate(template, from, repeat) : undefined}
-          onModifyOccurrence={isOwner ? (date, overrideStartedAt) => modifyOccurrence(template.id, date, overrideStartedAt) : undefined}
+          onModifyOccurrence={
+            isOwner
+              ? (occurrenceStartedAt, overrideStartedAt) => modifyOccurrence(template.id, occurrenceStartedAt, overrideStartedAt)
+              : undefined
+          }
           onUpdateMyReminder={!isOwner ? repeat => updateMyReminder(template.id, repeat) : undefined}
           readOnly={!isOwner}
           checklist={checklist}

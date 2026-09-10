@@ -1,5 +1,5 @@
 import { v4 } from 'uuid';
-import { subDays, endOfDay } from 'date-fns';
+import { subDays, endOfDay, format } from 'date-fns';
 import { useMutation, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { checklistLogsKeys } from '../checklist-logs/checklistLogsKeys';
 import { getEffectiveDayOfWeek } from '../../utils/scheduleUtils';
@@ -53,15 +53,27 @@ function withSyncedRepeat(template: ChecklistTemplate): ChecklistTemplate {
   return { ...template, repeat: { ...template.repeat, byday } };
 }
 
-// Adds/removes one date from `repeat.exceptionDates` — fully deterministic (unlike
+// Both `exceptionDates`/`modifiedOccurrences` stay day-keyed client-side (`YYYY-MM-DD`) — every
+// schedule this app builds today produces at most one occurrence a day, so a plain local calendar
+// day is all either matching function needs (see checklistTemplateTypes.ts's own doc comments).
+// The *server* now keys a `schedule_exceptions` row by the occurrence's own full instant instead
+// (see that table's migration) — this is just the client-local equivalent of the timezone-aware
+// day-bucketing `schedules.ts`'s own `toRepeat` does server-side, safe to do with plain local
+// `Date` methods here since this device's own clock is exactly the zone that occurrence's day
+// should be read in.
+const dayKeyOf = (occurrenceStartedAt: string) => format(new Date(occurrenceStartedAt), 'yyyy-MM-dd');
+
+// Adds/removes one day from `repeat.exceptionDates` — fully deterministic (unlike
 // `updateMyReminder`'s own clear-to-null-then-fallback-to-owner case, there's no server-computed
 // value the client doesn't already know), so this is the actual optimistic write, not just a
 // placeholder pending a refetch. Drops the key entirely rather than leaving `exceptionDates: []`,
 // same "absent means none" convention `toRepeat` itself already writes.
-function withExceptionDate(template: ChecklistTemplate, date: string, present: boolean): ChecklistTemplate {
+function withExceptionDate(template: ChecklistTemplate, dateKey: string, present: boolean): ChecklistTemplate {
   if (!template.repeat) return template;
   const current = template.repeat.exceptionDates ?? [];
-  const next = present ? (current.includes(date) ? current : [...current, date].sort()) : current.filter(d => d !== date);
+  const next = present
+    ? current.includes(dateKey) ? current : [...current, dateKey].sort()
+    : current.filter(d => d !== dateKey);
   const { exceptionDates: _drop, ...restRepeat } = template.repeat;
   return { ...template, repeat: next.length > 0 ? { ...restRepeat, exceptionDates: next } : restRepeat };
 }
@@ -69,9 +81,9 @@ function withExceptionDate(template: ChecklistTemplate, date: string, present: b
 // Same idea as withExceptionDate above, for a `MODIFIED` exception's own `overrideStartedAt`
 // instead of a plain skip — deterministic from the two inputs (no server-computed value to wait
 // on), so this is a real optimistic write too.
-function withModifiedOccurrence(template: ChecklistTemplate, date: string, overrideStartedAt: string): ChecklistTemplate {
+function withModifiedOccurrence(template: ChecklistTemplate, dateKey: string, overrideStartedAt: string): ChecklistTemplate {
   if (!template.repeat) return template;
-  const next = { ...(template.repeat.modifiedOccurrences ?? {}), [date]: overrideStartedAt };
+  const next = { ...(template.repeat.modifiedOccurrences ?? {}), [dateKey]: overrideStartedAt };
   return { ...template, repeat: { ...template.repeat, modifiedOccurrences: next } };
 }
 
@@ -178,18 +190,20 @@ export function useChecklistTemplateMutations({
   const exceptionMutation = useMutation<
     { ok: true } | null,
     Error,
-    { id: string; date: string; present: boolean },
+    { id: string; occurrenceStartedAt: string; present: boolean },
     RollbackContext
   >({
-    mutationFn: ({ id, date, present }) => (present ? deleteOccurrenceApi(id, date) : restoreOccurrenceApi(id, date)),
-    onMutate: async ({ id, date, present }) => {
+    mutationFn: ({ id, occurrenceStartedAt, present }) =>
+      present ? deleteOccurrenceApi(id, occurrenceStartedAt) : restoreOccurrenceApi(id, occurrenceStartedAt),
+    onMutate: async ({ id, occurrenceStartedAt, present }) => {
       const idKey = checklistTemplatesKeys.byId(id, userId);
+      const dateKey = dayKeyOf(occurrenceStartedAt);
       const previousFromAll = queryClient.getQueryData<ChecklistTemplatesMap>(allKey)?.[id];
       const previousFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
       // Before the awaits below: a caller's own synchronous `deleteChecklist` (ChecklistToday)
       // can otherwise render before `exceptionDates` lands, synthesizing a phantom row for today.
-      if (previousFromAll) writeTemplateIfPresent(queryClient, allKey, id, withExceptionDate(previousFromAll, date, present));
-      if (previousFromId) writeTemplate(queryClient, idKey, withExceptionDate(previousFromId, date, present));
+      if (previousFromAll) writeTemplateIfPresent(queryClient, allKey, id, withExceptionDate(previousFromAll, dateKey, present));
+      if (previousFromId) writeTemplate(queryClient, idKey, withExceptionDate(previousFromId, dateKey, present));
       await queryClient.cancelQueries({ queryKey: allKey });
       await queryClient.cancelQueries({ queryKey: idKey });
       return { previousFromAll, previousFromId };
@@ -209,18 +223,20 @@ export function useChecklistTemplateMutations({
   const modifyOccurrenceMutation = useMutation<
     { ok: true } | null,
     Error,
-    { id: string; date: string; overrideStartedAt: string },
+    { id: string; occurrenceStartedAt: string; overrideStartedAt: string },
     RollbackContext
   >({
-    mutationFn: ({ id, date, overrideStartedAt }) => modifyOccurrenceApi(id, date, overrideStartedAt),
-    onMutate: async ({ id, date, overrideStartedAt }) => {
+    mutationFn: ({ id, occurrenceStartedAt, overrideStartedAt }) =>
+      modifyOccurrenceApi(id, occurrenceStartedAt, overrideStartedAt),
+    onMutate: async ({ id, occurrenceStartedAt, overrideStartedAt }) => {
       const idKey = checklistTemplatesKeys.byId(id, userId);
+      const dateKey = dayKeyOf(occurrenceStartedAt);
       const previousFromAll = queryClient.getQueryData<ChecklistTemplatesMap>(allKey)?.[id];
       const previousFromId = queryClient.getQueryData<ChecklistTemplate | null>(idKey) ?? undefined;
       if (previousFromAll) {
-        writeTemplateIfPresent(queryClient, allKey, id, withModifiedOccurrence(previousFromAll, date, overrideStartedAt));
+        writeTemplateIfPresent(queryClient, allKey, id, withModifiedOccurrence(previousFromAll, dateKey, overrideStartedAt));
       }
-      if (previousFromId) writeTemplate(queryClient, idKey, withModifiedOccurrence(previousFromId, date, overrideStartedAt));
+      if (previousFromId) writeTemplate(queryClient, idKey, withModifiedOccurrence(previousFromId, dateKey, overrideStartedAt));
       await queryClient.cancelQueries({ queryKey: allKey });
       await queryClient.cancelQueries({ queryKey: idKey });
       return { previousFromAll, previousFromId };
@@ -345,22 +361,24 @@ export function useChecklistTemplateMutations({
     queryClient.invalidateQueries({ queryKey: checklistTemplatesKeys.byId(id, userId) });
   };
 
-  /** Google Calendar's "delete this event" for a single occurrence of a recurring series — see
+  /** Google Calendar's "delete this event" for a single occurrence of a recurring series —
+   * `occurrenceStartedAt` is that occurrence's own exact moment (its `Checklist.startedAt`), not
+   * just a calendar day (see the `schedule_exceptions` table's own migration for why). See
    * exceptionMutation above for the actual optimistic write. Never rejects, same quiet-write
    * convention as addChecklistTemplate's own `saved`. */
-  const deleteOccurrence = (id: string, date: string) =>
-    exceptionMutation.mutateAsync({ id, date, present: true }).catch(() => null);
+  const deleteOccurrence = (id: string, occurrenceStartedAt: string) =>
+    exceptionMutation.mutateAsync({ id, occurrenceStartedAt, present: true }).catch(() => null);
 
-  const restoreOccurrence = (id: string, date: string) =>
-    exceptionMutation.mutateAsync({ id, date, present: false }).catch(() => null);
+  const restoreOccurrence = (id: string, occurrenceStartedAt: string) =>
+    exceptionMutation.mutateAsync({ id, occurrenceStartedAt, present: false }).catch(() => null);
 
   /** Google Calendar's "this event" edit scope — overrides one occurrence's own start moment
    * without touching the rest of the series (`schedule_exceptions` `MODIFIED`, see
-   * modifyOccurrenceMutation above). `date` is the occurrence's own calendar day (the one being
-   * edited), `overrideStartedAt` the new moment. Never rejects, same quiet-write convention as
-   * deleteOccurrence/restoreOccurrence above. */
-  const modifyOccurrence = (id: string, date: string, overrideStartedAt: string) =>
-    modifyOccurrenceMutation.mutateAsync({ id, date, overrideStartedAt }).catch(() => null);
+   * modifyOccurrenceMutation above). `occurrenceStartedAt` is the occurrence's own normal,
+   * unmodified moment (the one being edited), `overrideStartedAt` the new moment. Never rejects,
+   * same quiet-write convention as deleteOccurrence/restoreOccurrence above. */
+  const modifyOccurrence = (id: string, occurrenceStartedAt: string, overrideStartedAt: string) =>
+    modifyOccurrenceMutation.mutateAsync({ id, occurrenceStartedAt, overrideStartedAt }).catch(() => null);
 
   return {
     addChecklistTemplate,

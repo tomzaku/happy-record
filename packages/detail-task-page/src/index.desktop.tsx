@@ -406,7 +406,9 @@ const DetailTaskPageDesktop = () => {
                         : undefined
                     }
                     onModifyOccurrence={
-                      isOwner ? (date, overrideStartedAt) => modifyOccurrence(id, date, overrideStartedAt) : undefined
+                      isOwner
+                        ? (occurrenceStartedAt, overrideStartedAt) => modifyOccurrence(id, occurrenceStartedAt, overrideStartedAt)
+                        : undefined
                     }
                     onDelete={isOwner && checklist ? () => openDelete(checklist.id) : undefined}
                     readOnly={!isOwner}

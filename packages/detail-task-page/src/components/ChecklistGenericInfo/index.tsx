@@ -60,7 +60,7 @@ type Props = {
   // Same owner-only gate as `onSplitSchedule` above — the edit-scope prompt's "This event" option
   // (a single-occurrence time override, `schedule_exceptions` `MODIFIED`). See
   // ScheduleEditDialogs.tsx's own `onModifyOccurrence` doc comment for the full shape.
-  onModifyOccurrence?: (date: string, overrideStartedAt: string) => void;
+  onModifyOccurrence?: (occurrenceStartedAt: string, overrideStartedAt: string) => void;
   isDefaultCollapsed: boolean;
   // Omitted entirely (not just a no-op) for a challenge participant who isn't the
   // template's owner — same "isOwner" gate index.desktop.tsx/index.mobile.tsx

@@ -1,12 +1,17 @@
-// The `schedule-exceptions` resource — a single calendar-day override on top of an otherwise-
+// The `schedule-exceptions` resource — a single-occurrence override on top of an otherwise-
 // recurring `schedules` row (see `supabase/shared/scheduleExceptions.ts` and the
 // `schedule_exceptions` table's own migration for the concept). See CLAUDE.md.
 //
-//   POST   /schedule-exceptions  { checklistTemplateId, date, type } → { ok }
+//   POST   /schedule-exceptions  { checklistTemplateId, occurrenceStartedAt, type, timezone?,
+//                                  overrideStartedAt? } → { ok }
 //   DELETE /schedule-exceptions/:id                                  → { ok }
 //
-// `:id` is `<checklistTemplateId>:<date>` (URL-encoded), never the underlying `schedules`/
-// `schedule_exceptions` row id directly — that row id embeds the *owner's* userId
+// `occurrenceStartedAt` is the occurrence's own full ISO instant, not a bare calendar day — see
+// the migration's own header comment on why a `date`-only key can't tell two occurrences on the
+// same day apart.
+//
+// `:id` is `<checklistTemplateId>:<occurrenceStartedAt>` (URL-encoded), never the underlying
+// `schedules`/`schedule_exceptions` row id directly — that row id embeds the *owner's* userId
 // (`ct:<templateId>:<userId>`, see schedules.ts's own `rowId`), and trusting a client-supplied
 // version of it would let a caller address another user's row by constructing the right string.
 // Both routes instead derive the real row id server-side from `ctx.userId` (see

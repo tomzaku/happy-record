@@ -286,7 +286,9 @@ const DetailTaskPageMobile = () => {
             : undefined
         }
         onModifyOccurrence={
-          isOwner ? (date, overrideStartedAt) => modifyOccurrence(id, date, overrideStartedAt) : undefined
+          isOwner
+            ? (occurrenceStartedAt, overrideStartedAt) => modifyOccurrence(id, occurrenceStartedAt, overrideStartedAt)
+            : undefined
         }
         onDelete={isOwner ? () => openDelete(checklist.id) : undefined}
         readOnly={!isOwner}

@@ -84,7 +84,18 @@ export function toRepeat(row: Row | undefined, exceptions?: ScheduleException[])
     .some(v => v !== null && v !== undefined);
   if (!hasAny) return undefined;
 
-  const exceptionDates = (exceptions ?? []).filter(e => e.type === 'DELETED').map(e => e.date);
+  // Every exception is keyed server-side by its own full `occurrenceStartedAt` instant (see the
+  // migration's own header comment on why — a bare `date` can't tell two same-day occurrences
+  // apart), but every client-side consumer (occursOnDate/list in rruleUtils.ts, occurrenceSeed in
+  // useChecklists.tsx, the calendar's own event rendering) still only ever needs "which calendar
+  // day" — every schedule this app builds today produces at most one occurrence per day anyway.
+  // `calendarDayIn` recovers the *local* day the occurrence actually fell on, reading through the
+  // exception's own stored `timezone` (falling back to UTC for one saved before that existed)
+  // rather than a bare UTC read, which can land on the wrong day near a midnight boundary — same
+  // reasoning `schedules.timezone` itself exists for.
+  const dayOf = (e: ScheduleException) => calendarDayIn(new Date(e.occurrenceStartedAt), e.timezone || 'UTC');
+
+  const exceptionDates = (exceptions ?? []).filter(e => e.type === 'DELETED').map(dayOf);
   // `date` -> the single overridden moment for that one occurrence ("this event only" — see
   // ChecklistGenericInfo's Schedule dialog and its own edit-scope prompt) — a `MODIFIED` row
   // never changes *whether* the schedule recurs that day (occursOnDate/list still match it
@@ -94,7 +105,7 @@ export function toRepeat(row: Row | undefined, exceptions?: ScheduleException[])
   const modifiedOccurrences = Object.fromEntries(
     (exceptions ?? [])
       .filter((e): e is ScheduleException & { overrideStartedAt: string } => e.type === 'MODIFIED' && !!e.overrideStartedAt)
-      .map(e => [e.date, e.overrideStartedAt]),
+      .map(e => [dayOf(e), e.overrideStartedAt]),
   );
 
   return {

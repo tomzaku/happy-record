@@ -16,11 +16,14 @@ export async function body(req: Request): Promise<Record<string, unknown>> {
   }
 }
 
-/** `<checklistTemplateId>:<date>` → its two parts, or throws — the shape every route's own `:id`
- * (delete) or body fields (create, which sends them separately) collapse to before deriving the
- * real `schedules`/`schedule_exceptions` row ids server-side. */
-export function parseCompositeId(id: string): { checklistTemplateId: string; date: string } {
-  const at = id.lastIndexOf(':');
+/** `<checklistTemplateId>:<occurrenceStartedAt>` → its two parts, or throws — the shape every
+ * route's own `:id` (delete) or body fields (create, which sends them separately) collapse to
+ * before deriving the real `schedules`/`schedule_exceptions` row ids server-side. Split on the
+ * *first* colon, not the last — `checklistTemplateId` is always a colon-free `uniqueId()` (see
+ * CLAUDE.md), but `occurrenceStartedAt` is a full ISO instant and very much has colons of its own
+ * (`HH:MM:SS`), so `lastIndexOf` would cut it in the wrong place. */
+export function parseCompositeId(id: string): { checklistTemplateId: string; occurrenceStartedAt: string } {
+  const at = id.indexOf(':');
   if (at <= 0 || at === id.length - 1) throw new ApiError(400, 'Malformed exception id.');
-  return { checklistTemplateId: id.slice(0, at), date: id.slice(at + 1) };
+  return { checklistTemplateId: id.slice(0, at), occurrenceStartedAt: id.slice(at + 1) };
 }
