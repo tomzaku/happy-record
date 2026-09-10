@@ -645,7 +645,12 @@ file imports it" bar as `tasks-page-ui`/`pomodoro-mobile`/`pregnant-page-ui` bef
 - **Comments explain why, not what.** One non-obvious reason, one to two lines. If a reader gets
   the same information from the next few lines of code, delete the comment — don't narrate a
   walkthrough of what the code already shows, and don't restate history that belongs in a commit
-  message instead.
+  message instead. **Don't over-comment a source file with the full "why" behind a fix — that
+  reasoning belongs in a unit test.** A test case named for the exact scenario (`"a MODIFIED
+  occurrence moved to a different day still renders all-day, not timed"`) documents the bug and
+  its fix permanently, keeps passing/failing as proof it's still fixed, and doesn't bloat the
+  source file the way a paragraph-long inline comment does. Leave only the short, load-bearing
+  reason inline; move the rest into that scenario's own test.
 - **Keep every file under ~200 lines** — not just hooks, any file in `packages/*/src`. Once one
   grows past that, split by concern into sibling files rather than letting it keep accreting
   everything: type definitions and pure helpers that don't need a hook (`fieldGroupTypes.ts`-shaped),

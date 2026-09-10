@@ -7,76 +7,14 @@ import {
   hasGroupSchedule,
   getActiveFieldGroups,
   isFieldGroupActiveOnDay,
-  movedOccurrenceOnDate,
   Checklist,
 } from '@dreamer/global';
+import { DEFAULT_EVENT_MINUTES, resolveTaskEventTiming } from './resolveTaskEventTiming';
+import { resolveTaskColor, DEFAULT_PALETTE } from './resolveTaskColor';
 
-// A Checklist instance has no time of its own (`startedAt`/`endedDate` just span
-// whole calendar days) — only a template with no field groups carries a single
-// `repeat.byhour`/`byminute` worth plotting on an hourly grid (see
-// ChecklistDay.desktop.tsx's own `getScheduledTimeLabel`). A field-group
-// template has no single time to show there either, so it renders here as an
-// all-day event instead of guessing which group's hour should win.
-const DEFAULT_EVENT_MINUTES = 60;
-
-// The pre-selected swatch every "Create Task" form seeds `selectedColor`
-// with (`CoreChecklistForm.tsx`, `create-task-modal`, `CreateChecklistForm`),
-// and the only color `AddInlineTask`'s quick-add row can ever save — not a
-// color anyone actually picked, just the form default.
-const UNCHOSEN_AVATAR_COLOR = '#607d8b';
-
-// A template with no `avatar.color` of its own (every seed/default template
-// today) still gets a real, distinct color per template instead of one flat
-// gray for everything — a deterministic hash of its id, so the same template
-// always lands on the same color across renders/devices without needing a
-// stored value. Fixed at 10 colors, each a visually distinct hue, so two
-// unrelated templates rarely land on the same one. Swap for a real
-// per-template color picker later; this is just the default.
-// Exported for TaskColorPicker (home-calendar) — the same fixed 10 swatches offered there for a
-// manual per-template pick, so a manually-chosen color always looks like it could have been the
-// automatic one.
-export const DEFAULT_PALETTE = [
-  '#2f6fed', // blue
-  '#f2994a', // orange
-  '#27ae60', // green
-  '#eb5757', // red
-  '#9b51e0', // purple
-  '#2d9cdb', // light blue
-  '#f2c94c', // yellow
-  '#1abc9c', // teal
-  '#eb5a90', // pink
-  '#8d6e63', // brown
-];
-
-const hashColor = (id: string): string => {
-  let hash = 0;
-  for (let i = 0; i < id.length; i += 1) {
-    hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  }
-  return DEFAULT_PALETTE[Math.abs(hash) % DEFAULT_PALETTE.length];
-};
-
-// `repeat.until` is really "the last day this schedule repeats" (rrule's
-// UNTIL) — recurrence generation only ever reads its *date*, truncating to
-// end-of-day (see `rruleUtils.ts`'s `buildRule`). But the "Start & End Date"
-// picker that writes it (`StartEndDateFields.tsx`) lets someone pick a real
-// clock time for it too, same as the start-time field, and that time is
-// otherwise stored and never read anywhere — the exact "16:30 typed in, only
-// a 1-hour block shown" gap being fixed here. Reusing it as a daily end time
-// (ignoring its date, applying its hour/minute to every occurrence) is a
-// calendar-only reading of already-stored data — it doesn't touch
-// `buildRule` or when the schedule actually stops repeating.
-const computeEventEnd = (day: Date, start: Date, until: string | undefined): Date => {
-  if (until) {
-    const untilTime = new Date(until);
-    const end = new Date(day);
-    end.setHours(untilTime.getHours(), untilTime.getMinutes(), 0, 0);
-    if (end.getTime() > start.getTime()) {
-      return end;
-    }
-  }
-  return new Date(start.getTime() + DEFAULT_EVENT_MINUTES * 60000);
-};
+// Re-exported for TaskColorPicker (home-calendar), which offers the same 10 swatches for a
+// manual pick.
+export { DEFAULT_PALETTE };
 
 export type CalendarEventData = {
   checklistTemplateId: string;
@@ -90,10 +28,8 @@ export type CalendarEventData = {
   fieldGroupIds?: string[];
 };
 
-// `checklistTemplateId` scopes every day's tasks to one template instead of everything
-// scheduled that day — detail-task-page's own history calendar (ChecklistTemplateCalendar) uses
-// this; the home page's own CalendarEventsView usage leaves it unset. Same optional-scope shape
-// `WeekView`/`MonthView`/`YearView` used before this replaced them there.
+// `checklistTemplateId` scopes every day's tasks to one template — detail-task-page's own
+// history calendar uses this; the home page's calendar leaves it unset.
 export const useCalendarEvents = (
   range: CalendarRange | null,
   selectedTag: string,
@@ -112,24 +48,16 @@ export const useCalendarEvents = (
     if (!range) return [];
 
     const events: CalendarEvent[] = [];
-    // A `recurring: false` template (see rruleUtils.ts's `occursInRange`) is a one-time
-    // arrangement, not a weekly pattern — it still gets one real Checklist instance per day (each
-    // independently completable, same as any other task), but visually it should read as the one
-    // bar it actually is, Bryntum-style, not one chip per day. Collected here instead of pushed
-    // immediately; turned into a single spanning event per template after the day loop, covering
-    // exactly the days actually found to have an instance in this range (not re-derived from
-    // `startedAt`/`until` — those may extend beyond what's actually been fetched/confirmed).
+    // A `recurring: false` (one-time) template still gets one real Checklist instance per day —
+    // collected per template here and turned into a single spanning bar after the day loop,
+    // Bryntum-style, instead of one chip per day.
     const spanningDaysByTemplate = new Map<
       string,
       { title: string; color: string; days: Date[]; allDone: boolean }
     >();
-    // Same one-bar-not-one-chip-per-day idea as spanningDaysByTemplate above, for a one-time event
-    // that has a real time set (`byhour`) instead of being All Day. Its `startedAt`/`until` are
-    // already absolute timestamps for the whole span, not a time-of-day pattern to reapply to each
-    // occurrence's own day the way a genuinely recurring template's `byhour`/`until` are used below
-    // (`computeEventEnd`) — so this collects only title/color/done-ness per day found, and takes
-    // start/end straight from the template's own repeat once, instead of reconstructing an end from
-    // each individual day like the per-day branch does.
+    // Same idea for a one-time event with a real time set (`byhour`) — its own `startedAt`/`until`
+    // are absolute timestamps for the whole span already, so this just tracks title/color/done-ness
+    // per day found rather than reconstructing an end from each individual day.
     const timedSpanByTemplate = new Map<
       string,
       { title: string; color: string; start: Date; end: Date; allDone: boolean }
@@ -144,30 +72,14 @@ export const useCalendarEvents = (
       Object.values(checklist).forEach((task: Checklist) => {
         if (checklistTemplateId && task.checklistTemplateId !== checklistTemplateId) return;
 
-        // `checklistTemplate[id]` alone has no `fieldGroups` — that's not a column on the row
-        // (see useChecklistTemplates.tsx's own comment) — so every hasGroupSchedule/field-group
-        // check below needs the merged copy, not the raw map entry, or a field-group template
-        // reads as having none and falls through to the plain/spanning-bar branches below as if
-        // it were a bare recurring task.
+        // `fieldGroups` isn't a column on the raw template row — merge it in, or a field-group
+        // template reads as having none.
         const rawTemplate = checklistTemplate[task.checklistTemplateId];
         const template = rawTemplate ? withFieldGroups(rawTemplate) : undefined;
-        const avatarColor = template?.avatar.color;
-        // `calendarColor` (TaskColorPicker, home-calendar) is a deliberate manual pick, scoped to
-        // the calendar only — takes priority over everything below when set. Below that: every
-        // "Create Task" entry point pre-selects this exact swatch (and `AddInlineTask`'s quick-add
-        // row has no color picker at all, so it always saves it) — it's the form's default value,
-        // not a color anyone actually chose. Treating it the same as "unset" here is what lets
-        // templates that were never deliberately given a color still land on a distinct one,
-        // instead of every quickly-added task piling onto this one shade.
-        const color =
-          template?.calendarColor ??
-          (avatarColor && avatarColor !== UNCHOSEN_AVATAR_COLOR ? avatarColor : hashColor(task.checklistTemplateId));
+        const color = resolveTaskColor(template, task.checklistTemplateId);
         const hasActiveFieldGroups = hasGroupSchedule(template ?? {});
 
-        // Which of this template's own active groups are actually due *today* (not just active
-        // in general — a group can have its own independent day-of-week schedule, see
-        // isFieldGroupActiveOnDay) — only worth surfacing once there's more than one group to
-        // disambiguate between; a single-group template's own title already says what it is.
+        // Only worth surfacing once there's more than one group to disambiguate between.
         const allGroups = getActiveFieldGroups(template?.fieldGroups ?? []);
         const groupsToday = hasActiveFieldGroups
           ? allGroups.filter(group => isFieldGroupActiveOnDay(group.repeat, day))
@@ -177,12 +89,9 @@ export const useCalendarEvents = (
             ? `${template?.title ?? task.title} · ${groupsToday.map(group => group.title).join(', ')}`
             : template?.title ?? task.title;
 
-        // A field-group-driven template's real schedule lives on each active group's own
-        // `repeat`, not the template's top-level one — a top-level `recurring: false` there (e.g.
-        // left over from before groups existed, or set by the Start/End Date dialog for its own
-        // unrelated reason) must not merge every day into one spanning bar; each group can be
-        // active on different days, which a single bar can't represent. Same guard as
-        // `isTemplateScheduledOnDate`'s own.
+        // A field-group template's real schedule lives on each group's own `repeat`, not the
+        // template's top-level `recurring: false` (which can be a stale leftover) — never merge
+        // one of these into a single spanning bar.
         if (!hasActiveFieldGroups && template?.repeat?.recurring === false) {
           if (!template?.repeat?.byhour) {
             const entry = spanningDaysByTemplate.get(task.checklistTemplateId) ?? {
@@ -200,10 +109,8 @@ export const useCalendarEvents = (
             return;
           }
 
-          // A one-time event with a real time set — `startedAt`/`until` carry the actual from/to
-          // instant for the whole span (e.g. Sept 9 8am to Sept 10 12:47pm), not a time-of-day to
-          // reapply to whichever day is being iterated, so take them as-is rather than routing
-          // through `computeEventEnd` (which would truncate `until` back onto `day`).
+          // `startedAt`/`until` are the actual from/to instant for the whole span already — used
+          // as-is, not reapplied per iterated day.
           const spanStart = new Date(template.repeat.startedAt ?? day);
           spanStart.setHours(Number(template.repeat.byhour), Number(template.repeat.byminute), 0, 0);
           const spanEnd = template.repeat.until
@@ -234,24 +141,10 @@ export const useCalendarEvents = (
           } satisfies CalendarEventData,
         };
 
-        // "This event only" (a `MODIFIED` schedule_exceptions row — ScheduleEditDialogs' own
-        // edit-scope prompt) overrides just this one day's own start moment, without touching the
-        // series' normal `byhour`/`byminute` — see checklistTemplateTypes.ts's own
-        // `modifiedOccurrences` doc comment. `movedOccurrenceOnDate` (not a direct
-        // `modifiedOccurrences[dateKey]` read) is the reverse lookup this needs: the map is keyed
-        // by the occurrence's own *original* day, so `day` here — which, by the time this task is
-        // even in `checklist` for this iteration, `occursOnDate` has already recognized as either
-        // this occurrence's normal day or its relocated one — only ever matches as some entry's
-        // own *value*, never its key.
-        const modifiedStart = movedOccurrenceOnDate(template?.repeat, day);
-
-        if (!hasActiveFieldGroups && (template?.repeat?.byhour || modifiedStart)) {
-          const start = new Date(modifiedStart ?? day);
-          if (!modifiedStart) start.setHours(Number(template!.repeat!.byhour), Number(template!.repeat!.byminute), 0, 0);
-          events.push({ ...base, start, end: computeEventEnd(day, start, template?.repeat?.until) });
-        } else {
-          events.push({ ...base, start: day, allDay: true });
-        }
+        // See resolveTaskEventTiming.test.ts for the timed-vs-all-day rules, including a
+        // `MODIFIED` occurrence relocated to a different day.
+        const timing = resolveTaskEventTiming(day, template, hasActiveFieldGroups);
+        events.push({ ...base, ...timing });
       });
     });
 
