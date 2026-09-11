@@ -14,15 +14,20 @@ function devScopedName(localName, filename, css) {
   const relative = path.relative(process.cwd(), filename).replace(/\\/g, '/');
   const segments = relative.split('/');
   const srcIndex = segments.indexOf('src');
-  const pkg = srcIndex > 0 ? segments[srcIndex - 1] : segments[0];
-  const base = path
-    .basename(filename)
-    .replace(/\.module\.(scss|css)$/, '')
-    // e.g. "index.desktop" -> "index-desktop" — a raw "." here would land in
-    // the CSS class name and split it into two selectors.
-    .replace(/[^a-zA-Z0-9_-]/g, '-');
+  // Not every package nests its stylesheet under `src/` — `@moon-ui/icon`'s
+  // styles.module.scss sits directly in the package root, with no `src` segment
+  // to find. Falling back to segments[0] in that case picked up ".." (this file
+  // runs with cwd `web/`, so the relative path to a sibling `packages/` file
+  // starts with "../"), landing literal dots in the class name below.
+  const pkg = srcIndex > 0 ? segments[srcIndex - 1] : segments[segments.length - 2] ?? segments[0];
+  const sanitize = (value) =>
+    // e.g. "index.desktop" -> "index-desktop", ".." -> "--" — a raw "." here
+    // would land in the CSS class name and split it into invalid chained
+    // class selectors (exactly what the unsanitized `pkg` fallback above did).
+    value.replace(/[^a-zA-Z0-9_-]/g, '-');
+  const base = sanitize(path.basename(filename).replace(/\.module\.(scss|css)$/, ''));
   const hash = createHash('md5').update(css).digest('hex').slice(0, 5);
-  return `${pkg}__${base}__${localName}___${hash}`;
+  return `${sanitize(pkg)}__${base}__${localName}___${hash}`;
 }
 
 // https://vitejs.dev/config/
