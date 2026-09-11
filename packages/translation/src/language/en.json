@@ -332,7 +332,7 @@
   "recurrence-picker.interval-label": "Repeat every",
   "recurrence-picker.interval-unit": "week(s)",
   "right-panel-switcher.calendar": "Calendar",
-  "right-panel-switcher.history": "History",
+  "right-panel-switcher.history": "Recent",
   "right-panel-switcher.title": "History",
   "schedule-forever": "Forever (until done)",
   "setting-page.description-theme": "Config theme for whole page",
