@@ -9,7 +9,7 @@ export type DefaultButtonProps = Omit<
   >,
   'type'
 > & {
-  type?: 'primary' | 'ghost' | 'dash';
+  type?: 'primary' | 'ghost' | 'dash' | 'outline' | 'plain';
   /** The real HTML `type` attribute — separate from the style `type` above.
    * Defaults to `'button'` so a `Button` dropped inside a `<form>` never
    * implicitly submits it; pass `'submit'` explicitly for a button that
@@ -40,6 +40,8 @@ export default function Button({
         styles.default,
         type === 'ghost' && styles.ghost,
         type === 'dash' && styles.dash,
+        type === 'outline' && styles.outline,
+        type === 'plain' && styles.plain,
         block && styles.block,
         size === 'sm' && styles.sm,
         size === 'lg' && styles.lg,

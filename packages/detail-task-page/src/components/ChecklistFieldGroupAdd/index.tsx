@@ -18,6 +18,8 @@ import {
 } from '@dreamer/global/src/lib/fieldValueFormat';
 import { parseMultiselect, serializeMultiselect } from '@dreamer/global/src/lib/multiselectValue';
 import Checkbox from '@moon-ui/checkbox';
+import Button from '@moon-ui/button/src/DefaultButton';
+import { showToast } from '@moon-ui/toast';
 import { Checklist, ChecklistTemplate, FieldGroup, useAiNoteGenerate } from '@dreamer/global';
 import {
   ChecklistRecord,
@@ -279,22 +281,12 @@ const ChecklistFieldGroupAdd = ({
             width={16}
             className={cx(styles.arrowIcon, showTodayRecord && styles.arrowExpanded)}
           />
-          <Typography.Title level={4} noMargin>
-            {intl.formatMessage(
-              {
-                id: 'ChecklistFieldGroupView.record-day',
-                defaultMessage: 'Record on {{day}}',
-              },
-              {
-                day: today
-                  ? intl.formatMessage({
-                    id: 'ChecklistFieldGroupView.current-day',
-                    defaultMessage: 'today',
-                  })
-                  : new Date(currentDay).toLocaleDateString(),
-              },
-            )}
-          </Typography.Title>
+          <Typography.Text className={styles.recordDayTitle}>
+            {intl.formatMessage({
+              id: 'ChecklistFieldGroupView.record-day',
+              defaultMessage: 'History',
+            })}
+          </Typography.Text>
         </div>
         {showTodayRecord && (
           <div className={styles.historyBody}>
@@ -584,9 +576,9 @@ const ChecklistFieldGroupAdd = ({
           // left to push against.
           <span />
         )}
-        <button
-          type="button"
-          className={styles.submitBtn}
+        <Button
+          type="plain"
+          size="md"
           onClick={async () => {
             // Reads each note field's real current content directly from its own editor
             // instance (see noteEditorRefs' own comment) rather than trusting state a debounced
@@ -675,12 +667,19 @@ const ChecklistFieldGroupAdd = ({
               setFieldRecord(getEmptyFieldRecord());
               setTextFieldRecord({});
               setNewNoteKey(v4());
+              showToast(
+                intl.formatMessage({
+                  id: 'checklist-field-group-add.submit-success',
+                  defaultMessage: 'Record submitted',
+                }),
+                { variant: 'info' },
+              );
               onSubmit?.();
             }
           }}
         >
           Submit
-        </button>
+        </Button>
       </div>
         {currentChecklistRecords.length > 0 ? (
           <>

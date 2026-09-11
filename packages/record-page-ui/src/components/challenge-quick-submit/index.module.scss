@@ -1,11 +1,17 @@
 @use '@moon-ui/app-scss/metric' as *;
 
+// This wraps the header + each itemCard below, which already look like real cards on their
+// own — an outer Card too just double-boxes the same content. `!important` here because Card's
+// own `.container` (background/padding, @moon-ui/card) and this class both land on the same
+// element and which CSS Modules file's rules win isn't guaranteed by import order alone.
 .card {
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
   width: 100%;
-  padding: $spacing-md $spacing-lg;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
   margin-bottom: $spacing-sm;
 }
 
@@ -69,9 +75,16 @@
   background: var(--icon-primary);
 }
 
-.itemTitle {
+// Title on top, group name (when there is one) underneath — both truncate independently rather
+// than wrapping, same "one line, ellipsis" rule .itemTitle already followed on its own.
+.itemHeaderText {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.itemTitle {
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -81,6 +94,14 @@
 .itemChevron {
   flex-shrink: 0;
   color: var(--text-description-color);
+}
+
+.groupName {
+  font-size: 12px;
+  color: var(--text-description-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .plainRow {

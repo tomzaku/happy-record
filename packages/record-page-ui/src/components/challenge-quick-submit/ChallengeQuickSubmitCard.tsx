@@ -52,20 +52,29 @@ const ChallengeQuickSubmitCard = ({ challenge, date }: Props) => {
   const isPlainTask = !hasFieldGroups;
   const isDone = isPlainTask && Boolean(checklist.completedAt);
 
-  return (
-    <Card className={styles.itemCard}>
-      <div
-        className={styles.itemHeader}
-        onClick={() => navigate(`/task/${template.id}?currentDay=${date.toISOString()}`)}
-      >
-        <div className={styles.itemBadge}>
-          <Icon width={16} icon={template.avatar.name || 'solar:checklist-line-duotone'} color="#fff" />
-        </div>
-        <Typography.Text className={styles.itemTitle}>{template.title}</Typography.Text>
-        <Icon icon="solar:alt-arrow-right-linear" width={14} className={styles.itemChevron} />
+  // Shared across every card this component renders (one for a plain task, one per field group
+  // otherwise — see below) — logo on the left, challenge title + (when there's a group to name)
+  // that group's own name stacked on the right, both navigating to the real task page.
+  const renderHeader = (groupTitle?: string) => (
+    <div
+      className={styles.itemHeader}
+      onClick={() => navigate(`/task/${template.id}?currentDay=${date.toISOString()}`)}
+    >
+      <div className={styles.itemBadge}>
+        <Icon width={16} icon={template.avatar.name || 'solar:checklist-line-duotone'} color="#fff" />
       </div>
+      <div className={styles.itemHeaderText}>
+        <Typography.Text className={styles.itemTitle}>{template.title}</Typography.Text>
+        {groupTitle && <Typography.Text className={styles.groupName}>{groupTitle}</Typography.Text>}
+      </div>
+      <Icon icon="solar:alt-arrow-right-linear" width={14} className={styles.itemChevron} />
+    </div>
+  );
 
-      {isPlainTask ? (
+  if (isPlainTask) {
+    return (
+      <Card className={styles.itemCard}>
+        {renderHeader()}
         <div className={styles.plainRow} onClick={e => e.stopPropagation()}>
           <Checkbox
             defaultChecked={isDone}
@@ -82,21 +91,32 @@ const ChallengeQuickSubmitCard = ({ challenge, date }: Props) => {
               : intl.formatMessage({ id: 'ChallengeQuickSubmit.mark-done', defaultMessage: 'Mark as done' })}
           </Typography.Text>
         </div>
-      ) : (
-        relevantGroups.map(group => (
-          <ChecklistFieldGroupAdd
-            key={group.id}
-            fields={fieldsByGroup[group.id] ?? []}
-            checklistTemplate={template}
-            fieldGroup={group}
-            checklist={checklist}
-            currentDay={date.toISOString()}
-            onSubmit={markCompleted}
-            compact
-          />
-        ))
-      )}
-    </Card>
+      </Card>
+    );
+  }
+
+  // A multi-group challenge (Push/Diamond/Wide push-ups, say) gets its own card per group due
+  // today, rather than one card stacking every group's fields under a single header — each
+  // group's submission is otherwise unrelated to the others due the same day.
+  return (
+    <>
+      {relevantGroups.map(group => (
+        <Card key={group.id} className={styles.itemCard}>
+          {renderHeader(group.title)}
+          <div onClick={e => e.stopPropagation()}>
+            <ChecklistFieldGroupAdd
+              fields={fieldsByGroup[group.id] ?? []}
+              checklistTemplate={template}
+              fieldGroup={group}
+              checklist={checklist}
+              currentDay={date.toISOString()}
+              onSubmit={markCompleted}
+              compact
+            />
+          </div>
+        </Card>
+      ))}
+    </>
   );
 };
 

@@ -74,6 +74,44 @@
   }
 }
 
+// A quiet, flat pill — transparent fill, thin solid border — for an action that shouldn't
+// compete visually with a real primary button (e.g. "Today" on a calendar toolbar, "Submit" on
+// a plain record-entry form). Same shape `.dash` already covers, just a solid border instead of
+// a dashed one and a filled hover state instead of none.
+.outline {
+  border: 1px solid var(--card-border);
+  background: transparent;
+  color: var(--text-color);
+  box-shadow: none;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-secondary);
+    box-shadow: none;
+  }
+
+  &:active:not(:disabled) {
+    box-shadow: none;
+  }
+}
+
+// No border at all — a soft tint of the accent color instead, reusing the same
+// `--button-action-background`/`--button-action-color` pair ActionButton's own `.pending`
+// state already relies on for "light primary fill, primary text," themed for both light/dark.
+.plain {
+  border: 0;
+  background: var(--button-action-background);
+  color: var(--button-action-color);
+  box-shadow: none;
+
+  &:hover:not(:disabled) {
+    box-shadow: none;
+  }
+
+  &:active:not(:disabled) {
+    box-shadow: none;
+  }
+}
+
 .block {
   width: 100%;
   box-sizing: border-box;

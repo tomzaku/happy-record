@@ -108,7 +108,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: $spacing-lg;
+  margin-top: $spacing-sm;
 }
 
 // Deliberately quiet — plain text, no border/background — since this tab's job is filling
@@ -142,19 +142,10 @@
   user-select: none;
 }
 
-.submitBtn {
-  background: transparent;
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  padding: 10px 24px;
-  font-size: toRem(14px);
+.recordDayTitle {
+  font-size: toRem(13px);
   font-weight: 600;
-  color: var(--text-color);
-  cursor: pointer;
-
-  &:hover {
-    background: var(--surface-secondary);
-  }
+  color: var(--text-description-color);
 }
 
 .historyBody {
