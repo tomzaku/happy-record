@@ -681,7 +681,7 @@ const ChecklistFieldGroupAdd = ({
                   id: 'checklist-field-group-add.submit-success',
                   defaultMessage: 'Record submitted',
                 }),
-                { variant: 'info' },
+                { variant: 'success' },
               );
               onSubmit?.();
             }

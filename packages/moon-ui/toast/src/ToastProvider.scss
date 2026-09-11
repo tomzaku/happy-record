@@ -29,8 +29,27 @@
   border-left: 4px solid #eb5757 !important;
 }
 
+// A springy pop-in specifically for the success toast (e.g. "Record submitted") — notistack's
+// own default entrance is a plain slide shared by every variant, which doesn't read as
+// confirmation the way a quick overshoot-then-settle does. Scoped to this one class rather than
+// the shared container so it doesn't touch the error/info toasts' own transition.
+@keyframes toast-success-pop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 .notistack-MuiContent-success {
   border-left: 4px solid #27ae60 !important;
+  animation: toast-success-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .notistack-MuiContent-info {

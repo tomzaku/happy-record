@@ -5,10 +5,11 @@
 // one shared HTTP client every `<resource>Api.ts` module is built on).
 import { enqueueSnackbar, type VariantType } from 'notistack';
 
-export type ToastVariant = 'error' | 'info';
+export type ToastVariant = 'error' | 'info' | 'success';
 
 /** Queues one toast. `variant: 'error'` (the default) is what `api.ts` reaches for on a real
- * server failure; `'info'` is available for a caller with something to report that isn't one. */
+ * server failure; `'info'`/`'success'` are available for a caller with something to report that
+ * isn't one. */
 export function showToast(message: string, opts: { variant?: ToastVariant } = {}): void {
   enqueueSnackbar(message, { variant: (opts.variant ?? 'error') as VariantType });
 }

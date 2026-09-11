@@ -1,11 +1,92 @@
 @use '@moon-ui/app-scss/color' as *;
 
 .container {
-  accent-color: var(--checkbox-accent-color);
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
+
+  .check {
+    width: 13px;
+    height: 13px;
+  }
+
+  &.lg {
+    width: 24px;
+    height: 24px;
+
+    .check {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+
+    .box {
+      opacity: 0.5;
+    }
+  }
 }
 
-.lg {
-  height: 24px;
-  width: 24px;
+// The real input stays interactive (it's what actually receives clicks/focus/keyboard
+// toggling) but visually invisible — .box below is the checkbox everyone sees.
+.input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.box {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1.5px solid var(--input-border);
+  background: var(--input-background);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.check {
+  // The default accent (teal in dark mode, dark red in light) is a fairly extreme
+  // contrast against its own theme's ink — --text-color-invert already encodes
+  // "the opposite-brightness color for this theme" for exactly this kind of pairing.
+  color: var(--text-color-invert);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.input:checked + .box {
+  background: var(--checkbox-accent-color);
+  border-color: var(--checkbox-accent-color);
+}
+
+.input:checked + .box .check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.input:hover:not(:disabled) + .box {
+  border-color: var(--checkbox-accent-color);
+}
+
+.input:focus-visible + .box {
+  outline: 2px solid var(--checkbox-accent-color);
+  outline-offset: 2px;
+}
+
+.input:active:not(:disabled) + .box {
+  transform: scale(0.9);
 }
