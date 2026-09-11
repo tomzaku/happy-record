@@ -130,22 +130,6 @@
   }
 }
 
-.historyContainer {
-  position: relative;
-}
-
-.recordDayHeader {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-}
-
-.recordDayTitle {
-  font-size: toRem(13px);
-  font-weight: 600;
-  color: var(--text-description-color);
-}
-
 .historyBody {
   position: relative;
   overflow: hidden;
@@ -175,8 +159,14 @@
   opacity: 0.4;
 }
 
+// The number field's already-submitted total — sits outside that field's own List.ItemMeta row
+// (its `rightComponent` is just the input), right-aligned underneath it.
 .sumValueText {
-  margin-right: $spacing-xs;
+  display: block;
+  margin-top: -#{$spacing-xs};
+  padding-bottom: $spacing-xs;
+  text-align: right;
+  color: var(--text-description-color);
 }
 
 .hr {

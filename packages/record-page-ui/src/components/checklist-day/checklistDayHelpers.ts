@@ -4,6 +4,8 @@ import {
   formatDaysOfWeek,
   hasGroupSchedule,
   ALL_ICAL_DAYS,
+  getActiveFieldGroups,
+  isFieldGroupActiveOnDay,
 } from '@dreamer/global';
 import { format } from 'date-fns';
 
@@ -42,6 +44,16 @@ export const formatTemplateSchedule = (template?: ChecklistTemplate): string => 
   const time = `${template.repeat.byhour.padStart(2, '0')}:${template.repeat.byminute.padStart(2, '0')}`;
   return `${time} • ${formatDaysOfWeek(template.repeat.byday)}`;
 };
+
+// Whether a row has anything to expand into — a field-group task with at least one group
+// actually due on `date` (a multi-group template's other groups, scheduled on other days, don't
+// count — see isFieldGroupActiveOnDay's own doc comment). A plain check/uncheck task has nothing
+// more to show than the checkbox already in the row header, so it gets no expand button at all.
+// Shared between ChecklistDayRow (its own per-row toggle) and ChecklistDay.desktop.tsx (deciding
+// which rows a section's "expand/collapse all" button actually affects).
+export const getHasQuickSubmit = (template: ChecklistTemplate | undefined, date: Date): boolean =>
+  getActiveFieldGroups(template?.fieldGroups ?? []).filter(group => isFieldGroupActiveOnDay(group.repeat, date))
+    .length > 0;
 
 // The row's own right-aligned time — only meaningful for a template with no
 // field groups (see formatTemplateSchedule's own comment on why a merged

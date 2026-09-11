@@ -13,7 +13,6 @@ import styles from './index.module.scss';
 import {
   dateInputValueToIso,
   datetimeLocalInputValueToIso,
-  formatFieldValueForDisplay,
   isoToDatetimeLocalInputValue,
 } from '@dreamer/global/src/lib/fieldValueFormat';
 import { parseMultiselect, serializeMultiselect } from '@dreamer/global/src/lib/multiselectValue';
@@ -30,12 +29,11 @@ import {
   setMinutes,
   setSeconds,
   setMilliseconds,
-  isToday,
 } from 'date-fns';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import { useIntl } from '@dreamer/translation';
 import WeeklyRow from '../WeeklyRow';
-import ChecklistFieldGroupHistory from '../ChecklistFieldGroupHistory';
+import ChecklistFieldGroupAttachments from './ChecklistFieldGroupAttachments';
 import MediaFieldInput, { MediaFieldPreview } from './MediaFieldInput';
 
 type Props = {
@@ -89,7 +87,6 @@ const hasNoteContent = (value: unknown): boolean => {
 const ChecklistFieldGroupAdd = ({
   fields,
   checklistTemplate,
-  fieldGroup,
   checklist,
   currentDay,
   onSubmit,
@@ -180,7 +177,8 @@ const ChecklistFieldGroupAdd = ({
   // State for shake animation
   const [isShaking, setIsShaking] = React.useState(false);
 
-  // State for showing history
+  // Whether the Attachments section below is expanded — collapsed by default, toggled only by
+  // its own header click.
   const [showHistory, setShowHistory] = React.useState(false);
 
 
@@ -218,12 +216,8 @@ const ChecklistFieldGroupAdd = ({
     // Flatten the records object into an array
     const flattenedRecords = Object.values(records).flat();
     setCurrentChecklistRecords(flattenedRecords);
-    if (flattenedRecords.length === 0) {
-      setShowHistory(true)
-    }
     return records;
   };
-  const today = isToday(currentDay);
   const intl = useIntl();
   // `reloadChecklistRecord` has side effects beyond a pure read
   // (`setShowHistory`), so this stays an effect rather than becoming a
@@ -237,163 +231,13 @@ const ChecklistFieldGroupAdd = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDay, checklistTemplate.id, fields, getChecklistRecords]);
 
-  const renderEmpty = () => {
-    return null;
-    return (
-      <div>
-        <div className={styles.emptyContainer}>
-          <Icon
-            width={80}
-            // color="#00000024"
-            icon="clarity:sad-face-line"
-            className={styles.iconEmpty}
-          />
-          <Typography.Title level={3} noMargin>
-            {intl.formatMessage(
-              {
-                id: 'ChecklistFieldGroupView.noRecord',
-                defaultMessage: 'No record found on {{day}}',
-              },
-              {
-                day: today
-                  ? intl.formatMessage({
-                    id: 'ChecklistFieldGroupView.today',
-                    defaultMessage: 'today',
-                  })
-                  : new Date(currentDay).toLocaleDateString(),
-              },
-            )}
-          </Typography.Title>
-          <Typography.Paragraph noMargin onClick={() => { }} style={{}}>
-            {intl.formatMessage({
-              id: 'ChecklistFieldGroupView.noRecordDescription',
-              defaultMessage:
-                'Submit your record to keep track of your progress',
-            })}
-          </Typography.Paragraph>
-        </div>
-      </div>
-    );
-  };
-  const renderCurrentDay = () => {
-    return (
-      <div className={styles.historyContainer}>
-        <div className={styles.recordDayHeader}>
-          <Icon
-            icon="solar:alt-arrow-down-outline"
-            width={16}
-            className={cx(styles.arrowIcon, styles.arrowExpanded)}
-          />
-          <Typography.Text className={styles.recordDayTitle}>
-            {intl.formatMessage({
-              id: 'ChecklistFieldGroupView.record-day',
-              defaultMessage: 'History',
-            })}
-          </Typography.Text>
-        </div>
-        <div className={styles.historyBody}>
-          <Icon
-            width={100}
-            color="rgba(16,154,0,0.1)"
-            icon="ion:checkmark-done-circle-outline"
-            className={`${styles.iconSuccess} ${isShaking ? styles.shake : ''}`}
-          />
-          {fields.map(recordField => {
-              if (recordField.type === 'number') {
-                const recordValues = Object.values(currentChecklistRecords)
-                  .flat()
-                  .filter(record => record.fieldId === recordField.id);
-                const sumValue = sum(recordValues.map(record => record.value));
-                return (
-                  <List.ItemMeta
-                    key={recordField.id}
-                    logo={<Icon width={24} icon={recordField.icon} />}
-                    title={recordField.title}
-                    noPaddingHorizontal={compact}
-                    rightComponent={
-                      <>
-                        <Typography.Title
-                          level={1}
-                          noMargin
-                          className={styles.sumValueText}
-                        >
-                          {sumValue}
-                        </Typography.Title>
-                        <Typography.Text>{recordField.unit}</Typography.Text>
-                      </>
-                    }
-                  />
-                );
-              } else if (recordField.type === 'note') {
-                const latestRecord = currentChecklistRecords.find(
-                  record => record.fieldId === recordField.id,
-                );
-                if (!latestRecord) {
-                  return null;
-                }
-                return (
-                  <React.Fragment key={latestRecord.id}>
-                    <List.ItemMeta
-                      logo={<Icon width={24} icon={recordField.icon} />}
-                      title={recordField.title}
-                      noPaddingHorizontal={compact}
-                    />
-                    <NoteEditor
-                      key={latestRecord.id}
-                      value={latestRecord.value}
-                      readOnly
-                      withoutBorder
-                    />
-                  </React.Fragment>
-                );
-              } else if (recordField.type === 'photo' || recordField.type === 'video') {
-                const latestRecord = currentChecklistRecords.find(
-                  record => record.fieldId === recordField.id,
-                );
-                if (!latestRecord || typeof latestRecord.value !== 'string') {
-                  return null;
-                }
-                return (
-                  <React.Fragment key={latestRecord.id}>
-                    <List.ItemMeta
-                      logo={<Icon width={24} icon={recordField.icon} />}
-                      title={recordField.title}
-                      noPaddingHorizontal={compact}
-                    />
-                    <MediaFieldPreview kind={recordField.type} mediaId={latestRecord.value} />
-                  </React.Fragment>
-                );
-              } else {
-                // text/date/datetime/select/multiselect — a plain formatted string, same
-                // read-only display ChecklistFieldGeneral's own collapsed state uses.
-                const latestRecord = currentChecklistRecords.find(
-                  record => record.fieldId === recordField.id,
-                );
-                if (!latestRecord) {
-                  return null;
-                }
-                return (
-                  <List.ItemMeta
-                    key={latestRecord.id}
-                    logo={<Icon width={24} icon={recordField.icon} />}
-                    title={recordField.title}
-                    noPaddingHorizontal={compact}
-                    rightComponent={
-                      <Typography.Text>
-                        {formatFieldValueForDisplay(
-                          recordField.type as 'text' | 'date' | 'datetime' | 'select' | 'multiselect',
-                          latestRecord.value,
-                        )}
-                      </Typography.Text>
-                    }
-                  />
-                );
-              }
-            })}
-          </div>
-      </div>
-    );
-  };
+  // Today's photo/video check-ins only — no field name/icon labels, just the attachments
+  // themselves (number/note/text/date/select values already have their own place: the number
+  // total on its own input row above, everything else in the group's real submission history).
+  const todaysAttachments = currentChecklistRecords.filter(record => {
+    const field = fields.find(f => f.id === record.fieldId);
+    return field && (field.type === 'photo' || field.type === 'video') && typeof record.value === 'string';
+  });
   // The Submit button's own `disabled` gate — same "is anything actually filled in" shape the
   // onClick handler below re-derives for the real submission guard, just synchronous (`noteTouched`
   // instead of an awaited `getValue()` per note field, see its own comment above) since a render
@@ -407,35 +251,51 @@ const ChecklistFieldGroupAdd = ({
   return (
     <>
       {!compact && <WeeklyRow currentDay={currentDay} />}
-      {numberFields.map(field => (
-        <List.ItemMeta
-          key={field.id}
-          logo={<Icon width={24} icon={field.icon} />}
-          title={field.title}
-          noPaddingHorizontal={compact}
-          rightComponent={
-            <>
-              <Input
-                key={`${field.id}-${newNoteKey}`}
-                suffix={<Typography.Text>{field.unit}</Typography.Text>}
-                value={fieldRecord[field.id] === undefined ? '' : String(fieldRecord[field.id])}
-                onChange={e => {
-                  setFieldRecord({
-                    ...fieldRecord,
-                    [field.id]: Number(e.target.value),
-                  });
-                }}
-                border="dash"
-                classes={{ wrapper: styles.input }}
-                type="number"
-                // Only ever set via a group's own override (see getEffectiveFieldDisplay
-                // in ChecklistFieldGroup) — a field has no placeholder of its own.
-                placeholder={field.placeholder}
-              />
-            </>
-          }
-        />
-      ))}
+      {numberFields.map(field => {
+        // Today's total for this field, same sum renderCurrentDay used to show in its own
+        // duplicate row below — rendered outside this row's own List.ItemMeta container
+        // (that row's `rightComponent` is only the input; the total sits underneath it,
+        // aligned to the bottom right) so it no longer stretches that row's own height and
+        // throws off the input's alignment.
+        const recordValues = currentChecklistRecords.filter(record => record.fieldId === field.id);
+        const sumValue = sum(recordValues.map(record => record.value));
+        return (
+          <div key={field.id}>
+            <List.ItemMeta
+              logo={<Icon width={24} icon={field.icon} />}
+              title={field.title}
+              noPaddingHorizontal={compact}
+              rightComponent={
+                <Input
+                  key={`${field.id}-${newNoteKey}`}
+                  suffix={<Typography.Text>{field.unit}</Typography.Text>}
+                  value={fieldRecord[field.id] === undefined ? '' : String(fieldRecord[field.id])}
+                  onChange={e => {
+                    setFieldRecord({
+                      ...fieldRecord,
+                      [field.id]: Number(e.target.value),
+                    });
+                  }}
+                  border="dash"
+                  classes={{ wrapper: styles.input }}
+                  type="number"
+                  // Only ever set via a group's own override (see getEffectiveFieldDisplay
+                  // in ChecklistFieldGroup) — a field has no placeholder of its own.
+                  placeholder={field.placeholder}
+                />
+              }
+            />
+            {recordValues.length > 0 && (
+              <Typography.Text className={styles.sumValueText}>
+                {intl.formatMessage(
+                  { id: 'checklist-field-group-add.total', defaultMessage: 'Total: {{value}}' },
+                  { value: String(sumValue) },
+                )}
+              </Typography.Text>
+            )}
+          </div>
+        );
+      })}
       {noteFields.map(field => (
         <div key={field.id} className={styles.noteField}>
           <List.ItemMeta
@@ -711,25 +571,36 @@ const ChecklistFieldGroupAdd = ({
           Submit
         </Button>
       </div>
-        {currentChecklistRecords.length > 0 ? (
+        {todaysAttachments.length > 0 && (
           <>
             <Hr classes={{ hr: styles.hr }} />
-            {renderCurrentDay()}
-          </>
-        ) : (
-          <>
-            {renderEmpty()}
+            <div className={styles.historyBody}>
+              {todaysAttachments.map(record => {
+                const field = fields.find(f => f.id === record.fieldId);
+                if (!field) return null;
+                return (
+                  <MediaFieldPreview
+                    key={record.id}
+                    kind={field.type as 'photo' | 'video'}
+                    mediaId={record.value as string}
+                  />
+                );
+              })}
+            </div>
           </>
         )}
 
-        {!compact && (
+        {!compact && mediaFields.length > 0 && (
           <>
-            {/* History Section Header */}
+            {/* Attachments Section Header — collapsed by default, no auto-expand */}
             <div className={styles.historyHeader} onClick={() => setShowHistory(!showHistory)}>
               <div className={styles.historyHeaderContent}>
-                <Icon icon="solar:history-3-outline" width={20} />
+                <Icon icon="solar:gallery-wide-bold-duotone" width={20} />
                 <Typography.Title level={5} noMargin>
-                  History
+                  {intl.formatMessage({
+                    id: 'checklist-field-group-add.attachments',
+                    defaultMessage: 'Attachments',
+                  })}
                 </Typography.Title>
               </div>
               <Icon
@@ -741,10 +612,9 @@ const ChecklistFieldGroupAdd = ({
 
             {showHistory && (
               <div className={styles.historyContent}>
-                <ChecklistFieldGroupHistory
+                <ChecklistFieldGroupAttachments
                   checklistTemplate={checklistTemplate}
-                  fieldGroup={fieldGroup}
-                  fields={fields}
+                  fields={mediaFields}
                 />
               </div>
             )}

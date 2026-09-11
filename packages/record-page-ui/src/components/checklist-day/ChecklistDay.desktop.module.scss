@@ -117,6 +117,12 @@
   color: var(--text-description-color);
 }
 
+.sectionHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
 .itemList {
   display: flex;
   flex-direction: column;

@@ -14,6 +14,7 @@ import ChecklistDayTaskList from './ChecklistDayTaskList';
 import { useDeleteTaskFlow } from './useDeleteTaskFlow';
 import { useChecklistDayShortcuts } from './useChecklistDayShortcuts';
 import { useInlineTaskTitleEdit } from './useInlineTaskTitleEdit';
+import { useFieldGroupExpansion } from './useFieldGroupExpansion';
 
 const ChecklistDayDesktop = ({
   date,
@@ -61,6 +62,15 @@ const ChecklistDayDesktop = ({
     [checklistByGivingDateIds, checklist],
   );
   const orderedIds = React.useMemo(() => [...pendingIds, ...completedIds], [pendingIds, completedIds]);
+
+  const {
+    collapsedFieldGroupIds,
+    toggleFieldGroupExpanded,
+    pendingExpandableIds,
+    completedExpandableIds,
+    isSectionExpanded,
+    toggleSectionExpanded,
+  } = useFieldGroupExpansion({ checklist, checklistTemplate, date, pendingIds, completedIds });
 
   const completedPercent =
     checklistByGivingDateIds.length > 0
@@ -192,6 +202,8 @@ const ChecklistDayDesktop = ({
       commitEditingTitle={commitEditingTitle}
       cancelEditingTitle={cancelEditingTitle}
       openDelete={openDelete}
+      expanded={!collapsedFieldGroupIds.has(id)}
+      onToggleExpanded={() => toggleFieldGroupExpanded(id)}
     />
   );
 
@@ -208,6 +220,10 @@ const ChecklistDayDesktop = ({
         addTaskRef={addTaskRef}
         onTaskCreateStart={handleTaskCreateStart}
         onTaskCreateEnd={handleTaskCreateEnd}
+        pendingExpandableIds={pendingExpandableIds}
+        completedExpandableIds={completedExpandableIds}
+        isSectionExpanded={isSectionExpanded}
+        onToggleSectionExpanded={toggleSectionExpanded}
       />
 
       <ChecklistDayShortcutsHint />

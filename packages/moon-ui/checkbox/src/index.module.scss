@@ -56,6 +56,9 @@
   border: 1.5px solid var(--input-border);
   background: var(--input-background);
   transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  // Painted after .input in DOM order, so without this it sits on top and swallows every
+  // click before it reaches the real (invisible) input underneath — nothing ever toggles.
+  pointer-events: none;
 }
 
 .check {

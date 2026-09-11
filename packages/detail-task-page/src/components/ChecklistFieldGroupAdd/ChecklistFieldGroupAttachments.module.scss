@@ -1,0 +1,27 @@
+@use '@moon-ui/app-scss/metric' as *;
+@use '@moon-ui/app-scss/function' as *;
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: $spacing-sm;
+  padding: $spacing-md;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.date {
+  color: var(--text-description-color);
+  font-size: toRem(11px);
+}
+
+.emptyText {
+  display: block;
+  padding: $spacing-md;
+  color: var(--text-description-color);
+  text-align: center;
+}

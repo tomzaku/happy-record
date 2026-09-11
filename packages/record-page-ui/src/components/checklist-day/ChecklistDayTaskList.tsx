@@ -2,6 +2,8 @@ import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
+import { Icon } from '@moon-ui/icon/Icon';
+import cx from 'classnames';
 import { useIntl } from '@dreamer/translation';
 import styles from './ChecklistDay.desktop.module.scss';
 import AddInlineTask, { AddInlineTaskHandle, PendingInlineTask } from '../AddInlineTask';
@@ -16,6 +18,46 @@ type Props = {
   addTaskRef: React.RefObject<AddInlineTaskHandle>;
   onTaskCreateStart: (task: PendingInlineTask) => void;
   onTaskCreateEnd: (id: string) => void;
+  // Which ids in each section actually have a field-group area to expand/collapse — a section
+  // with none of these gets no "expand/collapse all" button at all, same as a single row with no
+  // field groups gets no expand button of its own (see ChecklistDayRow).
+  pendingExpandableIds: string[];
+  completedExpandableIds: string[];
+  isSectionExpanded: (ids: string[]) => boolean;
+  onToggleSectionExpanded: (ids: string[]) => void;
+};
+
+const SectionExpandButton = ({
+  expandableIds,
+  isSectionExpanded,
+  onToggleSectionExpanded,
+}: {
+  expandableIds: string[];
+  isSectionExpanded: (ids: string[]) => boolean;
+  onToggleSectionExpanded: (ids: string[]) => void;
+}) => {
+  const intl = useIntl();
+  if (expandableIds.length === 0) return null;
+
+  const expanded = isSectionExpanded(expandableIds);
+  return (
+    <button
+      type="button"
+      className={styles.rowExpandButton}
+      onClick={() => onToggleSectionExpanded(expandableIds)}
+      aria-label={
+        expanded
+          ? intl.formatMessage({ id: 'ChecklistToday.collapse-all-tasks', defaultMessage: 'Collapse all' })
+          : intl.formatMessage({ id: 'ChecklistToday.expand-all-tasks', defaultMessage: 'Expand all' })
+      }
+    >
+      <Icon
+        width={16}
+        icon="solar:alt-arrow-down-linear"
+        className={cx(styles.rowExpandIcon, expanded && styles.rowExpandIconOpen)}
+      />
+    </button>
+  );
 };
 
 // The full-list branch's own two sections (Pending, Completed) plus the inline "Add a task" row —
@@ -30,6 +72,10 @@ const ChecklistDayTaskList = ({
   addTaskRef,
   onTaskCreateStart,
   onTaskCreateEnd,
+  pendingExpandableIds,
+  completedExpandableIds,
+  isSectionExpanded,
+  onToggleSectionExpanded,
 }: Props) => {
   const intl = useIntl();
   return (
@@ -41,9 +87,16 @@ const ChecklistDayTaskList = ({
               <Typography.Text className={styles.sectionLabel}>
                 {intl.formatMessage({ id: 'ChecklistToday.pending', defaultMessage: 'Pending' })}
               </Typography.Text>
-              <Typography.Text className={styles.sectionCount}>
-                {pendingIds.length + pendingTasks.length}
-              </Typography.Text>
+              <div className={styles.sectionHeaderRight}>
+                <Typography.Text className={styles.sectionCount}>
+                  {pendingIds.length + pendingTasks.length}
+                </Typography.Text>
+                <SectionExpandButton
+                  expandableIds={pendingExpandableIds}
+                  isSectionExpanded={isSectionExpanded}
+                  onToggleSectionExpanded={onToggleSectionExpanded}
+                />
+              </div>
             </div>
             <div className={styles.itemList}>
               {/* `pendingTasks` (the transient "Creating…" placeholder) stays outside this
@@ -73,7 +126,14 @@ const ChecklistDayTaskList = ({
             <Typography.Text className={styles.sectionLabel}>
               {intl.formatMessage({ id: 'ChecklistToday.completed', defaultMessage: 'Completed' })}
             </Typography.Text>
-            <Typography.Text className={styles.sectionCount}>{completedIds.length}</Typography.Text>
+            <div className={styles.sectionHeaderRight}>
+              <Typography.Text className={styles.sectionCount}>{completedIds.length}</Typography.Text>
+              <SectionExpandButton
+                expandableIds={completedExpandableIds}
+                isSectionExpanded={isSectionExpanded}
+                onToggleSectionExpanded={onToggleSectionExpanded}
+              />
+            </div>
           </div>
           <div className={styles.itemList}>
             <AnimatePresence initial={false}>{completedIds.map(renderTaskRow)}</AnimatePresence>

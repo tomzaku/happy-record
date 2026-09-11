@@ -1,5 +1,5 @@
 import React from 'react';
-import { useChecklist, useChecklistTemplates, getActiveFieldGroups, isFieldGroupActiveOnDay } from '@dreamer/global';
+import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
 import Checkbox from '@moon-ui/checkbox';
 import { motion } from 'framer-motion';
@@ -9,7 +9,7 @@ import { NavigateFunction } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
 import { format } from 'date-fns';
 import styles from './ChecklistDay.desktop.module.scss';
-import { formatTemplateSchedule, getScheduledTimeLabel } from './checklistDayHelpers';
+import { formatTemplateSchedule, getScheduledTimeLabel, getHasQuickSubmit } from './checklistDayHelpers';
 import ChecklistDayRowSubmit from './ChecklistDayRowSubmit';
 import ChecklistDayRowTitle from './ChecklistDayRowTitle';
 
@@ -31,6 +31,10 @@ type Props = {
   commitEditingTitle: () => void;
   cancelEditingTitle: () => void;
   openDelete: (id: string) => void;
+  // Lifted up to ChecklistDay.desktop.tsx so a section header's "expand/collapse all" button can
+  // drive every row's own field-group area at once, not just this row's own toggle.
+  expanded: boolean;
+  onToggleExpanded: () => void;
 };
 
 // One row of ChecklistDay.desktop.tsx's task list — pulled into its own file to keep that
@@ -54,6 +58,8 @@ const ChecklistDayRow = ({
   commitEditingTitle,
   cancelEditingTitle,
   openDelete,
+  expanded,
+  onToggleExpanded,
 }: Props) => {
   const intl = useIntl();
   const currentChecklist = checklist[id];
@@ -76,12 +82,7 @@ const ChecklistDayRow = ({
   // don't count — see isFieldGroupActiveOnDay's own doc comment). A plain check/uncheck task has
   // nothing more to show than the checkbox already in the row header, so it gets no expand button
   // at all rather than an expand area that would always render empty.
-  const hasQuickSubmit =
-    getActiveFieldGroups(currentChecklistTemplate?.fieldGroups ?? []).filter(group =>
-      isFieldGroupActiveOnDay(group.repeat, date),
-    ).length > 0;
-  // Expanded by default — see ChecklistDayRowSubmit for what actually renders here.
-  const [expanded, setExpanded] = React.useState(true);
+  const hasQuickSubmit = getHasQuickSubmit(currentChecklistTemplate, date);
 
   return (
     <div className={styles.taskRowContainer}>
@@ -175,7 +176,7 @@ const ChecklistDayRow = ({
               className={styles.rowExpandButton}
               onClick={event => {
                 event.stopPropagation();
-                setExpanded(current => !current);
+                onToggleExpanded();
               }}
               aria-label={
                 expanded
