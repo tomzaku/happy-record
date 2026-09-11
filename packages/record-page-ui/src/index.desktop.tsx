@@ -55,9 +55,6 @@ const TaskListPage = () => {
         {viewMode === 'list' && (
           <div className={styles.rightCalendar}>
             <div className={styles.rightPanelHeader}>
-              <Typography.Text className={styles.rightPanelLabel}>
-                {intl.formatMessage({ id: 'right-panel-switcher.title', defaultMessage: 'History' })}
-              </Typography.Text>
               <div className={switcherStyles.container}>
                 <button
                   type="button"

@@ -178,10 +178,6 @@ const ChecklistFieldGroupAdd = ({
   // State for showing history
   const [showHistory, setShowHistory] = React.useState(false);
 
-  // "Record on {{day}}" starts minimized — the full field-by-field breakdown ate a lot of
-  // vertical space on a group with several fields, and most people just want confirmation it
-  // was recorded, not the detail, every time they reopen this tab.
-  const [showTodayRecord, setShowTodayRecord] = React.useState(false);
 
   // Trigger shake animation when records change
   React.useEffect(() => {
@@ -277,14 +273,11 @@ const ChecklistFieldGroupAdd = ({
   const renderCurrentDay = () => {
     return (
       <div className={styles.historyContainer}>
-        <div
-          className={styles.recordDayHeader}
-          onClick={() => setShowTodayRecord(!showTodayRecord)}
-        >
+        <div className={styles.recordDayHeader}>
           <Icon
             icon="solar:alt-arrow-down-outline"
             width={16}
-            className={cx(styles.arrowIcon, showTodayRecord && styles.arrowExpanded)}
+            className={cx(styles.arrowIcon, styles.arrowExpanded)}
           />
           <Typography.Text className={styles.recordDayTitle}>
             {intl.formatMessage({
@@ -293,15 +286,14 @@ const ChecklistFieldGroupAdd = ({
             })}
           </Typography.Text>
         </div>
-        {showTodayRecord && (
-          <div className={styles.historyBody}>
-            <Icon
-              width={100}
-              color="rgba(16,154,0,0.1)"
-              icon="ion:checkmark-done-circle-outline"
-              className={`${styles.iconSuccess} ${isShaking ? styles.shake : ''}`}
-            />
-            {fields.map(recordField => {
+        <div className={styles.historyBody}>
+          <Icon
+            width={100}
+            color="rgba(16,154,0,0.1)"
+            icon="ion:checkmark-done-circle-outline"
+            className={`${styles.iconSuccess} ${isShaking ? styles.shake : ''}`}
+          />
+          {fields.map(recordField => {
               if (recordField.type === 'number') {
                 const recordValues = Object.values(currentChecklistRecords)
                   .flat()
@@ -394,7 +386,6 @@ const ChecklistFieldGroupAdd = ({
               }
             })}
           </div>
-        )}
       </div>
     );
   };
