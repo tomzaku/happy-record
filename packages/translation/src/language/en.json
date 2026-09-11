@@ -56,7 +56,6 @@
   "ChallengeQuickSubmit.mark-done": "Mark as done",
   "ChallengeQuickSubmit.title": "Challenge check-in",
   "ChallengeQuickSubmit.view-all": "All challenges",
-  "ChecklistFieldGroupView.current-day": "today",
   "ChecklistFieldGroupView.noRecord": "No record found on {{day}}",
   "ChecklistFieldGroupView.noRecordDescription": "Submit your record to keep track of your progress",
   "ChecklistFieldGroupView.record-day": "History",
