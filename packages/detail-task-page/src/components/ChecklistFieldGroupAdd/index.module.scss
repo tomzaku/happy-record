@@ -22,7 +22,7 @@
 }
 
 .input {
-  width: 100px;
+  width: 140px;
   padding: 0;
   text-align: end;
   @include media.media('>=tablet') {
@@ -270,6 +270,10 @@
   background: var(--input-background);
   color: var(--text-color);
   cursor: pointer;
+
+  @include media.media('<=tablet') {
+    width: 140px;
+  }
 
   &:disabled {
     opacity: 0.6;

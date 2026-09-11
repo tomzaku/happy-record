@@ -5,7 +5,6 @@ import ChecklistDay from './components/checklist-day';
 import WeeklyCalendar from './components/weekly-calendar';
 import RecentHistory from './components/RecentHistory';
 import WeeklyProgressCard from './components/WeeklyProgressCard';
-import HomeViewSwitcher, { HomeViewMode } from './components/home-view-switcher';
 import switcherStyles from './components/view-switcher/index.module.scss';
 import HomeCalendar from './components/home-calendar';
 import ChallengeQuickSubmit from './components/challenge-quick-submit';
@@ -18,7 +17,19 @@ import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
 import { useSelectedDate } from './hooks/useSelectedDate';
 
-type RightPanelMode = 'calendar' | 'history';
+type MobileViewMode = 'list' | 'calendar' | 'history';
+
+// Mobile has no separate right column (unlike index.desktop.tsx), so the
+// desktop's two stacked switchers — List/Calendar up top, Calendar/History
+// just above the card below it — collapsed into duplicate-looking pill rows
+// here. One flat List/Calendar/History switcher replaces both: List and
+// History share the same layout (the small card + the day's task list),
+// only swapping what the card shows.
+const MOBILE_VIEW_MODES: { mode: MobileViewMode; id: string; defaultMessage: string }[] = [
+  { mode: 'list', id: 'home-view-switcher.list', defaultMessage: 'List' },
+  { mode: 'calendar', id: 'home-view-switcher.calendar', defaultMessage: 'Calendar' },
+  { mode: 'history', id: 'right-panel-switcher.history', defaultMessage: 'History' },
+];
 
 const TaskListPage = () => {
   const intl = useIntl();
@@ -29,11 +40,7 @@ const TaskListPage = () => {
   // this stays fixed at 'all' rather than threading a picker through, same
   // "no filter" behavior every view already had by default.
   const selectedTag = 'all';
-  const [viewMode, setViewMode] = React.useState<HomeViewMode>('list');
-  // Same Calendar/History toggle as index.desktop.tsx's right column — mobile
-  // has no separate right column, so it sits directly above the same Card
-  // the calendar strip already used, swapping only that card's content.
-  const [rightPanelMode, setRightPanelMode] = React.useState<RightPanelMode>('calendar');
+  const [viewMode, setViewMode] = React.useState<MobileViewMode>('list');
 
   // Update key and trigger flip when date changes
   React.useEffect(() => {
@@ -52,32 +59,25 @@ const TaskListPage = () => {
       <div className={styles.body}>
         <ChallengeQuickSubmit />
         <div className={styles.viewSwitcherContainer}>
-          <HomeViewSwitcher value={viewMode} onChange={setViewMode} />
+          <div className={switcherStyles.container}>
+            {MOBILE_VIEW_MODES.map(({ mode, id, defaultMessage }) => (
+              <button
+                key={mode}
+                type="button"
+                className={cx(switcherStyles.option, viewMode === mode && switcherStyles.active)}
+                onClick={() => setViewMode(mode)}
+              >
+                <Typography.Text className={switcherStyles.label}>
+                  {intl.formatMessage({ id, defaultMessage })}
+                </Typography.Text>
+              </button>
+            ))}
+          </div>
         </div>
-        {viewMode === 'list' && (
+        {(viewMode === 'list' || viewMode === 'history') && (
           <>
-            <div className={cx(switcherStyles.container, styles.rightPanelSwitcher)}>
-              <button
-                type="button"
-                className={cx(switcherStyles.option, rightPanelMode === 'calendar' && switcherStyles.active)}
-                onClick={() => setRightPanelMode('calendar')}
-              >
-                <Typography.Text className={switcherStyles.label}>
-                  {intl.formatMessage({ id: 'right-panel-switcher.calendar', defaultMessage: 'Calendar' })}
-                </Typography.Text>
-              </button>
-              <button
-                type="button"
-                className={cx(switcherStyles.option, rightPanelMode === 'history' && switcherStyles.active)}
-                onClick={() => setRightPanelMode('history')}
-              >
-                <Typography.Text className={switcherStyles.label}>
-                  {intl.formatMessage({ id: 'right-panel-switcher.history', defaultMessage: 'History' })}
-                </Typography.Text>
-              </button>
-            </div>
             <Card className={styles.card}>
-              {rightPanelMode === 'calendar' ? (
+              {viewMode === 'list' ? (
                 <WeeklyCalendar
                   currentDate={startDate}
                   onDateChange={setStartDate}
