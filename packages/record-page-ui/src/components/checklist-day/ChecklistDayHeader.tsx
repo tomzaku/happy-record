@@ -1,5 +1,5 @@
 import Typography from '@moon-ui/typography';
-import Button from '@moon-ui/button';
+import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
 import { format, isToday } from 'date-fns';
 import styles from './ChecklistDay.desktop.module.scss';
@@ -27,43 +27,47 @@ const ChecklistDayHeader = ({ date, lunar, completedCount, pendingCount, complet
     <div className={styles.header}>
       <div className={styles.headerLeft}>
         <Typography.Title level={2} className={styles.dateTitle} noMargin>
-          {isToday(date)
-            ? intl.formatMessage({ id: 'ChecklistToday.today', defaultMessage: 'Today' })
-            : format(date, 'EEEE')}
-        </Typography.Title>
-        <Typography.Text className={styles.dateSubtitle}>
           {intl.formatMessage(
+            { id: 'ChecklistToday.date-title', defaultMessage: '{{weekday}}, {{solarDate}}' },
             {
-              id: 'ChecklistToday.date-subtitle',
-              defaultMessage: '{{solarDate}} · Lunar day {{day}}, mo {{month}}',
+              weekday: isToday(date)
+                ? intl.formatMessage({ id: 'ChecklistToday.today', defaultMessage: 'Today' })
+                : format(date, 'EEEE'),
+              solarDate: format(date, 'MMMM d'),
             },
-            { solarDate: format(date, 'MMMM d'), day: lunar.day, month: lunar.month },
           )}
-        </Typography.Text>
-      </div>
-      <div className={styles.headerRight}>
-        {showTodayButton && (
-          <Button type="outline" size="sm" className={styles.todayButton} onClick={onGoToToday}>
-            {intl.formatMessage({ id: 'ChecklistToday.go-to-today', defaultMessage: 'Back to Today' })}
-          </Button>
-        )}
-        <div className={styles.progressBlock}>
-          <Typography.Text className={styles.progressLabel}>
+        </Typography.Title>
+        <div className={styles.dateMeta}>
+          {showTodayButton && (
+            <button type="button" className={styles.todayLink} onClick={onGoToToday}>
+              <Icon width={14} height={14} icon="solar:arrow-left-outline" />
+              {intl.formatMessage({ id: 'ChecklistToday.go-to-today', defaultMessage: 'Back to Today' })}
+            </button>
+          )}
+          <Typography.Text className={styles.dateSubtitle}>
             {intl.formatMessage(
-              { id: 'ChecklistToday.done-count', defaultMessage: '{{count}} done' },
-              { count: completedCount },
-            )}
-          </Typography.Text>
-          <div className={styles.progressTrack}>
-            <div className={styles.progressFill} style={{ width: `${completedPercent}%` }} />
-          </div>
-          <Typography.Text className={styles.progressLabel}>
-            {intl.formatMessage(
-              { id: 'ChecklistToday.to-go-count', defaultMessage: '{{count}} to go' },
-              { count: pendingCount },
+              { id: 'ChecklistToday.lunar-subtitle', defaultMessage: 'Lunar day {{day}}, mo {{month}}' },
+              { day: lunar.day, month: lunar.month },
             )}
           </Typography.Text>
         </div>
+      </div>
+      <div className={styles.progressBlock}>
+        <Typography.Text className={styles.progressLabel}>
+          {intl.formatMessage(
+            { id: 'ChecklistToday.done-count', defaultMessage: '{{count}} done' },
+            { count: completedCount },
+          )}
+        </Typography.Text>
+        <div className={styles.progressTrack}>
+          <div className={styles.progressFill} style={{ width: `${completedPercent}%` }} />
+        </div>
+        <Typography.Text className={styles.progressLabel}>
+          {intl.formatMessage(
+            { id: 'ChecklistToday.to-go-count', defaultMessage: '{{count}} to go' },
+            { count: pendingCount },
+          )}
+        </Typography.Text>
       </div>
     </div>
   );

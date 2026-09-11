@@ -34,7 +34,7 @@ const Header = () => {
       {navigationItems.map(item => (
         <div
           key={item.id}
-          className={cx(styles.navItem, isActivePath(item.path) && styles.activeNavItem)}
+          className={styles.navItem}
           onClick={() => navigate(item.path)}
         >
           <Icon

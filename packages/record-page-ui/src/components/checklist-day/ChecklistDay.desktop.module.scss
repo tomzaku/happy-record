@@ -18,6 +18,13 @@
 
 .headerLeft {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.dateMeta {
+  display: flex;
   align-items: baseline;
   gap: $spacing-sm;
 }
@@ -35,14 +42,23 @@
   font-size: 16px;
 }
 
-.headerRight {
-  display: flex;
+.todayLink {
+  display: inline-flex;
   align-items: center;
-  gap: $spacing-lg;
-}
-
-.todayButton {
+  gap: 4px;
   flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-description-color);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--almanac-accent);
+    text-decoration: underline;
+  }
 }
 
 .progressBlock {
