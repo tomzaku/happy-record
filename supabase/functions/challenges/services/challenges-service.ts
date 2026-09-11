@@ -554,7 +554,7 @@ async function getRecordDetailHistory(
   const resolveFieldId = new Map(forkedFieldRows.map(row => [row.id, row.copied_from_id]));
   const resolvedFieldIds = [...new Set([...fieldIds, ...resolveFieldId.keys()])];
 
-  const rows = await fetchRecordDetailHistoryRows(db, resolvedFieldIds, targetUserId, from, to, MAX_ROWS);
+  const rows = await fetchRecordDetailHistoryRows(db, resolvedFieldIds, [targetUserId], from, to, MAX_ROWS);
 
   const bySubmission = new Map<string, RecordDetailHistoryEntry>();
   for (const row of rows) {
@@ -678,6 +678,112 @@ async function getAttachments(
     }));
 }
 
+export type LogFieldValue = {
+  fieldId: string;
+  title: string;
+  icon: string;
+  unit: string;
+  /** The field's own `fields.type` — lets the client pick number-with-unit vs. plain-text vs.
+   * media rendering the same way `formatFieldValueForDisplay` (packages/global/src/lib/
+   * fieldValueFormat.ts) already does for every other read-only display in this app. */
+  type: string;
+  /** The submitted value itself — `value_number`/`value_text`, whichever this row actually had.
+   * Empty string for a photo/video entry (see `mediaId` below), same "nothing to read as text"
+   * convention `formatFieldValueForDisplay` already uses for those two types. */
+  value: number | string;
+  /** A `media` row's own id, present only for a `type: 'photo'/'video'` entry — same
+   * not-a-URL/needs-`useMediaUrl` contract as `Attachment.mediaId` above. */
+  mediaId?: string;
+};
+
+export type LogEntry = {
+  submissionId: string;
+  userId: string;
+  createdAt: string;
+  values: LogFieldValue[];
+};
+
+const MAX_LOG_ENTRIES = 100;
+
+/**
+ * The dashboard's own cross-participant activity log — every visible participant's own
+ * submissions in range, grouped by `submission_id` into one entry per real Submit click (same
+ * shape `getRecordDetailHistory` already builds for a single member's own "By Member" tab), just
+ * widened to `visibleUserIds` and to *every* field the template's field_groups reference — not
+ * only `challenge.recordDetailFieldIds` (an owner-curated subset for the chart-driven Record
+ * Detail card above) — since a log entry is meant to read as "what did this person actually
+ * submit," not a pre-picked slice of it. A `type: 'note'` field's own entry (`value_number`/
+ * `value_text` both null — see checklist-records-dto.ts) is skipped rather than resolved: showing
+ * a note's real content here would mean reaching into `notes` the way `checklist-records`' own
+ * `resolveNotes` does, out of scope for a log that's otherwise just reading `checklist_records`
+ * rows directly.
+ */
+async function getLogFeed(
+  db: SupabaseClient,
+  challenge: ReturnType<typeof toChallenge>,
+  templateIds: string[],
+  visibleUserIds: string[],
+  from: string,
+  to: string,
+): Promise<LogEntry[]> {
+  const referencedFieldIdsPerTemplate = await Promise.all(
+    templateIds.map(templateId => fetchFieldIdsReferencedByTemplate(db, templateId)),
+  );
+  const fieldIds = [...new Set(referencedFieldIdsPerTemplate.flat())];
+  if (!fieldIds.length) return [];
+
+  const [fieldMetaRows, fieldTypeRows, forkedFieldRows, rows] = await Promise.all([
+    fetchFieldsMetaForUser(db, fieldIds, challenge.ownerId),
+    fetchFieldTypesByIds(db, fieldIds),
+    fetchForkedFields(db, visibleUserIds, fieldIds),
+    fetchRecordDetailHistoryRows(db, fieldIds, visibleUserIds, from, to, MAX_ROWS),
+  ]);
+  const fieldMeta = new Map(fieldMetaRows.map(row => [row.id, { title: row.title, unit: row.unit ?? '', icon: row.icon ?? '' }]));
+  const typeByFieldId = new Map(fieldTypeRows.map(row => [row.id, row.type]));
+  // A legacy fork's id -> the field id it counts toward — same as getTargets' own resolveFieldId.
+  const resolveFieldId = new Map(forkedFieldRows.map(row => [row.id, row.copied_from_id]));
+
+  const bySubmission = new Map<string, LogEntry>();
+  for (const row of rows) {
+    if (row.value_number === null && row.value_text === null) continue; // note-type entry — see doc comment above
+    const fieldId = resolveFieldId.get(row.field_id) ?? row.field_id;
+    const meta = fieldMeta.get(fieldId);
+    if (!meta) continue;
+    const type = typeByFieldId.get(fieldId) ?? 'text';
+    const isMedia = type === 'photo' || type === 'video';
+
+    // Grouped per user *and* submission — two different participants' submissions never share a
+    // submission_id, but this stays correct even for the rare fallback-to-created_at key below
+    // (predates submissions existing at all, see getRecordDetailHistory's own comment).
+    const key = `${row.user_id}:${row.submission_id ?? row.created_at}`;
+    if (!bySubmission.has(key)) {
+      bySubmission.set(key, {
+        submissionId: row.submission_id ?? row.created_at,
+        userId: row.user_id,
+        createdAt: row.created_at,
+        values: [],
+      });
+    }
+    bySubmission.get(key)!.values.push({
+      fieldId,
+      title: meta.title,
+      icon: meta.icon,
+      unit: meta.unit,
+      type,
+      value: isMedia ? '' : (row.value_number ?? row.value_text ?? ''),
+      ...(isMedia && row.value_text ? { mediaId: row.value_text } : {}),
+    });
+  }
+
+  // Newest-first to decide which MAX_LOG_ENTRIES survive the cap, then reversed for the actual
+  // response — a chat-style feed reads oldest-to-newest, latest message at the bottom, same as
+  // every messenger CommentsCard's own layout already mirrors.
+  return [...bySubmission.values()]
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    .slice(0, MAX_LOG_ENTRIES)
+    .reverse();
+}
+
 export type Dashboard = {
   challenge: ReturnType<typeof toChallenge> | null;
   participants: ReturnType<typeof toChallengeParticipant>[];
@@ -686,6 +792,7 @@ export type Dashboard = {
   targets: Target[];
   recordDetails: RecordDetail[];
   attachments: Attachment[];
+  logs: LogEntry[];
 };
 
 export const EMPTY_DASHBOARD: Dashboard = {
@@ -696,6 +803,7 @@ export const EMPTY_DASHBOARD: Dashboard = {
   targets: [],
   recordDetails: [],
   attachments: [],
+  logs: [],
 };
 
 /**
@@ -780,13 +888,14 @@ export async function buildDashboard({ url, db, userId }: Ctx, challengeRow: Rec
   for (const c of completions) countByUser.set(c.userId, (countByUser.get(c.userId) ?? 0) + 1);
   const ranking = [...countByUser.entries()].map(([userId, count]) => ({ userId, count })).sort((a, b) => b.count - a.count);
 
-  const [targets, recordDetails, attachments] = await Promise.all([
+  const [targets, recordDetails, attachments, logs] = await Promise.all([
     getTargets(db, challenge, participants, visibleUserIds),
     getRecordDetails(db, challenge, participants, visibleUserIds),
     getAttachments(db, challenge.ownerId, templateIds, visibleUserIds, from, to),
+    getLogFeed(db, challenge, templateIds, visibleUserIds, from, to),
   ]);
 
-  return { challenge, participants, completions, ranking, targets, recordDetails, attachments };
+  return { challenge, participants, completions, ranking, targets, recordDetails, attachments, logs };
 }
 
 /** `challenge.ownerDisplayName`/`ownerAvatarUrl` are not `challenges` columns — they become the

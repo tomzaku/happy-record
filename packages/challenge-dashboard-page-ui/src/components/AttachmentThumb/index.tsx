@@ -8,12 +8,14 @@ import styles from '../../index.module.scss';
  * can't run conditionally/per-iteration like that (same reasoning TargetFill has for its
  * own per-target component). Renders nothing once the fetch fails (expired/deleted/not visible)
  * rather than a broken-image icon — same "degrade, don't break" rule the field-level equivalent
- * (ChecklistFieldGroupAdd's own MediaFieldPreview) already follows. */
-const AttachmentThumb = ({ kind, mediaId }: { kind: 'photo' | 'video'; mediaId: string }) => {
+ * (ChecklistFieldGroupAdd's own MediaFieldPreview) already follows. `size` overrides the grid's
+ * own fixed 160px (LogCard's own inline bubble thumbnails want something smaller) — the class
+ * still sets that as its default so every other caller keeps behaving exactly as before. */
+const AttachmentThumb = ({ kind, mediaId, size }: { kind: 'photo' | 'video'; mediaId: string; size?: number }) => {
   const { url, isLoading, error } = useMediaUrl(mediaId);
   if (error) return null;
   return (
-    <div className={styles.attachmentThumb}>
+    <div className={styles.attachmentThumb} style={size ? { width: size, height: size } : undefined}>
       {isLoading && <Icon icon="svg-spinners:180-ring" width={20} />}
       {url && kind === 'photo' && <img src={url} alt="" className={styles.attachmentThumbImg} />}
       {url && kind === 'video' && <video src={url} controls className={styles.attachmentThumbVideo} />}

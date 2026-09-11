@@ -9,11 +9,9 @@ type Props = {
   radius?: number | string;
   className?: string;
   /**
-   * Default `'surface'` — the shimmer's two-tone gradient (`--input-background`/
-   * `--surface-secondary`) is tuned to blend into a Card's own background. Pass `'page'` for a
-   * skeleton sitting directly on the page background instead of inside a card — those tokens
-   * are usually a different (often lighter) shade than the page background itself, so the same
-   * gradient reads as a mismatched floating box rather than a blended shimmer there.
+   * Default `'surface'` — a light `--text-color` overlay, sized for sitting inside a Card. Pass
+   * `'page'` for a skeleton sitting directly on the page background instead: with no Card edge
+   * of its own to read against, it needs a stronger overlay than `'surface'` to stay visible.
    */
   tone?: 'surface' | 'page';
 };

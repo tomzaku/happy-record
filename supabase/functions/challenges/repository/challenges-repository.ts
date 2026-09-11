@@ -291,30 +291,33 @@ export async function fetchChecklistRecordRows(
 
 export type RecordDetailHistoryRow = {
   field_id: string;
+  user_id: string;
   value_number: number | null;
+  value_text: string | null;
   submission_id: string | null;
   created_at: string;
 };
 
 /** Feeds getRecordDetailHistory's own per-member, per-submission listing (the dashboard's "Record
- * Detail" card's "By Member" tab) — unlike fetchChecklistRecordRows above (a per-field, per-user
- * *sum*), this keeps every row's own `submission_id`/`created_at` so the caller can group them back
- * into "what did this one person submit, and when." Scoped to one `userId`, not a visible roster —
- * the caller already checked that user is actually visible before calling this. */
+ * Detail" card's "By Member" tab) and getLogFeed's own cross-participant activity log — unlike
+ * fetchChecklistRecordRows above (a per-field, per-user *sum*), this keeps every row's own
+ * `submission_id`/`created_at`/`user_id`/`value_text` so a caller can group them back into "what
+ * did this person submit, and when." `userIds` is whichever roster the caller already decided is
+ * visible — a single id for the "By Member" tab, the full `visibleUserIds` list for the log. */
 export async function fetchRecordDetailHistoryRows(
   db: SupabaseClient,
   fieldIds: string[],
-  userId: string,
+  userIds: string[],
   from: string,
   to: string,
   limit: number,
 ): Promise<RecordDetailHistoryRow[]> {
-  if (!fieldIds.length) return [];
+  if (!fieldIds.length || !userIds.length) return [];
   const { data, error } = await db
     .from('checklist_records')
-    .select('field_id, value_number, submission_id, created_at')
+    .select('field_id, user_id, value_number, value_text, submission_id, created_at')
     .in('field_id', fieldIds)
-    .eq('user_id', userId)
+    .in('user_id', userIds)
     .gte('created_at', from)
     .lte('created_at', to)
     .order('created_at', { ascending: false })

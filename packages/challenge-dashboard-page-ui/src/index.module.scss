@@ -840,3 +840,47 @@
   margin-left: auto;
   font-weight: 600;
 }
+
+// ─── Log (cross-participant activity feed) ───
+// Reuses .comments/.commentRow/.bubbleCol/.commentAuthor/.commentTime's own messenger-style
+// layout (see that section above) — this card just puts a per-submission field list
+// (.recordDetailFieldRow/.recordDetailFieldValue, same as Record Detail's "By Member" tab) inside
+// each bubble instead of comment text. Not `.bubble` itself, though: that one's background is
+// `var(--input-background)`, which resolves to the exact same `--almanac-card` this card's own
+// body sits on — an invisible bubble. `.logBubble` tints itself with the card's own accent
+// (`#c85a28`, matching `.cardHeaderWash`/the header icon above) instead, so it actually reads as a
+// bubble against the card body behind it.
+.logFeed {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.logBubble {
+  background: rgba(200, 90, 40, 0.07);
+  border: 1px solid rgba(200, 90, 40, 0.16);
+  border-radius: 16px 16px 16px 4px;
+  padding: $spacing-xs $spacing-sm;
+  max-width: 100%;
+
+  &[data-mine='true'] {
+    background: #c85a28;
+    border-color: #c85a28;
+    border-radius: 16px 16px 4px 16px;
+  }
+}
+
+.logFieldList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+}
+
+.logFieldMedia {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

@@ -5,8 +5,12 @@
   padding: 3px;
   // Falls back to the pre-existing value everywhere this switcher is reused
   // (detail-task-page, mobile) — only defined by the home page's own
-  // `.almanacScope` (index.desktop.module.scss).
-  background: var(--almanac-pill-bg, var(--surface-secondary));
+  // `.almanacScope` (index.desktop.module.scss). Mixed 30% toward transparent (not a literal
+  // lighten()) since both fallback tokens are CSS custom properties, not values SCSS's own
+  // lighten() can compute against — and blending toward transparent scales the pill's visual
+  // weight down in both themes alike, unlike mixing toward white (which would wash out on the
+  // dark theme's own near-black surfaces).
+  background: color-mix(in srgb, var(--almanac-pill-bg, var(--surface-secondary)) 70%, transparent);
   border-radius: 8px;
 }
 

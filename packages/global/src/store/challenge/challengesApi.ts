@@ -119,6 +119,30 @@ export function fetchChallengeDashboard(
     mediaId: string;
     createdAt: string;
   }[];
+  /**
+   * Every visible participant's own submissions in range, grouped by Submit click — the
+   * dashboard's cross-participant activity log (like `recordDetailHistory` below, but for
+   * everyone, and every field the template has, not just `Challenge.recordDetailFieldIds`).
+   */
+  logs: {
+    submissionId: string;
+    userId: string;
+    createdAt: string;
+    values: {
+      fieldId: string;
+      title: string;
+      /** The field's own Iconify icon — see useRecordField.tsx's `RecordField.icon`. */
+      icon: string;
+      unit: string;
+      /** The field's own `type` (see useRecordField.tsx's `RecordField.type`) — picks how `value`
+       * below should render (number-with-unit, plain text, or via `mediaId` for photo/video). */
+      type: string;
+      value: number | string;
+      /** A `media` row's own id, present only for a photo/video entry — resolve via
+       * `useMediaUrl`, never used as a URL directly. */
+      mediaId?: string;
+    }[];
+  }[];
 }> {
   return request.get(`/challenges/${encodeURIComponent(id)}`, { params: { from, to } });
 }

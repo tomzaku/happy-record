@@ -14,6 +14,8 @@
   "ChallengeDashboard.daily-activity": "Check-ins per day",
   "ChallengeDashboard.daily-activity-caption": "{{average}} on average · best {{best}}",
   "ChallengeDashboard.day-streak": "🔥 {{streak}} day streak",
+  "ChallengeDashboard.log": "Log",
+  "ChallengeDashboard.log-caption": "Everyone's check-ins, as they happen.",
   "ChallengeDashboard.member-count": "{{count}} joined",
   "ChallengeDashboard.no-comments": "No comments yet.",
   "ChallengeDashboard.no-contributions": "No contributions yet.",

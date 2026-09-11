@@ -18,9 +18,11 @@ import { useInlineTaskTitleEdit } from './useInlineTaskTitleEdit';
 const ChecklistDayDesktop = ({
   date,
   selectedTag,
+  onGoToToday,
 }: {
   date: Date;
   selectedTag?: string;
+  onGoToToday?: () => void;
 }) => {
   const { getChecklistByGivingDate, updateChecklist, deleteChecklist, getAllChecklistWithTemplate, checklistsLoading } =
     useChecklist();
@@ -72,6 +74,7 @@ const ChecklistDayDesktop = ({
       completedCount={completedIds.length}
       pendingCount={pendingIds.length}
       completedPercent={completedPercent}
+      onGoToToday={onGoToToday}
     />
   );
 

@@ -9,22 +9,33 @@
   flex-shrink: 0;
   border-radius: 6px;
   // A wide gradient panned left-to-right, not a plain pulsing opacity — reads less like "this is
-  // broken" and more like a deliberate loading state.
-  background: linear-gradient(90deg, var(--input-background) 25%, var(--surface-secondary) 37%, var(--input-background) 63%);
+  // broken" and more like a deliberate loading state. Blended against `--text-color`, not
+  // `--input-background`/`--surface-secondary` — those two tokens sit within a couple shades of
+  // each other in both themes (by design, so a real Card's own background stays subtle), which
+  // left almost no contrast between the gradient's own stops *or* against a surrounding Card/
+  // surface using either of them as its background — nearly invisible in practice, not just
+  // "subtle". A translucent overlay of the current text color instead reads as real gray
+  // regardless of the exact surface tone underneath, in both light and dark theme.
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--text-color) 12%, transparent) 25%,
+    color-mix(in srgb, var(--text-color) 24%, transparent) 37%,
+    color-mix(in srgb, var(--text-color) 12%, transparent) 63%
+  );
   background-size: 400% 100%;
   animation: shimmer 1.4s ease infinite;
 }
 
-// A skeleton sitting directly on the page background (no Card wrapper), rather than inside one
-// — see `tone` above. A translucent overlay of the current text color instead of a fixed
-// card/surface tone, so contrast stays right against whatever the page background is, in both
-// light and dark theme, without per-theme tuning.
+// A skeleton sitting directly on the page background (no Card wrapper) — see `tone` above.
+// Same text-color-overlay approach as the default now, just stronger: a bare page background has
+// no Card edge of its own to help a lighter overlay read as "a shape," so this needs more
+// contrast than the in-Card default above to stay legible.
 .onPage {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--text-color) 8%, transparent) 25%,
-    color-mix(in srgb, var(--text-color) 16%, transparent) 37%,
-    color-mix(in srgb, var(--text-color) 8%, transparent) 63%
+    color-mix(in srgb, var(--text-color) 18%, transparent) 25%,
+    color-mix(in srgb, var(--text-color) 32%, transparent) 37%,
+    color-mix(in srgb, var(--text-color) 18%, transparent) 63%
   );
   background-size: 400% 100%;
 }

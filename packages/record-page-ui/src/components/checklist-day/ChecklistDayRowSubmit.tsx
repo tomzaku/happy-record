@@ -6,6 +6,7 @@ import { useChallenge } from '@dreamer/global';
 import { useIntl } from '@dreamer/translation';
 import { useTaskDetailModalData } from '../home-calendar/useTaskDetailModalData';
 import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
+import ChecklistDayRowSubmitSkeleton from './ChecklistDayRowSubmitSkeleton';
 import styles from './ChecklistDay.desktop.module.scss';
 
 type Props = {
@@ -33,12 +34,16 @@ const ChecklistDayRowSubmit = ({ checklistTemplateId, date }: Props) => {
   const { getChallengeForTemplate } = useChallenge();
   const challenge = getChallengeForTemplate(checklistTemplateId);
 
-  // `template`/`checklist` land a beat after mount (own fetch, or the creation effect for a
-  // brand-new day) — same "nothing to show yet" gate TaskDetailModal's own showSubmit uses.
-  // `relevantGroups` empty means nothing due on this row's day — ChecklistDayRow already gates
-  // rendering this component on that, but a re-render between those two checks (a group's own
-  // schedule changing) can still land here with a stale gate, so this checks again itself.
-  if (!template || !checklist || relevantGroups.length === 0) return null;
+  // `template` lands a beat after mount (own fetch) — same "nothing to show yet" gate
+  // TaskDetailModal's own showSubmit uses. `relevantGroups` empty means nothing due on this
+  // row's day — ChecklistDayRow already gates rendering this component on that, but a re-render
+  // between those two checks (a group's own schedule changing) can still land here with a stale
+  // gate, so this checks again itself. Neither is worth a skeleton: there's no known group shape
+  // to skeleton yet, so this stays a plain "render nothing" gate for both.
+  if (!template || relevantGroups.length === 0) return null;
+  // `checklist` itself lands a further beat behind `template` (the creation effect for a
+  // brand-new day, or its own fetch) — but `relevantGroups`/`fieldsByGroup` are already known by
+  // this point, so each group's column skeletons instead of the whole row disappearing.
 
   return (
     <div className={styles.rowExpandedGroups} onClick={event => event.stopPropagation()}>
@@ -50,15 +55,19 @@ const ChecklistDayRowSubmit = ({ checklistTemplateId, date }: Props) => {
       {relevantGroups.map(group => (
         <div key={group.id} className={styles.rowExpandedGroupColumn}>
           <Typography.Text className={styles.rowExpandedGroupTitle}>{group.title}</Typography.Text>
-          <ChecklistFieldGroupAdd
-            fields={fieldsByGroup[group.id] ?? []}
-            checklistTemplate={template}
-            fieldGroup={group}
-            checklist={checklist}
-            currentDay={date.toISOString()}
-            onSubmit={markCompleted}
-            compact
-          />
+          {checklist ? (
+            <ChecklistFieldGroupAdd
+              fields={fieldsByGroup[group.id] ?? []}
+              checklistTemplate={template}
+              fieldGroup={group}
+              checklist={checklist}
+              currentDay={date.toISOString()}
+              onSubmit={markCompleted}
+              compact
+            />
+          ) : (
+            <ChecklistDayRowSubmitSkeleton fieldCount={group.fields.length} />
+          )}
         </div>
       ))}
     </div>

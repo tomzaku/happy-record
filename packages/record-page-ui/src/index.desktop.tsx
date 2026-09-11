@@ -120,6 +120,7 @@ const TaskListPage = () => {
                     <ChecklistDayDesktop
                       date={startDate}
                       selectedTag={selectedTag === 'all' ? undefined : selectedTag}
+                      onGoToToday={() => setStartDate(new Date())}
                     />
                   </div>
                 </div>

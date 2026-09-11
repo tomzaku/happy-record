@@ -16,6 +16,7 @@ import { useLeaveChallengeFlow } from './hooks/useLeaveChallengeFlow';
 import DashboardSkeleton from './components/DashboardSkeleton';
 import TargetsCard from './components/TargetsCard';
 import RecordDetailCard from './components/RecordDetailCard';
+import LogCard from './components/LogCard';
 import StreaksCard from './components/StreaksCard';
 import LeaderboardCard from './components/LeaderboardCard';
 import CommentsCard from './components/CommentsCard';
@@ -146,6 +147,8 @@ const ChallengeDashboardPageUi = () => {
             rankedParticipants={rankedParticipants}
             onLeaveClick={() => leaveFlow.setLeaveModalVisible(true)}
           />
+
+          <LogCard dashboard={dashboard} userId={userId} />
 
           {dashboard.challenge.commentsEnabled && (
             <CommentsCard

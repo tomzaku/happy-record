@@ -35,6 +35,16 @@
   font-size: 16px;
 }
 
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+}
+
+.todayButton {
+  flex-shrink: 0;
+}
+
 .progressBlock {
   display: flex;
   align-items: center;
@@ -363,6 +373,14 @@
   color: var(--text-color);
   font-size: 13px;
   font-weight: 700;
+}
+
+// Mirrors ChecklistFieldGroupAdd's own .footerCenter's Submit-button alignment (right-aligned)
+// for ChecklistDayRowSubmitSkeleton, without pulling in that whole stylesheet for one rule.
+.rowExpandedSkeletonFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: $spacing-sm;
 }
 
 .emptyContainer {
