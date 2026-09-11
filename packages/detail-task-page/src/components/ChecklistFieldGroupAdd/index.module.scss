@@ -2,25 +2,6 @@
 @use '@moon-ui/app-scss/function' as *;
 @use 'include-media/dist/include-media' as media;
 
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  25% {
-    transform: translateX(-10px);
-  }
-
-  75% {
-    transform: translateX(10px);
-  }
-}
-
-.shake {
-  animation: shake 0.5s ease-in-out;
-}
-
 .input {
   width: 140px;
   padding: 0;
@@ -130,33 +111,11 @@
   }
 }
 
+// Today's photo/video attachments — a plain wrapping row of thumbnails, no per-field labels.
 .historyBody {
-  position: relative;
-  overflow: hidden;
-}
-
-.iconSuccess {
-  position: absolute;
-  right: -20px;
-  bottom: -30px;
-}
-
-.emptyContainer {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: $spacing-lg;
-  flex-direction: column;
-  text-align: center;
-}
-
-.iconEmpty {
-  color: var(--icon-color-inactive-invert);
-}
-
-.itemEmptyContainer {
-  position: absolute;
-  opacity: 0.4;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
 }
 
 // The number field's already-submitted total — sits outside that field's own List.ItemMeta row

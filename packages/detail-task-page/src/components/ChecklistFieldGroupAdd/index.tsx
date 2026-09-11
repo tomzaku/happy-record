@@ -171,28 +171,9 @@ const ChecklistFieldGroupAdd = ({
   // drag-and-drop dropzone genuinely needs room for.
   const isMobile = useIsMobile();
 
-  // Add ref to track previous records for shake animation
-  const prevRecordsRef = React.useRef<ChecklistRecord[]>([]);
-
-  // State for shake animation
-  const [isShaking, setIsShaking] = React.useState(false);
-
   // Whether the Attachments section below is expanded — collapsed by default, toggled only by
   // its own header click.
   const [showHistory, setShowHistory] = React.useState(false);
-
-
-  // Trigger shake animation when records change
-  React.useEffect(() => {
-    if (currentChecklistRecords.length > prevRecordsRef.current.length) {
-      // Shake animation when new records are added
-      setIsShaking(true);
-      setTimeout(() => {
-        setIsShaking(false);
-      }, 500);
-    }
-    prevRecordsRef.current = currentChecklistRecords;
-  }, [currentChecklistRecords]);
 
   const reloadChecklistRecord = () => {
     // `fieldIds: []` means "no filter" to getChecklistRecords (see that hook's own comment),
