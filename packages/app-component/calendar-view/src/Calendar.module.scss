@@ -81,8 +81,11 @@
 }
 
 .todayButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: transparent;
-  border: 1px solid var(--card-border);
+  border: 0;
   border-radius: 8px;
   padding: 6px 14px;
   margin-right: 8px;
@@ -92,7 +95,7 @@
   cursor: pointer;
 
   &:hover {
-    background: var(--surface-secondary);
+    background: var(--button-action-background);
   }
 }
 

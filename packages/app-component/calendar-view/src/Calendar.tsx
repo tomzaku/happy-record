@@ -192,6 +192,7 @@ const Calendar = ({
         <div className={styles.toolbarLeft}>
           {menuSlot}
           <button type="button" className={styles.todayButton} onClick={() => calendarRef.current?.getApi().today()}>
+            <Icon width={14} icon="solar:calendar-mark-line-duotone" />
             {todayLabel}
           </button>
           <button

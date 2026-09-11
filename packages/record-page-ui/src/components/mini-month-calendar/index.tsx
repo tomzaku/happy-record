@@ -9,7 +9,6 @@ import {
   endOfMonth,
   endOfWeek,
   format,
-  isBefore,
   isSameDay,
   isSameMonth,
   isToday,
@@ -63,26 +62,18 @@ const MiniMonthCalendar = ({ currentDate, onDateChange, selectedTag, showTodayBu
   // cell, not this reference point) to avoid the two shadowing each other.
   const todayStart = React.useMemo(() => startOfDay(new Date()), []);
 
-  // A plain traffic light — but "nothing done yet" only reads as `missed`
-  // (red) once the day has actually happened; a future day with nothing
-  // done yet hasn't failed anything, it just hasn't arrived, so that's
-  // `upcoming` (neutral) instead. Today itself counts as `upcoming` too —
-  // there's still time left in it. `undefined` (nothing scheduled at all)
-  // renders no badge.
+  // `undefined` (nothing scheduled at all) renders no badge.
   const getDotLevel = React.useCallback(
-    (date: Date): 'upcoming' | 'missed' | 'inProgress' | 'done' | undefined => {
+    (date: Date): 'done' | 'pending' | undefined => {
       const { checklist } = getChecklistForDateWithoutFetching({
         date,
         selectedTag: selectedTag === 'all' ? undefined : selectedTag,
       });
       const items = Object.values(checklist);
       if (items.length === 0) return undefined;
-      const completed = items.filter(item => item.completedAt).length;
-      if (completed === items.length) return 'done';
-      if (completed > 0) return 'inProgress';
-      return isBefore(startOfDay(date), todayStart) ? 'missed' : 'upcoming';
+      return items.every(item => item.completedAt) ? 'done' : 'pending';
     },
-    [getChecklistForDateWithoutFetching, selectedTag, todayStart],
+    [getChecklistForDateWithoutFetching, selectedTag],
   );
 
   return (
@@ -141,8 +132,9 @@ const MiniMonthCalendar = ({ currentDate, onDateChange, selectedTag, showTodayBu
               data-selected={selected || undefined}
               onClick={() => onDateChange(date)}
             >
-              <span className={styles.dayNumber} data-level={dotLevel}>
+              <span className={styles.dayNumber}>
                 {format(date, 'd')}
+                {dotLevel && <span className={styles.statusDot} data-level={dotLevel} />}
               </span>
             </button>
           );
