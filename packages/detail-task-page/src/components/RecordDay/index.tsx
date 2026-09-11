@@ -66,6 +66,7 @@ const RecordDay = ({
     hasRecords ? RecordTab.Home : RecordTab.Add,
   );
   const today = isToday(currentDay);
+  const [collapsed, setCollapsed] = React.useState(false);
   const renderBody = () => {
     switch (activeTab) {
       case RecordTab.Home: {
@@ -132,9 +133,15 @@ const RecordDay = ({
         onClickAdd={() => setActiveTab(RecordTab.Add)}
         activeTab={activeTab}
         renderTitle={renderTitle}
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed(prev => !prev)}
       />
-      <Hr classes={{ hr: styles.hr }} />
-      {renderBody()}
+      {!collapsed && (
+        <>
+          <Hr classes={{ hr: styles.hr }} />
+          {renderBody()}
+        </>
+      )}
     </Card>
   );
 };

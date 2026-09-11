@@ -18,7 +18,6 @@ import {
 } from '@dreamer/global/src/lib/fieldValueFormat';
 import { parseMultiselect, serializeMultiselect } from '@dreamer/global/src/lib/multiselectValue';
 import Checkbox from '@moon-ui/checkbox';
-import Button from '@moon-ui/button/src/DefaultButton';
 import { Checklist, ChecklistTemplate, FieldGroup, useAiNoteGenerate } from '@dreamer/global';
 import {
   ChecklistRecord,
@@ -172,6 +171,11 @@ const ChecklistFieldGroupAdd = ({
   // State for showing history
   const [showHistory, setShowHistory] = React.useState(false);
 
+  // "Record on {{day}}" starts minimized — the full field-by-field breakdown ate a lot of
+  // vertical space on a group with several fields, and most people just want confirmation it
+  // was recorded, not the detail, every time they reopen this tab.
+  const [showTodayRecord, setShowTodayRecord] = React.useState(false);
+
   // Trigger shake animation when records change
   React.useEffect(() => {
     if (currentChecklistRecords.length > prevRecordsRef.current.length) {
@@ -266,14 +270,16 @@ const ChecklistFieldGroupAdd = ({
   const renderCurrentDay = () => {
     return (
       <div className={styles.historyContainer}>
-        <div className={styles.historyBody}>
+        <div
+          className={styles.recordDayHeader}
+          onClick={() => setShowTodayRecord(!showTodayRecord)}
+        >
           <Icon
-            width={100}
-            color="rgba(16,154,0,0.1)"
-            icon="ion:checkmark-done-circle-outline"
-            className={`${styles.iconSuccess} ${isShaking ? styles.shake : ''}`}
+            icon="solar:alt-arrow-down-outline"
+            width={16}
+            className={cx(styles.arrowIcon, showTodayRecord && styles.arrowExpanded)}
           />
-          <Typography.Title level={4}>
+          <Typography.Title level={4} noMargin>
             {intl.formatMessage(
               {
                 id: 'ChecklistFieldGroupView.record-day',
@@ -289,99 +295,109 @@ const ChecklistFieldGroupAdd = ({
               },
             )}
           </Typography.Title>
-          {fields.map(recordField => {
-            if (recordField.type === 'number') {
-              const recordValues = Object.values(currentChecklistRecords)
-                .flat()
-                .filter(record => record.fieldId === recordField.id);
-              const sumValue = sum(recordValues.map(record => record.value));
-              return (
-                <List.ItemMeta
-                  key={recordField.id}
-                  logo={<Icon width={24} icon={recordField.icon} />}
-                  title={recordField.title}
-                  noPaddingHorizontal={compact}
-                  rightComponent={
-                    <>
-                      <Typography.Title
-                        level={1}
-                        noMargin
-                        className={styles.sumValueText}
-                      >
-                        {sumValue}
-                      </Typography.Title>
-                      <Typography.Text>{recordField.unit}</Typography.Text>
-                    </>
-                  }
-                />
-              );
-            } else if (recordField.type === 'note') {
-              const latestRecord = currentChecklistRecords.find(
-                record => record.fieldId === recordField.id,
-              );
-              if (!latestRecord) {
-                return null;
-              }
-              return (
-                <React.Fragment key={latestRecord.id}>
-                  <List.ItemMeta
-                    logo={<Icon width={24} icon={recordField.icon} />}
-                    title={recordField.title}
-                    noPaddingHorizontal={compact}
-                  />
-                  <NoteEditor
-                    key={latestRecord.id}
-                    value={latestRecord.value}
-                    readOnly
-                    withoutBorder
-                  />
-                </React.Fragment>
-              );
-            } else if (recordField.type === 'photo' || recordField.type === 'video') {
-              const latestRecord = currentChecklistRecords.find(
-                record => record.fieldId === recordField.id,
-              );
-              if (!latestRecord || typeof latestRecord.value !== 'string') {
-                return null;
-              }
-              return (
-                <React.Fragment key={latestRecord.id}>
-                  <List.ItemMeta
-                    logo={<Icon width={24} icon={recordField.icon} />}
-                    title={recordField.title}
-                    noPaddingHorizontal={compact}
-                  />
-                  <MediaFieldPreview kind={recordField.type} mediaId={latestRecord.value} />
-                </React.Fragment>
-              );
-            } else {
-              // text/date/datetime/select/multiselect — a plain formatted string, same
-              // read-only display ChecklistFieldGeneral's own collapsed state uses.
-              const latestRecord = currentChecklistRecords.find(
-                record => record.fieldId === recordField.id,
-              );
-              if (!latestRecord) {
-                return null;
-              }
-              return (
-                <List.ItemMeta
-                  key={latestRecord.id}
-                  logo={<Icon width={24} icon={recordField.icon} />}
-                  title={recordField.title}
-                  noPaddingHorizontal={compact}
-                  rightComponent={
-                    <Typography.Text>
-                      {formatFieldValueForDisplay(
-                        recordField.type as 'text' | 'date' | 'datetime' | 'select' | 'multiselect',
-                        latestRecord.value,
-                      )}
-                    </Typography.Text>
-                  }
-                />
-              );
-            }
-          })}
         </div>
+        {showTodayRecord && (
+          <div className={styles.historyBody}>
+            <Icon
+              width={100}
+              color="rgba(16,154,0,0.1)"
+              icon="ion:checkmark-done-circle-outline"
+              className={`${styles.iconSuccess} ${isShaking ? styles.shake : ''}`}
+            />
+            {fields.map(recordField => {
+              if (recordField.type === 'number') {
+                const recordValues = Object.values(currentChecklistRecords)
+                  .flat()
+                  .filter(record => record.fieldId === recordField.id);
+                const sumValue = sum(recordValues.map(record => record.value));
+                return (
+                  <List.ItemMeta
+                    key={recordField.id}
+                    logo={<Icon width={24} icon={recordField.icon} />}
+                    title={recordField.title}
+                    noPaddingHorizontal={compact}
+                    rightComponent={
+                      <>
+                        <Typography.Title
+                          level={1}
+                          noMargin
+                          className={styles.sumValueText}
+                        >
+                          {sumValue}
+                        </Typography.Title>
+                        <Typography.Text>{recordField.unit}</Typography.Text>
+                      </>
+                    }
+                  />
+                );
+              } else if (recordField.type === 'note') {
+                const latestRecord = currentChecklistRecords.find(
+                  record => record.fieldId === recordField.id,
+                );
+                if (!latestRecord) {
+                  return null;
+                }
+                return (
+                  <React.Fragment key={latestRecord.id}>
+                    <List.ItemMeta
+                      logo={<Icon width={24} icon={recordField.icon} />}
+                      title={recordField.title}
+                      noPaddingHorizontal={compact}
+                    />
+                    <NoteEditor
+                      key={latestRecord.id}
+                      value={latestRecord.value}
+                      readOnly
+                      withoutBorder
+                    />
+                  </React.Fragment>
+                );
+              } else if (recordField.type === 'photo' || recordField.type === 'video') {
+                const latestRecord = currentChecklistRecords.find(
+                  record => record.fieldId === recordField.id,
+                );
+                if (!latestRecord || typeof latestRecord.value !== 'string') {
+                  return null;
+                }
+                return (
+                  <React.Fragment key={latestRecord.id}>
+                    <List.ItemMeta
+                      logo={<Icon width={24} icon={recordField.icon} />}
+                      title={recordField.title}
+                      noPaddingHorizontal={compact}
+                    />
+                    <MediaFieldPreview kind={recordField.type} mediaId={latestRecord.value} />
+                  </React.Fragment>
+                );
+              } else {
+                // text/date/datetime/select/multiselect — a plain formatted string, same
+                // read-only display ChecklistFieldGeneral's own collapsed state uses.
+                const latestRecord = currentChecklistRecords.find(
+                  record => record.fieldId === recordField.id,
+                );
+                if (!latestRecord) {
+                  return null;
+                }
+                return (
+                  <List.ItemMeta
+                    key={latestRecord.id}
+                    logo={<Icon width={24} icon={recordField.icon} />}
+                    title={recordField.title}
+                    noPaddingHorizontal={compact}
+                    rightComponent={
+                      <Typography.Text>
+                        {formatFieldValueForDisplay(
+                          recordField.type as 'text' | 'date' | 'datetime' | 'select' | 'multiselect',
+                          latestRecord.value,
+                        )}
+                      </Typography.Text>
+                    }
+                  />
+                );
+              }
+            })}
+          </div>
+        )}
       </div>
     );
   };
@@ -568,8 +584,8 @@ const ChecklistFieldGroupAdd = ({
           // left to push against.
           <span />
         )}
-        <Button
-          size="lg"
+        <button
+          type="button"
           className={styles.submitBtn}
           onClick={async () => {
             // Reads each note field's real current content directly from its own editor
@@ -664,7 +680,7 @@ const ChecklistFieldGroupAdd = ({
           }}
         >
           Submit
-        </Button>
+        </button>
       </div>
         {currentChecklistRecords.length > 0 ? (
           <>

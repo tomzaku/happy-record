@@ -81,7 +81,6 @@ const RecordDayEdit = ({
       <div className={styles.footerCenter}>
         <Button
           size="lg"
-          className={styles.submitBtn}
           onClick={() => {
             if (currentChecklistTemplate) {
               addChecklistRecord({

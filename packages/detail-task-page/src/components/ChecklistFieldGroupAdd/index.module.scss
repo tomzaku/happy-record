@@ -109,8 +109,6 @@
   align-items: center;
   justify-content: space-between;
   margin-top: $spacing-lg;
-  padding-left: 8px;
-  padding-right: 8px;
 }
 
 // Deliberately quiet — plain text, no border/background — since this tab's job is filling
@@ -132,25 +130,31 @@
   }
 }
 
-.submitBtn {
-  padding: 10px 12px;
-  border-radius: 5px;
-  border: 0;
-  color: var(--text-color-invert);
-  font-size: toRem(16px);
-  font-weight: bold;
-  cursor: pointer;
-  background: linear-gradient(to right, #3b8fd6, #00b7d6);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: background 0.3s ease;
-
-  &:hover {
-    background: linear-gradient(to right, #00b7d6, #3b8fd6);
-  }
-}
-
 .historyContainer {
   position: relative;
+}
+
+.recordDayHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  cursor: pointer;
+  user-select: none;
+}
+
+.submitBtn {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: toRem(14px);
+  font-weight: 600;
+  color: var(--text-color);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-secondary);
+  }
 }
 
 .historyBody {

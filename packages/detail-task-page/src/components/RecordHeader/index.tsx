@@ -14,6 +14,8 @@ const RecordHeader = ({
   onClickAdd,
   activeTab,
   renderTitle = () => null,
+  collapsed,
+  onToggleCollapse,
 }: {
   onClickHome: () => void;
   onClickHistory: () => void;
@@ -21,6 +23,8 @@ const RecordHeader = ({
   onClickAdd: () => void;
   activeTab: RecordTab;
   renderTitle?: () => React.ReactNode;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }) => {
   const buttons = [
     {
@@ -45,32 +49,43 @@ const RecordHeader = ({
   const intl = useIntl();
   return (
     <div className={styles.container}>
-      <Typography.Title level={4} noMargin className={styles.title}>
-        {renderTitle()}
-      </Typography.Title>
-      {buttons.map(({ icon, iconActive, onClick, isActive }, index) => (
+      <div className={styles.titleGroup} onClick={onToggleCollapse}>
+        <Typography.Title level={4} noMargin className={styles.title}>
+          {renderTitle()}
+        </Typography.Title>
         <Icon
-          key={index}
-          onClick={onClick}
-          className={cx(styles.icon, isActive && styles.iconActive)}
-          width={24}
-          icon={activeTab === index ? iconActive : icon}
+          className={cx(styles.chevron, collapsed && styles.chevronCollapsed)}
+          width={20}
+          icon="solar:alt-arrow-down-line-duotone"
         />
-      ))}
-      <Button
-        className={cx(
-          styles.button,
-          activeTab === RecordTab.Add && styles.buttonActive,
-        )}
-        type="dash"
-        onClick={onClickAdd}
-      >
-        <Icon icon="material-symbols:add" className={styles.addIcon} />
-        {intl.formatMessage({
-          id: 'record-header.add-record',
-          defaultMessage: 'Add',
-        })}
-      </Button>
+      </div>
+      {!collapsed && (
+        <>
+          {buttons.map(({ icon, iconActive, onClick, isActive }, index) => (
+            <Icon
+              key={index}
+              onClick={onClick}
+              className={cx(styles.icon, isActive && styles.iconActive)}
+              width={24}
+              icon={activeTab === index ? iconActive : icon}
+            />
+          ))}
+          <Button
+            className={cx(
+              styles.button,
+              activeTab === RecordTab.Add && styles.buttonActive,
+            )}
+            type="dash"
+            onClick={onClickAdd}
+          >
+            <Icon icon="material-symbols:add" className={styles.addIcon} />
+            {intl.formatMessage({
+              id: 'record-header.add-record',
+              defaultMessage: 'Add',
+            })}
+          </Button>
+        </>
+      )}
     </div>
   );
 };
