@@ -36,6 +36,7 @@ const AnimationRoute = ({ children }: { children: React.ReactNode }) => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
+      style={{ flex: 1, display: 'flex' }}
     >
       {children}
     </motion.div>

@@ -43,7 +43,7 @@ const TaskListPage = () => {
   }, [startDate]);
 
   return (
-    <div className={styles.desktopContainer}>
+    <div className={styles.desktopContainer} style={{ opacity: 1, flex: 1, display: 'flex' }}>
       <DesktopDrawer />
       <div className={cx(styles.desktopBody, styles.almanacScope)}>
         {/* Right Calendar — rendered first (see the module's own
