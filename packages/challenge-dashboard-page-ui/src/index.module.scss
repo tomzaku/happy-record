@@ -844,12 +844,16 @@
 // ─── Log (cross-participant activity feed) ───
 // Reuses .comments/.commentRow/.bubbleCol/.commentAuthor/.commentTime's own messenger-style
 // layout (see that section above) — this card just puts a per-submission field list
-// (.recordDetailFieldRow/.recordDetailFieldValue, same as Record Detail's "By Member" tab) inside
-// each bubble instead of comment text. Not `.bubble` itself, though: that one's background is
-// `var(--input-background)`, which resolves to the exact same `--almanac-card` this card's own
-// body sits on — an invisible bubble. `.logBubble` tints itself with the card's own accent
-// (`#c85a28`, matching `.cardHeaderWash`/the header icon above) instead, so it actually reads as a
-// bubble against the card body behind it.
+// (.logFieldRow/.logFieldValue below — its own, not Record Detail's .recordDetailFieldRow/
+// .recordDetailFieldValue, since that one's right-aligned value leaves an awkward gap in this
+// card's narrower bubble) inside each bubble instead of comment text. Not `.bubble` itself,
+// though: that one's background is `var(--input-background)`, which resolves to the exact same
+// `--almanac-card` this card's own body sits on — an invisible bubble. `.logBubble` uses the
+// app's own primary accent instead — `--button-action-background` (the accent-soft tint already
+// used for an "on" action background) for everyone else's entries, `--icon-primary` (the same
+// solid accent CommentsCard's own "mine" bubble already uses) for this device's own — so it reads
+// as a real bubble against the card body behind it, in the app's actual brand color rather than a
+// one-off per-card tint.
 .logFeed {
   display: flex;
   flex-direction: column;
@@ -859,15 +863,13 @@
 }
 
 .logBubble {
-  background: rgba(200, 90, 40, 0.07);
-  border: 1px solid rgba(200, 90, 40, 0.16);
+  background: var(--button-action-background);
   border-radius: 16px 16px 16px 4px;
   padding: $spacing-xs $spacing-sm;
   max-width: 100%;
 
   &[data-mine='true'] {
-    background: #c85a28;
-    border-color: #c85a28;
+    background: var(--icon-primary);
     border-radius: 16px 16px 4px 16px;
   }
 }
@@ -876,11 +878,24 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 160px;
 }
 
 .logFieldMedia {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+// "title: value" inline, not Record Detail's own right-aligned column — see this section's own
+// top comment for why the two field rows can't share a class.
+.logFieldRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: toRem(13px);
+  color: var(--text-color);
+}
+
+.logFieldValue {
+  font-weight: 600;
 }

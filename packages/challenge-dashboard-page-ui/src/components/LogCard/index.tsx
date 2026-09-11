@@ -14,11 +14,14 @@ import styles from '../../index.module.scss';
 // chat bubble alongside other fields, not as the whole point of the card.
 const LOG_MEDIA_THUMB_SIZE = 120;
 
-/** One field out of one log entry — a plain icon/title/value row for everything but photo/video
- * (same shape RecordDetailCard's own "By Member" history already uses), a small inline thumbnail
- * for those two. `isMine` flips text color to white the same way CommentsCard's own bubble text
- * does, since `.recordDetailFieldRow`'s `color: var(--text-color)` would otherwise fight the
- * colored "mine" bubble background. */
+/** One field out of one log entry — a plain icon/"title: value" row for everything but
+ * photo/video, a small inline thumbnail for those two. Its own `.logFieldRow`/`.logFieldValue`,
+ * not `RecordDetailCard`'s `.recordDetailFieldRow`/`.recordDetailFieldValue` — that one's
+ * `margin-left: auto` right-aligns the value, which reads fine in that card's own wide chart-tab
+ * column but leaves an awkward gap in this card's much narrower sideColumn bubble, so this keeps
+ * the value flush right after "title:" instead. `isMine` flips text color to white the same way
+ * CommentsCard's own bubble text does, since the row's default `color: var(--text-color)` would
+ * otherwise fight the colored "mine" bubble background. */
 const LogFieldLine = ({ value, isMine }: { value: LogFieldValue; isMine: boolean }) => {
   const isMedia = value.type === 'photo' || value.type === 'video';
   const color = isMine ? '#fff' : undefined;
@@ -26,7 +29,7 @@ const LogFieldLine = ({ value, isMine }: { value: LogFieldValue; isMine: boolean
   if (isMedia) {
     return (
       <div className={styles.logFieldMedia}>
-        <div className={styles.recordDetailFieldRow} style={{ color }}>
+        <div className={styles.logFieldRow} style={{ color }}>
           {!!value.icon && <Icon icon={value.icon} width={14} color={color} />}
           <span>{value.title}</span>
         </div>
@@ -44,10 +47,10 @@ const LogFieldLine = ({ value, isMine }: { value: LogFieldValue; isMine: boolean
   if (!display) return null;
 
   return (
-    <div className={styles.recordDetailFieldRow} style={{ color }}>
+    <div className={styles.logFieldRow} style={{ color }}>
       {!!value.icon && <Icon icon={value.icon} width={14} color={color} />}
-      <span>{value.title}</span>
-      <span className={styles.recordDetailFieldValue}>{display}</span>
+      <span>{value.title}:</span>
+      <span className={styles.logFieldValue}>{display}</span>
     </div>
   );
 };

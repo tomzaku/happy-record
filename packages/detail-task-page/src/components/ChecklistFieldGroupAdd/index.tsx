@@ -152,6 +152,11 @@ const ChecklistFieldGroupAdd = ({
   // entirely missing) content. `getValue()` (NoteEditorHandle, see @moon-ui/note-editor) asks
   // Editor.js for its real current state instead of trusting whatever was last reported.
   const noteEditorRefs = React.useRef<Record<string, NoteEditorHandle | null>>({});
+  // A debounced approximation of the same thing, purely to drive the Submit button's own
+  // `disabled` state below — that has to be synchronous (a render can't `await` each note
+  // editor's `getValue()` the way the onClick handler does), and a keystroke-old value is fine
+  // for "should this button even be clickable," unlike the submit payload itself above.
+  const [noteTouched, setNoteTouched] = React.useState<Record<string, boolean>>({});
   const { addChecklistRecord, getChecklistRecords } = useChecklistRecord();
   const [currentChecklistRecords, setCurrentChecklistRecords] = React.useState<
     ChecklistRecord[]
@@ -389,6 +394,16 @@ const ChecklistFieldGroupAdd = ({
       </div>
     );
   };
+  // The Submit button's own `disabled` gate — same "is anything actually filled in" shape the
+  // onClick handler below re-derives for the real submission guard, just synchronous (`noteTouched`
+  // instead of an awaited `getValue()` per note field, see its own comment above) since a render
+  // can't await anything. A click-time false positive from a note field the user just touched but
+  // whose debounced `setValue` hasn't landed yet still can't submit an empty group — the onClick
+  // handler's own async check is still the real guard, this is only ever a UX affordance.
+  const hasAnyValue =
+    Object.values(fieldRecord).some(value => value !== undefined) ||
+    Object.values(textFieldRecord).some(value => value !== undefined) ||
+    Object.values(noteTouched).some(Boolean);
   return (
     <>
       {!compact && <WeeklyRow currentDay={currentDay} />}
@@ -435,6 +450,7 @@ const ChecklistFieldGroupAdd = ({
             ref={handle => {
               noteEditorRefs.current[field.id] = handle;
             }}
+            setValue={value => setNoteTouched(prev => ({ ...prev, [field.id]: hasNoteContent(value) }))}
             withoutBorder
             ai={{ isPro, generate }}
           />
@@ -588,6 +604,7 @@ const ChecklistFieldGroupAdd = ({
         <Button
           type="plain"
           size="md"
+          disabled={!hasAnyValue}
           onClick={async () => {
             // Reads each note field's real current content directly from its own editor
             // instance (see noteEditorRefs' own comment) rather than trusting state a debounced
@@ -605,12 +622,15 @@ const ChecklistFieldGroupAdd = ({
             // undefined for an empty records array rather than writing a no-op submission,
             // so this has to bail before that, not rely on `result` being spreadable below.
             // A touched note field counts too, even with no number value alongside it — same for
-            // a touched text/date/datetime field.
-            const hasAnyValue =
+            // a touched text/date/datetime field. The real guard, not `hasAnyValue` above (the
+            // `disabled` prop's own synchronous approximation) — this one awaits each note
+            // editor's actual current content first, so it can't be fooled by a keystroke that
+            // hasn't reached `noteTouched` yet.
+            const hasAnyValueAtSubmit =
               Object.values(fieldRecord).some(value => value !== undefined) ||
               Object.values(textFieldRecord).some(value => value !== undefined) ||
               touchedNoteFields.length > 0;
-            if (checklistTemplate && hasAnyValue) {
+            if (checklistTemplate && hasAnyValueAtSubmit) {
               const now = new Date();
 
               // Create a new date with the same day/month/year as currentDay but with the current time
@@ -675,6 +695,7 @@ const ChecklistFieldGroupAdd = ({
               ]);
               setFieldRecord(getEmptyFieldRecord());
               setTextFieldRecord({});
+              setNoteTouched({});
               setNewNoteKey(v4());
               showToast(
                 intl.formatMessage({

@@ -86,6 +86,7 @@
   "ChecklistToday.done-count": "{{count}} done",
   "ChecklistToday.edit-title": "Edit title",
   "ChecklistToday.expand-task": "Expand",
+  "ChecklistToday.go-to-today": "Back to Today",
   "ChecklistToday.loading": "Fetching your tasks…",
   "ChecklistToday.no-record": "No tasks found!",
   "ChecklistToday.pending": "Pending",
