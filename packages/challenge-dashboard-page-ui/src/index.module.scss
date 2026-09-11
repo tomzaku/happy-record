@@ -49,8 +49,26 @@
 // it'd only ever get auto-placed into the first (main) column's own width instead of spanning the
 // whole page.
 .breadcrumbRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
   @include media.media('>tablet') {
     grid-column: 1 / -1;
+  }
+}
+
+// The owner-only gear icon that opens ChallengeConfigDrawer (reused from the invite page — see
+// index.tsx's own import) — same hover treatment as that page's own `.configIcon`.
+.configIcon {
+  cursor: pointer;
+  color: var(--text-color-secondary, var(--text-color));
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    opacity: 0.7;
   }
 }
 
@@ -729,4 +747,80 @@
   text-overflow: ellipsis;
   font-size: toRem(11px);
   color: var(--text-color-secondary, var(--text-color));
+}
+
+// ─── RecordDetailCard's own "By Member" tab ───────────────────────────────────────────────────
+
+.memberPickerRow {
+  display: flex;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+// A .tabPill-shaped button (same pill/active treatment), just with a ParticipantAvatar in front
+// of the name instead of plain text — one per participant, picking whose own history shows below.
+.memberPickerItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--input-border);
+  background: var(--input-background);
+  padding: 4px 12px 4px 4px;
+  border-radius: 999px;
+  font-size: toRem(12px);
+  font-weight: 600;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &[data-active='true'] {
+    background: #1baf7a;
+    border-color: #1baf7a;
+    color: #fff;
+  }
+}
+
+.recordDetailHistoryList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+}
+
+// One submission — a dashed date rule (matches ChecklistFieldGroupHistory's own hrContainer
+// shape, the pattern this whole tab mirrors) followed by every field the member submitted
+// together in that one Submit click.
+.recordDetailHistoryEntry {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recordDetailHistoryDate {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: toRem(11px);
+  font-weight: 600;
+  color: var(--text-color-secondary, var(--text-color));
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-top: 1px dashed var(--division-color);
+  }
+}
+
+.recordDetailFieldRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: toRem(13px);
+  color: var(--text-color);
+}
+
+.recordDetailFieldValue {
+  margin-left: auto;
+  font-weight: 600;
 }

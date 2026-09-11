@@ -25,9 +25,11 @@ import {
   ButtonWidgetLayout,
   CHALLENGE_THEMES,
   CHALLENGE_THEME_SWATCH,
+  CHART_TYPES,
   Challenge,
   ChallengeTarget,
   ChallengeThemeId,
+  ChartType,
   GREETING_WIDGET_LAYOUTS,
   GreetingWidgetLayout,
   PAGE_BACKGROUND_LAYOUTS,
@@ -81,6 +83,8 @@ const TITLE_LAYOUT_LABELS: Record<TitleWidgetLayout, string> = {
   stacked: 'Stacked',
   minimal: 'Minimal',
 };
+
+const CHART_TYPE_LABELS: Record<ChartType, string> = { bar: 'Bar', line: 'Line', area: 'Area' };
 
 const PAGE_BACKGROUND_LAYOUT_LABELS: Record<PageBackgroundLayout, string> = {
   solid: 'Solid',
@@ -155,6 +159,7 @@ const ChallengeConfigForm = ({
   const [startDate, setStartDate] = React.useState(challenge.startDate);
   const [startWidgetLayout, setStartWidgetLayout] = React.useState<StartWidgetLayout>(challenge.startWidgetLayout);
   const [targets, setTargets] = React.useState<ChallengeTarget[]>(challenge.targets);
+  const [recordDetailFieldIds, setRecordDetailFieldIds] = React.useState<string[]>(challenge.recordDetailFieldIds);
   const [targetsWidgetLayout, setTargetsWidgetLayout] = React.useState<TargetsWidgetLayout>(
     challenge.targetsWidgetLayout,
   );
@@ -167,6 +172,7 @@ const ChallengeConfigForm = ({
   );
   const [pageBackgroundImageUrl, setPageBackgroundImageUrl] = React.useState(challenge.pageBackgroundImageUrl ?? '');
   const [glassOpacity, setGlassOpacity] = React.useState(challenge.glassOpacity);
+  const [checkinsChartType, setCheckinsChartType] = React.useState<ChartType>(challenge.checkinsChartType);
   const [commentsEnabled, setCommentsEnabled] = React.useState(challenge.commentsEnabled);
   // '' means open-ended (null on the wire) — same convention as startDate/endDate elsewhere in
   // this app's date fields.
@@ -185,12 +191,14 @@ const ChallengeConfigForm = ({
     setStartDate(challenge.startDate);
     setStartWidgetLayout(challenge.startWidgetLayout);
     setTargets(challenge.targets);
+    setRecordDetailFieldIds(challenge.recordDetailFieldIds);
     setTargetsWidgetLayout(challenge.targetsWidgetLayout);
     setButtonWidgetLayout(challenge.buttonWidgetLayout);
     setTitleWidgetLayout(challenge.titleWidgetLayout);
     setPageBackgroundLayout(challenge.pageBackgroundLayout);
     setPageBackgroundImageUrl(challenge.pageBackgroundImageUrl ?? '');
     setGlassOpacity(challenge.glassOpacity);
+    setCheckinsChartType(challenge.checkinsChartType);
     setCommentsEnabled(challenge.commentsEnabled);
     setEndDate(challenge.endDate ?? '');
   }, [challenge]);
@@ -216,8 +224,10 @@ const ChallengeConfigForm = ({
     pageBackgroundLayout,
     pageBackgroundImageUrl: pageBackgroundImageUrl.trim() || null,
     glassOpacity,
+    checkinsChartType,
     startDate,
     targets,
+    recordDetailFieldIds,
   });
 
   // Every edit reports the current draft upward immediately, so the page behind the drawer
@@ -239,8 +249,10 @@ const ChallengeConfigForm = ({
     pageBackgroundLayout,
     pageBackgroundImageUrl,
     glassOpacity,
+    checkinsChartType,
     startDate,
     targets,
+    recordDetailFieldIds,
     commentsEnabled,
     endDate,
   ]);
@@ -304,6 +316,32 @@ const ChallengeConfigForm = ({
                 </Typography.Title>
 
                 <TargetFormulaEditor targets={targets} numberFields={numberFields} onChange={setTargets} />
+              </div>
+
+              <div className={styles.groupDivider} />
+              <div className={styles.group}>
+                <Typography.Title level={5} noMargin className={styles.groupTitle}>
+                  Record Detail
+                </Typography.Title>
+                <Typography.Text className={styles.optionalTag}>
+                  Show everyone's own numbers for these fields on the dashboard — no goal to hit, just effort.
+                </Typography.Text>
+                <div className={styles.recordDetailFieldList}>
+                  {numberFields.map(f => (
+                    <label key={f.id} className={styles.optionRow}>
+                      <Checkbox
+                        checked={recordDetailFieldIds.includes(f.id)}
+                        onChange={e =>
+                          setRecordDetailFieldIds(prev =>
+                            e.target.checked ? [...prev, f.id] : prev.filter(id => id !== f.id),
+                          )
+                        }
+                      />
+                      {!!f.icon && <Icon width={16} icon={f.icon} />}
+                      <Typography.Text>{f.title}</Typography.Text>
+                    </label>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -386,6 +424,22 @@ const ChallengeConfigForm = ({
               </div>
             </>
           )}
+
+          <div className={styles.groupDivider} />
+
+          {/* The dashboard's own "Check-ins per day" trend chart — independent of each target's
+              own chart type (set per-target in the Target/Goal editor above). */}
+          <div className={styles.group}>
+            <Typography.Title level={5} noMargin className={styles.groupTitle}>
+              Check-ins chart
+            </Typography.Title>
+            <LayoutPicker
+              options={CHART_TYPES}
+              labels={CHART_TYPE_LABELS}
+              value={checkinsChartType}
+              onChange={setCheckinsChartType}
+            />
+          </div>
 
           <div className={styles.groupDivider} />
 

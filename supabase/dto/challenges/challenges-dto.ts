@@ -25,6 +25,13 @@ math.import(
 const VARIABLE_NAME_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 const MAX_TARGETS = 20;
 const MAX_VARIABLES_PER_TARGET = 20;
+const MAX_RECORD_DETAIL_FIELDS = 20;
+
+// Shared by each target's own `chartType` (below) and the challenge-level `checkinsChartType` —
+// the dashboard's "Breakdown by participant" chart (one per target, or check-ins) and its
+// "Check-ins per day" trend chart each pick their own independently; see StreaksCard.
+export const CHART_TYPES = ['bar', 'line', 'area'] as const;
+export type ChartType = (typeof CHART_TYPES)[number];
 
 export type ChallengeTarget = {
   id: string;
@@ -37,6 +44,9 @@ export type ChallengeTarget = {
   /** Per-variable fallback for a user who never recorded that field — see getTargets. Omitted
    * (or missing a given name) means "use 0". */
   variableDefaults?: Record<string, number>;
+  /** How this target's own tab renders on the dashboard's "Breakdown by participant" chart.
+   * Omitted (pre-existing targets) means 'bar', the chart's original hardcoded shape. */
+  chartType?: ChartType;
 };
 
 /** Sanitizes one raw `targets` array entry into a `ChallengeTarget`, or `null` if it isn't a
@@ -80,6 +90,7 @@ function sanitizeTarget(entry: unknown): ChallengeTarget | null {
 
   const unit = typeof e.unit === 'string' ? e.unit.trim().slice(0, 20) : '';
   const icon = typeof e.icon === 'string' ? e.icon.trim().slice(0, 100) : '';
+  const chartType = CHART_TYPES.includes(e.chartType as ChartType) ? (e.chartType as ChartType) : undefined;
 
   // Only a name that's still a real variable can carry a fallback — a stale entry left over from
   // a renamed/removed variable is dropped rather than carried forward as dead weight.
@@ -101,6 +112,7 @@ function sanitizeTarget(entry: unknown): ChallengeTarget | null {
     formula,
     variables,
     ...(Object.keys(variableDefaults).length ? { variableDefaults } : {}),
+    ...(chartType ? { chartType } : {}),
   };
 }
 
@@ -145,6 +157,9 @@ export function toChallenge(r: Record<string, unknown>) {
     commentsEnabled: !!r.comments_enabled,
     // Owner-defined formula per target — see 20260909010000_challenge_target_formulas.sql.
     targets: (r.targets as ChallengeTarget[]) ?? [],
+    // Owner-picked fields for the dashboard's "Record Detail" section — a plain per-field
+    // contribution total, no goal — see 20260911010000_challenge_record_detail_fields.sql.
+    recordDetailFieldIds: (r.record_detail_field_ids as string[]) ?? [],
     // See 20260825010000_challenge_theme.sql / 20260906080000_challenge_theme_dark.sql — the
     // DB's own CHECK constraint is the real guarantee this is always one of the four; the cast
     // here is just so the client type isn't a bare `string`.
@@ -173,6 +188,10 @@ export function toChallenge(r: Record<string, unknown>) {
     pageBackgroundImageUrl: (r.page_background_image_url as string | null) ?? null,
     // See 20260906070000_challenge_glass_opacity.sql.
     glassOpacity: typeof r.glass_opacity === 'number' ? r.glass_opacity : 12,
+    // The "Check-ins per day" trend chart's own chart type, independent of each target's own —
+    // see 20260911000000_challenge_checkins_chart_type.sql. DB CHECK is the real guard, same cast
+    // as theme/every other widget layout above.
+    checkinsChartType: (r.checkins_chart_type as ChartType) ?? 'bar',
     // See 20260905020000_challenges_dates.sql — startDate is required client-side (fromChallenge
     // below throws if it's missing on write), endDate stays null for an open-ended challenge.
     startDate: r.start_date as string,
@@ -197,6 +216,18 @@ export function fromChallenge(e: Record<string, unknown>) {
         .map(sanitizeTarget)
         .filter((t): t is ChallengeTarget => t !== null)
         .slice(0, MAX_TARGETS)
+    : [];
+
+  // A plain list of field ids, not a compound object — dedupe and drop anything that isn't a
+  // real non-empty string rather than validating each one is an actual, currently-existing field
+  // (getRecordDetails' own query already no-ops on an id that doesn't resolve to anything, same
+  // "drop the bad entry, don't throw" convention as sanitizeTarget above, just with nothing to
+  // parse).
+  const recordDetailFieldIds: string[] = Array.isArray(e.recordDetailFieldIds)
+    ? [...new Set((e.recordDetailFieldIds as unknown[]).filter((id): id is string => typeof id === 'string' && !!id))].slice(
+        0,
+        MAX_RECORD_DETAIL_FIELDS,
+      )
     : [];
 
   // Falls back to 'classic' rather than throwing — the DB's CHECK
@@ -243,6 +274,9 @@ export function fromChallenge(e: Record<string, unknown>) {
   const pageBackgroundLayout = PAGE_BACKGROUND_LAYOUTS.includes(e.pageBackgroundLayout as PageBackgroundLayout)
     ? (e.pageBackgroundLayout as PageBackgroundLayout)
     : 'solid';
+  const checkinsChartType = CHART_TYPES.includes(e.checkinsChartType as ChartType)
+    ? (e.checkinsChartType as ChartType)
+    : 'bar';
 
   // Same "fall back rather than throw" URL validation as backgroundImageUrl above — a separate
   // field, not the same column, since this one covers the whole page rather than a corner accent.
@@ -277,6 +311,7 @@ export function fromChallenge(e: Record<string, unknown>) {
     share_records: !!e.shareRecords,
     comments_enabled: !!e.commentsEnabled,
     targets,
+    record_detail_field_ids: recordDetailFieldIds,
     theme,
     background_image_url: backgroundImageUrl,
     greeting_text: greetingText,
@@ -288,6 +323,7 @@ export function fromChallenge(e: Record<string, unknown>) {
     page_background_layout: pageBackgroundLayout,
     page_background_image_url: pageBackgroundImageUrl,
     glass_opacity: glassOpacity,
+    checkins_chart_type: checkinsChartType,
     start_date: e.startDate,
     end_date: endDate,
     // Deliberately never read from `e` here — see 20260905010000_challenges_public_listing.sql.

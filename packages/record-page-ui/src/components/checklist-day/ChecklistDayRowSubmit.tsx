@@ -1,6 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Typography from '@moon-ui/typography';
 import ChecklistFieldGroupAdd from '@dreamer/detail-task-page/src/components/ChecklistFieldGroupAdd';
+import { useChallenge } from '@dreamer/global';
+import { useIntl } from '@dreamer/translation';
 import { useTaskDetailModalData } from '../home-calendar/useTaskDetailModalData';
 import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
 import styles from './ChecklistDay.desktop.module.scss';
@@ -19,11 +22,16 @@ type Props = {
 // Wide push-ups on different days, say) only ever shows whichever group is actually due on this
 // row's day.
 const ChecklistDayRowSubmit = ({ checklistTemplateId, date }: Props) => {
+  const intl = useIntl();
   const data = React.useMemo<CalendarEventData>(
     () => ({ checklistTemplateId, date }),
     [checklistTemplateId, date],
   );
   const { template, relevantGroups, fieldsByGroup, checklist, markCompleted } = useTaskDetailModalData(data);
+  // Only renders once a real challenge row exists for this template — a public template doesn't
+  // necessarily have one (that's a separate opt-in via CardShare's "Share everyone's check-ins").
+  const { getChallengeForTemplate } = useChallenge();
+  const challenge = getChallengeForTemplate(checklistTemplateId);
 
   // `template`/`checklist` land a beat after mount (own fetch, or the creation effect for a
   // brand-new day) — same "nothing to show yet" gate TaskDetailModal's own showSubmit uses.
@@ -34,6 +42,11 @@ const ChecklistDayRowSubmit = ({ checklistTemplateId, date }: Props) => {
 
   return (
     <div className={styles.rowExpandedGroups} onClick={event => event.stopPropagation()}>
+      {challenge && (
+        <Link to={`/challenge/${challenge.id}`} className={styles.rowExpandedDashboardLink}>
+          {intl.formatMessage({ id: 'CardShare.view-dashboard', defaultMessage: 'View Dashboard' })}
+        </Link>
+      )}
       {relevantGroups.map(group => (
         <div key={group.id} className={styles.rowExpandedGroupColumn}>
           <Typography.Text className={styles.rowExpandedGroupTitle}>{group.title}</Typography.Text>

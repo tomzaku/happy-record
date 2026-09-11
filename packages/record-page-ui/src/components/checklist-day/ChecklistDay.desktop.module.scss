@@ -325,11 +325,28 @@
 // tall. Left padding roughly aligns the grid under .rowInfo, past the checkbox/icon the header
 // line has that this content doesn't repeat.
 .rowExpandedGroups {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: $spacing-md;
-  padding: 0 4px $spacing-lg 46px;
+  padding: 24px 4px $spacing-lg 46px;
   cursor: default;
+}
+
+// Top-right of .rowExpandedGroups, above the grid — only rendered when this row's template has
+// a real challenge (see ChecklistDayRowSubmit).
+.rowExpandedDashboardLink {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--icon-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .rowExpandedGroupColumn {

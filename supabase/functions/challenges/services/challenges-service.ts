@@ -24,6 +24,7 @@ import {
   fetchParticipantsForChallenge,
   fetchParticipantsForChallenges,
   fetchPublicChallenges,
+  fetchRecordDetailHistoryRows,
   fetchSubmissionsForUsersInRange,
   fetchTemplateVisibilities,
   fetchTemplatesMeta,
@@ -351,6 +352,8 @@ type Target = {
   icon: string;
   goal: number;
   contributions: { userId: string; total: number }[];
+  /** Straight passthrough of the owner-set `ChallengeTarget.chartType` — see challenges-dto.ts. */
+  chartType: 'bar' | 'line' | 'area';
 };
 
 /**
@@ -456,8 +459,141 @@ export async function getTargets(
       contributions: participants
         .map(p => ({ userId: p.userId, total: totals.get(p.userId) ?? 0 }))
         .sort((a, b) => b.total - a.total),
+      chartType: target.chartType ?? 'bar',
     };
   });
+}
+
+type RecordDetail = {
+  fieldId: string;
+  title: string;
+  icon: string;
+  unit: string;
+  contributions: { userId: string; total: number }[];
+};
+
+/**
+ * The dashboard's own "Record Detail" section — a plain per-field contribution total for each of
+ * `challenge.recordDetailFieldIds`, no goal/formula the way `getTargets` has one. Same
+ * anchored-to-`startDate`, sum-across-the-whole-challenge-life, forked-field-resolution shape as
+ * `getTargets` (see its own doc comment for why), just for one raw field instead of a formula over
+ * several — title/icon/unit come straight from the field's own row (owner-or-public visibility,
+ * same reasoning `getAttachments`' fieldMeta lookup already uses), not owner-typed the way a
+ * target's are.
+ */
+async function getRecordDetails(
+  db: SupabaseClient,
+  challenge: ReturnType<typeof toChallenge>,
+  participants: ReturnType<typeof toChallengeParticipant>[],
+  visibleUserIds: string[],
+): Promise<RecordDetail[]> {
+  const fieldIds = challenge.recordDetailFieldIds;
+  if (!fieldIds.length) return [];
+
+  const [fieldMetaRows, forkedFieldRows] = await Promise.all([
+    fetchFieldsMetaForUser(db, fieldIds, challenge.ownerId),
+    fetchForkedFields(db, visibleUserIds, fieldIds),
+  ]);
+  const fieldMeta = new Map(fieldMetaRows.map(row => [row.id, { title: row.title, unit: row.unit ?? '', icon: row.icon ?? '' }]));
+  // A legacy fork's id -> the field id it counts toward — same as getTargets' own resolveFieldId.
+  const resolveFieldId = new Map(forkedFieldRows.map(row => [row.id, row.copied_from_id]));
+
+  const resolvedFieldIds = [...new Set([...fieldIds, ...resolveFieldId.keys()])];
+  const recordRows = await fetchChecklistRecordRows(db, resolvedFieldIds, visibleUserIds, challenge.startDate, MAX_ROWS);
+
+  const totalsByField = new Map<string, Map<string, number>>(); // fieldId -> userId -> sum
+  for (const row of recordRows) {
+    if (typeof row.value_number !== 'number') continue;
+    const fieldId = resolveFieldId.get(row.field_id) ?? row.field_id;
+    if (!totalsByField.has(fieldId)) totalsByField.set(fieldId, new Map());
+    const byUser = totalsByField.get(fieldId)!;
+    byUser.set(row.user_id, (byUser.get(row.user_id) ?? 0) + row.value_number);
+  }
+
+  return fieldIds.map(fieldId => ({
+    fieldId,
+    title: fieldMeta.get(fieldId)?.title ?? '',
+    icon: fieldMeta.get(fieldId)?.icon ?? '',
+    unit: fieldMeta.get(fieldId)?.unit ?? '',
+    contributions: participants
+      .map(p => ({ userId: p.userId, total: totalsByField.get(fieldId)?.get(p.userId) ?? 0 }))
+      .sort((a, b) => b.total - a.total),
+  }));
+}
+
+export type RecordDetailHistoryEntry = {
+  submissionId: string;
+  createdAt: string;
+  values: { fieldId: string; title: string; icon: string; unit: string; value: number }[];
+};
+
+/**
+ * One member's own itemized "Record Detail" submissions in range — every field written together
+ * (same `submission_id`) grouped into one entry, newest first. This is the row-level counterpart
+ * to `getRecordDetails`' per-field *sums*: deliberately a separate, on-demand read (see
+ * `buildRecordDetailHistory` below) rather than folded into the main dashboard payload, since it's
+ * the one piece of this dashboard that scales with a member's own submission count, not with the
+ * roster size — fine for the one member an owner clicks into, wasteful to preload for every
+ * participant on every dashboard load.
+ */
+async function getRecordDetailHistory(
+  db: SupabaseClient,
+  challenge: ReturnType<typeof toChallenge>,
+  targetUserId: string,
+  from: string,
+  to: string,
+): Promise<RecordDetailHistoryEntry[]> {
+  const fieldIds = challenge.recordDetailFieldIds;
+  if (!fieldIds.length) return [];
+
+  const [fieldMetaRows, forkedFieldRows] = await Promise.all([
+    fetchFieldsMetaForUser(db, fieldIds, challenge.ownerId),
+    fetchForkedFields(db, [targetUserId], fieldIds),
+  ]);
+  const fieldMeta = new Map(fieldMetaRows.map(row => [row.id, { title: row.title, unit: row.unit ?? '', icon: row.icon ?? '' }]));
+  const resolveFieldId = new Map(forkedFieldRows.map(row => [row.id, row.copied_from_id]));
+  const resolvedFieldIds = [...new Set([...fieldIds, ...resolveFieldId.keys()])];
+
+  const rows = await fetchRecordDetailHistoryRows(db, resolvedFieldIds, targetUserId, from, to, MAX_ROWS);
+
+  const bySubmission = new Map<string, RecordDetailHistoryEntry>();
+  for (const row of rows) {
+    if (typeof row.value_number !== 'number') continue;
+    const fieldId = resolveFieldId.get(row.field_id) ?? row.field_id;
+    const meta = fieldMeta.get(fieldId);
+    if (!meta) continue;
+    // Falls back to this row's own timestamp on the rare row with no submission_id (predates
+    // 20260909... submissions existing at all) — still groups sensibly, just one entry per row
+    // instead of per real submit click.
+    const key = row.submission_id ?? row.created_at;
+    if (!bySubmission.has(key)) bySubmission.set(key, { submissionId: key, createdAt: row.created_at, values: [] });
+    bySubmission.get(key)!.values.push({ fieldId, title: meta.title, icon: meta.icon, unit: meta.unit, value: row.value_number });
+  }
+
+  return [...bySubmission.values()].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+/** ctx-level orchestrator matching `buildDashboard`'s own shape — resolves the same `?from=&to=`
+ * window the rest of the dashboard uses, checks `targetUserId` is actually someone this caller may
+ * see (same peer-visibility gate `buildDashboard` computes, replicated here since this is a
+ * genuinely separate read, not a sub-piece of that one), and empties out rather than throwing for
+ * anyone outside it — same "not visible" convention as everywhere else in this file. */
+export async function buildRecordDetailHistory(
+  { url, db, userId }: Ctx,
+  challengeRow: Record<string, unknown>,
+  targetUserId: string,
+): Promise<RecordDetailHistoryEntry[]> {
+  const challenge = toChallenge(challengeRow);
+  if (!challenge.recordDetailFieldIds.length) return [];
+
+  const participantRows = await fetchParticipantsForChallenge(db, challenge.id, MAX_PARTICIPANTS);
+  const participants = participantRows.map(toChallengeParticipant);
+  const userIds = [...new Set(participants.map(p => p.userId))];
+  const visibleUserIds = challenge.shareRecords ? userIds : [userId];
+  if (!visibleUserIds.includes(targetUserId)) return [];
+
+  const { from, to } = resolveDashboardRange(url, challenge.startDate);
+  return getRecordDetailHistory(db, challenge, targetUserId, from, to);
 }
 
 /** listMyChallenges' own lighter target read — the caller's own total toward each of this
@@ -548,6 +684,7 @@ export type Dashboard = {
   completions: { userId: string; date: string }[];
   ranking: { userId: string; count: number }[];
   targets: Target[];
+  recordDetails: RecordDetail[];
   attachments: Attachment[];
 };
 
@@ -557,8 +694,27 @@ export const EMPTY_DASHBOARD: Dashboard = {
   completions: [],
   ranking: [],
   targets: [],
+  recordDetails: [],
   attachments: [],
 };
+
+/**
+ * The dashboard's own `?from=&to=` window, defaulting to the last DEFAULT_RANGE_DAYS days and
+ * clamped to never start before the challenge itself did — a participant who was already tracking
+ * this template solo shouldn't get credit (streaks, targets, record detail) predating the
+ * challenge. Re-clamps against the row's *current* `startDate` on every read rather than something
+ * decided at creation time, so this stays correct if the owner pushes it later
+ * (ChallengeConfigForm.tsx). Shared by buildDashboard and buildRecordDetailHistory below — the
+ * "By Member" history tab uses the exact same window the rest of the dashboard does.
+ */
+function resolveDashboardRange(url: URL, startDate: string): { from: string; to: string } {
+  const now = new Date();
+  const to = url.searchParams.get('to') || now.toISOString();
+  const requestedFrom =
+    url.searchParams.get('from') || new Date(now.getTime() - DEFAULT_RANGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const from = new Date(requestedFrom).getTime() > new Date(startDate).getTime() ? requestedFrom : startDate;
+  return { from, to };
+}
 
 export async function buildDashboard({ url, db, userId }: Ctx, challengeRow: Record<string, unknown>): Promise<Dashboard> {
   const challenge = toChallenge(challengeRow);
@@ -567,16 +723,7 @@ export async function buildDashboard({ url, db, userId }: Ctx, challengeRow: Rec
   const participants = participantRows.map(toChallengeParticipant);
   if (!participants.length) return { ...EMPTY_DASHBOARD, challenge };
 
-  const now = new Date();
-  const to = url.searchParams.get('to') || now.toISOString();
-  const requestedFrom =
-    url.searchParams.get('from') || new Date(now.getTime() - DEFAULT_RANGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  // Never rank/streak on activity from before the challenge existed — a participant who was
-  // already tracking this template solo shouldn't get credit predating the challenge, and this
-  // stays correct if the owner pushes startDate later (ChallengeConfigForm.tsx): every read
-  // re-clamps against the row's current value rather than something decided at creation time.
-  const from =
-    new Date(requestedFrom).getTime() > new Date(challenge.startDate).getTime() ? requestedFrom : challenge.startDate;
+  const { from, to } = resolveDashboardRange(url, challenge.startDate);
 
   const userIds = [...new Set(participants.map(p => p.userId))];
   // The peer-data gate — used to be `share_records = true` inside four separate RLS policies
@@ -633,12 +780,13 @@ export async function buildDashboard({ url, db, userId }: Ctx, challengeRow: Rec
   for (const c of completions) countByUser.set(c.userId, (countByUser.get(c.userId) ?? 0) + 1);
   const ranking = [...countByUser.entries()].map(([userId, count]) => ({ userId, count })).sort((a, b) => b.count - a.count);
 
-  const [targets, attachments] = await Promise.all([
+  const [targets, recordDetails, attachments] = await Promise.all([
     getTargets(db, challenge, participants, visibleUserIds),
+    getRecordDetails(db, challenge, participants, visibleUserIds),
     getAttachments(db, challenge.ownerId, templateIds, visibleUserIds, from, to),
   ]);
 
-  return { challenge, participants, completions, ranking, targets, attachments };
+  return { challenge, participants, completions, ranking, targets, recordDetails, attachments };
 }
 
 /** `challenge.ownerDisplayName`/`ownerAvatarUrl` are not `challenges` columns — they become the

@@ -359,6 +359,15 @@
   gap: $spacing-md;
 }
 
+// The "Record Detail" field picker — a plain checkbox list, one row per number field, much
+// lighter than .targetFormulaCard's own card shape since there's no formula/goal to configure
+// here, just an on/off toggle per field.
+.recordDetailFieldList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
 .targetFormulaCard {
   display: flex;
   flex-direction: column;

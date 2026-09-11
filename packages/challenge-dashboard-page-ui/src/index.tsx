@@ -5,12 +5,16 @@ import { useSession } from '@dreamer/global';
 import { AppShell, Breadcrumb } from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
+import Icon from '@moon-ui/icon/Icon';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
+import ChallengeConfigDrawer from '@happy-record/checklist-template-shared-page-ui/src/components/challenge-config-drawer';
 import { useChallengeDashboardData } from './hooks/useChallengeDashboardData';
+import { useChallengeDashboardConfig } from './hooks/useChallengeDashboardConfig';
 import { useChallengeCommentForm } from './hooks/useChallengeCommentForm';
 import { useLeaveChallengeFlow } from './hooks/useLeaveChallengeFlow';
 import DashboardSkeleton from './components/DashboardSkeleton';
 import TargetsCard from './components/TargetsCard';
+import RecordDetailCard from './components/RecordDetailCard';
 import StreaksCard from './components/StreaksCard';
 import LeaderboardCard from './components/LeaderboardCard';
 import CommentsCard from './components/CommentsCard';
@@ -33,10 +37,16 @@ const ChallengeDashboardPageUi = () => {
     totalCheckIns,
     rankedParticipants,
     hasChallengeTargets,
+    refetchDashboard,
   } = useChallengeDashboardData(id, userId);
 
   const commentForm = useChallengeCommentForm(id, !!dashboard?.challenge?.commentsEnabled, me);
   const leaveFlow = useLeaveChallengeFlow(id, dashboard?.challenge?.checklistTemplateId);
+  const challengeConfig = useChallengeDashboardConfig(
+    dashboard?.challenge?.checklistTemplateId,
+    dashboard?.challenge,
+    refetchDashboard,
+  );
 
   if (error) {
     return (
@@ -83,11 +93,20 @@ const ChallengeDashboardPageUi = () => {
                 },
               ]}
             />
+            {isOwner && (
+              <Icon
+                width={22}
+                icon="solar:settings-line-duotone"
+                className={styles.configIcon}
+                onClick={challengeConfig.openChallengeConfig}
+              />
+            )}
           </div>
         )}
         <div className={styles.mainColumn}>
           <TargetsCard dashboard={dashboard} userId={userId} />
-          <StreaksCard dashboard={dashboard} userId={userId} myStreak={myStreak} bestStreak={bestStreak} totalCheckIns={totalCheckIns} />
+          <RecordDetailCard dashboard={dashboard} userId={userId} />
+          <StreaksCard dashboard={dashboard} myStreak={myStreak} bestStreak={bestStreak} totalCheckIns={totalCheckIns} />
         </div>
 
         <div className={styles.sideColumn}>
@@ -121,6 +140,20 @@ const ChallengeDashboardPageUi = () => {
 
         <AttachmentsSection dashboard={dashboard} />
       </div>
+
+      {isOwner && checklistTemplate && (
+        <ChallengeConfigDrawer
+          visible={challengeConfig.configOpen}
+          onDismiss={challengeConfig.closeChallengeConfig}
+          challenge={dashboard.challenge}
+          numberFields={challengeConfig.numberFields}
+          defaultGreeting={`${dashboard.challenge.ownerDisplayName || 'Someone'} just challenged you!`}
+          templateTitle={checklistTemplate.title}
+          templateIcon={checklistTemplate.avatar?.name}
+          onSave={challengeConfig.saveChallengeConfig}
+          onChange={() => {}}
+        />
+      )}
 
       <WarningModal
         visible={leaveFlow.leaveModalVisible}

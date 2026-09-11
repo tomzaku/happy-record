@@ -90,6 +90,17 @@ export function fetchChallengeDashboard(
     icon: string;
     goal: number;
     contributions: { userId: string; total: number }[];
+    chartType: 'bar' | 'line' | 'area';
+  }[];
+  /** The dashboard's own "Record Detail" section — a plain per-field contribution total, no goal
+   * the way `targets` has one. One entry per `Challenge.recordDetailFieldIds`. */
+  recordDetails: {
+    fieldId: string;
+    title: string;
+    /** The field's own Iconify icon — see useRecordField.tsx's `RecordField.icon`. */
+    icon: string;
+    unit: string;
+    contributions: { userId: string; total: number }[];
   }[];
   /**
    * Which photo/video field(s) each visible participant submitted, in this same date window —
@@ -112,12 +123,46 @@ export function fetchChallengeDashboard(
   return request.get(`/challenges/${encodeURIComponent(id)}`, { params: { from, to } });
 }
 
+/** One member's own itemized "Record Detail" submissions in range — every field written together
+ * (same Submit click) grouped into one entry, newest first. */
+export type RecordDetailHistoryEntry = {
+  submissionId: string;
+  createdAt: string;
+  values: {
+    fieldId: string;
+    title: string;
+    /** The field's own Iconify icon — see useRecordField.tsx's `RecordField.icon`. */
+    icon: string;
+    unit: string;
+    value: number;
+  }[];
+};
+
+/**
+ * A separate, on-demand read from `fetchChallengeDashboard` above — same route, a `recordDetailUserId`
+ * query param that switches it to this lighter shape instead (see the edge function's own
+ * get-challenge-dashboard-handler.ts comment for why). Quiet: the "By Member" tab has nothing
+ * useful to fall back to on a real failure besides showing nothing, same as an empty result.
+ */
+export function fetchChallengeRecordDetailHistory(
+  challengeId: string,
+  recordDetailUserId: string,
+  from?: string,
+  to?: string,
+): Promise<{ recordDetailHistory: RecordDetailHistoryEntry[] } | null> {
+  return request.get(`/challenges/${encodeURIComponent(challengeId)}`, {
+    quiet: true,
+    params: { recordDetailUserId, from, to },
+  });
+}
+
 export function saveChallenge(challenge: {
   id: string;
   checklistTemplateId: string;
   shareRecords: boolean;
   commentsEnabled: boolean;
   targets: Challenge['targets'];
+  recordDetailFieldIds: Challenge['recordDetailFieldIds'];
   theme: Challenge['theme'];
   backgroundImageUrl: Challenge['backgroundImageUrl'];
   greetingText: Challenge['greetingText'];
@@ -129,6 +174,7 @@ export function saveChallenge(challenge: {
   pageBackgroundLayout: Challenge['pageBackgroundLayout'];
   pageBackgroundImageUrl: Challenge['pageBackgroundImageUrl'];
   glassOpacity: Challenge['glassOpacity'];
+  checkinsChartType: Challenge['checkinsChartType'];
   startDate: string;
   endDate: string | null;
   /** Neither is a `challenges` column — see the edge function; always used now that every save enrolls the owner as a participant. */

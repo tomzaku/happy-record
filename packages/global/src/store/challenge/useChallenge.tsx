@@ -5,12 +5,13 @@ import { uniqueId } from '../../util';
 import {
   fetchChallengeDashboard,
   fetchChallengeForTemplate,
+  fetchChallengeRecordDetailHistory,
   fetchMyChallenges,
   fetchPublicChallenges,
   saveChallenge,
 } from './challengesApi';
 import { challengesKeys } from './challengesKeys';
-export type { MyChallengeRow, PublicChallengeRow } from './challengesApi';
+export type { MyChallengeRow, PublicChallengeRow, RecordDetailHistoryEntry } from './challengesApi';
 
 /**
  * The 4 fixed visual directions the shared "take the challenge" page
@@ -57,6 +58,15 @@ export const PAGE_BACKGROUND_LAYOUTS = ['solid', 'glass'] as const;
 export type PageBackgroundLayout = (typeof PAGE_BACKGROUND_LAYOUTS)[number];
 
 /**
+ * Shared by each target's own `chartType` (below) and `Challenge.checkinsChartType` — the
+ * dashboard's per-metric "Breakdown by participant" chart and its "Check-ins per day" trend chart
+ * each pick their own independently (see challenge-dashboard-page-ui's StreaksCard). Mirrors
+ * supabase/dto/challenges/challenges-dto.ts's own CHART_TYPES.
+ */
+export const CHART_TYPES = ['bar', 'line', 'area'] as const;
+export type ChartType = (typeof CHART_TYPES)[number];
+
+/**
  * An owner-defined shared goal — `formula` is a mathjs expression (e.g. `"push_ups +
  * wide_push_ups"`) evaluated server-side once per participant (see
  * supabase/functions/challenges/services/challenges-service.ts's own getTargets), against each
@@ -80,6 +90,10 @@ export type ChallengeTarget = {
    * name as `variables`. Omitted (or missing a given name) means "use 0", the same as before this
    * existed. */
   variableDefaults?: Record<string, number>;
+  /** How this target's own tab renders on the dashboard's "Breakdown by participant" chart —
+   * see TargetFormulaEditor.tsx's own chart-type picker. Omitted (every pre-existing target)
+   * means 'bar', the chart's original hardcoded shape. */
+  chartType?: ChartType;
 };
 
 /**
@@ -100,6 +114,11 @@ export type Challenge = {
   commentsEnabled: boolean;
   /** Owner-only to set, "before or after share" (CardShare) — see `ChallengeTarget` above. */
   targets: ChallengeTarget[];
+  /** Owner-picked fields for the dashboard's own "Record Detail" section — a plain per-field
+   * contribution total, no goal/formula the way `targets` has one (see
+   * 20260911010000_challenge_record_detail_fields.sql). Empty for every challenge that hasn't
+   * picked any, same as `targets` before it existed. */
+  recordDetailFieldIds: string[];
   /** Owner-picked in CardShare; applied by the shared page for every visitor, not just participants. */
   theme: ChallengeThemeId;
   /**
@@ -144,6 +163,10 @@ export type Challenge = {
    * it. Defaults to 12. See 20260906070000_challenge_glass_opacity.sql.
    */
   glassOpacity: number;
+  /** The "Check-ins per day" trend chart's own chart type, independent of each target's own —
+   * see 20260911000000_challenge_checkins_chart_type.sql. Defaults to 'bar' for every challenge
+   * saved before this existed. */
+  checkinsChartType: ChartType;
   /** Required — when this challenge actually starts, for score calculation (not implemented
    * yet). Owner-picked in CardShare, defaulting to "now" for a brand-new challenge. */
   startDate: string;
@@ -184,6 +207,7 @@ type SetChallengeOptionsArgs = {
     shareRecords: boolean;
     commentsEnabled: boolean;
     targets: ChallengeTarget[];
+    recordDetailFieldIds: string[];
     theme: ChallengeThemeId;
     backgroundImageUrl: string | null;
     greetingText: string | null;
@@ -195,6 +219,7 @@ type SetChallengeOptionsArgs = {
     pageBackgroundLayout: PageBackgroundLayout;
     pageBackgroundImageUrl: string | null;
     glassOpacity: number;
+    checkinsChartType: ChartType;
     startDate: string;
     endDate: string | null;
     ownerDisplayName?: string;
@@ -280,6 +305,23 @@ export const useChallenge = () => {
     return checklistTemplateId ? challenges[checklistTemplateId] : undefined;
   };
 
+  /**
+   * Seeds this hook's own per-template cache with a `Challenge` fetched some other way (the
+   * dashboard's own `getChallengeDashboard`, not `getChallengeForTemplate`) — without this,
+   * `setChallengeOptions` below can't find the real existing row (`challenges[checklistTemplateId]`
+   * stays a cache miss forever, since nothing ever called `getChallengeForTemplate` to populate
+   * it), so its own `existing?.id ?? uniqueId()` fallback mints a *brand-new* id on every save.
+   * That id then collides with `upsertChallenge`'s `onConflict: 'checklist_template_id'`: Postgres
+   * finds the existing row by template id but tries to rewrite its primary key to the fresh one,
+   * which 500s the moment any other row (a participant, a comment) already references the real id
+   * by foreign key. Marks the scope as already-fetched too, so a later `getChallengeForTemplate`
+   * call elsewhere doesn't double-fetch what's already fresh here.
+   */
+  const primeChallengeForTemplate = (checklistTemplateId: string, challenge: Challenge) => {
+    fetchedFor.add(`${userId}:${checklistTemplateId}`);
+    queryClient.setQueryData<ChallengesMap>(queryKey, prev => ({ ...prev, [checklistTemplateId]: challenge }));
+  };
+
   /** Owner-only (RLS-enforced); upserts on checklistTemplateId, so re-sharing reuses the same challenge. */
   const setChallengeOptions = async (
     checklistTemplateId: string,
@@ -295,6 +337,7 @@ export const useChallenge = () => {
       shareRecords: options.shareRecords,
       commentsEnabled: options.commentsEnabled,
       targets: options.targets,
+      recordDetailFieldIds: options.recordDetailFieldIds,
       theme: options.theme,
       backgroundImageUrl: options.backgroundImageUrl,
       greetingText: options.greetingText,
@@ -306,6 +349,7 @@ export const useChallenge = () => {
       pageBackgroundLayout: options.pageBackgroundLayout,
       pageBackgroundImageUrl: options.pageBackgroundImageUrl,
       glassOpacity: options.glassOpacity,
+      checkinsChartType: options.checkinsChartType,
       startDate: options.startDate,
       endDate: options.endDate,
       isPublicListing: existing?.isPublicListing ?? false,
@@ -323,11 +367,17 @@ export const useChallenge = () => {
 
   return {
     getChallengeForTemplate,
+    primeChallengeForTemplate,
     setChallengeOptions,
     // Imperative — the dashboard page wants the real data on load, not a
     // value that fills in over a later render, so this awaits the fetch and
     // returns it directly instead of reading back through the cache.
     getChallengeDashboard: fetchChallengeDashboard,
+    // A separate, on-demand imperative fetch — the dashboard's own "Record Detail" card only
+    // calls this once an owner/viewer actually picks a member, not on every dashboard load (see
+    // challengesApi.ts's own comment on why this is a distinct read, not part of the dashboard
+    // payload above).
+    getRecordDetailHistory: fetchChallengeRecordDetailHistory,
     // Same shape, same reasoning — challenge-list-page-ui is a dedicated page that wants its
     // whole roster fresh on load, not a value other components read reactively, so this is a
     // plain imperative fetch (like getChallengeDashboard above) rather than a cached "all mine"

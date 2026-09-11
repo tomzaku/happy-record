@@ -6,8 +6,12 @@
 //   GET  /challenges  ?checklistTemplateId=          → { challenge }        owner's or a public
 //     template's, null if none yet — see api/get-challenge-by-template-handler.ts
 //   GET  /challenges/:id  ?from=&to=                 → { challenge, participants, completions,
-//     ranking, targets } the dashboard read — see api/get-challenge-dashboard-handler.ts and
-//     services/challenges-access-service.ts's checkCanReadDashboard for its two visibility tiers
+//     ranking, targets, recordDetails, attachments } the dashboard read — see
+//     api/get-challenge-dashboard-handler.ts and services/challenges-access-service.ts's
+//     checkCanReadDashboard for its two visibility tiers
+//   GET  /challenges/:id  ?recordDetailUserId=&from=&to=  → { recordDetailHistory } one member's
+//     own itemized Record Detail submissions in range, not the full dashboard above — see
+//     api/get-challenge-dashboard-handler.ts's own comment on why this is a separate read
 //   POST /challenges  { challenge }                  → { challenge }        owner-only upsert —
 //     see api/save-challenge-handler.ts and services/challenges-access-service.ts's
 //     checkCanWriteChallenge

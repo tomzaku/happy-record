@@ -22,12 +22,20 @@ export const useChallengeDashboardData = (id: string | undefined, userId: string
   const [dashboard, setDashboard] = React.useState<Dashboard | null>(null);
   const [error, setError] = React.useState(false);
 
-  React.useEffect(() => {
+  // Re-runs the same fetch the mount effect below does — used after the owner saves a config
+  // change (a new/edited target, say) so the dashboard's own server-computed pieces (contributions,
+  // ranking) pick it up too, not just the raw challenge row a plain optimistic update would give.
+  const refetchDashboard = React.useCallback(() => {
     if (!id) return;
     const from = new Date(Date.now() - RANGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
-    getChallengeDashboard(id, from)
+    return getChallengeDashboard(id, from)
       .then(setDashboard)
       .catch(() => setError(true));
+  }, [id, getChallengeDashboard]);
+
+  React.useEffect(() => {
+    refetchDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, getChallengeDashboard]);
 
   // See challengeRanking.ts's own comment for what "current" means here —
@@ -102,5 +110,6 @@ export const useChallengeDashboardData = (id: string | undefined, userId: string
     totalCheckIns,
     rankedParticipants,
     hasChallengeTargets,
+    refetchDashboard,
   };
 };

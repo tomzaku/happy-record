@@ -19,6 +19,7 @@ import type {
   ButtonWidgetLayout,
   ChallengeTarget,
   ChallengeThemeId,
+  ChartType,
   ChecklistTemplate,
   GreetingWidgetLayout,
   PageBackgroundLayout,
@@ -35,6 +36,7 @@ export type ChallengeConfigOptions = {
   shareRecords: boolean;
   commentsEnabled: boolean;
   targets: ChallengeTarget[];
+  recordDetailFieldIds: string[];
   theme: ChallengeThemeId;
   backgroundImageUrl: string | null;
   greetingText: string | null;
@@ -46,6 +48,7 @@ export type ChallengeConfigOptions = {
   pageBackgroundLayout: PageBackgroundLayout;
   pageBackgroundImageUrl: string | null;
   glassOpacity: number;
+  checkinsChartType: ChartType;
   startDate: string;
   endDate: string | null;
   ownerDisplayName?: string;

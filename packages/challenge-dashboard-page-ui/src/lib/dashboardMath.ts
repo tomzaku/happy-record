@@ -1,4 +1,4 @@
-import { TranslationContextProps } from '@dreamer/translation';
+import { ChartType, type RecordDetailHistoryEntry } from '@dreamer/global';
 import { Dashboard } from '../types';
 
 export const RANGE_DAYS = 30;
@@ -21,29 +21,57 @@ export const formatShortDate = (iso: string) => {
   return `${MONTH_ABBR[m - 1]} ${d}`;
 };
 
+/** A full timestamp (RecordDetailHistoryEntry.createdAt), not just a 'YYYY-MM-DD' day — unlike
+ * formatShortDate above, this is a real submit time, not a calendar-grid column label, so it
+ * carries the local date + time rather than just the month/day. */
+export const formatSubmissionTime = (iso: string) => {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return `${date} · ${time}`;
+};
+
 export type MetricTab = {
   key: string;
   label: string;
   unit: string;
   byUser: Map<string, number>;
+  /** This target's own "Breakdown by participant" chart type — see ChallengeTarget.chartType. */
+  chartType: ChartType;
 };
 
-/** How many tabs the breakdown chart can show — Check-ins plus targets, capped by the categorical palette's own length (see chartColors.ts). */
-export const buildMetricTabs = (dashboard: Dashboard, intl: TranslationContextProps, maxTabs: number): MetricTab[] => {
-  const tabs: MetricTab[] = [
-    {
-      key: 'checkins',
-      label: intl.formatMessage({ id: 'ChallengeDashboard.chart-checkins', defaultMessage: 'Check-ins' }),
-      unit: '',
-      byUser: new Map(dashboard.ranking.map(r => [r.userId, r.count])),
-    },
-    ...dashboard.targets.map(t => ({
-      key: t.id,
-      label: t.title,
-      unit: t.unit,
-      byUser: new Map(t.contributions.map(c => [c.userId, c.total])),
-    })),
-  ];
+/**
+ * One tab per target, capped by the categorical palette's own length (see chartColors.ts) — no
+ * Check-ins tab here, unlike before: StreaksCard's own "Check-ins per day" chart already covers
+ * that, so a per-participant Check-ins breakdown next to it here was showing the same thing twice.
+ */
+export const buildMetricTabs = (dashboard: Dashboard, maxTabs: number): MetricTab[] => {
+  const tabs: MetricTab[] = dashboard.targets.map(t => ({
+    key: t.id,
+    label: t.title,
+    unit: t.unit,
+    byUser: new Map(t.contributions.map(c => [c.userId, c.total])),
+    chartType: t.chartType,
+  }));
+  return tabs.slice(0, maxTabs);
+};
+
+/**
+ * One tab per owner-picked "Record Detail" field (`Challenge.recordDetailFieldIds`) — a plain
+ * per-field contribution total, no goal/formula the way a target's tab has one, so unlike
+ * `buildMetricTabs` there's no owner-set `chartType` to read either; always 'bar', the simplest
+ * shape for "who contributed how much to this field." Reuses `MetricTab` (and so `buildBreakdown`/
+ * `buildBreakdownOptions` below) rather than a parallel type, since the two only ever differ in
+ * where the tab list itself comes from.
+ */
+export const buildRecordDetailTabs = (dashboard: Dashboard, maxTabs: number): MetricTab[] => {
+  const tabs: MetricTab[] = dashboard.recordDetails.map(r => ({
+    key: r.fieldId,
+    label: r.title,
+    unit: r.unit,
+    byUser: new Map(r.contributions.map(c => [c.userId, c.total])),
+    chartType: 'bar',
+  }));
   return tabs.slice(0, maxTabs);
 };
 
@@ -55,6 +83,34 @@ export const buildDailyActivity = (completions: { userId: string; date: string }
   const best = Math.max(0, ...data);
   const average = data.length ? Math.round((data.reduce((a, b) => a + b, 0) / data.length) * 10) / 10 : 0;
   return { data, best, average };
+};
+
+/**
+ * The "By Member" chart's own series — one line per field the member actually submitted (not one
+ * per `Challenge.recordDetailFieldIds`, so a field they never touched doesn't draw a flat
+ * all-zero line), oldest to newest since `entries` itself arrives newest-first (see
+ * buildRecordDetailHistory's own `.sort`). Field identity/color-slot order comes from the first
+ * entry each field appears in, walking oldest-first, so it stays stable as more history loads
+ * rather than jittering with whichever submission happens to list a field first in `entries`'
+ * own (newest-first) order.
+ */
+export const buildMemberHistorySeries = (entries: RecordDetailHistoryEntry[]) => {
+  const chronological = [...entries].reverse();
+  const categories = chronological.map(e => formatSubmissionTime(e.createdAt));
+
+  const fieldLabels = new Map<string, string>();
+  for (const entry of chronological) {
+    for (const v of entry.values) {
+      if (!fieldLabels.has(v.fieldId)) fieldLabels.set(v.fieldId, v.title);
+    }
+  }
+
+  const series = [...fieldLabels.entries()].map(([fieldId, title]) => ({
+    name: title,
+    data: chronological.map(e => e.values.find(v => v.fieldId === fieldId)?.value ?? 0),
+  }));
+
+  return { categories, series };
 };
 
 export const buildBreakdown = (dashboard: Dashboard, activeTab: MetricTab | undefined, userId: string | undefined) => {

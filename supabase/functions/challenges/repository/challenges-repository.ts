@@ -289,6 +289,40 @@ export async function fetchChecklistRecordRows(
   return (data ?? []) as ChecklistRecordRow[];
 }
 
+export type RecordDetailHistoryRow = {
+  field_id: string;
+  value_number: number | null;
+  submission_id: string | null;
+  created_at: string;
+};
+
+/** Feeds getRecordDetailHistory's own per-member, per-submission listing (the dashboard's "Record
+ * Detail" card's "By Member" tab) — unlike fetchChecklistRecordRows above (a per-field, per-user
+ * *sum*), this keeps every row's own `submission_id`/`created_at` so the caller can group them back
+ * into "what did this one person submit, and when." Scoped to one `userId`, not a visible roster —
+ * the caller already checked that user is actually visible before calling this. */
+export async function fetchRecordDetailHistoryRows(
+  db: SupabaseClient,
+  fieldIds: string[],
+  userId: string,
+  from: string,
+  to: string,
+  limit: number,
+): Promise<RecordDetailHistoryRow[]> {
+  if (!fieldIds.length) return [];
+  const { data, error } = await db
+    .from('checklist_records')
+    .select('field_id, value_number, submission_id, created_at')
+    .in('field_id', fieldIds)
+    .eq('user_id', userId)
+    .gte('created_at', from)
+    .lte('created_at', to)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as RecordDetailHistoryRow[];
+}
+
 export type FieldTypeRow = { id: string; type: string };
 
 /** Just the type, for `getAttachments`' own "which of this template's fields are photo/video"

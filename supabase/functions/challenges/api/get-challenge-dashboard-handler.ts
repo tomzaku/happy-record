@@ -5,6 +5,15 @@
 // owner-defined formula (`challenge.targets`), each with every participant's real contributed
 // total (see services/challenges-service.ts's own getTargets).
 //
+// `GET /challenges/:id ?recordDetailUserId=&from=&to=` — a different, much lighter read on the
+// same route: `{ recordDetailHistory }`, one member's own itemized "Record Detail" submissions in
+// range (see services/challenges-service.ts's own buildRecordDetailHistory) instead of the full
+// dashboard. Deliberately not folded into the dashboard payload above — see that function's own
+// comment on why a per-member row-level history doesn't belong in a response that scales with
+// roster size. Same `canSeeRoster` gate as the dashboard read; `recordDetailUserId` itself is
+// checked against that same peer-visibility set inside buildRecordDetailHistory, empty (not an
+// error) for anyone outside it.
+//
 // `compose(checkCanReadDashboard, core)` — two visibility tiers, replicated from what used to be
 // two separate RLS checks on two different tables (see
 // services/challenges-access-service.ts's own doc comment): the challenge row itself needs
@@ -15,7 +24,7 @@
 import { compose } from '../../../shared/authorize.ts';
 import { toChallenge } from '../../../dto/challenges/challenges-dto.ts';
 import { checkCanReadDashboard, type DashboardAuthorization } from '../services/challenges-access-service.ts';
-import { buildDashboard, EMPTY_DASHBOARD } from '../services/challenges-service.ts';
+import { buildDashboard, buildRecordDetailHistory, EMPTY_DASHBOARD } from '../services/challenges-service.ts';
 import type { Ctx } from './challenges-context.ts';
 
 export const getChallengeDashboardHandler = compose(
@@ -23,6 +32,12 @@ export const getChallengeDashboardHandler = compose(
   async (ctx: Ctx, { challengeRow, canSeeRoster }: DashboardAuthorization) => {
     if (!challengeRow) return EMPTY_DASHBOARD;
     if (!canSeeRoster) return { ...EMPTY_DASHBOARD, challenge: toChallenge(challengeRow) };
+
+    const recordDetailUserId = ctx.url.searchParams.get('recordDetailUserId');
+    if (recordDetailUserId) {
+      return { recordDetailHistory: await buildRecordDetailHistory(ctx, challengeRow, recordDetailUserId) };
+    }
+
     return buildDashboard(ctx, challengeRow);
   },
 );

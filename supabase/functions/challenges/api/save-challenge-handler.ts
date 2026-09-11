@@ -28,6 +28,13 @@
 // page (distinct from backgroundImageUrl's corner accent), same fall-back-to-null validation.
 // `challenge.glassOpacity` is an integer 0-100 (how opaque the 'glass' layout's panel is), falls
 // back to 12 if missing and clamps into range rather than rejecting an out-of-range value.
+// `challenge.checkinsChartType` is one of CHART_TYPES ('bar' | 'line' | 'area', falls back to
+// 'bar') — the dashboard's "Check-ins per day" trend chart, independent of each target's own
+// optional `chartType` (same CHART_TYPES set, carried inline on each `targets[]` entry).
+// `challenge.recordDetailFieldIds` is a plain array of field ids the owner picked to show on the
+// dashboard's own "Record Detail" section — everyone's raw per-field contribution, no goal/formula
+// the way `targets` has one; deduped and capped, not validated against real existing fields
+// (getRecordDetails' own query just no-ops on an id that doesn't resolve to anything).
 //
 // `compose(checkCanWriteChallenge, core)` — see services/challenges-access-service.ts's own
 // comment for why the write-side check has to be explicit now.

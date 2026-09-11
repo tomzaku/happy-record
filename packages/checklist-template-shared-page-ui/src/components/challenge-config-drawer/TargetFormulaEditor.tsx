@@ -6,15 +6,18 @@
 // re-validates and drops anything invalid, so a formula left broken here just silently doesn't
 // save rather than blocking the rest of the config.
 import * as React from 'react';
+import cx from 'classnames';
 import Typography from '@moon-ui/typography';
 import Input from '@moon-ui/input';
 import Select from '@moon-ui/select';
 import Icon from '@moon-ui/icon/Icon';
 import Dropdown from '@moon-ui/dropdown';
 import { parse } from 'mathjs';
-import { uniqueId, type ChallengeTarget } from '@dreamer/global';
+import { CHART_TYPES, uniqueId, type ChallengeTarget, type ChartType } from '@dreamer/global';
 import type { RecordField } from '@dreamer/global/src/store/record-field';
 import styles from './ChallengeConfigForm.module.scss';
+
+const CHART_TYPE_LABELS: Record<ChartType, string> = { bar: 'Bar', line: 'Line', area: 'Area' };
 
 type Props = {
   targets: ChallengeTarget[];
@@ -193,6 +196,23 @@ const TargetFormulaEditor = ({ targets, numberFields, onChange }: Props) => {
                 classes={{ input: styles.targetInputField }}
                 renderRightInput={() => <></>}
               />
+            </div>
+
+            {/* This target's own "Breakdown by participant" chart type on the dashboard — each
+                target picks independently (see StreaksCard/chartOptions.ts), not one shared
+                setting for every metric. */}
+            <div className={styles.layoutOptions}>
+              {CHART_TYPES.map(id => (
+                <button
+                  key={id}
+                  type="button"
+                  className={cx(styles.layoutOption, (target.chartType ?? 'bar') === id && styles.layoutOptionSelected)}
+                  aria-pressed={(target.chartType ?? 'bar') === id}
+                  onClick={() => updateTarget(target.id, { chartType: id })}
+                >
+                  {CHART_TYPE_LABELS[id]}
+                </button>
+              ))}
             </div>
 
             <div className={styles.variableList}>

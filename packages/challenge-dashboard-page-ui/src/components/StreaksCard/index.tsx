@@ -5,21 +5,19 @@ import { Theme, usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import Icon from '@moon-ui/icon/Icon';
-import { buildBreakdownOptions, buildDailyChartOptions } from '../../lib/chartOptions';
-import { MAX_METRIC_TABS } from '../../lib/chartColors';
-import { buildBreakdown, buildDailyActivity, buildDays, buildMetricTabs, formatShortDate, RANGE_DAYS } from '../../lib/dashboardMath';
+import { buildDailyChartOptions } from '../../lib/chartOptions';
+import { buildDailyActivity, buildDays, formatShortDate, RANGE_DAYS } from '../../lib/dashboardMath';
+import { useSettledChartKey } from '../../hooks/useSettledChartKey';
 import { Dashboard } from '../../types';
 import styles from '../../index.module.scss';
 
 const StreaksCard = ({
   dashboard,
-  userId,
   myStreak,
   bestStreak,
   totalCheckIns,
 }: {
   dashboard: Dashboard;
-  userId: string | undefined;
   myStreak: number;
   bestStreak: number;
   totalCheckIns: number;
@@ -27,30 +25,19 @@ const StreaksCard = ({
   const intl = useIntl();
   const { theme } = usePomodoroGlobalConfig();
   const isDark = theme === Theme.Dark;
-  // Which series the "Breakdown by participant" chart is showing —
-  // 'checkins' or a target's own id. Tabs instead of a grouped bar so
-  // each metric reads at full width instead of getting squeezed 4-wide.
-  const [metricTab, setMetricTab] = React.useState('checkins');
 
   const days = React.useMemo(() => buildDays(RANGE_DAYS), []);
 
   // The "Words per day"-style trend line: how active the group is over
-  // time, as opposed to the breakdown chart below (who's ahead right now).
+  // time, as opposed to TargetsCard's own per-participant breakdown chart
+  // (who's ahead right now).
   const dailyActivity = React.useMemo(() => buildDailyActivity(dashboard.completions, days), [dashboard, days]);
-  const dailyChartOptions = React.useMemo(() => buildDailyChartOptions(isDark, days), [isDark, days]);
-
-  // One tab per metric — Check-ins plus (up to MAX_METRIC_TABS - 1) of the
-  // owner's own targets, each already broken down per user by
-  // getChallengeDashboard's `targets[].contributions`.
-  const metricTabs = React.useMemo(() => buildMetricTabs(dashboard, intl, MAX_METRIC_TABS), [dashboard, intl]);
-  const activeTabIndex = Math.max(0, metricTabs.findIndex(t => t.key === metricTab));
-  const activeTab = metricTabs[activeTabIndex];
-
-  const breakdown = React.useMemo(() => buildBreakdown(dashboard, activeTab, userId), [dashboard, activeTab, userId]);
-  const breakdownOptions = React.useMemo(
-    () => buildBreakdownOptions(isDark, activeTabIndex, activeTab, breakdown?.categories ?? []),
-    [isDark, activeTabIndex, activeTab, breakdown],
+  const checkinsChartType = dashboard.challenge?.checkinsChartType ?? 'bar';
+  const dailyChartOptions = React.useMemo(
+    () => buildDailyChartOptions(isDark, days, checkinsChartType),
+    [isDark, days, checkinsChartType],
   );
+  const settledDailyChartType = useSettledChartKey(checkinsChartType);
 
   if (!dashboard.participants.length) return null;
 
@@ -116,43 +103,24 @@ const StreaksCard = ({
             </Typography.Text>
           </div>
         </div>
-        <Chart options={dailyChartOptions} series={[{ name: 'Check-ins', data: dailyActivity.data }]} type="bar" height={160} />
+        {/* Remounts on a real type change instead of an in-place options update — see
+            useSettledChartKey's own comment for why a bare `key` isn't enough by itself. Blank
+            for one tick during that gap rather than nothing at all, so the layout doesn't jump. */}
+        {settledDailyChartType ? (
+          <Chart
+            key={settledDailyChartType}
+            options={dailyChartOptions}
+            series={[{ name: 'Check-ins', data: dailyActivity.data }]}
+            type={settledDailyChartType}
+            height={160}
+          />
+        ) : (
+          <div style={{ height: 160 }} />
+        )}
         <div className={styles.chartAxisEnds}>
           <span>{formatShortDate(days[0])}</span>
           <span>{formatShortDate(days[days.length - 1])}</span>
         </div>
-
-        {metricTabs.length > 0 && breakdown && (
-          <>
-            <hr className={styles.sectionDivider} />
-            <div className={styles.sectionHeaderRow}>
-              <Typography.Text className={styles.sectionHeaderTitle}>
-                {intl.formatMessage({ id: 'ChallengeDashboard.breakdown', defaultMessage: 'Breakdown by participant' })}
-              </Typography.Text>
-              {metricTabs.length > 1 && (
-                <div className={styles.tabRow}>
-                  {metricTabs.map(tab => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      className={styles.tabPill}
-                      data-active={tab.key === activeTab?.key}
-                      onClick={() => setMetricTab(tab.key)}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <Chart
-              options={breakdownOptions}
-              series={[{ name: activeTab?.label, data: breakdown.data }]}
-              type="bar"
-              height={Math.max(160, breakdown.categories.length * 46)}
-            />
-          </>
-        )}
       </div>
     </Card>
   );
