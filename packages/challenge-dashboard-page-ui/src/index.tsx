@@ -1,11 +1,12 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
-import { useSession } from '@dreamer/global';
+import { getSharedChecklistTemplateUrl, useSession } from '@dreamer/global';
 import { AppShell, Breadcrumb } from '@dreamer/header';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import Icon from '@moon-ui/icon/Icon';
+import Button from '@moon-ui/button';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
 import ChallengeConfigDrawer from '@happy-record/checklist-template-shared-page-ui/src/components/challenge-config-drawer';
 import { useChallengeDashboardData } from './hooks/useChallengeDashboardData';
@@ -25,6 +26,7 @@ const ChallengeDashboardPageUi = () => {
   const intl = useIntl();
   const { id } = useParams<{ id: string }>();
   const { userId } = useSession();
+  const [inviteCopied, setInviteCopied] = React.useState(false);
 
   const {
     dashboard,
@@ -47,6 +49,21 @@ const ChallengeDashboardPageUi = () => {
     dashboard?.challenge,
     refetchDashboard,
   );
+
+  // Same link CardShare's own copy icon generates for a template already shared (this page only
+  // ever renders once a challenge exists, so it's always public by the time this runs) — no
+  // separate invite-link concept to keep in sync with that one.
+  const handleInvite = async () => {
+    const templateId = dashboard?.challenge?.checklistTemplateId;
+    if (!templateId) return;
+    try {
+      await navigator.clipboard.writeText(getSharedChecklistTemplateUrl(templateId));
+      setInviteCopied(true);
+      window.setTimeout(() => setInviteCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy invite link:', err);
+    }
+  };
 
   if (error) {
     return (
@@ -93,14 +110,24 @@ const ChallengeDashboardPageUi = () => {
                 },
               ]}
             />
-            {isOwner && (
-              <Icon
-                width={22}
-                icon="solar:settings-line-duotone"
-                className={styles.configIcon}
-                onClick={challengeConfig.openChallengeConfig}
-              />
-            )}
+            <div className={styles.headerActions}>
+              <Button type="ghost" size="sm" onClick={handleInvite} className={styles.inviteButton}>
+                <Icon width={16} icon={inviteCopied ? 'solar:check-circle-bold' : 'solar:user-plus-line-duotone'} />
+                {intl.formatMessage(
+                  inviteCopied
+                    ? { id: 'ChallengeDashboard.invite-copied', defaultMessage: 'Copied!' }
+                    : { id: 'ChallengeDashboard.invite-button', defaultMessage: 'Invite' },
+                )}
+              </Button>
+              {isOwner && (
+                <Icon
+                  width={22}
+                  icon="solar:settings-line-duotone"
+                  className={styles.configIcon}
+                  onClick={challengeConfig.openChallengeConfig}
+                />
+              )}
+            </div>
           </div>
         )}
         <div className={styles.mainColumn}>

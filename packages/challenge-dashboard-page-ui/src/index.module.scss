@@ -59,6 +59,22 @@
   }
 }
 
+// Groups the Invite button with the owner-only gear icon so both stay pinned to the row's right
+// edge regardless of whether the gear renders (non-owner viewers still get to invite).
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.inviteButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 // The owner-only gear icon that opens ChallengeConfigDrawer (reused from the invite page — see
 // index.tsx's own import) — same hover treatment as that page's own `.configIcon`.
 .configIcon {

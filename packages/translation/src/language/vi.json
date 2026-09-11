@@ -192,6 +192,8 @@
   "CardShare.share-description": "Tạo liên kết có thể chia sẻ",
   "CardShare.view-dashboard": "Xem Bảng Điều Khiển",
   "ChallengeDashboard.title": "Bảng Điều Khiển Thử Thách",
+  "ChallengeDashboard.invite-button": "Mời",
+  "ChallengeDashboard.invite-copied": "Đã sao chép!",
   "ChallengeDashboard.no-participants": "Chưa có ai tham gia thử thách này.",
   "ChallengeDashboard.not-found": "Không thể tải thử thách này.",
   "ChallengeDashboard.comments": "Bình Luận",
