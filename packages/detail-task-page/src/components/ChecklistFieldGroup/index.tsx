@@ -7,6 +7,7 @@ import {
   getNextScheduledDayLabel,
   isFieldGroupActiveOnDay,
   useChecklist,
+  useFieldGroupCompletions,
   useFieldGroups,
   useIsMobile,
 } from '@dreamer/global';
@@ -66,6 +67,10 @@ const ChecklistFieldGroup = ({
 }: Props) => {
   const { updateChecklist } = useChecklist();
   const { addFieldGroup, updateFieldGroup } = useFieldGroups();
+  // A fields-empty group has no checklist_records to ever derive "done today" from (see
+  // useFieldGroupAccordion's own hasSubmittedToday) — this is its own plain check/uncheck marker
+  // instead, one per group per day's checklist (see that hook's own doc comment).
+  const { isFieldGroupComplete, toggleFieldGroupCompletion } = useFieldGroupCompletions(checklist.id);
   const intl = useIntl();
   // Desktop has real width to spare — Submit and Metrics sit side by side there instead of
   // Metrics being one more collapsible section stacked under Submit, the shape mobile keeps
@@ -271,7 +276,12 @@ const ChecklistFieldGroup = ({
       const fieldDetails = fieldDetailsByGroup[fieldGroup.id] ?? [];
       const collapsed = isCollapsed(fieldGroup.id);
       const isActiveToday = isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay));
-      const done = hasSubmittedToday(fieldGroup);
+      // A fields-empty group has no checklist_records to derive "done" from at all — its own
+      // plain completion marker (useFieldGroupCompletions) stands in instead of
+      // hasSubmittedToday's record-presence check, and — unlike that derived, read-only dot — is
+      // actually clickable, the same "too simple to need fields" checkbox a plain to-do gets.
+      const isEmptyGroup = fieldGroup.fields.length === 0;
+      const done = isEmptyGroup ? isFieldGroupComplete(fieldGroup.id) : hasSubmittedToday(fieldGroup);
 
       return (
         <Card
@@ -279,18 +289,35 @@ const ChecklistFieldGroup = ({
           className={cx(styles.cardContainer, !isActiveToday && styles.cardNotScheduled)}
         >
           <ChecklistFieldGroupHeader
-            renderIndicator={() => (
-              <span
-                className={cx(styles.doneIndicator, done && styles.doneIndicatorDone)}
-                title={
-                  done
-                    ? intl.formatMessage({ id: 'checklist-field-group.done-today', defaultMessage: 'Done today' })
-                    : intl.formatMessage({ id: 'checklist-field-group.not-done-today', defaultMessage: 'Not done yet' })
-                }
-              >
-                {done && <Icon width={12} icon="solar:check-read-linear" color="#fff" />}
-              </span>
-            )}
+            renderIndicator={() => {
+              const label = done
+                ? intl.formatMessage({ id: 'checklist-field-group.done-today', defaultMessage: 'Done today' })
+                : intl.formatMessage({ id: 'checklist-field-group.not-done-today', defaultMessage: 'Not done yet' });
+              if (isEmptyGroup && !readOnly) {
+                return (
+                  <button
+                    type="button"
+                    className={cx(styles.doneIndicator, styles.doneIndicatorClickable, done && styles.doneIndicatorDone)}
+                    aria-pressed={done}
+                    aria-label={label}
+                    title={label}
+                    // Sits inside ChecklistFieldGroupHeader's own titleContainer, which toggles
+                    // collapse on click — this needs to only ever toggle completion, not that too.
+                    onClick={e => {
+                      e.stopPropagation();
+                      toggleFieldGroupCompletion(fieldGroup.id);
+                    }}
+                  >
+                    {done && <Icon width={12} icon="solar:check-read-linear" color="#fff" />}
+                  </button>
+                );
+              }
+              return (
+                <span className={cx(styles.doneIndicator, done && styles.doneIndicatorDone)} title={label}>
+                  {done && <Icon width={12} icon="solar:check-read-linear" color="#fff" />}
+                </span>
+              );
+            }}
             renderTitle={() => renderTitle(fieldGroup)}
             renderStatus={() => renderScheduleStatus(fieldGroup)}
             // The settings cog only matters once you're actually looking at this sub-task's own

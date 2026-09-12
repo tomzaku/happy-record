@@ -33,6 +33,19 @@
   border: 2px solid var(--card-border);
 }
 
+// A fields-empty group's own indicator is a real checkbox, not just a read-only dot — see
+// renderIndicator's own comment for why only that case gets a <button> here.
+.doneIndicatorClickable {
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    border-color: var(--almanac-accent);
+  }
+}
+
 .doneIndicatorDone {
   border-color: var(--almanac-accent);
   background: var(--almanac-accent);
