@@ -394,11 +394,20 @@ const ChecklistFieldGroup = ({
         {intl.formatMessage({ id: 'checklist-field-group.sub-tasks-title', defaultMessage: 'Sub Tasks' })}
       </Typography.Text>
       {renderBody()}
-      <ChecklistFieldGroupAddGroup
-        onAddFieldGroup={handleAddFieldGroup}
-        onOpenAiGenerate={onOpenAiGenerate}
-        disabled={readOnly}
-      />
+      {readOnly ? (
+        // A participant can't add sub-tasks to someone else's template at all (see
+        // saveFieldGroupChange/handleAddFieldGroup's own no-op) — a disabled-looking input here
+        // read as broken rather than as "not yours to edit," so a plain description takes its
+        // place instead of an input nobody can actually use.
+        <Typography.Text className={styles.addGroupDisabledDescription}>
+          {intl.formatMessage({
+            id: 'checklist-field-group.add-group-owner-only',
+            defaultMessage: 'Only the owner can add sub-tasks.',
+          })}
+        </Typography.Text>
+      ) : (
+        <ChecklistFieldGroupAddGroup onAddFieldGroup={handleAddFieldGroup} onOpenAiGenerate={onOpenAiGenerate} />
+      )}
     </>
   )
 };

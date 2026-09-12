@@ -8,7 +8,8 @@ import Card from '@moon-ui/card';
 import Button from '@moon-ui/button';
 import Typography from '@moon-ui/typography';
 import { Icon } from '@moon-ui/icon/Icon';
-import { useIsMobile, isRecurringSchedule } from '@dreamer/global';
+import Checkbox from '@moon-ui/checkbox';
+import { useFieldGroupCompletions, useIsMobile, isRecurringSchedule } from '@dreamer/global';
 import ChecklistFieldGroupAdd from '@dreamer/detail-task-page/src/components/ChecklistFieldGroupAdd';
 import ScheduleEditDialogs from '@dreamer/detail-task-page/src/components/ChecklistGenericInfo/ScheduleEditDialogs';
 import { SettingsRow } from '@dreamer/detail-task-page/src/components/SettingsCard';
@@ -65,6 +66,10 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
     handleDeleteAll,
     eventChecklistId,
   } = useTaskDetailDeleteFlow(data);
+  // A fields-empty group has nothing for ChecklistFieldGroupAdd to submit — same plain
+  // check/uncheck marker detail-task-page's own ChecklistFieldGroup uses for that exact case (see
+  // useFieldGroupCompletions' own doc comment).
+  const { isFieldGroupComplete, toggleFieldGroupCompletion } = useFieldGroupCompletions(checklist?.id);
 
   if (!event || !data) return null;
 
@@ -177,16 +182,30 @@ const TaskDetailModal = ({ event, onClose, onViewDetails }: Props) => {
           <div className={styles.submit}>
             {relevantGroups.map(group => (
               <Card key={group.id} className={styles.groupCard}>
-                {showGroupLabels && <Typography.Text className={styles.groupTitle}>{group.title}</Typography.Text>}
-                <ChecklistFieldGroupAdd
-                  fields={fieldsByGroup[group.id] ?? []}
-                  checklistTemplate={template}
-                  fieldGroup={group}
-                  checklist={checklist}
-                  currentDay={data.date.toISOString()}
-                  onSubmit={markCompleted}
-                  compact
-                />
+                {group.fields.length === 0 ? (
+                  // The group's own title is the checkbox's label here — showGroupLabels' own
+                  // title above it would just repeat that.
+                  <label className={styles.groupCheckboxRow}>
+                    <Checkbox
+                      checked={isFieldGroupComplete(group.id)}
+                      onChange={() => toggleFieldGroupCompletion(group.id)}
+                    />
+                    <Typography.Text className={styles.groupCheckboxLabel}>{group.title}</Typography.Text>
+                  </label>
+                ) : (
+                  <>
+                    {showGroupLabels && <Typography.Text className={styles.groupTitle}>{group.title}</Typography.Text>}
+                    <ChecklistFieldGroupAdd
+                      fields={fieldsByGroup[group.id] ?? []}
+                      checklistTemplate={template}
+                      fieldGroup={group}
+                      checklist={checklist}
+                      currentDay={data.date.toISOString()}
+                      onSubmit={markCompleted}
+                      compact
+                    />
+                  </>
+                )}
               </Card>
             ))}
           </div>

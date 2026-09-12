@@ -1,11 +1,25 @@
 @use '@moon-ui/app-scss/metric' as *;
 
+// Everything below BackHeader — same horizontal gutter the home page's own mobile page uses
+// (record-page-ui/index.mobile.module.scss's `.row`), so every card here (WeeklyRow,
+// MiniChallengeDashboard, the sub-tasks accordion, General Settings) sits off the screen edge
+// instead of flush against it the way this page had no page-level wrapper to do at all before.
+.content {
+  padding: $spacing-md;
+}
+
 // Same shape as the home page's own mobile `.card` (record-page-ui/index.mobile.module.scss) —
-// a real moon-ui Card (@moon-ui/card) wrapping WeeklyRow's own plain content, reusing that
-// component's own 12px padding rather than WeeklyRow re-implementing a card of its own.
+// a real moon-ui Card (@moon-ui/card) wrapping WeeklyRow's own plain content.
 .weeklyRowCard {
   border: 1px solid var(--card-border);
   border-radius: 18px;
   box-shadow: 0 6px 20px var(--card-shadow);
   margin-bottom: $spacing-md;
+}
+
+// Card's own default padding wasn't actually showing up here — same fix as the home page's own
+// mobile `.body` (record-page-ui/index.mobile.module.scss): a real padded wrapper around the
+// card's content instead of relying on Card's own container padding.
+.body {
+  padding: $spacing-sm;
 }

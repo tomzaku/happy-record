@@ -14,6 +14,14 @@
   width: 100%;
 }
 
+// Both right-side controls sit in one flex row now — the AI shortcut (icon+text when the input's
+// empty, icon-only once there's a title to submit) and Submit (once there's a title at all).
+.rightActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 // Same shortcut as an empty sub-task's own collapsed-row button (ChecklistFieldGroup's
 // .aiRowButton) — inline inside the input's own right side now, not a separate button beside it.
 .aiButton {
@@ -42,6 +50,58 @@
   }
 }
 
+// Same button, minimized to a square icon-only tap target once Submit has claimed the text slot
+// — still reachable, just not competing with Submit for width.
+.aiButtonIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px dashed var(--almanac-accent, var(--button-dash));
+  border-radius: 8px;
+  background: var(--card-background);
+  color: var(--almanac-accent, var(--icon-primary));
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-secondary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// The actual "create this sub-task" action — only worth showing once there's a title (see
+// ChecklistFieldGroupAddGroup's own `hasTitle`), same as AddInlineTask's own Submit button.
+.submitButton {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 $spacing-md;
+  border: 0;
+  border-radius: 8px;
+  background: var(--almanac-accent, var(--button-default-background));
+  color: #fff;
+  font-size: toRem(12px);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
 .input {
   height: 48px;
   padding-left: 2.6em;
@@ -53,6 +113,12 @@
 // doesn't run underneath it.
 .inputWithAiButton {
   padding-right: 11em;
+}
+
+// Once Submit + the minimized AI icon replace the full-text AI button, the reserved room shrinks
+// to match — narrower than .inputWithAiButton's own 11em, but still enough for both controls.
+.inputWithActions {
+  padding-right: 6.5em;
 }
 
 .placeholder {

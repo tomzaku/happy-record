@@ -169,6 +169,19 @@
   margin-bottom: $spacing-sm;
 }
 
+// A fields-empty group's own row — a plain checkbox instead of ChecklistFieldGroupAdd's submit
+// form, since there's nothing to submit.
+.groupCheckboxRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  cursor: pointer;
+}
+
+.groupCheckboxLabel {
+  font-size: 13px;
+}
+
 // Lives in .headerActions, alongside TaskOptionsMenu's own "⋮" trigger and the close icon.
 // Explicit `--icon-primary` rather than DefaultButton's own default background — the same blue as
 // .badge, so the header's one real action reads as part of the same accent rather than whatever

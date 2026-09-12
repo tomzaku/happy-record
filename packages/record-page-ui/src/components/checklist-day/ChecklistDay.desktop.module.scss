@@ -439,6 +439,12 @@
   cursor: default;
 }
 
+// See ChecklistDayRowSubmit's own `allGroupsWithoutFields` — no bordered field-group card in this
+// row needs the taller top gap above.
+.rowExpandedGroupsNoFields {
+  padding-top: 0;
+}
+
 // Top-right of .rowExpandedGroups, above the grid — only rendered when this row's template has
 // a real challenge (see ChecklistDayRowSubmit).
 .rowExpandedDashboardLink {
@@ -487,6 +493,28 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+// A fields-empty group's own column (see ChecklistDayRowSubmit) — just a checkbox with the
+// group's own title as its label, standing in for the whole .rowExpandedGroupColumn card + header
+// + submit form a field-bearing group needs; there's nothing to submit and the title above would
+// only repeat what the label already says.
+.rowExpandedGroupCheckboxColumn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  min-width: 0;
+  padding: $spacing-md;
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  background: var(--almanac-bg);
+  box-shadow: 0 4px 14px var(--almanac-shadow);
+  cursor: pointer;
+}
+
+.rowExpandedGroupCheckboxLabel {
+  color: var(--almanac-ink);
+  font-size: 13px;
 }
 
 // Mirrors ChecklistFieldGroupAdd's own .footerCenter's Submit-button alignment (right-aligned)

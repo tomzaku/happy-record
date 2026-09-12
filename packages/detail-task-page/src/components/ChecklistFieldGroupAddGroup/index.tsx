@@ -69,6 +69,15 @@ const ChecklistFieldGroupAddGroup = ({
     submit();
   };
 
+  // Once there's actually something to submit, Submit becomes the right-side action and the AI
+  // shortcut shrinks to just its icon to make room — same "controls only earn their space once
+  // they mean something" shape AddInlineTask's own Submit row uses.
+  const hasTitle = !!title.trim();
+  const aiButtonLabel = intl.formatMessage({
+    id: 'checklist-field-group-add-group.generate-with-ai',
+    defaultMessage: 'Generate subtask with AI',
+  });
+
   return (
     <div className={styles.container}>
       <form onSubmit={handleSubmit} className={styles.inputRow}>
@@ -83,7 +92,10 @@ const ChecklistFieldGroupAddGroup = ({
           })}
           classes={{
             wrapper: styles.inputWrapper,
-            input: onOpenAiGenerate ? cx(styles.input, styles.inputWithAiButton) : styles.input,
+            input: cx(styles.input, {
+              [styles.inputWithAiButton]: onOpenAiGenerate && !hasTitle,
+              [styles.inputWithActions]: hasTitle,
+            }),
             placeholder: styles.placeholder,
           }}
           disabled={disabled}
@@ -91,24 +103,31 @@ const ChecklistFieldGroupAddGroup = ({
           renderLeftInput={() => (
             <Icon width={22} height={22} icon="solar:add-circle-bold" className={styles.addIcon} />
           )}
-          renderRightInput={() =>
-            onOpenAiGenerate ? (
-              <button
-                type="button"
-                className={styles.aiButton}
-                onClick={onOpenAiGenerate}
-                disabled={disabled}
-              >
-                <Icon width={16} icon="solar:magic-stick-3-bold-duotone" />
-                {intl.formatMessage({
-                  id: 'checklist-field-group-add-group.generate-with-ai',
-                  defaultMessage: 'Generate subtask with AI',
-                })}
-              </button>
-            ) : (
-              <></>
-            )
-          }
+          renderRightInput={() => (
+            <div className={styles.rightActions}>
+              {onOpenAiGenerate && (
+                <button
+                  type="button"
+                  className={hasTitle ? styles.aiButtonIcon : styles.aiButton}
+                  onClick={onOpenAiGenerate}
+                  disabled={disabled}
+                  aria-label={aiButtonLabel}
+                >
+                  <Icon width={16} icon="solar:magic-stick-3-bold-duotone" />
+                  {!hasTitle && aiButtonLabel}
+                </button>
+              )}
+              {hasTitle && (
+                <button
+                  type="submit"
+                  className={styles.submitButton}
+                  disabled={disabled}
+                >
+                  {intl.formatMessage({ id: 'label-submit', defaultMessage: 'Submit' })}
+                </button>
+              )}
+            </div>
+          )}
         />
       </form>
     </div>

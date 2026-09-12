@@ -18,6 +18,16 @@
   margin: 0 0 $spacing-sm;
 }
 
+// Stands in for ChecklistFieldGroupAddGroup's own input when the viewer can't add sub-tasks at
+// all (see ChecklistFieldGroup's own `readOnly` branch) — plain text, not a disabled-looking
+// control nobody can actually use.
+.addGroupDisabledDescription {
+  display: block;
+  padding: $spacing-sm;
+  font-size: 13px;
+  color: var(--text-description-color);
+}
+
 // The accordion's own done/pending dot, at the row's own left edge (ChecklistFieldGroupHeader's
 // `renderIndicator` slot) — filled accent + checkmark once this sub-task has a record today,
 // otherwise an empty ring, same "is this handled yet" signal the collapsed row's whole point is

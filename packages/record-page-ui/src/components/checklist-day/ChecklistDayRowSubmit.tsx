@@ -1,8 +1,10 @@
 import React from 'react';
+import cx from 'classnames';
 import { Link } from 'react-router-dom';
 import Typography from '@moon-ui/typography';
+import Checkbox from '@moon-ui/checkbox';
 import ChecklistFieldGroupAdd from '@dreamer/detail-task-page/src/components/ChecklistFieldGroupAdd';
-import { useChallenge } from '@dreamer/global';
+import { useChallenge, useFieldGroupCompletions } from '@dreamer/global';
 import { useIntl } from '@dreamer/translation';
 import { useTaskDetailModalData } from '../home-calendar/useTaskDetailModalData';
 import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
@@ -34,6 +36,10 @@ const ChecklistDayRowSubmit = ({ checklistTemplateId, date }: Props) => {
   // necessarily have one (that's a separate opt-in via CardShare's "Share everyone's check-ins").
   const { getChallengeForTemplate } = useChallenge();
   const challenge = getChallengeForTemplate(checklistTemplateId);
+  // A fields-empty group has nothing for ChecklistFieldGroupAdd to submit — same plain
+  // check/uncheck marker detail-task-page's own ChecklistFieldGroup uses for the exact same case
+  // (see useFieldGroupCompletions' own doc comment) instead of a submit form with nothing in it.
+  const { isFieldGroupComplete, toggleFieldGroupCompletion } = useFieldGroupCompletions(checklist?.id);
 
   // `template` lands a beat after mount (own fetch) — same "nothing to show yet" gate
   // TaskDetailModal's own showSubmit uses. `relevantGroups` empty means nothing due on this
@@ -50,35 +56,54 @@ const ChecklistDayRowSubmit = ({ checklistTemplateId, date }: Props) => {
     template.avatar.color && template.avatar.color !== UNCHOSEN_AVATAR_COLOR
       ? template.avatar.color
       : 'var(--almanac-accent)';
+  // The checkbox-only columns below read shorter/lighter than a bordered field-group card — the
+  // grid's own top padding (sized for that taller card) reads as an oversized gap above a plain
+  // checkbox row, so it's dropped whenever nothing in this row actually needs it.
+  const allGroupsWithoutFields = relevantGroups.every(group => group.fields.length === 0);
 
   return (
-    <div className={styles.rowExpandedGroups} onClick={event => event.stopPropagation()}>
+    <div
+      className={cx(styles.rowExpandedGroups, allGroupsWithoutFields && styles.rowExpandedGroupsNoFields)}
+      onClick={event => event.stopPropagation()}
+    >
       {challenge && (
         <Link to={`/challenge/${challenge.id}`} className={styles.rowExpandedDashboardLink}>
           {intl.formatMessage({ id: 'CardShare.view-dashboard', defaultMessage: 'View Dashboard' })}
         </Link>
       )}
-      {relevantGroups.map(group => (
-        <div key={group.id} className={styles.rowExpandedGroupColumn}>
-          <div className={styles.rowExpandedGroupHeader}>
-            <span className={styles.rowExpandedGroupDot} style={{ backgroundColor: templateColor }} />
-            <Typography.Text className={styles.rowExpandedGroupTitle}>{group.title}</Typography.Text>
-          </div>
-          {checklist ? (
-            <ChecklistFieldGroupAdd
-              fields={fieldsByGroup[group.id] ?? []}
-              checklistTemplate={template}
-              fieldGroup={group}
-              checklist={checklist}
-              currentDay={date.toISOString()}
-              onSubmit={markCompleted}
-              compact
+      {relevantGroups.map(group =>
+        // A fields-empty group is just its own checkbox row — the title/dot header below is
+        // redundant once the group's own title is already the checkbox's label.
+        group.fields.length === 0 ? (
+          <label key={group.id} className={styles.rowExpandedGroupCheckboxColumn}>
+            <Checkbox
+              checked={isFieldGroupComplete(group.id)}
+              onChange={() => toggleFieldGroupCompletion(group.id)}
             />
-          ) : (
-            <ChecklistDayRowSubmitSkeleton fieldCount={group.fields.length} />
-          )}
-        </div>
-      ))}
+            <Typography.Text className={styles.rowExpandedGroupCheckboxLabel}>{group.title}</Typography.Text>
+          </label>
+        ) : (
+          <div key={group.id} className={styles.rowExpandedGroupColumn}>
+            <div className={styles.rowExpandedGroupHeader}>
+              <span className={styles.rowExpandedGroupDot} style={{ backgroundColor: templateColor }} />
+              <Typography.Text className={styles.rowExpandedGroupTitle}>{group.title}</Typography.Text>
+            </div>
+            {!checklist ? (
+              <ChecklistDayRowSubmitSkeleton fieldCount={group.fields.length} />
+            ) : (
+              <ChecklistFieldGroupAdd
+                fields={fieldsByGroup[group.id] ?? []}
+                checklistTemplate={template}
+                fieldGroup={group}
+                checklist={checklist}
+                currentDay={date.toISOString()}
+                onSubmit={markCompleted}
+                compact
+              />
+            )}
+          </div>
+        ),
+      )}
     </div>
   );
 };

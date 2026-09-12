@@ -219,6 +219,7 @@ const DetailTaskPageMobile = () => {
         )}
         onClickLeftButton={() => navigate('/')}
       />
+      <div className={styles.content}>
       {/* One page-level week-strip nav instead of each field group's own copy of it (see
           ChecklistFieldGroupAdd's own `isMobile` gate) — they all read/write the same page
           `currentDay` search param anyway, so showing it once at the very top avoids the same
@@ -228,20 +229,10 @@ const DetailTaskPageMobile = () => {
           `.card` — record-page-ui/index.mobile.module.scss) rather than baking Card-like styling
           into WeeklyRow itself, which stays plain content reusable in any container. */}
       <Card className={styles.weeklyRowCard}>
-        <WeeklyRow currentDay={currentDay} />
+        <div className={styles.body}>
+          <WeeklyRow currentDay={currentDay} />
+        </div>
       </Card>
-      {/* Same widget/condition as index.desktop.tsx's own side column — owner
-          or participant either way, replacing the header's plain dashboard
-          icon (and CardShare's old link) with an actual leaderboard preview.
-          Its own "⋮" menu is now the one "Leave Challenge" trigger for this
-          page too — replaces the header's own logout icon above. */}
-      {challenge && (
-        <MiniChallengeDashboard
-          challengeId={challenge.id}
-          userId={userId}
-          onLeaveChallenge={() => setLeaveModalVisible(true)}
-        />
-      )}
       {/* The template row still exists (soft-deleted, not removed — see
           20260905000000_checklist_templates_soft_delete.sql), so this page still resolves for a
           participant instead of just breaking; the owner already navigates away on their own
@@ -309,6 +300,20 @@ const DetailTaskPageMobile = () => {
       >
         {isOwner && <CardShare checklistTemplate={checklistTemplate} />}
       </ChecklistGenericInfo>
+      {/* Owner or participant either way — replaces the header's plain dashboard icon (and
+          CardShare's old link) with an actual leaderboard preview. Its own "⋮" menu is now the
+          one "Leave Challenge" trigger for this page too — replaces the header's own logout icon
+          above. Moved to the very bottom now: General Settings' own comment already argues the
+          real task content belongs above metadata about the task, and this leaderboard preview is
+          exactly that same kind of "about the task," not the task itself. */}
+      {challenge && (
+        <MiniChallengeDashboard
+          challengeId={challenge.id}
+          userId={userId}
+          onLeaveChallenge={() => setLeaveModalVisible(true)}
+        />
+      )}
+      </div>
 
       <AiChecklistGenerate
         visible={isAiModalVisible}
