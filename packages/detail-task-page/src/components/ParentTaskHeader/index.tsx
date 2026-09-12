@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { useIntl } from '@dreamer/translation';
 import {
@@ -26,6 +27,9 @@ type Props = {
   setEditedTitle: (value: string) => void;
   onStartEditTitle: () => void;
   onKeyPressTitle: (e: React.KeyboardEvent) => void;
+  /** Only set once a real challenge row exists for this template (see index.desktop.tsx's own
+   * `getChallengeForTemplate`) — a public template doesn't necessarily have one. */
+  challengeId?: string;
 };
 
 // LEVEL 1 of the page's own title hierarchy — everything here is challenge-level info only (see
@@ -45,6 +49,7 @@ const ParentTaskHeader = ({
   setEditedTitle,
   onStartEditTitle,
   onKeyPressTitle,
+  challengeId,
 }: Props) => {
   const intl = useIntl();
   const { getChecklistRecords } = useChecklistRecord();
@@ -128,6 +133,15 @@ const ParentTaskHeader = ({
                 <Button type="ghost" size="sm" onClick={onStartEditTitle} className={styles.editTitleButton}>
                   <Icon icon="solar:pen-new-square-linear" width={14} />
                 </Button>
+              )}
+              {challengeId && (
+                <Link to={`/challenge/${challengeId}`} className={styles.challengeDashboardLink}>
+                  <Icon icon="solar:round-graph-outline" width={16} />
+                  {intl.formatMessage({
+                    id: 'ParentTaskHeader.view-challenge-dashboard',
+                    defaultMessage: 'View Challenge Dashboard',
+                  })}
+                </Link>
               )}
             </div>
           )}

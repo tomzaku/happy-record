@@ -323,6 +323,7 @@ const DetailTaskPageDesktop = () => {
                 setEditedTitle={setEditedTitle}
                 onStartEditTitle={handleEditTitle}
                 onKeyPressTitle={handleKeyPress}
+                challengeId={challenge?.id}
               />
               {!isTemplateReady || !isChecklistReady || allRecordFieldsLoading ? (
                 // Same "Field Groups" row ChecklistFieldGroup itself would render via its own
