@@ -11,6 +11,7 @@ export { useSyncedSelector } from './useSyncedSelector';
 export { useApplyAiChecklistTemplate } from './useApplyAiChecklistTemplate';
 export { useAiNoteGenerate } from './useAiNoteGenerate';
 export { useFieldGroupNote } from './useFieldGroupNote';
+export { useChecklistTemplateNote } from './useChecklistTemplateNote';
 export { useWeeklyCompletionStats, useCompletionTrend } from './useWeeklyCompletionStats';
 export type {
   DailyCompletionStat,

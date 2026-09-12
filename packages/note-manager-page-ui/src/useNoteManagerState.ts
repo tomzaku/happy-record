@@ -226,7 +226,10 @@ export const useNoteManagerState = () => {
     const fieldGroupNotes: Note[] = [];
     const byField = new Map<string, Note[]>();
     for (const note of notes) {
-      if (note.ownerType === 'field_group') {
+      // Both a field-group's own Home note and a checklist template's own description are
+      // one-per-owner, persistent rows — flat rows here, same as each other, unlike a note-type
+      // field's own per-day journal entries (clustered below).
+      if (note.ownerType === 'field_group' || note.ownerType === 'checklist_template') {
         fieldGroupNotes.push(note);
         continue;
       }

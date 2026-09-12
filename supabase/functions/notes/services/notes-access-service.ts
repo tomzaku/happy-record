@@ -7,30 +7,42 @@
 
 import { ApiError } from '../../../shared/cors.ts';
 import { ForbiddenError } from '../../../shared/authorize.ts';
-import { fetchNoteRow, fetchNoteRowsByIds, publicFieldGroupOwnerIds, type NoteRow } from '../repository/notes-repository.ts';
+import {
+  fetchNoteRow,
+  fetchNoteRowsByIds,
+  publicFieldGroupOwnerIds,
+  publicTemplateOwnerIds,
+  type NoteRow,
+} from '../repository/notes-repository.ts';
 import { body, type Ctx } from '../api/notes-context.ts';
 
 export type { NoteRow };
 
-/** A note is readable by its owner, or by anyone at all if it's a field-group's Home note on a
- * template that's genuinely public — the app-layer equivalent of what used to be
- * 20260830010000_public_field_group_notes.sql's RLS policy, decided here instead. */
-function isReadable(row: NoteRow, userId: string, publicGroupIds: Set<string>): boolean {
+/** A note is readable by its owner, or by anyone at all if it's a field-group's Home note (or a
+ * checklist template's own description) on a template that's genuinely public — the app-layer
+ * equivalent of what used to be 20260830010000_public_field_group_notes.sql's RLS policy, decided
+ * here instead. Unlike a field-group note, a checklist-template-owned one has no participant-fork
+ * concept — everyone but the owner reads this same row, never their own copy. */
+function isReadable(row: NoteRow, userId: string, publicGroupIds: Set<string>, publicTemplateIds: Set<string>): boolean {
   if (row.user_id === userId) return true;
-  return row.owner_type === 'field_group' && publicGroupIds.has(row.owner_id as string);
+  if (row.owner_type === 'field_group') return publicGroupIds.has(row.owner_id as string);
+  if (row.owner_type === 'checklist_template') return publicTemplateIds.has(row.owner_id as string);
+  return false;
 }
 
 /** For `GET /notes/:id` — loads the row (there's nothing to authorize without it) and decides
  * whether this caller may see it. 404 for a missing id, 403 for one that exists but isn't this
- * caller's and isn't a public field-group note — either way the handler's own core never has to
- * touch the database again, it just maps the row this already loaded. */
+ * caller's and isn't a public field-group/checklist-template note — either way the handler's own
+ * core never has to touch the database again, it just maps the row this already loaded. */
 export async function checkReadNote({ db, userId, id }: Ctx): Promise<NoteRow> {
   if (!id) throw new ApiError(400, 'Missing id.');
   const row = await fetchNoteRow(db, id);
   if (!row) throw new ApiError(404, 'Note not found.');
   const publicGroupIds =
     row.owner_type === 'field_group' ? await publicFieldGroupOwnerIds(db, [row.owner_id as string]) : new Set<string>();
-  if (!isReadable(row, userId, publicGroupIds)) throw new ForbiddenError();
+  const publicTemplateIds =
+    row.owner_type === 'checklist_template' ? await publicTemplateOwnerIds(db, [row.owner_id as string]) : new Set<string>();
+  if (!isReadable(row, userId, publicGroupIds, publicTemplateIds)) throw new ForbiddenError();
   return row;
 }
 
@@ -49,7 +61,12 @@ export async function checkReadNotes({ db, userId, url }: Ctx): Promise<NoteRow[
     .map(r => r.owner_id as string);
   const publicGroupIds = await publicFieldGroupOwnerIds(db, candidateGroupIds);
 
-  return rows.filter(r => isReadable(r, userId, publicGroupIds));
+  const candidateTemplateIds = rows
+    .filter(r => r.owner_type === 'checklist_template' && r.user_id !== userId)
+    .map(r => r.owner_id as string);
+  const publicTemplateIds = await publicTemplateOwnerIds(db, candidateTemplateIds);
+
+  return rows.filter(r => isReadable(r, userId, publicGroupIds, publicTemplateIds));
 }
 
 export type WriteAuthorization = { entry: Record<string, unknown>; existing: NoteRow | null };

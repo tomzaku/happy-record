@@ -41,6 +41,13 @@ const ALLOWED_CALENDAR_COLORS = [
   '#2d9cdb', '#f2c94c', '#1abc9c', '#eb5a90', '#8d6e63',
 ];
 
+// A one-line summary, not enforced by a DB CHECK — same "clamp app-side, no column-length
+// constraint" precedent `title` already has. Generous enough for a real sentence or two, short
+// enough that it can't turn into the full write-up the linked `note_id` is for instead.
+const MAX_SHORT_DESCRIPTION_CHARS = 300;
+const clampShortDescription = (v: unknown): string | null =>
+  typeof v === 'string' && v.trim() ? v.trim().slice(0, MAX_SHORT_DESCRIPTION_CHARS) : null;
+
 export function toChecklistTemplate(
   r: Record<string, unknown>,
   repeatRow: Record<string, unknown> | undefined,
@@ -53,6 +60,8 @@ export function toChecklistTemplate(
   return {
     id: r.id as string,
     title: r.title as string,
+    ...(r.short_description ? { shortDescription: r.short_description as string } : {}),
+    ...(r.note_id ? { noteId: r.note_id as string } : {}),
     avatar: (r.avatar as Record<string, unknown>) ?? {},
     repeat: repeat && isPersonalOverride ? { ...repeat, isPersonal: true } : repeat,
     createdAt: r.created_at as string,
@@ -91,6 +100,15 @@ export function patchChecklistTemplate(e: Record<string, unknown>): Record<strin
   }
   if ('avatar' in e) {
     patch.avatar = e.avatar && typeof e.avatar === 'object' ? e.avatar : {};
+  }
+  if ('shortDescription' in e) {
+    patch.short_description = clampShortDescription(e.shortDescription);
+  }
+  // `noteId` is only ever set here by the caller who just created their own description note
+  // (see useChecklistTemplateNote.ts's own `startEditing`) — same "owner writes the pointer back
+  // once the note it points at actually exists" shape `field_groups.note_id` already uses.
+  if ('noteId' in e) {
+    patch.note_id = str(e.noteId);
   }
   // `repeat` isn't a column on this row anymore — the PATCH route (checklist-templates/services and api)
   // writes it to `schedules` itself via saveRepeat() when `'repeat' in params`, same as it does for
@@ -132,6 +150,8 @@ export function fromChecklistTemplate(e: Record<string, unknown>) {
   return {
     id: e.id,
     title: e.title,
+    short_description: clampShortDescription(e.shortDescription),
+    note_id: str(e.noteId),
     avatar: e.avatar && typeof e.avatar === 'object' ? e.avatar : {},
     // `repeat` isn't a column here anymore — the caller (checklist-templates/services and api) writes it
     // to `schedules` itself via saveRepeat(), after this row exists (the FK needs a parent to point

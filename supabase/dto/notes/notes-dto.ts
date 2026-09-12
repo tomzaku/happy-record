@@ -19,7 +19,7 @@
 
 import { blockToPlainText, toBlocks } from '../../shared/aiNoteGeneration.ts';
 
-export const OWNER_TYPES = ['field', 'field_group'] as const;
+export const OWNER_TYPES = ['field', 'field_group', 'checklist_template'] as const;
 export type OwnerType = (typeof OWNER_TYPES)[number];
 const isOwnerType = (v: unknown): v is OwnerType => (OWNER_TYPES as readonly string[]).includes(v as string);
 
@@ -118,8 +118,8 @@ export function fromNote(e: Record<string, unknown>) {
   if (hasOwnerId && (typeof e.ownerId !== 'string' || !e.ownerId)) throw new Error('Invalid ownerId.');
   const checklistId = typeof e.checklistId === 'string' ? e.checklistId : null;
   const checklistTemplateId = typeof e.checklistTemplateId === 'string' ? e.checklistTemplateId : null;
-  if (e.ownerType === 'field_group' && !checklistTemplateId) {
-    throw new Error('A field_group-owned note needs checklistTemplateId.');
+  if ((e.ownerType === 'field_group' || e.ownerType === 'checklist_template') && !checklistTemplateId) {
+    throw new Error('A field_group- or checklist_template-owned note needs checklistTemplateId.');
   }
   if (checklistId && !checklistTemplateId) {
     throw new Error('A checklist-day note needs checklistTemplateId.');

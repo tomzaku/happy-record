@@ -21,6 +21,11 @@ import styles from './index.module.scss';
 export type FormState = {
   selectedRecords?: string[];
   checklistText: string;
+  /** A one-line summary shown alongside the title in lists — the task's longer write-up (its
+   * `notes`-backed description) is edited from the detail page instead, once the task actually
+   * exists (see ChecklistGenericInfo), same as a field group's own note is never set up-front
+   * here either. */
+  shortDescription: string;
   weeklyHobbies: Day[];
   startedAt: string;
   selectedTime: string;
@@ -65,6 +70,7 @@ const CoreChecklistForm = ({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const {
     checklistText,
+    shortDescription,
     weeklyHobbies,
     startedAt,
     selectedTime,
@@ -76,6 +82,10 @@ const CoreChecklistForm = ({
 
   const setChecklistText = (text: string) => {
     setForm(prevForm => ({ ...prevForm, checklistText: text }));
+  };
+
+  const setShortDescription = (text: string) => {
+    setForm(prevForm => ({ ...prevForm, shortDescription: text }));
   };
 
   const setWeeklyHobbies = (hobbies: Day[]) => {
@@ -125,6 +135,19 @@ const CoreChecklistForm = ({
             setChecklistText(e.currentTarget.value);
           }}
           value={checklistText}
+        />
+        <TextareaAutosize
+          placeholder={intl.formatMessage({
+            id: 'CreateChecklist.label-short-description-placeholder',
+            defaultMessage: 'Short description (optional)',
+          })}
+          className={styles.shortDescriptionInput}
+          minRows={1}
+          maxRows={3}
+          onChange={e => {
+            setShortDescription(e.currentTarget.value);
+          }}
+          value={shortDescription}
         />
         <SchedulingGroup
           weeklyHobbies={weeklyHobbies}

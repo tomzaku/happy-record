@@ -3,6 +3,14 @@ import type { FieldGroup } from './fieldGroupTypes';
 export type ChecklistTemplate = {
   id: string;
   title: string;
+  /** A one-line summary, shown alongside the title in lists — distinct from `noteId`'s own
+   * longer write-up below. Plain text, clamped server-side (checklist-templates-dto.ts). */
+  shortDescription?: string;
+  /** This template's own longer "how to do it"/description note — same `notes` pattern as a
+   * field group's own canonical note (`FieldGroup.noteId`), just with no participant-fork
+   * concept: a challenge participant reads this same row read-only, never gets their own copy.
+   * See `useChecklistTemplateNote.ts`. */
+  noteId?: string;
   /** True only for the caller's own row, false for a joined challenge's — set server-side
    * (`toChecklistTemplate`) by comparing the row's real owner against the caller, since
    * `listOwnedAndJoinedTemplates` returns both shapes in the same "all mine" list and mere

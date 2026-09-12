@@ -29,6 +29,37 @@
   font-size: 16px;
 }
 
+// Short Description's own edit dialog — a plain single-field textarea, no rich editor (see
+// Description's own NoteEditor for that).
+.shortDescriptionTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 80px;
+  resize: vertical;
+  padding: $spacing-sm $spacing-md;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-color);
+  background: var(--card-background);
+  border: 1px solid var(--border-color, #d9d9d9);
+  border-radius: 8px;
+
+  &::placeholder {
+    color: var(--text-placeholder-color);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color, #607d8b);
+  }
+}
+
+// Description's own edit dialog — the NoteEditor needs a real minimum height, or a fresh
+// (empty) note renders as a sliver with almost nothing to click into.
+.descriptionEditor {
+  min-height: 240px;
+}
+
 // End Date's own DatePicker + "Clear" button (StartEndDateFields) — the button only renders once
 // there's a real date to clear, so this just needs to lay the two out side by side when it does.
 .endDateRow {

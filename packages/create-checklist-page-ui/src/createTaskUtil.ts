@@ -20,6 +20,7 @@ export const createTask = async (
     selectedColor,
     selectedIcon,
     checklistText,
+    shortDescription,
     weeklyHobbies,
     fieldGroups,
     tags,
@@ -112,6 +113,7 @@ export const createTask = async (
     {
       id: templateId,
       title: checklistText,
+      shortDescription,
       repeat,
       avatar: {
         type: 'icon',

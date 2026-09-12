@@ -32,6 +32,27 @@
   }
 }
 
+.shortDescriptionInput {
+  border: 0;
+  box-sizing: border-box;
+  background: transparent;
+  font-size: toRem(14px);
+  min-height: 24px;
+  resize: none;
+  width: 100%;
+  color: var(--text-secondary-color, var(--text-color));
+
+  margin-bottom: $spacing-md;
+
+  &::placeholder {
+    color: var(--text-placeholder-color);
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
 .container {
   padding-left: $spacing-sm;
   padding-right: $spacing-sm;

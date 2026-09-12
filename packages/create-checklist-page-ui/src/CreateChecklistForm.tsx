@@ -87,6 +87,7 @@ const CreateCheclistForm = () => {
                 {
                   selectedRecords: [],
                   checklistText: '',
+                  shortDescription: '',
                   weeklyHobbies: [], // Start with no schedule (forever by default)
                   startedAt: startOfDay(new Date()).toISOString(),
                   selectedTime: '',

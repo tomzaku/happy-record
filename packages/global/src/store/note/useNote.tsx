@@ -45,7 +45,7 @@ export type Note = {
   value?: unknown;
   title: string;
   preview: string;
-  ownerType?: 'field' | 'field_group';
+  ownerType?: 'field' | 'field_group' | 'checklist_template';
   ownerId?: string;
   folderId?: string;
   checklistId?: string;
@@ -67,7 +67,11 @@ export type Note = {
  * behind it at all — note-manager-page-ui's own "+" (see this file's own `Note` doc comment). */
 export type NoteOrigin =
   | { ownerType: 'field'; ownerId: string; checklistId?: string; checklistTemplateId?: string }
-  | { ownerType: 'field_group'; ownerId: string; checklistTemplateId: string; copiedFromId?: string };
+  | { ownerType: 'field_group'; ownerId: string; checklistTemplateId: string; copiedFromId?: string }
+  // A checklist template's own description — `ownerId` is the template's own id, same value as
+  // `checklistTemplateId` (see notes-dto.ts's own fromNote). No `copiedFromId`: unlike a field
+  // group's note, there's no participant-fork concept here.
+  | { ownerType: 'checklist_template'; ownerId: string; checklistTemplateId: string };
 
 type NotesMap = Record<string, Note>;
 // Scoped to the one note being written, not a whole-map snapshot — see useTags.tsx's own comment
@@ -423,10 +427,12 @@ export const useNote = () => {
               checklistTemplateId: origin.checklistTemplateId,
               ...(origin.copiedFromId ? { copiedFromId: origin.copiedFromId } : {}),
             }
-            : {
-              ...(origin.checklistId ? { checklistId: origin.checklistId } : {}),
-              ...(origin.checklistTemplateId ? { checklistTemplateId: origin.checklistTemplateId } : {}),
-            }),
+            : origin.ownerType === 'checklist_template'
+              ? { checklistTemplateId: origin.checklistTemplateId }
+              : {
+                ...(origin.checklistId ? { checklistId: origin.checklistId } : {}),
+                ...(origin.checklistTemplateId ? { checklistTemplateId: origin.checklistTemplateId } : {}),
+              }),
         }
         : {}),
       ...(folderId ? { folderId } : {}),

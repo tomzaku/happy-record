@@ -3,6 +3,7 @@ import {
   Checklist,
   ChecklistTemplate,
   useChecklistTemplates,
+  useChecklistTemplateNote,
   useFieldGroups,
   getEffectiveDayOfWeek,
   formatDaysOfWeek,
@@ -16,6 +17,7 @@ import Typography from '@moon-ui/typography';
 import { SettingsCard, SettingsRow } from '../SettingsCard';
 import Dialog from '@moon-ui/modal/src/Dialog';
 import Button from '@moon-ui/button/src/DefaultButton';
+import NoteEditor from '@moon-ui/note-editor';
 import { motion } from 'motion/react';
 import { useIntl } from '@dreamer/translation';
 import { Day } from '@dreamer/tasks-page-common';
@@ -107,6 +109,8 @@ enum EditModal {
   Tags,
   Archived,
   MyReminder,
+  ShortDescription,
+  Description,
 }
 
 const ChecklistGenericInfo = ({
@@ -132,6 +136,13 @@ const ChecklistGenericInfo = ({
     EditModal.None,
   );
 
+  // Not literally "isOwner" — readOnly is undefined for a plain non-challenge template too
+  // (its own owner, no participant concept at all), same "absent means owner" default onUpdate's
+  // own callers already rely on (index.desktop.tsx/index.mobile.tsx only ever pass `readOnly`
+  // for a challenge participant). Used by the Description row below, which needs to tell
+  // "may edit" from "read-only" the same way every other row here already does.
+  const isOwner = !readOnly;
+
   // Form states for editing
   const [tempIcon, setTempIcon] = React.useState(
     checklistTemplate.avatar?.name || '',
@@ -141,6 +152,25 @@ const ChecklistGenericInfo = ({
   );
   const [tempTags, setTempTags] = React.useState<string[]>(
     checklistTemplate.tags || [],
+  );
+  const [tempShortDescription, setTempShortDescription] = React.useState(
+    checklistTemplate.shortDescription || '',
+  );
+
+  // The template's own long-form description — a `notes`-backed row (useChecklistTemplateNote.ts),
+  // same pattern as a field group's own canonical note, minus the participant-fork concept: a
+  // non-owner reads this same row read-only, never gets their own copy. `onCreated` persists the
+  // brand-new note's id back onto the template the moment the owner starts editing for the first
+  // time — see that hook's own `startEditing` comment on why this can't wait for the first save.
+  const {
+    note: descriptionNote,
+    loading: descriptionLoading,
+    startEditing: startEditingDescription,
+    save: saveDescription,
+    isPro: descriptionIsPro,
+    generate: generateDescription,
+  } = useChecklistTemplateNote(checklistTemplate, isOwner, newNoteId =>
+    onUpdate({ ...checklistTemplate, noteId: newNoteId }),
   );
 
   // Once a template has field groups, its own day-of-week is derived from
@@ -277,6 +307,22 @@ const ChecklistGenericInfo = ({
     setActiveModal(EditModal.None);
   };
 
+  const handleSaveShortDescription = () => {
+    onUpdate({
+      ...checklistTemplate,
+      shortDescription: tempShortDescription,
+    });
+    setActiveModal(EditModal.None);
+  };
+
+  // Owner: makes the note to write into (a no-op past the first time) before the dialog opens, so
+  // the editor never opens onto a note that doesn't exist yet — see useChecklistTemplateNote.ts's
+  // own `startEditing` comment. Non-owner: nothing to create, just opens read-only.
+  const handleOpenDescription = async () => {
+    if (isOwner) await startEditingDescription();
+    setActiveModal(EditModal.Description);
+  };
+
   // Restores immediately, no staging — this is a plain toggle of one field on one group, not a
   // multi-field form like the modals above. `archivedAt: null`, not `undefined` — see
   // FieldGroup.archivedAt's own comment on why `undefined` here would silently fail to persist.
@@ -292,6 +338,7 @@ const ChecklistGenericInfo = ({
     setTempIcon(checklistTemplate.avatar?.name || '');
     setTempColor(checklistTemplate.avatar?.color || '#607d8b');
     setTempTags(checklistTemplate.tags || []);
+    setTempShortDescription(checklistTemplate.shortDescription || '');
   };
 
   const handleModalClose = () => {
@@ -510,6 +557,49 @@ const ChecklistGenericInfo = ({
               }
             />
 
+            {/* Short Description — a one-line summary, distinct from the longer Description
+                row below. */}
+            <SettingsRow
+              logo={<Icon width={24} icon="solar:text-field-linear" />}
+              title="Short Description"
+              description={checklistTemplate.shortDescription || 'No short description'}
+              rightComponent={
+                !readOnly && (
+                  <Icon
+                    width={16}
+                    icon="solar:pen-2-line-duotone"
+                    className={styles.editIcon}
+                    onClick={e => {
+                      e.stopPropagation();
+                      resetModalStates();
+                      setActiveModal(EditModal.ShortDescription);
+                    }}
+                  />
+                )
+              }
+              onClick={
+                readOnly
+                  ? undefined
+                  : () => {
+                      resetModalStates();
+                      setActiveModal(EditModal.ShortDescription);
+                    }
+              }
+            />
+
+            {/* Description — the task's longer write-up, a real note (rich text, AI-generate) —
+                see useChecklistTemplateNote.ts. Hidden for a read-only viewer once there's
+                genuinely nothing to read (no point in a row that opens an empty dialog). */}
+            {(isOwner || checklistTemplate.noteId) && (
+              <SettingsRow
+                logo={<Icon width={24} icon="solar:document-text-linear" />}
+                title="Description"
+                description={descriptionNote?.preview || (isOwner ? 'Add a description' : 'No description')}
+                rightComponent={<Icon width={16} icon="solar:alt-arrow-right-linear" />}
+                onClick={handleOpenDescription}
+              />
+            )}
+
             {/* Archived Groups — only shown once there's something to restore */}
             {archivedFieldGroups.length > 0 && (
               <SettingsRow
@@ -609,6 +699,68 @@ const ChecklistGenericInfo = ({
         }
       >
         <TagInput tags={tempTags} setTags={setTempTags} />
+      </Dialog>
+
+      {/* Short Description Edit Modal */}
+      <Dialog
+        visible={activeModal === EditModal.ShortDescription}
+        onDismiss={handleModalClose}
+        icon="solar:text-field-linear"
+        // tempShortDescription only commits on handleSaveShortDescription — same reasoning as
+        // Icon/Tags above.
+        closeOnOverlayClick={false}
+        title={intl.formatMessage({
+          id: 'checklist-generic-info.edit-short-description-title',
+          defaultMessage: 'Edit Short Description',
+        })}
+        headerAction={
+          <div className={styles.headerActionsRow}>
+            <Button type="ghost" size="sm" onClick={handleModalClose}>
+              {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
+            </Button>
+            <Button onClick={handleSaveShortDescription} className={styles.headerSaveButton}>
+              {intl.formatMessage({ id: 'label-save', defaultMessage: 'Save' })}
+            </Button>
+          </div>
+        }
+      >
+        <textarea
+          className={styles.shortDescriptionTextarea}
+          value={tempShortDescription}
+          onChange={e => setTempShortDescription(e.currentTarget.value)}
+          placeholder={intl.formatMessage({
+            id: 'checklist-generic-info.short-description-placeholder',
+            defaultMessage: 'A one-line summary',
+          })}
+          autoFocus
+        />
+      </Dialog>
+
+      {/* Description Edit Modal — no header Save action: NoteEditor's own `save` (passed as
+          `setValue`) already persists on every change, same as a field group's own note (see
+          ChecklistFieldGroupView) rather than a staged draft. */}
+      <Dialog
+        visible={activeModal === EditModal.Description}
+        onDismiss={() => setActiveModal(EditModal.None)}
+        icon="solar:document-text-linear"
+        title={intl.formatMessage({
+          id: 'checklist-generic-info.description-title',
+          defaultMessage: 'Description',
+        })}
+      >
+        {/* Keyed on the note being shown — NoteEditor/EditorJs.tsx only ever reads `value` at
+            construction (see useFieldGroupNote.ts's own comment on the same shape), so a
+            freshly-created note needs a real remount to pick up its own (empty) value. */}
+        <div className={styles.descriptionEditor}>
+          <NoteEditor
+            key={descriptionNote?.id ?? 'empty'}
+            value={descriptionNote?.value}
+            setValue={saveDescription}
+            readOnly={!isOwner || descriptionLoading}
+            withoutBorder
+            ai={{ isPro: descriptionIsPro, generate: generateDescription }}
+          />
+        </div>
       </Dialog>
 
       {/* Archived Groups — restore, one at a time. No "delete forever" here on purpose: this

@@ -133,3 +133,17 @@ export async function publicFieldGroupOwnerIds(db: SupabaseClient, ownerIds: str
 
   return new Set(rows.filter(g => publicTemplateIds.has(g.checklist_template_id)).map(g => g.id));
 }
+
+/** Which of `ownerIds` (checklist_template ids) are `visibility: 'public'` — same purpose as
+ * publicFieldGroupOwnerIds above, one join shallower: a checklist_template-owned note's own
+ * `owner_id` already *is* the template id, no field_groups hop needed. */
+export async function publicTemplateOwnerIds(db: SupabaseClient, ownerIds: string[]): Promise<Set<string>> {
+  if (!ownerIds.length) return new Set();
+  const { data, error } = await db
+    .from('checklist_templates')
+    .select('id')
+    .in('id', ownerIds)
+    .eq('visibility', 'public');
+  if (error) throw new Error(error.message);
+  return new Set(((data ?? []) as { id: string }[]).map(t => t.id));
+}

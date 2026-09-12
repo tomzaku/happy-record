@@ -30,6 +30,7 @@ const EditChecklistForm = () => {
     selectedColor,
     selectedIcon,
     checklistText,
+    shortDescription,
     weeklyHobbies,
     fieldGroups,
     tags,
@@ -42,6 +43,7 @@ const EditChecklistForm = () => {
       id: template.id,
       records: selectedRecords,
       title: checklistText,
+      shortDescription,
       repeat,
       avatar: {
         type: 'icon',
@@ -125,6 +127,7 @@ const EditChecklistForm = () => {
         initialValues={{
           selectedRecords: template.records,
           checklistText: template.title,
+          shortDescription: template.shortDescription || '',
           weeklyHobbies: getDaysFromRepeat(template.repeat),
           startedAt: template?.repeat?.startedAt || startOfDay(new Date()).toISOString(),
           selectedTime:
