@@ -9,7 +9,6 @@ import Typography from '@moon-ui/typography';
 import List from '@moon-ui/list';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
 import Dropdown from '@moon-ui/dropdown';
-import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
 import { FieldGroup, FieldGroupField, FieldOverrides, RecordField } from '@dreamer/global';
 import { getEffectiveFieldDisplay } from '@dreamer/global/src/store/record-field';
 import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
@@ -26,7 +25,7 @@ interface ChecklistFieldGroupMenuProps {
   onFieldAdded?: (newField: RecordField) => void;
 }
 
-// What a caller outside this menu (the Submit tab's own "Select Fields" button — see
+// What a caller outside this menu (the Submit form's own "Select Fields" button — see
 // ChecklistFieldGroupAdd) can reach through a ref, since the Select Fields dialog's visibility
 // is state private to this component, not a prop.
 export type ChecklistFieldGroupMenuHandle = {
@@ -49,19 +48,9 @@ const EMPTY_OVERRIDE_FORM: OverrideFormState = {
   placeholder: '',
 };
 
-// One entry per tab this group can show. `Config` isn't a real content tab any more (this is
-// its replacement — see the module doc below), so it was never a candidate here to begin with.
-const TAB_OPTIONS = [
-  { value: ChecklistFieldGroupTab.Home, label: 'Home', icon: 'solar:home-2-line-duotone' },
-  { value: ChecklistFieldGroupTab.History, label: 'History', icon: 'solar:clock-square-broken' },
-  { value: ChecklistFieldGroupTab.Metric, label: 'Metric', icon: 'solar:chart-square-linear' },
-  { value: ChecklistFieldGroupTab.Add, label: 'Add', icon: 'solar:add-square-line-duotone' },
-];
-
 enum Dialog {
   None,
   Name,
-  Tabs,
   Collapse,
   Fields,
 }
@@ -81,15 +70,14 @@ enum FieldsView {
 
 /**
  * The group's own settings — a "⋮" menu on the group header (rendered via
- * ChecklistFieldGroupHeader's `renderMenu`) instead of a `Config` tab in the tab row
- * (ChecklistFieldGroupConfig, the tab this replaces, is gone): clicking it pops up a menu of
- * what to change (Group Name, Tabs, Collapse Default, Select Fields, Delete Group), and picking
- * one opens a small dialog scoped to just that setting, rather than one long scrolling settings
- * page. `ChecklistFieldGroupTab.Config` itself stays defined in the enum (see enums.tsx) even
- * though nothing renders it as a tab any more — it's the last numeric value, and `defaultTab`/
- * `activeTabs` are persisted as raw numbers, so removing it would risk relabeling a later member
- * for any template whose stored data still contains it (harmless either way: an unrecognized tab
- * id just renders nothing / falls through to the Home-equivalent default).
+ * ChecklistFieldGroupHeader's `renderMenu`): clicking it pops up a menu of what to change (Group
+ * Name, Collapse Default, Select Fields, Delete Group), and picking one opens a small dialog
+ * scoped to just that setting, rather than one long scrolling settings page. There's no more
+ * "Tabs" entry here — a group now always renders as one single stacked view (Submit, metric
+ * glance, note, History — see ChecklistFieldGroup's own renderGroupContent) instead of a
+ * user-configurable set of tabs, so there's nothing left to choose. `FieldGroup.defaultTab`/
+ * `activeTabs` stay defined on the type (see fieldGroupTypes.ts) purely because they're already
+ * persisted on existing rows — nothing reads them any more.
  *
  * Every dialog here saves the instant it changes, same as this screen always has — no per-dialog
  * "Save" button, since there's nothing being staged. `repeat` (this group's own schedule) still
@@ -187,17 +175,6 @@ const ChecklistFieldGroupMenu = React.forwardRef<
   };
 
   const [groupName, setGroupName] = React.useState(fieldGroup.title);
-  const [defaultTab, setDefaultTab] = React.useState<ChecklistFieldGroupTab>(
-    fieldGroup.defaultTab ?? ChecklistFieldGroupTab.Home,
-  );
-  const [activeTabs, setActiveTabs] = React.useState<ChecklistFieldGroupTab[]>(
-    fieldGroup.activeTabs ?? [
-      ChecklistFieldGroupTab.Home,
-      ChecklistFieldGroupTab.History,
-      ChecklistFieldGroupTab.Metric,
-      ChecklistFieldGroupTab.Add,
-    ],
-  );
   const [collapseDefault, setCollapseDefault] = React.useState<boolean>(
     fieldGroup.collapseDefault ?? false,
   );
@@ -209,8 +186,6 @@ const ChecklistFieldGroupMenu = React.forwardRef<
     onUpdateFieldGroup({
       ...fieldGroup,
       title: groupName.trim(),
-      defaultTab,
-      activeTabs,
       collapseDefault,
       ...overrides,
     });
@@ -233,47 +208,6 @@ const ChecklistFieldGroupMenu = React.forwardRef<
   const handleNameBlur = () => {
     const trimmed = groupName.trim();
     if (trimmed !== fieldGroup.title) saveGroup({ title: trimmed });
-  };
-
-  const handleTabToggle = (tab: ChecklistFieldGroupTab) => {
-    const isActive = activeTabs.includes(tab);
-    // Keep at least one tab active — silently ignore the toggle that would clear the last one.
-    if (isActive && activeTabs.length === 1) return;
-
-    const newActiveTabs = isActive ? activeTabs.filter(t => t !== tab) : [...activeTabs, tab];
-    setActiveTabs(newActiveTabs);
-
-    // If the default tab is being removed, fall back to the first remaining tab.
-    let newDefaultTab = defaultTab;
-    if (!newActiveTabs.includes(defaultTab)) {
-      newDefaultTab = newActiveTabs[0];
-      setDefaultTab(newDefaultTab);
-    }
-    saveGroup({ activeTabs: newActiveTabs, defaultTab: newDefaultTab });
-  };
-
-  const handleSetDefaultTab = (tab: ChecklistFieldGroupTab) => {
-    // Marking a tab as default also activates it — a default tab that isn't shown doesn't mean
-    // anything.
-    const newActiveTabs = activeTabs.includes(tab) ? activeTabs : [...activeTabs, tab];
-    setActiveTabs(newActiveTabs);
-    setDefaultTab(tab);
-    saveGroup({ activeTabs: newActiveTabs, defaultTab: tab });
-  };
-
-  // `activeTabs`' own array order *is* the tab bar's render order (see
-  // ChecklistFieldGroupHeader's own comment on why it maps over `activeTabs` rather than
-  // filtering a fixed literal) — swapping two entries here is a real reorder, not just bookkeeping.
-  // Only active tabs are reachable through this (an inactive one has no position that means
-  // anything until it's turned on, which appends it to the end — see handleTabToggle).
-  const handleMoveTab = (tab: ChecklistFieldGroupTab, direction: -1 | 1) => {
-    const index = activeTabs.indexOf(tab);
-    const newIndex = index + direction;
-    if (index === -1 || newIndex < 0 || newIndex >= activeTabs.length) return;
-    const newActiveTabs = [...activeTabs];
-    [newActiveTabs[index], newActiveTabs[newIndex]] = [newActiveTabs[newIndex], newActiveTabs[index]];
-    setActiveTabs(newActiveTabs);
-    saveGroup({ activeTabs: newActiveTabs });
   };
 
   const handleCollapseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -372,11 +306,6 @@ const ChecklistFieldGroupMenu = React.forwardRef<
       }),
     },
     {
-      dialog: Dialog.Tabs,
-      icon: 'solar:widget-5-line-duotone',
-      label: intl.formatMessage({ id: 'checklist-field-group-menu.tabs', defaultMessage: 'Tabs' }),
-    },
-    {
       dialog: Dialog.Collapse,
       icon: 'solar:alt-arrow-down-line-duotone',
       label: intl.formatMessage({
@@ -453,98 +382,6 @@ const ChecklistFieldGroupMenu = React.forwardRef<
           border="dash"
           renderRightInput={() => <></>}
         />
-      </DialogModal>
-
-      {/* Tabs */}
-      <DialogModal
-        visible={activeDialog === Dialog.Tabs}
-        onDismiss={closeDialog}
-        icon="solar:widget-5-line-duotone"
-        title={intl.formatMessage({ id: 'checklist-field-group-menu.tabs', defaultMessage: 'Tabs' })}
-        headerAction={
-          <Button onClick={closeDialog} className={styles.headerDoneButton}>
-            {intl.formatMessage({ id: 'label-done', defaultMessage: 'Done' })}
-          </Button>
-        }
-      >
-        <Typography.Text className={styles.description}>
-          {intl.formatMessage({
-            id: 'checklist-field-group-menu.tabs-description',
-            defaultMessage: 'Which tabs show for this group, and which one opens first.',
-          })}
-        </Typography.Text>
-        <div className={styles.tabList}>
-          {/* Active tabs first, in `activeTabs`' own order (the tab bar's real render order —
-              see ChecklistFieldGroupHeader's own comment on why), then whatever's still off in
-              TAB_OPTIONS' fixed canonical order — an inactive tab has no position of its own to
-              show yet; turning it on appends it to the end (see handleTabToggle). */}
-          {[
-            ...activeTabs
-              .map(tab => TAB_OPTIONS.find(option => option.value === tab))
-              .filter((option): option is (typeof TAB_OPTIONS)[number] => option !== undefined),
-            ...TAB_OPTIONS.filter(option => !activeTabs.includes(option.value)),
-          ].map(({ value, label, icon }) => {
-            const isActive = activeTabs.includes(value);
-            const isDefault = defaultTab === value;
-            const activeIndex = activeTabs.indexOf(value);
-            return (
-              <div key={value} className={styles.tabRow}>
-                <Checkbox
-                  checked={isActive}
-                  onChange={() => handleTabToggle(value)}
-                  disabled={isActive && activeTabs.length === 1}
-                />
-                <Icon icon={icon} width={16} />
-                <Typography.Text className={styles.tabRowLabel}>{label}</Typography.Text>
-                {/* Reordering only means anything for a tab that's actually shown somewhere —
-                    an inactive row has no position to move. */}
-                {isActive && (
-                  <div className={styles.reorderButtons}>
-                    <button
-                      type="button"
-                      className={styles.reorderButton}
-                      onClick={() => handleMoveTab(value, -1)}
-                      disabled={activeIndex === 0}
-                      aria-label={intl.formatMessage({
-                        id: 'checklist-field-group-menu.move-tab-up',
-                        defaultMessage: 'Move up',
-                      })}
-                    >
-                      <Icon icon="solar:alt-arrow-up-linear" width={14} />
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.reorderButton}
-                      onClick={() => handleMoveTab(value, 1)}
-                      disabled={activeIndex === activeTabs.length - 1}
-                      aria-label={intl.formatMessage({
-                        id: 'checklist-field-group-menu.move-tab-down',
-                        defaultMessage: 'Move down',
-                      })}
-                    >
-                      <Icon icon="solar:alt-arrow-down-linear" width={14} />
-                    </button>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  className={cx(styles.defaultToggle, isDefault && styles.defaultToggleActive)}
-                  onClick={() => handleSetDefaultTab(value)}
-                  aria-pressed={isDefault}
-                  aria-label={intl.formatMessage(
-                    {
-                      id: 'checklist-field-group-menu.make-default-tab',
-                      defaultMessage: 'Make {{label}} the default tab',
-                    },
-                    { label },
-                  )}
-                >
-                  <Icon icon={isDefault ? 'solar:star-bold' : 'solar:star-linear'} width={16} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
       </DialogModal>
 
       {/* Collapse Default */}

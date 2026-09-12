@@ -8,7 +8,6 @@ import ChecklistFieldGeneral from '../ChecklistFieldGeneral';
 import FieldGroupCalendar from './FieldGroupCalendar';
 import HistorySection from '../HistorySection';
 import styles from './index.module.scss';
-import cx from 'classnames';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Icon from '@moon-ui/icon/Icon';
 
@@ -61,17 +60,14 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fieldGroup, fields, onD
           {Object.entries(groups).length === 0 && (
             <Typography.Text className={styles.noRecordText}>No record found</Typography.Text>
           )}
-          {Object.entries(groups).map(([key, checklistRecords], index) => (
+          {Object.entries(groups).map(([key, checklistRecords]) => (
             <div key={key} className={styles.recordContainer}>
               <div className={styles.hrContainer}>
-                <div className={cx(styles.hrSide, index === 0 && styles.noHr)} />
-
                 <Typography.Text className={styles.dateText}>
                   {new Date(key).toLocaleString()}
                 </Typography.Text>
-                <div className={cx(styles.hr, index === 0 && styles.noHr)} />
                 <Button
-                  type="dash"
+                  type="ghost"
                   size="sm"
                   className={styles.deleteButton}
                   onClick={() => {
@@ -95,7 +91,6 @@ const ChecklistFieldGroupHistory = ({ checklistTemplate, fieldGroup, fields, onD
                   />
                   Delete
                 </Button>
-                <div className={cx(styles.hrSide, index === 0 && styles.noHr)} />
               </div>
 
               {checklistRecords.map(checklistRecord => (

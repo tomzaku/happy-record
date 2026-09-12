@@ -11,10 +11,8 @@ import {
 } from '@dreamer/global';
 import { getEffectiveFieldDisplay, RecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
-import ChecklistFieldGroupHeader, {
-  ChecklistFieldGroupTab,
-} from '../ChecklistFieldGroupHeader';
-import { AnimatePresence, motion } from 'motion/react';
+import ChecklistFieldGroupHeader from '../ChecklistFieldGroupHeader';
+import { motion } from 'motion/react';
 import { useIntl } from '@dreamer/translation';
 
 import styles from './index.module.scss';
@@ -22,6 +20,7 @@ import ChecklistFieldGroupAdd from '../ChecklistFieldGroupAdd';
 import ChecklistFieldGroupHistory from '../ChecklistFieldGroupHistory';
 import ChecklistFieldGroupView from '../ChecklistFieldGroupView';
 import ChecklistFieldMetric from '../ChecklistFieldMetric';
+import CollapsibleSection from './CollapsibleSection';
 import ChecklistFieldGroupMenu, {
   ChecklistFieldGroupMenuHandle,
 } from '../ChecklistFieldGroupMenu';
@@ -39,7 +38,7 @@ type Props = {
    * that would just fail server-side anyway. Defaults to editable, same as before this existed. */
   readOnly?: boolean;
   onFieldAdded?: (newField: RecordField) => void;
-  /** Bubbled down into each group's own History tab (see
+  /** Bubbled down into each group's own History section (see
    * ChecklistFieldGroupHistory's Calendar mode) — same page-level
    * currentDay/checklistId nav ChecklistTemplateCalendar's Calendar mode
    * already uses. */
@@ -58,21 +57,11 @@ const ChecklistFieldGroup = ({
   const { updateChecklist } = useChecklist();
   const { addFieldGroup, updateFieldGroup } = useFieldGroups();
   const intl = useIntl();
-  // Keyed by fieldGroup id — the Submit tab's own "Select Fields" button (see
+  // Keyed by fieldGroup id — the Submit form's own "Select Fields" button (see
   // ChecklistFieldGroupAdd's onOpenFieldSettings) reaches into this same group's settings menu
   // rather than duplicating the Select Fields dialog, so it stays the one place that dialog
   // actually lives.
   const menuRefs = React.useRef<Record<string, ChecklistFieldGroupMenuHandle | null>>({});
-  const [activeTab, setActiveTab] = React.useState<
-    Record<string, ChecklistFieldGroupTab>
-  >(
-    getActiveFieldGroups(checklistTemplate.fieldGroups).reduce((acc, fieldGroup) => {
-      return {
-        ...acc,
-        [fieldGroup.id]: fieldGroup.defaultTab ?? ChecklistFieldGroupTab.Home,
-      };
-    }, {}),
-  );
   const [collapsedGroups, setCollapsedGroups] = React.useState<
     Record<string, boolean>
   >(
@@ -138,18 +127,18 @@ const ChecklistFieldGroup = ({
   const renderScheduleStatus = (fieldGroup: FieldGroup) => {
     if (isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay))) {
       return (
-        <span className={styles.scheduledBadge}>
+        <p className={styles.scheduledBadge}>
           {intl.formatMessage({
             id: 'checklist-field-group.scheduled-today',
             defaultMessage: 'Scheduled today',
           })}
-        </span>
+        </p>
       );
     }
     // See scheduleUtils.ts's isFieldGroupActiveOnDay.
     const nextDayLabel = getNextScheduledDayLabel(fieldGroup.repeat, new Date(currentDay));
     return (
-      <span className={styles.notScheduledBadge}>
+      <p className={styles.notScheduledBadge}>
         {nextDayLabel
           ? intl.formatMessage(
               {
@@ -162,7 +151,7 @@ const ChecklistFieldGroup = ({
               id: 'checklist-field-group.not-scheduled-today',
               defaultMessage: 'Not scheduled today',
             })}
-      </span>
+      </p>
     );
   };
   // Shared by every place that changes one group in place (the settings menu's
@@ -174,100 +163,57 @@ const ChecklistFieldGroup = ({
     updateFieldGroup(updatedGroup);
   };
 
-  const renderTab = ({
+  // One stacked view per group now — Submit always open (that's the one thing a group's card
+  // exists to do), then Metrics/Note/History each tucked behind their own plain collapsible
+  // section header, closed by default — instead of four tabs nobody but the person who built it
+  // knew to click between.
+  const renderGroupContent = ({
     fieldGroup,
     fieldDetails,
   }: {
     fieldGroup: FieldGroup;
     fieldDetails: RecordField[];
-  }) => {
-    let tabContent;
-
-    switch (activeTab[fieldGroup.id]) {
-      case ChecklistFieldGroupTab.Home: {
-        tabContent = (
-          <ChecklistFieldGroupView
-            fieldGroup={fieldGroup}
-            isOwner={!readOnly}
-            fields={fieldDetails}
-            checklistTemplateId={checklistTemplate.id}
-          />
-        );
-        break;
-      }
-      case ChecklistFieldGroupTab.History: {
-        tabContent = (
-          <ChecklistFieldGroupHistory
-            fields={fieldDetails}
-            checklistTemplate={checklistTemplate}
-            fieldGroup={fieldGroup}
-            onDaySelect={onDaySelect}
-          />
-        );
-        break;
-      }
-      case ChecklistFieldGroupTab.Metric: {
-        tabContent = (
-          <ChecklistFieldMetric
-            fields={fieldDetails}
-            checklistTemplateId={checklistTemplate.id}
-          />
-        );
-        break;
-      }
-      case ChecklistFieldGroupTab.Add: {
-        tabContent = (
-          <ChecklistFieldGroupAdd
-            fields={fieldDetails}
-            checklistTemplate={checklistTemplate}
-            fieldGroup={fieldGroup}
-            checklist={checklist}
-            currentDay={currentDay}
-            onOpenFieldSettings={() => menuRefs.current[fieldGroup.id]?.openFieldsDialog()}
-            onSubmit={() => {
-              // setActiveTab({
-              //   ...activeTab,
-              //   [fieldGroup.id]: ChecklistFieldGroupTab.Home,
-              // });
-              updateChecklist({
-                id: checklist.id,
-                completedAt: new Date().toISOString(),
-              });
-            }}
-          />
-        );
-        break;
-      }
-      default: {
-        tabContent = (
-          <ChecklistFieldGroupView
-            fieldGroup={fieldGroup}
-            isOwner={!readOnly}
-            fields={fieldDetails}
-            checklistTemplateId={checklistTemplate.id}
-          />
-        );
-        break;
-      }
-    }
-
-    return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab[fieldGroup.id]}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{
-            duration: 0.3,
-            ease: 'easeInOut',
-          }}
-        >
-          {tabContent}
-        </motion.div>
-      </AnimatePresence>
-    );
-  };
+  }) => (
+    <>
+      <ChecklistFieldGroupAdd
+        fields={fieldDetails}
+        checklistTemplate={checklistTemplate}
+        fieldGroup={fieldGroup}
+        checklist={checklist}
+        currentDay={currentDay}
+        onOpenFieldSettings={() => menuRefs.current[fieldGroup.id]?.openFieldsDialog()}
+        onSubmit={() =>
+          updateChecklist({
+            id: checklist.id,
+            completedAt: new Date().toISOString(),
+          })
+        }
+      />
+      <CollapsibleSection
+        icon="solar:clock-square-broken"
+        label={intl.formatMessage({ id: 'checklist-field-group.history-title', defaultMessage: 'History' })}
+      >
+        <ChecklistFieldGroupHistory
+          fields={fieldDetails}
+          checklistTemplate={checklistTemplate}
+          fieldGroup={fieldGroup}
+          onDaySelect={onDaySelect}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection
+        icon="solar:chart-square-linear"
+        label={intl.formatMessage({ id: 'checklist-field-group.metrics-title', defaultMessage: 'Metrics' })}
+      >
+        <ChecklistFieldMetric fields={fieldDetails} checklistTemplateId={checklistTemplate.id} />
+      </CollapsibleSection>
+      <CollapsibleSection
+        icon="solar:document-text-linear"
+        label={intl.formatMessage({ id: 'checklist-field-group.note-title', defaultMessage: 'Note' })}
+      >
+        <ChecklistFieldGroupView fieldGroup={fieldGroup} isOwner={!readOnly} />
+      </CollapsibleSection>
+    </>
+  );
   const renderBody = () => {
     // Each group is its own row now (see useFieldGroups.tsx) — no more index bookkeeping to
     // keep an update aimed at the right array position, unlike the old jsonb-array splice this
@@ -293,38 +239,6 @@ const ChecklistFieldGroup = ({
               .join(' ')}
           >
             <ChecklistFieldGroupHeader
-              activeTab={activeTab[fieldGroup.id]}
-              activeTabs={
-                fieldGroup.activeTabs ?? [
-                  ChecklistFieldGroupTab.Home,
-                  ChecklistFieldGroupTab.Metric,
-                  ChecklistFieldGroupTab.Add,
-                ]
-              }
-              onClickHome={() =>
-                setActiveTab({
-                  ...activeTab,
-                  [fieldGroup.id]: ChecklistFieldGroupTab.Home,
-                })
-              }
-              onClickHistory={() =>
-                setActiveTab({
-                  ...activeTab,
-                  [fieldGroup.id]: ChecklistFieldGroupTab.History,
-                })
-              }
-              onClickAdd={() =>
-                setActiveTab({
-                  ...activeTab,
-                  [fieldGroup.id]: ChecklistFieldGroupTab.Add,
-                })
-              }
-              onClickMetric={() =>
-                setActiveTab({
-                  ...activeTab,
-                  [fieldGroup.id]: ChecklistFieldGroupTab.Metric,
-                })
-              }
               renderTitle={() => renderTitle(fieldGroup)}
               renderStatus={() => renderScheduleStatus(fieldGroup)}
               renderMenu={() => (
@@ -369,7 +283,7 @@ const ChecklistFieldGroup = ({
               }}
             >
               <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
-              {renderTab({ fieldGroup, fieldDetails })}
+              {renderGroupContent({ fieldGroup, fieldDetails })}
             </motion.div>
           </Card>
         );
@@ -384,12 +298,6 @@ const ChecklistFieldGroup = ({
       checklistTemplateId: checklistTemplate.id,
       position: checklistTemplate.fieldGroups.length,
     });
-
-    // Update activeTab state to include the new field group
-    setActiveTab(prev => ({
-      ...prev,
-      [created.id]: created.defaultTab ?? ChecklistFieldGroupTab.Home,
-    }));
 
     // Update collapsedGroups state to include the new field group
     setCollapsedGroups(prev => ({

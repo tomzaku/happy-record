@@ -61,78 +61,6 @@
   }
 }
 
-.tabList {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-sm;
-}
-
-.tabRow {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  padding: $spacing-sm;
-  border-radius: 6px;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: var(--card-group-background);
-  }
-}
-
-.tabRowLabel {
-  flex: 1;
-}
-
-.reorderButtons {
-  display: flex;
-  // No gap — the two arrows read as one stacked up/down control, not two separate buttons.
-  gap: 0;
-}
-
-.reorderButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: $spacing-xs;
-  border: 0;
-  background: transparent;
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--text-description-color);
-
-  &:hover:not(:disabled) {
-    background-color: var(--surface-secondary);
-  }
-
-  &:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-}
-
-// The "which tab opens first" marker, folded into the same row as its "is it shown at all"
-// checkbox instead of a separate list.
-.defaultToggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: $spacing-xs;
-  border: 0;
-  background: transparent;
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--text-description-color);
-
-  &:hover {
-    background-color: var(--surface-secondary);
-  }
-}
-
-.defaultToggleActive {
-  color: var(--modal-logo-warning, #f5a623);
-}
-
 .collapseSetting {
   display: flex;
   align-items: center;
@@ -219,8 +147,7 @@
   font-size: 14px;
 }
 
-// The pencil on a selected row in Select Fields, opening that field's own customize panel —
-// same look as .defaultToggle above, just a different trigger.
+// The pencil on a selected row in Select Fields, opening that field's own customize panel.
 .fieldEditButton {
   display: flex;
   align-items: center;

@@ -1,0 +1,41 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.section {
+  border-top: 1px solid var(--almanac-divider);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  width: 100%;
+  padding: $spacing-sm 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-description-color);
+  text-align: left;
+}
+
+.chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.body {
+  padding-bottom: $spacing-sm;
+}

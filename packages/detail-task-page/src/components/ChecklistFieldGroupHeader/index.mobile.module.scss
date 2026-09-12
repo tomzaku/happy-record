@@ -4,7 +4,6 @@
 .container {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
 }
 
 // Column now, not a single row — the schedule status (.statusRow) sits under the title/cog row
@@ -49,33 +48,4 @@
 
 .iconGroup {
   display: flex;
-}
-
-.button {
-  display: flex;
-  align-items: center;
-  padding: $spacing-xs $spacing-sm;
-  padding-right: $spacing-md;
-}
-
-.buttonActive {
-  border: 1px solid var(--button-default-background);
-  background: var(--button-default-background);
-  color: #fff;
-}
-
-.addIcon {
-  margin-right: $spacing-xs;
-}
-
-.addIconActive {
-  color: #fff;
-}
-
-.icon {
-  margin-right: $spacing-sm;
-}
-
-.iconActive {
-  color: var(--icon-primary);
 }
