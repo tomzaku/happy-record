@@ -11,14 +11,14 @@
   // weight down in both themes alike, unlike mixing toward white (which would wash out on the
   // dark theme's own near-black surfaces).
   background: color-mix(in srgb, var(--almanac-pill-bg, var(--surface-secondary)) 70%, transparent);
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .option {
   border: none;
   background: transparent;
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 

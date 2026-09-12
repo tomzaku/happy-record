@@ -117,8 +117,9 @@
   // cell — so it never has to compete with (or suppress) the status dot
   // pinned to that circle's corner.
   &[data-selected] .dayNumber {
-    background: var(--almanac-accent-soft);
-    color: var(--almanac-ink);
+    background: var(--almanac-accent);
+    color: #ffffff;
+    font-weight: 700;
   }
 }
 

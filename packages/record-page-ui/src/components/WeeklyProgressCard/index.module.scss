@@ -5,8 +5,11 @@
   flex-direction: column;
   gap: $spacing-sm;
   width: 100%;
-  padding: $spacing-md $spacing-lg;
+  padding: $spacing-lg;
   margin-bottom: $spacing-sm;
+  border: 1px solid var(--almanac-card-border);
+  border-radius: 18px;
+  box-shadow: 0 6px 20px var(--almanac-shadow);
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 

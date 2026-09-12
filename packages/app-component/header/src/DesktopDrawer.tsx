@@ -14,7 +14,7 @@ import styles from './DesktopDrawer.module.scss';
 const DesktopDrawer = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isMinimized, setIsMinimized] = React.useState(true);
+  const [isMinimized, setIsMinimized] = React.useState(false);
   const { theme, setTheme } = usePomodoroGlobalConfig();
 
   const navigationItems = [
@@ -93,9 +93,12 @@ const DesktopDrawer = () => {
             />
           </button>
           {!isMinimized && (
-            <Typography.Title level={3} className={styles.appTitle}>
-              Dreamer
-            </Typography.Title>
+            <div className={styles.brandText}>
+              <Icon icon="solar:check-square-bold" width={18} className={styles.brandIcon} />
+              <Typography.Title level={3} className={styles.appTitle}>
+                Dreamer
+              </Typography.Title>
+            </div>
           )}
         </div>
         <button

@@ -18,8 +18,8 @@
 
 .desktopBody {
   display: grid;
-  grid-template-columns: 1fr 330px;
-  gap: $spacing-lg;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: $spacing-xl;
   flex: 1;
   overflow: hidden;
   position: relative;
@@ -33,8 +33,62 @@
 .almanacScope {
   @include almanac-scope;
 
-  padding: $spacing-lg $spacing-lg 0;
+  // A second, more locally-scoped shadowing pass on top of the mixin above —
+  // re-declaring the same --almanac-* primitives (not the mixin itself, and
+  // not light.scss/dark.scss's global values) so this "TodoFlow" cool/blue
+  // redesign applies only within this page's own subtree, leaving
+  // detail-task-page and every other consumer of the shared mixin on the
+  // original warm palette.
+  --almanac-bg: #f4f6fb;
+  --almanac-surface: #ffffff;
+  --almanac-card: #ffffff;
+  --almanac-card-border: #e8ecf3;
+  --almanac-ink: #1c2333;
+  --almanac-ink-soft: #4b5468;
+  --almanac-muted: #8a93a8;
+  --almanac-divider: #edf1f7;
+  --almanac-accent: #2f6feb;
+  --almanac-accent-soft: rgba(47, 111, 235, 0.12);
+  --almanac-pill-bg: #eef1f8;
+  --almanac-pill-active-bg: #2f6feb;
+  --almanac-pill-active-ink: #ffffff;
+  --almanac-badge-bg: #e7edfd;
+  --almanac-badge-ink: #2f6feb;
+  --almanac-shadow: rgba(31, 41, 61, 0.08);
+  --almanac-heatmap-0: #edf1f7;
+  --almanac-heatmap-1: #bcd3fb;
+  --almanac-heatmap-2: #6fa1f5;
+  --almanac-heatmap-3: #2f6feb;
+  // The shared mixin points the generic "primary button" background at
+  // --almanac-ink (near-black) — overridden here so every primary button in
+  // this page's subtree (Submit, Add) reads as the reference's blue accent
+  // instead.
+  --button-default-background: var(--almanac-accent);
+  --text-color-invert: #ffffff;
+
+  padding: $spacing-xl $spacing-xl 0;
   border-radius: 20px 0 0 0;
+}
+
+[data-theme='dark'] {
+  .almanacScope {
+    --almanac-bg: #11151f;
+    --almanac-surface: #161b26;
+    --almanac-card: #1a2029;
+    --almanac-card-border: #262d3a;
+    --almanac-ink: #eef1f7;
+    --almanac-ink-soft: #b7c0d4;
+    --almanac-muted: #838ea3;
+    --almanac-divider: #262d3a;
+    --almanac-accent: #5b8def;
+    --almanac-accent-soft: rgba(91, 141, 239, 0.18);
+    --almanac-pill-bg: #1f2531;
+    --almanac-pill-active-bg: #5b8def;
+    --almanac-pill-active-ink: #0d1117;
+    --almanac-badge-bg: rgba(91, 141, 239, 0.16);
+    --almanac-badge-ink: #9db9f7;
+    --almanac-shadow: rgba(0, 0, 0, 0.4);
+  }
 }
 
 .centerContent {
@@ -78,8 +132,10 @@
     overflow: auto;
     display: flex;
     flex-direction: column;
-    border-radius: 16px;
-    box-shadow: 0 6px 20px var(--almanac-shadow);
+    padding: $spacing-lg;
+    border: 1px solid var(--almanac-card-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 24px var(--almanac-shadow);
   }
 }
 
@@ -273,8 +329,9 @@
 .calendarViewCard {
   width: 100%;
   padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 6px 20px var(--almanac-shadow);
+  border: 1px solid var(--almanac-card-border);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px var(--almanac-shadow);
 }
 
 .tagSelectorContainer {

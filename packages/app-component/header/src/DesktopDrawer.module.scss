@@ -17,6 +17,11 @@
   --text-color: var(--almanac-ink);
   --card-selected-background: var(--almanac-badge-bg);
   --card-shadow: var(--almanac-shadow);
+  // A dedicated blue used only for this redesign's active-state highlight —
+  // kept independent of --almanac-accent (teal in the dark theme) so the
+  // sidebar's own accent reads as blue in both themes, matching the
+  // reference regardless of which page's own content sits next to it.
+  --sidebar-accent: #2f6feb;
 
   background: var(--drawer-background);
   box-shadow: 0 4px 12px var(--card-shadow);
@@ -27,7 +32,13 @@
   transition: width 0.3s ease;
 
   &.minimized {
-    width: 64px;
+    width: 72px;
+  }
+}
+
+[data-theme='dark'] {
+  .leftDrawer {
+    --sidebar-accent: #5b8def;
   }
 }
 
@@ -61,11 +72,23 @@
   color: var(--icon-primary);
 }
 
+.brandText {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.brandIcon {
+  flex-shrink: 0;
+  color: var(--sidebar-accent);
+}
+
 .appTitle {
   margin: 0;
   color: var(--text-title-primary-color);
   font-family: var(--almanac-font-serif);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -123,7 +146,10 @@
 
 .navigationMenu {
   flex: 1;
-  padding: 12px 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 // flex: 1 above pushes this to the bottom of the (flex-column) drawer.
@@ -136,12 +162,13 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
   background: none;
   border: 0;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   color: var(--text-color);
   text-align: left;
 
@@ -154,14 +181,23 @@
   }
 
   &.activeNavigationItem {
-    background: var(--card-selected-background);
-    border-right: 3px solid var(--icon-primary);
+    background: var(--sidebar-accent);
+    color: #ffffff;
+
+    .navigationLabel,
+    .navigationDescription {
+      color: #ffffff;
+    }
+
+    .navigationDescription {
+      opacity: 0.75;
+    }
   }
 
   &.minimizedNavigationItem {
     flex-direction: column;
     gap: 4px;
-    padding: 8px 4px;
+    padding: 10px 4px;
     align-items: center;
     text-align: center;
   }
@@ -185,11 +221,11 @@
 }
 
 .navigationItem:hover .navigationIcon {
-  color: var(--icon-primary);
+  color: var(--sidebar-accent);
 }
 
 .activeNavigationIcon {
-  color: var(--icon-primary) !important;
+  color: #ffffff !important;
 }
 
 .navigationContent {

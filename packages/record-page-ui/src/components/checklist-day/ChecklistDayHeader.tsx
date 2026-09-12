@@ -39,17 +39,23 @@ const ChecklistDayHeader = ({ date, lunar, completedCount, pendingCount, complet
         </Typography.Title>
         <div className={styles.dateMeta}>
           {showTodayButton && (
-            <button type="button" className={styles.todayLink} onClick={onGoToToday}>
-              <Icon width={14} height={14} icon="solar:arrow-left-outline" />
-              {intl.formatMessage({ id: 'ChecklistToday.go-to-today', defaultMessage: 'Back to Today' })}
-            </button>
+            <>
+              <button type="button" className={styles.todayLink} onClick={onGoToToday}>
+                <Icon width={14} height={14} icon="solar:arrow-left-bold" color="var(--almanac-accent)" />
+                {intl.formatMessage({ id: 'ChecklistToday.go-to-today', defaultMessage: 'Back to Today' })}
+              </button>
+              <span className={styles.dateMetaDivider} />
+            </>
           )}
-          <Typography.Text className={styles.dateSubtitle}>
-            {intl.formatMessage(
-              { id: 'ChecklistToday.lunar-subtitle', defaultMessage: 'Lunar day {{day}}, mo {{month}}' },
-              { day: lunar.day, month: lunar.month },
-            )}
-          </Typography.Text>
+          <div className={styles.lunarSubtitle}>
+            <Icon width={14} height={14} icon="solar:moon-linear" className={styles.lunarIcon} />
+            <Typography.Text className={styles.dateSubtitle}>
+              {intl.formatMessage(
+                { id: 'ChecklistToday.lunar-subtitle', defaultMessage: 'Lunar day {{day}}, mo {{month}}' },
+                { day: lunar.day, month: lunar.month },
+              )}
+            </Typography.Text>
+          </div>
         </div>
       </div>
       <div className={styles.progressBlock}>

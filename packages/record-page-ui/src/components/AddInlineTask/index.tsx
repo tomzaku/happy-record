@@ -131,7 +131,7 @@ const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(
         placeholder="Add a new task..."
         classes={{wrapper: styles.inputWrapper, input: styles.input, placeholder: styles.placeholder}}
         disabled={isSubmitting}
-        border="dash"
+        border="solid"
         renderRightInput={() => {
           if (taskName.trim()) {
             return (
@@ -169,7 +169,9 @@ const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(
           }
           return <></>;
         }}
-        renderLeftInput={() => <></>}
+        renderLeftInput={() => (
+          <Icon width={20} height={20} icon="solar:add-circle-bold" className={styles.addIcon} />
+        )}
       />
     </form>
   );

@@ -80,45 +80,44 @@ const ChecklistDayTaskList = ({
   const intl = useIntl();
   return (
     <>
-      <Card className={styles.sectionCard}>
-        {(pendingIds.length > 0 || pendingTasks.length > 0) && (
-          <>
-            <div className={styles.sectionHeader}>
-              <Typography.Text className={styles.sectionLabel}>
-                {intl.formatMessage({ id: 'ChecklistToday.pending', defaultMessage: 'Pending' })}
+      <AddInlineTask
+        ref={addTaskRef}
+        date={date}
+        className={styles.quickAddTask}
+        onTaskCreateStart={onTaskCreateStart}
+        onTaskCreateEnd={onTaskCreateEnd}
+      />
+
+      {(pendingIds.length > 0 || pendingTasks.length > 0) && (
+        <Card className={styles.sectionCard}>
+          <div className={styles.sectionHeader}>
+            <Typography.Text className={styles.sectionLabel}>
+              {intl.formatMessage({ id: 'ChecklistToday.pending', defaultMessage: 'Pending' })}
+            </Typography.Text>
+            <div className={styles.sectionHeaderRight}>
+              <Typography.Text className={styles.sectionCount}>
+                {pendingIds.length + pendingTasks.length}
               </Typography.Text>
-              <div className={styles.sectionHeaderRight}>
-                <Typography.Text className={styles.sectionCount}>
-                  {pendingIds.length + pendingTasks.length}
-                </Typography.Text>
-                <SectionExpandButton
-                  expandableIds={pendingExpandableIds}
-                  isSectionExpanded={isSectionExpanded}
-                  onToggleSectionExpanded={onToggleSectionExpanded}
-                />
-              </div>
+              <SectionExpandButton
+                expandableIds={pendingExpandableIds}
+                isSectionExpanded={isSectionExpanded}
+                onToggleSectionExpanded={onToggleSectionExpanded}
+              />
             </div>
-            <div className={styles.itemList}>
-              {/* `pendingTasks` (the transient "Creating…" placeholder) stays outside this
-                  `AnimatePresence` on purpose — it's a plain, untracked element (see
-                  PendingTaskRow's own comment), and mixing an untracked child in with the
-                  `motion.div` rows `AnimatePresence` *is* tracking confuses its own bookkeeping of
-                  which index each exiting row should reappear at. */}
-              <AnimatePresence initial={false}>{pendingIds.map(renderTaskRow)}</AnimatePresence>
-              {pendingTasks.map(task => (
-                <PendingTaskRow key={task.id} task={task} />
-              ))}
-            </div>
-          </>
-        )}
-        <AddInlineTask
-          ref={addTaskRef}
-          date={date}
-          className={styles.quickAddTask}
-          onTaskCreateStart={onTaskCreateStart}
-          onTaskCreateEnd={onTaskCreateEnd}
-        />
-      </Card>
+          </div>
+          <div className={styles.itemList}>
+            {/* `pendingTasks` (the transient "Creating…" placeholder) stays outside this
+                `AnimatePresence` on purpose — it's a plain, untracked element (see
+                PendingTaskRow's own comment), and mixing an untracked child in with the
+                `motion.div` rows `AnimatePresence` *is* tracking confuses its own bookkeeping of
+                which index each exiting row should reappear at. */}
+            <AnimatePresence initial={false}>{pendingIds.map(renderTaskRow)}</AnimatePresence>
+            {pendingTasks.map(task => (
+              <PendingTaskRow key={task.id} task={task} />
+            ))}
+          </div>
+        </Card>
+      )}
 
       {completedIds.length > 0 && (
         <Card className={styles.sectionCard}>

@@ -293,7 +293,9 @@ const RecentHistory = () => {
                 const statusStyle = KIND_STYLE[entry.kind];
                 return (
                   <div key={entry.key} className={styles.row}>
-                    <Icon className={styles.rowIcon} width={24} height={24} color={entry.color} icon={entry.icon} />
+                    <div className={styles.rowIconBadge} style={{ backgroundColor: `${entry.color}1f` }}>
+                      <Icon width={16} height={16} color={entry.color} icon={entry.icon} />
+                    </div>
                     <div className={styles.rowBody}>
                       <div className={styles.rowMain}>
                         <Typography.Text className={styles.rowTitle}>{entry.title}</Typography.Text>

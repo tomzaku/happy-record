@@ -132,13 +132,15 @@ const ChecklistDayRow = ({
             />
           )}
         </div>
-        <Icon
-          className={styles.rowIcon}
-          width={20}
-          height={20}
-          color={color}
-          icon={currentChecklistTemplate?.avatar.name || 'solar:settings-linear'}
-        />
+        <div className={styles.rowIconBadge} style={{ backgroundColor: `${color}1f` }}>
+          <Icon
+            className={styles.rowIcon}
+            width={18}
+            height={18}
+            color={color}
+            icon={currentChecklistTemplate?.avatar.name || 'solar:settings-linear'}
+          />
+        </div>
         <div className={styles.rowInfo}>
           <div className={styles.rowTitleLine}>
             <ChecklistDayRowTitle

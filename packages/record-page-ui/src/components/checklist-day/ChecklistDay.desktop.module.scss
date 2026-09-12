@@ -25,16 +25,34 @@
 
 .dateMeta {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: $spacing-sm;
+}
+
+.dateMetaDivider {
+  width: 1px;
+  height: 14px;
+  background: var(--almanac-card-border);
+}
+
+.lunarSubtitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lunarIcon {
+  color: var(--almanac-muted);
+  flex-shrink: 0;
 }
 
 .dateTitle {
   margin: 0;
   color: var(--text-title-primary-color);
   font-family: var(--almanac-font-serif);
-  font-size: 34px;
-  font-weight: 600;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .dateSubtitle {
@@ -47,36 +65,42 @@
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  padding: 0;
+  padding: 4px 10px;
   border: none;
+  border-radius: 100px;
   background: transparent;
-  color: var(--text-description-color);
+  color: var(--almanac-accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s ease;
 
   &:hover {
-    color: var(--almanac-accent);
-    text-decoration: underline;
+    background: var(--almanac-accent-soft);
   }
 }
 
 .progressBlock {
   display: flex;
   align-items: center;
-  gap: $spacing-sm;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-lg;
+  border-radius: 100px;
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 14px var(--almanac-shadow);
 }
 
 .progressLabel {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text-description-color);
   white-space: nowrap;
 }
 
 .progressTrack {
-  width: 140px;
-  height: 6px;
+  width: 220px;
+  height: 8px;
   border-radius: 100px;
   background: var(--almanac-divider);
   overflow: hidden;
@@ -93,6 +117,8 @@
   padding: $spacing-lg;
   margin-bottom: $spacing-lg;
   border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: 0 6px 20px var(--almanac-shadow);
 }
 
 .sectionHeader {
@@ -150,7 +176,8 @@
   display: flex;
   align-items: center;
   gap: $spacing-md;
-  padding: 14px 4px;
+  padding: 12px 8px;
+  border-radius: 12px;
   cursor: pointer;
 
   &.taskRowDone {
@@ -168,7 +195,6 @@
   // ChecklistToday.desktop.tsx's handleKeyDown.
   &.taskRowFocused {
     background: var(--surface-secondary);
-    border-radius: 8px;
     box-shadow: inset 0 0 0 1.5px var(--almanac-accent);
   }
 
@@ -191,7 +217,7 @@
   position: absolute;
   inset: 2px 0;
   z-index: -1;
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--surface-secondary);
 }
 
@@ -203,6 +229,16 @@
 .checkbox {
   height: 22px;
   width: 22px;
+}
+
+.rowIconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
 }
 
 .rowIcon {
@@ -385,8 +421,9 @@
   min-width: 0;
   padding: $spacing-md;
   border: 1px solid var(--card-border);
-  border-radius: 12px;
-  background: var(--surface-secondary);
+  border-radius: 16px;
+  background: var(--card-background);
+  box-shadow: 0 4px 14px var(--almanac-shadow);
 }
 
 .rowExpandedGroupTitle {
@@ -437,7 +474,7 @@
 }
 
 .quickAddTask {
-  margin-top: $spacing-sm;
+  margin-bottom: $spacing-lg;
 }
 
 .shortcutsHint {

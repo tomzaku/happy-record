@@ -52,7 +52,7 @@
   align-items: flex-start;
   gap: $spacing-sm;
   padding: $spacing-sm;
-  border-radius: 8px;
+  border-radius: 12px;
 
   &:hover {
     background: var(--surface-secondary);
@@ -63,9 +63,14 @@
 // identity ChecklistToday's rows use, so scanning a mix of recorded/
 // completed/uncompleted entries still reads "this task" at a glance instead
 // of every row looking identical.
-.rowIcon {
+.rowIconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  margin-top: 2px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
 }
 
 .rowBody {
