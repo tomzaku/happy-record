@@ -1,4 +1,5 @@
 import React from 'react';
+import cx from 'classnames';
 import { Icon } from '@moon-ui/icon/Icon';
 import Input from '@moon-ui/input';
 import { useIntl } from '@dreamer/translation';
@@ -14,6 +15,10 @@ type NewFieldGroup = Omit<FieldGroup, 'checklistTemplateId' | 'position' | 'upda
 
 interface ChecklistFieldGroupAddGroupProps {
   onAddFieldGroup: (newGroup: NewFieldGroup) => void;
+  /** Opens the existing "Add to This Task with AI" flow (AiChecklistGenerate, mode="existing") —
+   * same instance ParentTaskHeader's own AI button and each empty collapsed row's own shortcut
+   * open; this row only surfaces one more entry point to it, right next to plain manual entry. */
+  onOpenAiGenerate?: () => void;
   /** The checklist/template this would attach a new group to hasn't loaded yet — this row
    *  itself is still worth showing as-is, just disabled, until real data says otherwise. */
   disabled?: boolean;
@@ -27,7 +32,11 @@ interface ChecklistFieldGroupAddGroupProps {
  * record?" field picker (ChecklistFieldGroupAdd) — neither lives here, this row only creates the
  * group.
  */
-const ChecklistFieldGroupAddGroup = ({ onAddFieldGroup, disabled }: ChecklistFieldGroupAddGroupProps) => {
+const ChecklistFieldGroupAddGroup = ({
+  onAddFieldGroup,
+  onOpenAiGenerate,
+  disabled,
+}: ChecklistFieldGroupAddGroupProps) => {
   const intl = useIntl();
   const [title, setTitle] = React.useState('');
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -72,13 +81,34 @@ const ChecklistFieldGroupAddGroup = ({ onAddFieldGroup, disabled }: ChecklistFie
             id: 'checklist-field-group-add-group.placeholder',
             defaultMessage: 'Add sub task…',
           })}
-          classes={{ wrapper: styles.inputWrapper, input: styles.input, placeholder: styles.placeholder }}
+          classes={{
+            wrapper: styles.inputWrapper,
+            input: onOpenAiGenerate ? cx(styles.input, styles.inputWithAiButton) : styles.input,
+            placeholder: styles.placeholder,
+          }}
           disabled={disabled}
           border="dash"
-          renderRightInput={() => <></>}
           renderLeftInput={() => (
             <Icon width={22} height={22} icon="solar:add-circle-bold" className={styles.addIcon} />
           )}
+          renderRightInput={() =>
+            onOpenAiGenerate ? (
+              <button
+                type="button"
+                className={styles.aiButton}
+                onClick={onOpenAiGenerate}
+                disabled={disabled}
+              >
+                <Icon width={16} icon="solar:magic-stick-3-bold-duotone" />
+                {intl.formatMessage({
+                  id: 'checklist-field-group-add-group.generate-with-ai',
+                  defaultMessage: 'Generate subtask with AI',
+                })}
+              </button>
+            ) : (
+              <></>
+            )
+          }
         />
       </form>
     </div>

@@ -55,7 +55,7 @@ const DetailTaskPageDesktop = () => {
   const { getAllRecordFields, allRecordFieldsLoading, getRecordFieldsByTemplateId } = useRecordField();
   const { getChallengeForTemplate } = useChallenge();
   const { leaveTheChallenge } = useLeaveChallenge();
-  const { userId, isPro } = useCurrentAccount();
+  const { userId } = useCurrentAccount();
   const intl = useIntl();
   const checklistId = search.get('checklistId');
   const currentDay = search.get('currentDay');
@@ -282,9 +282,10 @@ const DetailTaskPageDesktop = () => {
       <DesktopDrawer />
       <div className={styles.desktopBody}>
         <div className={styles.content}>
-          {/* Header Section — just a plain back link now; everything that used to live here
-              (title/edit, avatar, "Add with AI") moved down into ParentTaskHeader, the page's own
-              LEVEL 1 (challenge-level) header, right above the sub-tasks accordion. */}
+          {/* Header Section — just a plain back link now; the title/edit and avatar that used to
+              live here moved down into ParentTaskHeader, the page's own LEVEL 1 (challenge-level)
+              header, right above the sub-tasks accordion. "Add with AI" isn't a page-level entry
+              point any more — see ChecklistFieldGroupAddGroup's own AI button instead. */}
           <div className={styles.header}>
             <button type="button" className={styles.backLink} onClick={() => navigate(-1)}>
               <Icon icon="solar:arrow-left-linear" width={18} />
@@ -322,8 +323,6 @@ const DetailTaskPageDesktop = () => {
                 setEditedTitle={setEditedTitle}
                 onStartEditTitle={handleEditTitle}
                 onKeyPressTitle={handleKeyPress}
-                onGenerateWithAi={() => setIsAiModalVisible(true)}
-                isPro={isPro}
               />
               {!isTemplateReady || !isChecklistReady || allRecordFieldsLoading ? (
                 // Same "Field Groups" row ChecklistFieldGroup itself would render via its own

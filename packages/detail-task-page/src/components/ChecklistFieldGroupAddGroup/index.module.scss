@@ -14,11 +14,45 @@
   width: 100%;
 }
 
+// Same shortcut as an empty sub-task's own collapsed-row button (ChecklistFieldGroup's
+// .aiRowButton) — inline inside the input's own right side now, not a separate button beside it.
+.aiButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 $spacing-sm;
+  border: 1px dashed var(--almanac-accent, var(--button-dash));
+  border-radius: 8px;
+  background: var(--card-background);
+  color: var(--almanac-accent, var(--icon-primary));
+  font-size: toRem(12px);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-secondary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
 .input {
   height: 48px;
   padding-left: 2.6em;
   font-size: toRem(14px);
   border-radius: 12px !important;
+}
+
+// Reserves room on the right for .aiButton (renderRightInput's own overlay) so typed text
+// doesn't run underneath it.
+.inputWithAiButton {
+  padding-right: 11em;
 }
 
 .placeholder {

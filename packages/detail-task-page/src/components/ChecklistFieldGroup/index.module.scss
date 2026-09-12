@@ -38,26 +38,6 @@
   background: var(--almanac-accent);
 }
 
-// Collapsed-row shortcut for a sub-task with no note and no fields yet — replaces the settings
-// cog there (see renderMenu's own comment: nothing for that menu to manage on an empty group).
-.aiRowButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border: 1px dashed var(--almanac-accent, var(--button-dash));
-  border-radius: 8px;
-  background: none;
-  color: var(--almanac-accent, var(--icon-primary));
-  cursor: pointer;
-
-  &:hover {
-    background: var(--surface-secondary);
-  }
-}
-
 // Submit on the left, Metrics on the right — desktop only (see isMobile in index.tsx); mobile
 // renders Submit alone here, Metrics folded into the same collapsible-section stack as
 // History/Note below instead, since there's no room for two real columns on a phone-width card.

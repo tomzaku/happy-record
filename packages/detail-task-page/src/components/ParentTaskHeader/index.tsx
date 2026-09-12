@@ -26,8 +26,6 @@ type Props = {
   setEditedTitle: (value: string) => void;
   onStartEditTitle: () => void;
   onKeyPressTitle: (e: React.KeyboardEvent) => void;
-  onGenerateWithAi: () => void;
-  isPro: boolean;
 };
 
 // LEVEL 1 of the page's own title hierarchy — everything here is challenge-level info only (see
@@ -47,8 +45,6 @@ const ParentTaskHeader = ({
   setEditedTitle,
   onStartEditTitle,
   onKeyPressTitle,
-  onGenerateWithAi,
-  isPro,
 }: Props) => {
   const intl = useIntl();
   const { getChecklistRecords } = useChecklistRecord();
@@ -141,13 +137,6 @@ const ParentTaskHeader = ({
             </Typography.Text>
           )}
         </div>
-        {isOwner && (
-          <Button onClick={onGenerateWithAi} className={styles.aiButton}>
-            <Icon icon="solar:magic-stick-3-bold-duotone" width={18} color="#fff" />
-            {intl.formatMessage({ id: 'DetailTaskPage.generate-with-ai', defaultMessage: 'Add with AI' })}
-            {!isPro && <span className={styles.proBadge}>PRO</span>}
-          </Button>
-        )}
       </div>
 
       <div className={styles.statRow}>

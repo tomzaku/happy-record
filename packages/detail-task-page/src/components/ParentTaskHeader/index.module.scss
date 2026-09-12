@@ -60,23 +60,6 @@
   color: var(--text-description-color);
 }
 
-.aiButton {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--almanac-accent, var(--button-default-background));
-  color: #fff;
-}
-
-.proBadge {
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.25);
-  font-size: 10px;
-  font-weight: 700;
-}
-
 .statRow {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
