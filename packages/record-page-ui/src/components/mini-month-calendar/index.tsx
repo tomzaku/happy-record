@@ -79,32 +79,34 @@ const MiniMonthCalendar = ({ currentDate, onDateChange, selectedTag, showTodayBu
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-          <Icon
-            onClick={() => setVisibleMonth(prev => subMonths(prev, 1))}
-            width={16}
-            icon="basil:skip-prev-outline"
-            className={styles.navIcon}
-          />
-        <Typography.Text className={styles.monthLabel}>
-          {format(visibleMonth, 'MMMM yyyy')}
-        </Typography.Text>
         <div className={styles.headerLeft}>
-          {showTodayButton && (
-            <button
-              type="button"
-              className={styles.todayButton}
-              onClick={() => onDateChange(todayStart)}
-            >
-              {intl.formatMessage({ id: 'mini-month-calendar.today', defaultMessage: 'Today' })}
-            </button>
-          )}
-        <Icon
-          onClick={() => setVisibleMonth(prev => addMonths(prev, 1))}
-          width={16}
-          icon="basil:skip-next-outline"
-          className={styles.navIconRight}
-        />
+          <Typography.Text className={styles.monthLabel}>
+            {format(visibleMonth, 'MMMM yyyy')}
+          </Typography.Text>
+          <div className={styles.navArrows}>
+            <Icon
+              onClick={() => setVisibleMonth(prev => subMonths(prev, 1))}
+              width={16}
+              icon="solar:alt-arrow-left-linear"
+              className={styles.navIcon}
+            />
+            <Icon
+              onClick={() => setVisibleMonth(prev => addMonths(prev, 1))}
+              width={16}
+              icon="solar:alt-arrow-right-linear"
+              className={styles.navIcon}
+            />
+          </div>
         </div>
+        {showTodayButton && (
+          <button
+            type="button"
+            className={styles.todayButton}
+            onClick={() => onDateChange(todayStart)}
+          >
+            {intl.formatMessage({ id: 'mini-month-calendar.today', defaultMessage: 'Today' })}
+          </button>
+        )}
       </div>
 
       <div className={styles.weekdays}>

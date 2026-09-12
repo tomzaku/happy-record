@@ -125,28 +125,43 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 4px 12px;
+  padding: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-sm;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.sectionHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.sectionIcon {
+  color: var(--almanac-accent);
+  flex-shrink: 0;
 }
 
 .sectionLabel {
   margin: 0;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-description-color);
+  color: var(--almanac-ink);
 }
 
 .sectionCount {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-description-color);
-}
-
-.sectionHeaderRight {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: $spacing-sm;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--almanac-accent-soft);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--almanac-accent);
 }
 
 .itemList {
@@ -238,7 +253,7 @@
   flex-shrink: 0;
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: 50%;
 }
 
 .rowIcon {
@@ -331,9 +346,20 @@
   outline: none;
 }
 
+.rowSubtitleLine {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .rowSubtitle {
   color: var(--text-description-color);
   font-size: 13px;
+}
+
+.repeatIcon {
+  flex-shrink: 0;
+  color: var(--text-description-color);
 }
 
 .rowTime {
@@ -422,16 +448,33 @@
   padding: $spacing-md;
   border: 1px solid var(--card-border);
   border-radius: 16px;
-  background: var(--card-background);
+  background: var(--almanac-bg);
   box-shadow: 0 4px 14px var(--almanac-shadow);
 }
 
-.rowExpandedGroupTitle {
-  display: block;
+.rowExpandedGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: $spacing-sm;
-  color: var(--text-color);
-  font-size: 13px;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid var(--almanac-card-border);
+}
+
+.rowExpandedGroupDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rowExpandedGroupTitle {
+  margin: 0;
+  color: var(--almanac-ink);
+  font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 // Mirrors ChecklistFieldGroupAdd's own .footerCenter's Submit-button alignment (right-aligned)

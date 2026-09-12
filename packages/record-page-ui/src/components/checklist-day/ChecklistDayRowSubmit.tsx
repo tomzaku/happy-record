@@ -7,6 +7,7 @@ import { useIntl } from '@dreamer/translation';
 import { useTaskDetailModalData } from '../home-calendar/useTaskDetailModalData';
 import { CalendarEventData } from '../calendar-events-view/useCalendarEvents';
 import ChecklistDayRowSubmitSkeleton from './ChecklistDayRowSubmitSkeleton';
+import { UNCHOSEN_AVATAR_COLOR } from '../calendar-events-view/resolveTaskColor';
 import styles from './ChecklistDay.desktop.module.scss';
 
 type Props = {
@@ -45,6 +46,11 @@ const ChecklistDayRowSubmit = ({ checklistTemplateId, date }: Props) => {
   // brand-new day, or its own fetch) — but `relevantGroups`/`fieldsByGroup` are already known by
   // this point, so each group's column skeletons instead of the whole row disappearing.
 
+  const templateColor =
+    template.avatar.color && template.avatar.color !== UNCHOSEN_AVATAR_COLOR
+      ? template.avatar.color
+      : 'var(--almanac-accent)';
+
   return (
     <div className={styles.rowExpandedGroups} onClick={event => event.stopPropagation()}>
       {challenge && (
@@ -54,7 +60,10 @@ const ChecklistDayRowSubmit = ({ checklistTemplateId, date }: Props) => {
       )}
       {relevantGroups.map(group => (
         <div key={group.id} className={styles.rowExpandedGroupColumn}>
-          <Typography.Text className={styles.rowExpandedGroupTitle}>{group.title}</Typography.Text>
+          <div className={styles.rowExpandedGroupHeader}>
+            <span className={styles.rowExpandedGroupDot} style={{ backgroundColor: templateColor }} />
+            <Typography.Text className={styles.rowExpandedGroupTitle}>{group.title}</Typography.Text>
+          </div>
           {checklist ? (
             <ChecklistFieldGroupAdd
               fields={fieldsByGroup[group.id] ?? []}

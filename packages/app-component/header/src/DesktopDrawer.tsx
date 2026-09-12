@@ -6,15 +6,24 @@ import IconSunny from '@moon-ui/icon/IconSunny';
 import IconMoon from '@moon-ui/icon/IconMoon';
 import { usePomodoroGlobalConfig } from '@dreamer/pomodoro-common';
 import { Theme } from '@dreamer/pomodoro-common';
+import { useLocalStorage } from '@dreamer/global';
 import cx from 'classnames';
 import AccountStatus from './AccountStatus';
 import TaskSearch from './TaskSearch';
 import styles from './DesktopDrawer.module.scss';
 
+// A device preference, not account data — same "outlives sign-out, never listed in
+// SYNCED_DATA_KEYS" shape as theme/pomodoro config (see useSession.ts), not
+// notes_sidebar_collapsed (a different, unrelated sidebar's own key).
+const DRAWER_COLLAPSED_KEY = 'app_drawer_collapsed';
+
 const DesktopDrawer = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isMinimized, setIsMinimized] = React.useState(false);
+  // Persisted so every page's own mount of this drawer (there's no single shared layout
+  // instance — see CLAUDE.md's "the drawer is duplicated per-page") remembers the same
+  // collapsed/expanded state instead of resetting to the default on every navigation.
+  const [isMinimized, setIsMinimized] = useLocalStorage(DRAWER_COLLAPSED_KEY, true);
   const { theme, setTheme } = usePomodoroGlobalConfig();
 
   const navigationItems = [

@@ -170,7 +170,7 @@ const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(
           return <></>;
         }}
         renderLeftInput={() => (
-          <Icon width={20} height={20} icon="solar:add-circle-bold" className={styles.addIcon} />
+          <Icon width={30} height={30} icon="solar:add-circle-bold" className={styles.addIcon} />
         )}
       />
     </form>

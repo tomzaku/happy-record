@@ -121,19 +121,24 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
         {/* Timer Display */}
-        <Typography.Text
+        <div
+          className={styles.fabTimeGroup}
           onClick={() => {
             onOpenModal();
           }}
-          className={`${styles.fabTime} ${isAnyTimerRunning() ? styles.running : ''}`}
-          style={{ 
-            fontSize: '20px',
-            fontWeight: '700',
-            minWidth: '80px',
-            textAlign: 'center'
-          }}>
-          {getCurrentTimeDisplay()}
-        </Typography.Text>
+        >
+          <Icon
+            icon="solar:stopwatch-linear"
+            width={22}
+            height={22}
+            className={`${styles.fabClockIcon} ${isAnyTimerRunning() ? styles.running : ''}`}
+          />
+          <Typography.Text
+            className={`${styles.fabTime} ${isAnyTimerRunning() ? styles.running : ''}`}
+          >
+            {getCurrentTimeDisplay()}
+          </Typography.Text>
+        </div>
 
         {/* Quick Play/Pause Button */}
         <motion.button
@@ -141,15 +146,12 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
           onClick={handlePlayPause}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          style={{
-            width: '32px',
-            height: '32px'
-          }}
         >
           <Icon
-            icon={isAnyTimerRunning() ? "solar:pause-circle-outline" : "solar:play-circle-outline"}
-            width={24}
-            height={24}
+            icon={isAnyTimerRunning() ? "solar:pause-bold" : "solar:play-bold"}
+            width={20}
+            height={20}
+            color="#fff"
           />
         </motion.button>
 
@@ -160,15 +162,12 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
             onClick={handleReset}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            style={{
-              width: '32px',
-              height: '32px'
-            }}
           >
             <Icon
               icon="material-symbols:refresh"
-              width={22}
-              height={22}
+              width={20}
+              height={20}
+              color="#fff"
             />
           </motion.button>
         )}
@@ -182,15 +181,11 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
               onClick={handleMuteToggle}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              style={{
-                width: '28px',
-                height: '28px'
-              }}
             >
               <Icon
                 icon={isAnySoundMuted() ? "solar:volume-cross-outline" : "solar:volume-loud-linear"}
-                width={24}
-                height={24}
+                width={20}
+                height={20}
               />
             </motion.button>
 
@@ -200,10 +195,6 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
               onClick={handleMusicToggle}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              style={{
-                width: '28px',
-                height: '28px'
-              }}
             >
               <motion.div
                 animate={isAnySoundActive() ? {
@@ -218,8 +209,8 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
               >
                 <Icon
                   icon={"material-symbols:music-note"}
-                  width={24}
-                  height={24}
+                  width={20}
+                  height={20}
                 />
               </motion.div>
             </motion.button>
@@ -229,19 +220,15 @@ const FocusZoneFAB: React.FC<FocusZoneFABProps> = ({
         {/* Music Control Button (when no music is active) */}
         {!isAnySoundActive() && (
           <motion.button
-            className={styles.fabPlayPauseButton}
+            className={styles.fabMusicButton}
             onClick={handleMusicToggle}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            style={{
-              width: '32px',
-              height: '32px'
-            }}
           >
             <Icon
               icon={"material-symbols:music-note"}
-              width={24}
-              height={24}
+              width={20}
+              height={20}
             />
           </motion.button>
         )}

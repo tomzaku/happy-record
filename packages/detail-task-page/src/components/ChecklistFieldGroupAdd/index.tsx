@@ -246,34 +246,34 @@ const ChecklistFieldGroupAdd = ({
               logo={<Icon width={24} icon={field.icon} />}
               title={field.title}
               noPaddingHorizontal={compact}
-              rightComponent={
-                <Input
-                  key={`${field.id}-${newNoteKey}`}
-                  suffix={<Typography.Text>{field.unit}</Typography.Text>}
-                  value={fieldRecord[field.id] === undefined ? '' : String(fieldRecord[field.id])}
-                  onChange={e => {
-                    setFieldRecord({
-                      ...fieldRecord,
-                      [field.id]: Number(e.target.value),
-                    });
-                  }}
-                  border="dash"
-                  classes={{ wrapper: styles.input }}
-                  type="number"
-                  // Only ever set via a group's own override (see getEffectiveFieldDisplay
-                  // in ChecklistFieldGroup) — a field has no placeholder of its own.
-                  placeholder={field.placeholder}
-                />
-              }
             />
-            {recordValues.length > 0 && (
-              <Typography.Text className={styles.sumValueText}>
-                {intl.formatMessage(
-                  { id: 'checklist-field-group-add.total', defaultMessage: 'Total: {{value}}' },
-                  { value: String(sumValue) },
-                )}
-              </Typography.Text>
-            )}
+            <div className={cx(styles.numberFieldRow, compact && styles.numberFieldRowCompact)}>
+              <Input
+                key={`${field.id}-${newNoteKey}`}
+                suffix={<Typography.Text>{field.unit}</Typography.Text>}
+                value={fieldRecord[field.id] === undefined ? '' : String(fieldRecord[field.id])}
+                onChange={e => {
+                  setFieldRecord({
+                    ...fieldRecord,
+                    [field.id]: Number(e.target.value),
+                  });
+                }}
+                border="dash"
+                classes={{ wrapper: styles.input }}
+                type="number"
+                // Only ever set via a group's own override (see getEffectiveFieldDisplay
+                // in ChecklistFieldGroup) — a field has no placeholder of its own.
+                placeholder={field.placeholder}
+              />
+              {recordValues.length > 0 && (
+                <Typography.Text className={styles.sumValueText}>
+                  {intl.formatMessage(
+                    { id: 'checklist-field-group-add.total', defaultMessage: 'Total: {{value}}' },
+                    { value: String(sumValue) },
+                  )}
+                </Typography.Text>
+              )}
+            </div>
           </div>
         );
       })}

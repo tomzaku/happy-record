@@ -10,6 +10,7 @@ import { useIntl } from '@dreamer/translation';
 import { format } from 'date-fns';
 import styles from './ChecklistDay.desktop.module.scss';
 import { formatTemplateSchedule, getScheduledTimeLabel, getHasQuickSubmit } from './checklistDayHelpers';
+import { UNCHOSEN_AVATAR_COLOR } from '../calendar-events-view/resolveTaskColor';
 import ChecklistDayRowSubmit from './ChecklistDayRowSubmit';
 import ChecklistDayRowTitle from './ChecklistDayRowTitle';
 
@@ -65,7 +66,12 @@ const ChecklistDayRow = ({
   const currentChecklist = checklist[id];
   const currentChecklistTemplate = checklistTemplate[currentChecklist.checklistTemplateId];
   const completed = Boolean(currentChecklist?.completedAt);
-  const color = currentChecklistTemplate?.avatar.color || '#8A8A8A';
+  const avatarColor = currentChecklistTemplate?.avatar.color;
+  const hasCustomColor = Boolean(avatarColor && avatarColor !== UNCHOSEN_AVATAR_COLOR);
+  const color = hasCustomColor ? avatarColor! : 'var(--almanac-accent)';
+  const badgeBackground = hasCustomColor
+    ? `${color}33`
+    : 'color-mix(in srgb, var(--almanac-accent) 10%, transparent)';
   const timeLabel = completed
     ? currentChecklist.completedAt && format(new Date(currentChecklist.completedAt), 'h:mm')
     : getScheduledTimeLabel(currentChecklistTemplate);
@@ -83,6 +89,8 @@ const ChecklistDayRow = ({
   // nothing more to show than the checkbox already in the row header, so it gets no expand button
   // at all rather than an expand area that would always render empty.
   const hasQuickSubmit = getHasQuickSubmit(currentChecklistTemplate, date);
+  const scheduleText = formatTemplateSchedule(currentChecklistTemplate);
+  const isRecurring = !isCreating && scheduleText !== 'No schedule';
 
   return (
     <div className={styles.taskRowContainer}>
@@ -132,12 +140,13 @@ const ChecklistDayRow = ({
             />
           )}
         </div>
-        <div className={styles.rowIconBadge} style={{ backgroundColor: `${color}1f` }}>
+        <div className={styles.rowIconBadge} style={{ backgroundColor: badgeBackground }}>
           <Icon
             className={styles.rowIcon}
             width={18}
             height={18}
             color={color}
+            fill={color}
             icon={currentChecklistTemplate?.avatar.name || 'solar:settings-linear'}
           />
         </div>
@@ -155,11 +164,22 @@ const ChecklistDayRow = ({
               openDelete={openDelete}
             />
           </div>
-          <Typography.Text className={styles.rowSubtitle}>
-            {isCreating
-              ? intl.formatMessage({ id: 'ChecklistToday.creating', defaultMessage: 'Creating…' })
-              : formatTemplateSchedule(currentChecklistTemplate)}
-          </Typography.Text>
+          <div className={styles.rowSubtitleLine}>
+            <Typography.Text className={styles.rowSubtitle}>
+              {isCreating
+                ? intl.formatMessage({ id: 'ChecklistToday.creating', defaultMessage: 'Creating…' })
+                : scheduleText}
+            </Typography.Text>
+            {isRecurring && (
+              <Icon
+                width={12}
+                height={12}
+                icon="solar:refresh-linear"
+                className={styles.repeatIcon}
+                title={intl.formatMessage({ id: 'ChecklistToday.recurring', defaultMessage: 'Recurring' })}
+              />
+            )}
+          </div>
         </div>
         <div className={styles.rowEnd}>
           {currentChecklistTemplate?.visibility === 'public' && (

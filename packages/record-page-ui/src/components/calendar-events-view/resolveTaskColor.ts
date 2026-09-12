@@ -14,7 +14,9 @@ export const DEFAULT_PALETTE = [
 ];
 
 // Every "Create Task" form's own pre-selected default — not a color anyone actually chose.
-const UNCHOSEN_AVATAR_COLOR = '#607d8b';
+// Exported so any other consumer (ChecklistDayRow's own icon badge, say) can tell "genuinely
+// unchosen" apart from "chose this exact shade of gray" the same way this file does.
+export const UNCHOSEN_AVATAR_COLOR = '#607d8b';
 
 function hashColor(id: string): string {
   let hash = 0;

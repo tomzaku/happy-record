@@ -89,55 +89,61 @@ const ChecklistDayTaskList = ({
       />
 
       {(pendingIds.length > 0 || pendingTasks.length > 0) && (
-        <Card className={styles.sectionCard}>
+        <>
           <div className={styles.sectionHeader}>
-            <Typography.Text className={styles.sectionLabel}>
-              {intl.formatMessage({ id: 'ChecklistToday.pending', defaultMessage: 'Pending' })}
-            </Typography.Text>
-            <div className={styles.sectionHeaderRight}>
+            <div className={styles.sectionHeaderLeft}>
+              <Icon width={25} icon="material-symbols:checklist" className={styles.sectionIcon} />
+              <Typography.Text className={styles.sectionLabel}>
+                {intl.formatMessage({ id: 'ChecklistToday.pending', defaultMessage: 'Pending' })}
+              </Typography.Text>
               <Typography.Text className={styles.sectionCount}>
                 {pendingIds.length + pendingTasks.length}
               </Typography.Text>
-              <SectionExpandButton
-                expandableIds={pendingExpandableIds}
-                isSectionExpanded={isSectionExpanded}
-                onToggleSectionExpanded={onToggleSectionExpanded}
-              />
             </div>
+            <SectionExpandButton
+              expandableIds={pendingExpandableIds}
+              isSectionExpanded={isSectionExpanded}
+              onToggleSectionExpanded={onToggleSectionExpanded}
+            />
           </div>
-          <div className={styles.itemList}>
-            {/* `pendingTasks` (the transient "Creating…" placeholder) stays outside this
-                `AnimatePresence` on purpose — it's a plain, untracked element (see
-                PendingTaskRow's own comment), and mixing an untracked child in with the
-                `motion.div` rows `AnimatePresence` *is* tracking confuses its own bookkeeping of
-                which index each exiting row should reappear at. */}
-            <AnimatePresence initial={false}>{pendingIds.map(renderTaskRow)}</AnimatePresence>
-            {pendingTasks.map(task => (
-              <PendingTaskRow key={task.id} task={task} />
-            ))}
-          </div>
-        </Card>
+          <Card className={styles.sectionCard}>
+            <div className={styles.itemList}>
+              {/* `pendingTasks` (the transient "Creating…" placeholder) stays outside this
+                  `AnimatePresence` on purpose — it's a plain, untracked element (see
+                  PendingTaskRow's own comment), and mixing an untracked child in with the
+                  `motion.div` rows `AnimatePresence` *is* tracking confuses its own bookkeeping of
+                  which index each exiting row should reappear at. */}
+              <AnimatePresence initial={false}>{pendingIds.map(renderTaskRow)}</AnimatePresence>
+              {pendingTasks.map(task => (
+                <PendingTaskRow key={task.id} task={task} />
+              ))}
+            </div>
+          </Card>
+        </>
       )}
 
       {completedIds.length > 0 && (
-        <Card className={styles.sectionCard}>
+        <>
           <div className={styles.sectionHeader}>
-            <Typography.Text className={styles.sectionLabel}>
-              {intl.formatMessage({ id: 'ChecklistToday.completed', defaultMessage: 'Completed' })}
-            </Typography.Text>
-            <div className={styles.sectionHeaderRight}>
+            <div className={styles.sectionHeaderLeft}>
+              <Icon width={25} icon="material-symbols:task-alt" className={styles.sectionIcon} />
+              <Typography.Text className={styles.sectionLabel}>
+                {intl.formatMessage({ id: 'ChecklistToday.completed', defaultMessage: 'Completed' })}
+              </Typography.Text>
               <Typography.Text className={styles.sectionCount}>{completedIds.length}</Typography.Text>
-              <SectionExpandButton
-                expandableIds={completedExpandableIds}
-                isSectionExpanded={isSectionExpanded}
-                onToggleSectionExpanded={onToggleSectionExpanded}
-              />
             </div>
+            <SectionExpandButton
+              expandableIds={completedExpandableIds}
+              isSectionExpanded={isSectionExpanded}
+              onToggleSectionExpanded={onToggleSectionExpanded}
+            />
           </div>
-          <div className={styles.itemList}>
-            <AnimatePresence initial={false}>{completedIds.map(renderTaskRow)}</AnimatePresence>
-          </div>
-        </Card>
+          <Card className={styles.sectionCard}>
+            <div className={styles.itemList}>
+              <AnimatePresence initial={false}>{completedIds.map(renderTaskRow)}</AnimatePresence>
+            </div>
+          </Card>
+        </>
       )}
     </>
   );

@@ -3,11 +3,15 @@
 @use 'include-media/dist/include-media' as media;
 
 .input {
-  width: 140px;
+  width: 100%;
   padding: 0;
   text-align: end;
-  @include media.media('>=tablet') {
-    width: 200px;
+
+  // Targets the real `<input>` moon-ui's own Input renders inside this wrapper — the `wrapper`
+  // slot (this class) has no fixed height of its own to grow, and `classes.input` isn't wired
+  // through from here.
+  input {
+    height: 44px;
   }
 }
 
@@ -118,13 +122,32 @@
   gap: $spacing-sm;
 }
 
-// The number field's already-submitted total — sits outside that field's own List.ItemMeta row
-// (its `rightComponent` is just the input), right-aligned underneath it.
+// The number field's input and its own already-submitted total now share one row, below the
+// field's title (List.ItemMeta above renders title-only) — both right-aligned together, since
+// the total is only meaningful right next to the input that's about to add to it.
+.numberFieldRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 0 $spacing-sm $spacing-xs;
+
+  // The input wrapper itself, not `.input` (the `<input>` element inside it) — grows to fill the
+  // row now that it's on its own line, with `.sumValueText` trailing at a fixed width.
+  > :first-child {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+// Mirrors List.ItemMeta's own `noPaddingHorizontal` above it — this row sits directly under
+// that one and needs the same horizontal padding (none, in compact mode) to stay aligned with it.
+.numberFieldRowCompact {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .sumValueText {
-  display: block;
-  margin-top: -#{$spacing-xs};
-  padding-bottom: $spacing-xs;
-  text-align: right;
+  flex-shrink: 0;
   color: var(--text-description-color);
 }
 
