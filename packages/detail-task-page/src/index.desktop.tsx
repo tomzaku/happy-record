@@ -330,7 +330,7 @@ const DetailTaskPageDesktop = () => {
                 // ChecklistFieldGroupAddGroup once loaded — with no groups known yet, "No groups
                 // created" is exactly what it'll say either way, so there's nothing to fake with
                 // a skeleton here; just the Add button can't actually attach to anything yet.
-                <ChecklistFieldGroupAddGroup fieldGroups={[]} onAddFieldGroup={() => {}} disabled />
+                <ChecklistFieldGroupAddGroup onAddFieldGroup={() => {}} disabled />
               ) : (
                 <ChecklistFieldGroup
                   checklist={checklist}
@@ -339,6 +339,7 @@ const DetailTaskPageDesktop = () => {
                   currentDay={currentDay}
                   readOnly={!isOwner}
                   onDaySelect={handleCalendarDaySelect}
+                  onOpenAiGenerate={() => setIsAiModalVisible(true)}
                 />
               )}
             </div>

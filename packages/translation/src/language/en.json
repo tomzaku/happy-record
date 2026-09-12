@@ -201,6 +201,8 @@
   "checklist-field-group-menu.no-fields-available": "No fields available",
   "checklist-field-group-menu.open": "Group settings",
   "checklist-field-group-menu.select-fields": "Select Fields",
+  "checklist-field-group-view.edit": "Edit",
+  "checklist-field-group-view.note-title": "Note",
   "checklist-field-group.done-today": "Done today",
   "checklist-field-group.history-title": "History",
   "checklist-field-group.metrics-title": "Metrics",

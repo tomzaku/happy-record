@@ -48,6 +48,10 @@ type Props = {
    * currentDay/checklistId nav ChecklistTemplateCalendar's Calendar mode
    * already uses. */
   onDaySelect?: (date: Date) => void;
+  /** Opens the page-level "Add to This Task with AI" modal (AiChecklistGenerate, mode="existing")
+   * — same instance ParentTaskHeader's own AI button opens, bubbled down to
+   * ChecklistFieldGroupAddGroup's own post-create nudge (see that component's own doc). */
+  onOpenAiGenerate?: () => void;
 };
 
 const ChecklistFieldGroup = ({
@@ -58,6 +62,7 @@ const ChecklistFieldGroup = ({
   readOnly = false,
   onFieldAdded,
   onDaySelect,
+  onOpenAiGenerate,
 }: Props) => {
   const { updateChecklist } = useChecklist();
   const { addFieldGroup, updateFieldGroup } = useFieldGroups();
@@ -359,9 +364,9 @@ const ChecklistFieldGroup = ({
       </Typography.Text>
       {renderBody()}
       <ChecklistFieldGroupAddGroup
-        fieldGroups={getActiveFieldGroups(checklistTemplate.fieldGroups)}
         onAddFieldGroup={handleAddFieldGroup}
-        onFieldAdded={onFieldAdded}
+        onOpenAiGenerate={onOpenAiGenerate}
+        disabled={readOnly}
       />
     </>
   )

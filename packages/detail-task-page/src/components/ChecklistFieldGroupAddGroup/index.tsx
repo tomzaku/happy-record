@@ -1,14 +1,8 @@
 import React from 'react';
 import { Icon } from '@moon-ui/icon/Icon';
-import List from '@moon-ui/list';
-import Button from '@moon-ui/button/src/DefaultButton';
-import Checkbox from '@moon-ui/checkbox';
 import Input from '@moon-ui/input';
-import Typography from '@moon-ui/typography';
 import { useIntl } from '@dreamer/translation';
-import { FieldGroup, RecordField, useRecordField } from '@dreamer/global';
-import Dialog from '@moon-ui/modal/src/Dialog';
-import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
+import { FieldGroup } from '@dreamer/global';
 import { ChecklistFieldGroupTab } from '../ChecklistFieldGroupHeader';
 import styles from './index.module.scss';
 
@@ -19,111 +13,47 @@ import styles from './index.module.scss';
 type NewFieldGroup = Omit<FieldGroup, 'checklistTemplateId' | 'position' | 'updatedAt'>;
 
 interface ChecklistFieldGroupAddGroupProps {
-  fieldGroups?: FieldGroup[];
   onAddFieldGroup: (newGroup: NewFieldGroup) => void;
-  availableFields?: string[];
-  onFieldAdded?: (newField: RecordField) => void;
+  /** Opens the existing "Add to This Task with AI" flow (AiChecklistGenerate, mode="existing") —
+   * this component only surfaces the entry point, same as ParentTaskHeader's own AI button; the
+   * modal itself is owned and rendered once at the page level. */
+  onOpenAiGenerate?: () => void;
   /** The checklist/template this would attach a new group to hasn't loaded yet — this row
-   *  itself is still worth showing as-is (it reads the same "No groups created" either way
-   *  until real data says otherwise), just with nothing to actually add a group against yet. */
+   *  itself is still worth showing as-is, just disabled, until real data says otherwise. */
   disabled?: boolean;
 }
 
-// Form/AddField are the same two-view drill-down ChecklistFieldGroupMenu's own Select Fields
-// sheet uses (List/Add/Customize there) — see this component's own module doc for why.
-enum AddGroupView {
-  Form,
-  AddField,
-}
-
 /**
- * "Add Group" — one `Dialog` (badge/gradient header, Modal on desktop, BottomModal on
- * mobile — see that component's own doc, `@moon-ui/modal`), not the Modal-vs-hand-rolled-overlay
- * pair this used to be split across `index.desktop.tsx`/`index.mobile.tsx`: those two files'
- * actual trigger row markup was byte-for-byte identical, and only diverged in *how* they opened
- * a modal at all — a difference `Dialog` already owns internally now, so the split had nothing
- * left to justify it.
- *
- * "Add Field" used to open `AddFieldRecordUi` as a second panel stacked on top of this one —
- * the exact z-index conflict ChecklistFieldGroupMenu's own Select Fields sheet had (BottomModal
- * portals to a shared modal root with its own fixed z-index; a plain in-tree `position: fixed`
- * panel can't reliably stack above that — see FieldsView's own comment there for the full
- * reasoning). Sliding Add Field in as a second view of this same sheet, with Back in the
- * header, sidesteps that instead of chasing z-index.
+ * A plain "Add sub task…" input, not a modal — a sub-task only needs a name to exist (see
+ * ChecklistFieldGroup's own accordion, one level up: fields, schedule, note, everything else is
+ * configured on the card itself once it's there via its own settings menu). This used to open a
+ * whole Create New Group dialog (group name + a required field selection + an "Add Field" detour)
+ * before a group could even be created at all — that's what AiChecklistGenerate's "Add to This
+ * Task with AI" prompt (surfaced right below, once something's actually been typed) is for now:
+ * describing what the sub-task should track and letting AI propose the fields/schedule, instead
+ * of making every sub-task start with a manual field picklist.
  */
 const ChecklistFieldGroupAddGroup = ({
-  fieldGroups = [],
   onAddFieldGroup,
-  availableFields,
-  onFieldAdded,
+  onOpenAiGenerate,
   disabled,
 }: ChecklistFieldGroupAddGroupProps) => {
   const intl = useIntl();
-  const { getAllRecordFields } = useRecordField();
+  const [title, setTitle] = React.useState('');
+  // Shown right after a sub-task is created, until the user starts typing the next one — a nudge
+  // toward the existing AI flow for fleshing this one out, not a permanent fixture of the row.
+  const [justAdded, setJustAdded] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const allRecordFields = React.useMemo(() => getAllRecordFields(), [getAllRecordFields]);
-  const actualAvailableFields = React.useMemo(
-    () => availableFields ?? allRecordFields.map(field => field.id),
-    [availableFields, allRecordFields],
-  );
-
-  const [isModalVisible, setIsModalVisible] = React.useState(false);
-  const [view, setView] = React.useState<AddGroupView>(AddGroupView.Form);
-  const defaultGroupName = intl.formatMessage({
-    defaultMessage: 'General',
-    id: 'label-default-group-name',
-  });
-
-  const [groupName, setGroupName] = React.useState(defaultGroupName);
-  const [selectedFields, setSelectedFields] = React.useState<string[]>([]);
-
-  const resetForm = () => {
-    setGroupName(defaultGroupName);
-    setSelectedFields([]);
-    setView(AddGroupView.Form);
-  };
-
-  const handleModalOpen = () => {
-    resetForm();
-    setIsModalVisible(true);
-  };
-
-  const handleModalClose = () => {
-    setIsModalVisible(false);
-    resetForm();
-  };
-
-  const handleFieldToggle = (fieldId: string) => {
-    setSelectedFields(prev =>
-      prev.includes(fieldId) ? prev.filter(id => id !== fieldId) : [...prev, fieldId],
-    );
-  };
-
-  const getFieldDisplayInfo = (fieldId: string) => {
-    const field = allRecordFields.find(f => f.id === fieldId);
-    return field
-      ? { title: field.title, icon: field.icon }
-      : { title: fieldId, icon: 'solar:document-linear' };
-  };
-
-  const handleFieldAdded = (newField: RecordField) => {
-    onFieldAdded?.(newField);
-    setView(AddGroupView.Form);
-  };
-
-  const isFormValid = groupName.trim().length > 0 && selectedFields.length > 0;
-
-  const handleSave = () => {
-    if (!isFormValid) return;
+  const submit = () => {
+    const trimmed = title.trim();
+    if (!trimmed || disabled) return;
     const newGroup: NewFieldGroup = {
       id: `group-${Date.now()}`,
-      title: groupName.trim(),
-      // No overrides on creation — Select Fields' own "Customize" panel (ChecklistFieldGroupMenu)
-      // is where those get set, once the group actually exists.
-      fields: selectedFields.map(fieldId => ({ fieldId })),
-      // All four real tabs, not just Add+Config — the old desktop-only default (see git history)
-      // left a freshly created group unable to show History/Metric at all until someone opened
-      // its own Tabs dialog and turned them back on.
+      title: trimmed,
+      // No fields yet — Select Fields now lives on the card's own settings menu once it exists
+      // (ChecklistFieldGroupMenu), or the AI prompt below proposes some right away.
+      fields: [],
       defaultTab: ChecklistFieldGroupTab.Add,
       activeTabs: [
         ChecklistFieldGroupTab.Home,
@@ -134,159 +64,53 @@ const ChecklistFieldGroupAddGroup = ({
       collapseDefault: false,
     };
     onAddFieldGroup(newGroup);
-    handleModalClose();
+    setTitle('');
+    setJustAdded(true);
+    // Back to the input, not the AI hint that just appeared below it — adding several sub-tasks
+    // in a row (the common case) shouldn't need a re-click into the field each time.
+    inputRef.current?.focus();
   };
 
-  const getGroupsSummary = () => {
-    if (fieldGroups.length === 0) {
-      return intl.formatMessage({ defaultMessage: 'No groups created', id: 'label-no-groups' });
-    }
-    const groupNames = fieldGroups.map(group => group.title).join(', ');
-    return `${fieldGroups.length} group${fieldGroups.length > 1 ? 's' : ''}: ${groupNames}`;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submit();
   };
 
   return (
-    <>
-      <div className={styles.container}>
-        <List.ItemMeta
-          logo={<Icon width={24} icon="solar:folder-open-line-duotone" />}
-          title={intl.formatMessage({ defaultMessage: 'Field Groups', id: 'label-field-groups' })}
-          description={getGroupsSummary()}
-          rightComponent={
-            <Button onClick={handleModalOpen} disabled={disabled} className={styles.addButton} type="dash">
-              <Icon width={16} icon="material-symbols:add" />
-              {intl.formatMessage({ defaultMessage: 'Add Group', id: 'label-add-group' })}
-            </Button>
-          }
+    <div className={styles.container}>
+      <form onSubmit={handleSubmit} className={styles.inputRow}>
+        <Input
+          ref={inputRef}
+          type="text"
+          value={title}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            setTitle(e.target.value);
+            setJustAdded(false);
+          }}
+          placeholder={intl.formatMessage({
+            id: 'checklist-field-group-add-group.placeholder',
+            defaultMessage: 'Add sub task…',
+          })}
+          classes={{ wrapper: styles.inputWrapper, input: styles.input, placeholder: styles.placeholder }}
+          disabled={disabled}
+          border="dash"
+          renderRightInput={() => <></>}
+          renderLeftInput={() => (
+            <Icon width={22} height={22} icon="solar:add-circle-bold" className={styles.addIcon} />
+          )}
         />
-      </div>
-
-      <Dialog
-        visible={isModalVisible}
-        onDismiss={handleModalClose}
-        icon="solar:folder-open-line-duotone"
-        // Both views here are real staged forms (groupName/selectedFields; AddField's own
-        // whole-new-field form) with no live-save — only `handleSave`/its own submit actually
-        // commits either one. A stray backdrop click shouldn't be able to discard either.
-        closeOnOverlayClick={false}
-        onBack={view === AddGroupView.AddField ? () => setView(AddGroupView.Form) : undefined}
-        title={
-          view === AddGroupView.AddField
-            ? intl.formatMessage({ id: 'label-add-new-field', defaultMessage: 'Add New Field' })
-            : intl.formatMessage({
-                id: 'label-create-new-group',
-                defaultMessage: 'Create New Group',
-              })
-        }
-        footer={
-          view === AddGroupView.Form ? (
-            <>
-              <Button type="ghost" className={styles.secondaryButton} onClick={handleModalClose}>
-                {intl.formatMessage({ id: 'label-cancel', defaultMessage: 'Cancel' })}
-              </Button>
-              <Button
-                className={styles.gradientButton}
-                disabled={!isFormValid}
-                onClick={handleSave}
-              >
-                {intl.formatMessage({ id: 'label-create-group', defaultMessage: 'Create Group' })}
-              </Button>
-            </>
-          ) : undefined
-          // AddField has no footer here — CoreFieldRecord (via AddFieldRecordUi) already renders
-          // its own Cancel/Save pair.
-        }
-      >
-        {view === AddGroupView.Form && (
-          <>
-            <Typography.Text className={styles.description}>
-              {intl.formatMessage({
-                defaultMessage:
-                  "A group bundles a few fields so they're recorded together as one section — like Duration + Distance under \"Cardio\", or Push-ups + Pull-ups under \"Strength\".",
-                id: 'label-create-new-group-description',
-              })}
-            </Typography.Text>
-
-            <div className={styles.section}>
-              <Typography.Text className={styles.sectionTitle}>
-                {intl.formatMessage({ defaultMessage: 'Group Name', id: 'label-group-name' })}
-              </Typography.Text>
-              <Typography.Text className={styles.sectionDescription}>
-                {intl.formatMessage({
-                  defaultMessage: "What these fields have in common — you'll see this as the section heading.",
-                  id: 'label-group-name-description',
-                })}
-              </Typography.Text>
-              <Input
-                value={groupName}
-                onChange={e => setGroupName(e.target.value)}
-                placeholder={intl.formatMessage({
-                  defaultMessage: 'e.g. Cardio, Strength, Morning Routine',
-                  id: 'placeholder-group-name',
-                })}
-                border="dash"
-                renderRightInput={() => <></>}
-              />
-            </div>
-
-            <div className={styles.section}>
-              <div className={styles.sectionHeader}>
-                <Typography.Text className={styles.sectionTitle}>
-                  {intl.formatMessage({ defaultMessage: 'Select Fields', id: 'label-select-fields' })}
-                </Typography.Text>
-                <Button
-                  onClick={() => setView(AddGroupView.AddField)}
-                  className={styles.addFieldButton}
-                  type="ghost"
-                  size="sm"
-                >
-                  <Icon width={16} icon="fe:plus" />
-                  {intl.formatMessage({ defaultMessage: 'Add Field', id: 'label-add-field' })}
-                </Button>
-              </div>
-
-              <div className={styles.fieldsList}>
-                {actualAvailableFields.length === 0 ? (
-                  <div className={styles.emptyState}>
-                    <Icon
-                      width={48}
-                      icon="solar:folder-open-line-duotone"
-                      className={styles.emptyIcon}
-                    />
-                    <Typography.Text className={styles.emptyText}>
-                      {intl.formatMessage({
-                        defaultMessage: 'No fields available',
-                        id: 'label-no-fields-available',
-                      })}
-                    </Typography.Text>
-                  </div>
-                ) : (
-                  actualAvailableFields.map(fieldId => {
-                    const { title, icon } = getFieldDisplayInfo(fieldId);
-                    const isChecked = selectedFields.includes(fieldId);
-                    return (
-                      <div key={fieldId} className={styles.fieldItem}>
-                        <Checkbox
-                          checked={isChecked}
-                          onChange={() => handleFieldToggle(fieldId)}
-                          className={styles.fieldCheckbox}
-                        />
-                        <Icon width={16} icon={icon} className={styles.fieldIcon} />
-                        <Typography.Text className={styles.fieldLabel}>{title}</Typography.Text>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </>
-        )}
-
-        {view === AddGroupView.AddField && (
-          <AddFieldRecordUi onSubmit={handleFieldAdded} onCancel={() => setView(AddGroupView.Form)} />
-        )}
-      </Dialog>
-    </>
+      </form>
+      {justAdded && onOpenAiGenerate && (
+        <button type="button" className={styles.aiHint} onClick={onOpenAiGenerate}>
+          <Icon width={16} icon="solar:magic-stick-3-bold-duotone" />
+          {intl.formatMessage({
+            id: 'checklist-field-group-add-group.add-detail-with-ai',
+            defaultMessage: 'Add more detail with AI',
+          })}
+          <Icon width={14} icon="solar:alt-arrow-right-linear" className={styles.aiHintArrow} />
+        </button>
+      )}
+    </div>
   );
 };
 
