@@ -17,11 +17,6 @@
   --text-color: var(--almanac-ink);
   --card-selected-background: var(--almanac-badge-bg);
   --card-shadow: var(--almanac-shadow);
-  // A dedicated blue used only for this redesign's active-state highlight —
-  // kept independent of --almanac-accent (teal in the dark theme) so the
-  // sidebar's own accent reads as blue in both themes, matching the
-  // reference regardless of which page's own content sits next to it.
-  --sidebar-accent: #2f6feb;
 
   background: var(--drawer-background);
   box-shadow: 0 4px 12px var(--card-shadow);
@@ -33,12 +28,6 @@
 
   &.minimized {
     width: 72px;
-  }
-}
-
-[data-theme='dark'] {
-  .leftDrawer {
-    --sidebar-accent: #5b8def;
   }
 }
 
@@ -81,7 +70,7 @@
 
 .brandIcon {
   flex-shrink: 0;
-  color: var(--sidebar-accent);
+  color: var(--icon-primary);
 }
 
 .appTitle {
@@ -181,7 +170,7 @@
   }
 
   &.activeNavigationItem {
-    background: var(--sidebar-accent);
+    background: var(--icon-primary);
     color: #ffffff;
 
     .navigationLabel,
@@ -221,7 +210,7 @@
 }
 
 .navigationItem:hover .navigationIcon {
-  color: var(--sidebar-accent);
+  color: var(--icon-primary);
 }
 
 .activeNavigationIcon {

@@ -4,6 +4,37 @@
   position: relative;
 }
 
+.metricGlance {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid var(--almanac-divider);
+}
+
+.metricStats {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.metricTotal {
+  color: var(--text-title-primary-color);
+}
+
+.metricSub {
+  font-size: 11px;
+  color: var(--text-description-color);
+  white-space: nowrap;
+}
+
+.metricChart {
+  flex: 1;
+  min-width: 0;
+}
+
 // The Original/Mine switcher — a non-owner only (see ChecklistFieldGroupView's own `isOwner`
 // gate). Same tab-pill shape challenge-dashboard-page-ui's own metric tabs use, kept as a local
 // copy here rather than a shared component for three CSS properties' worth of visual match.

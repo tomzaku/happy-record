@@ -109,7 +109,7 @@ const ChecklistFieldMetric = ({
         />
       </div>
 
-      <Chart options={options} series={series} type="bar" />
+      <Chart options={options} series={series} type="bar" height={220} />
     </>
   );
 };

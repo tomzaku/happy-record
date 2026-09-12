@@ -162,29 +162,29 @@
 
   // Almanac palette — dark counterpart of light.scss's own, and (see there)
   // the app's actual base dark theme now, not a standalone opt-in set. A
-  // deep navy/violet night sky rather than an earlier warm-paper-gone-dark
-  // guess — near-black indigo surfaces, near-white ink, a teal accent, and
-  // gradient pills for the two "primary action" chips.
-  --almanac-bg: #14121e;
-  --almanac-surface: #1b1829;
-  --almanac-card: #1f1c2f;
-  --almanac-card-border: rgba(255, 255, 255, 0.08);
-  --almanac-ink: #f1eef8;
-  --almanac-ink-soft: #cdc8dc;
-  --almanac-muted: #948fac;
-  --almanac-divider: rgba(255, 255, 255, 0.08);
-  --almanac-accent: #45d6b8;
-  --almanac-accent-soft: rgba(69, 214, 184, 0.16);
-  --almanac-pill-bg: rgba(255, 255, 255, 0.06);
-  --almanac-pill-active-bg: linear-gradient(135deg, #8b7cf6, #45d6b8);
-  --almanac-pill-active-ink: #f8f7ff;
-  --almanac-badge-bg: rgba(255, 255, 255, 0.08);
-  --almanac-badge-ink: #cfcbe0;
-  --almanac-shadow: rgba(0, 0, 0, 0.45);
-  --almanac-heatmap-0: #221f34;
-  --almanac-heatmap-1: #2a3f45;
-  --almanac-heatmap-2: #2f7d6e;
-  --almanac-heatmap-3: #45d6b8;
+  // deep navy "TodoFlow" night — near-black cool surfaces, near-white ink,
+  // and a vivid blue accent matching the light theme's own, rather than the
+  // earlier violet/teal guess.
+  --almanac-bg: #11151f;
+  --almanac-surface: #161b26;
+  --almanac-card: #1a2029;
+  --almanac-card-border: #262d3a;
+  --almanac-ink: #eef1f7;
+  --almanac-ink-soft: #b7c0d4;
+  --almanac-muted: #838ea3;
+  --almanac-divider: #262d3a;
+  --almanac-accent: #5b8def;
+  --almanac-accent-soft: rgba(91, 141, 239, 0.18);
+  --almanac-pill-bg: #1f2531;
+  --almanac-pill-active-bg: #5b8def;
+  --almanac-pill-active-ink: #0d1117;
+  --almanac-badge-bg: rgba(91, 141, 239, 0.16);
+  --almanac-badge-ink: #9db9f7;
+  --almanac-shadow: rgba(0, 0, 0, 0.4);
+  --almanac-heatmap-0: #1f2531;
+  --almanac-heatmap-1: #2c3a56;
+  --almanac-heatmap-2: #3f5f9e;
+  --almanac-heatmap-3: #5b8def;
   // See light.scss's own comment — same traffic-light triad, brightened
   // slightly for the dark background.
   --almanac-status-done: #4caf6d;

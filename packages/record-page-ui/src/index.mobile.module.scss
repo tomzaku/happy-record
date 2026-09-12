@@ -2,55 +2,14 @@
 @use '@moon-ui/app-scss/almanac-scope' as *;
 @use 'include-media/dist/include-media' as media;
 
-// Same locally-scoped "TodoFlow" cool/blue palette as index.desktop.module.scss's own
-// `.almanacScope` — kept in sync by hand since SCSS has no cross-file mixin for a set of plain
-// custom-property values, only for the `@include almanac-scope` mapping itself.
+// The "TodoFlow" cool/blue palette itself now lives in light.scss/dark.scss's own --almanac-*
+// primitives (applied app-wide), not duplicated here — this scope only still needs to override
+// what's genuinely page-local (see index.desktop.module.scss's own copy of this same override).
 .almanacScope {
   @include almanac-scope;
 
-  --almanac-bg: #f4f6fb;
-  --almanac-surface: #ffffff;
-  --almanac-card: #ffffff;
-  --almanac-card-border: #e8ecf3;
-  --almanac-ink: #1c2333;
-  --almanac-ink-soft: #4b5468;
-  --almanac-muted: #8a93a8;
-  --almanac-divider: #edf1f7;
-  --almanac-accent: #2f6feb;
-  --almanac-accent-soft: rgba(47, 111, 235, 0.12);
-  --almanac-pill-bg: #eef1f8;
-  --almanac-pill-active-bg: #2f6feb;
-  --almanac-pill-active-ink: #ffffff;
-  --almanac-badge-bg: #e7edfd;
-  --almanac-badge-ink: #2f6feb;
-  --almanac-shadow: rgba(31, 41, 61, 0.08);
-  --almanac-heatmap-0: #edf1f7;
-  --almanac-heatmap-1: #bcd3fb;
-  --almanac-heatmap-2: #6fa1f5;
-  --almanac-heatmap-3: #2f6feb;
   --button-default-background: var(--almanac-accent);
   --text-color-invert: #ffffff;
-}
-
-[data-theme='dark'] {
-  .almanacScope {
-    --almanac-bg: #11151f;
-    --almanac-surface: #161b26;
-    --almanac-card: #1a2029;
-    --almanac-card-border: #262d3a;
-    --almanac-ink: #eef1f7;
-    --almanac-ink-soft: #b7c0d4;
-    --almanac-muted: #838ea3;
-    --almanac-divider: #262d3a;
-    --almanac-accent: #5b8def;
-    --almanac-accent-soft: rgba(91, 141, 239, 0.18);
-    --almanac-pill-bg: #1f2531;
-    --almanac-pill-active-bg: #5b8def;
-    --almanac-pill-active-ink: #0d1117;
-    --almanac-badge-bg: rgba(91, 141, 239, 0.16);
-    --almanac-badge-ink: #9db9f7;
-    --almanac-shadow: rgba(0, 0, 0, 0.4);
-  }
 }
 
 .container {

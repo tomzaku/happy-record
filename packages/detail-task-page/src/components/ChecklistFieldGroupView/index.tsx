@@ -1,5 +1,10 @@
 import React from 'react';
 import { useFieldGroupNote, useFieldGroups, type FieldGroup } from '@dreamer/global';
+import { RecordField } from '@dreamer/global/src/store/record-field';
+import Chart from 'react-apexcharts';
+import Typography from '@moon-ui/typography';
+import { useIntl } from '@dreamer/translation';
+import { useMetricRecordField } from '../ChecklistFieldMetric/useMetricRecordField';
 
 import styles from './index.module.scss';
 import NoteEditor from '@moon-ui/note-editor';
@@ -13,12 +18,62 @@ type Props = {
    * their own copy of this group's note instead of the owner's, and gets the Original/Mine
    * switcher below (only once they actually have one — see useFieldGroupNote's own comment). */
   isOwner: boolean;
+  /** This group's own fields — used only for the small "this month" metric strip at top (see
+   * MetricGlance below); the full break-down with a month/year picker still lives on the group's
+   * own Metric tab (ChecklistFieldMetric). */
+  fields: RecordField[];
+  checklistTemplateId: string;
+};
+
+/** A small "how's this month going" glance at the top of the Home tab, so a numeric field group
+ * doesn't need a tab switch just to see its current total — stats on the left, a mini bar chart
+ * on the right. Reuses the Metric tab's own hook rather than a second data pipeline; no
+ * month/year picker here on purpose, that's what the full Metric tab is still for. Renders
+ * nothing for a group with no number fields — there's nothing to chart. */
+const MetricGlance = ({ fields, checklistTemplateId }: { fields: RecordField[]; checklistTemplateId: string }) => {
+  const intl = useIntl();
+  const { series, options, total, currentStreak } = useMetricRecordField({ checklistTemplateId, fields });
+  const hasNumberField = fields.some(field => field.type === 'number');
+  const hasData = series.some(s => (s.data ?? []).length > 0);
+  if (!hasNumberField || !hasData) return null;
+
+  return (
+    <div className={styles.metricGlance}>
+      <div className={styles.metricStats}>
+        <Typography.Title level={3} noMargin className={styles.metricTotal}>
+          {total}
+        </Typography.Title>
+        <Typography.Text className={styles.metricSub}>
+          {intl.formatMessage({ id: 'ChecklistFieldGroupView.metric-this-month', defaultMessage: 'This month' })}
+        </Typography.Text>
+        <Typography.Text className={styles.metricSub}>
+          {intl.formatMessage(
+            { id: 'ChecklistFieldGroupView.metric-streak', defaultMessage: '🔥 {{days}}-day streak' },
+            { days: currentStreak },
+          )}
+        </Typography.Text>
+      </div>
+      <div className={styles.metricChart}>
+        <Chart
+          options={{
+            ...options,
+            chart: { ...options.chart, sparkline: { enabled: true } },
+            tooltip: { enabled: false },
+          }}
+          series={series}
+          type="bar"
+          height={44}
+          width="100%"
+        />
+      </div>
+    </div>
+  );
 };
 
 /** The group's own note only — a `type: 'note'` field's own value is a checklist journal entry
  * now (see ChecklistFieldGeneral's own comment), rendered on the Submit/History tabs alongside
  * the other fields, not here. */
-const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
+const ChecklistFieldGroupView = ({ fieldGroup, isOwner, fields, checklistTemplateId }: Props) => {
   const { updateFieldGroup } = useFieldGroups();
   // View mode by default — editable only once the user asks for it via the Edit button. Reset
   // to view whenever a different group's note is shown (e.g. switching field groups) rather
@@ -66,6 +121,7 @@ const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
 
   return (
     <div className={styles.container}>
+      <MetricGlance fields={fields} checklistTemplateId={checklistTemplateId} />
       {!isOwner && hasPersonalCopy && (
         <div className={styles.tabRow}>
           <button

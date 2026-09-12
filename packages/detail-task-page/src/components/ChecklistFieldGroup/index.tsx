@@ -189,6 +189,8 @@ const ChecklistFieldGroup = ({
           <ChecklistFieldGroupView
             fieldGroup={fieldGroup}
             isOwner={!readOnly}
+            fields={fieldDetails}
+            checklistTemplateId={checklistTemplate.id}
           />
         );
         break;
@@ -241,6 +243,8 @@ const ChecklistFieldGroup = ({
           <ChecklistFieldGroupView
             fieldGroup={fieldGroup}
             isOwner={!readOnly}
+            fields={fieldDetails}
+            checklistTemplateId={checklistTemplate.id}
           />
         );
         break;

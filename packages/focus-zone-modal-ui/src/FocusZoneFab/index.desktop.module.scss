@@ -4,13 +4,13 @@
 
 /* Icon States */
 .iconActive {
-  color: #2f6feb;
-  fill: #2f6feb;
+  color: var(--almanac-accent);
+  fill: var(--almanac-accent);
 }
 
 .iconInactive {
-  color: var(--almanac-muted, rgba(255, 255, 255, 0.6));
-  fill: var(--almanac-muted, rgba(255, 255, 255, 0.6));
+  color: var(--almanac-muted);
+  fill: var(--almanac-muted);
 }
 
 /* FAB Container */
@@ -30,9 +30,9 @@
   position: relative;
   border-radius: 100px;
   padding: 10px 16px;
-  background: #f8f9fc;
-  border: 1px solid rgba(31, 41, 61, 0.06);
-  box-shadow: 0 10px 28px rgba(31, 41, 61, 0.14);
+  background: var(--almanac-card);
+  border: 1px solid var(--almanac-card-border);
+  box-shadow: 0 10px 28px var(--almanac-shadow);
   display: flex;
   align-items: center;
   gap: 14px;
@@ -41,15 +41,7 @@
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 12px 32px rgba(31, 41, 61, 0.18);
-  }
-}
-
-[data-theme='dark'] {
-  .focusZoneFAB {
-    background: #1a1f2b;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 12px 32px var(--almanac-shadow);
   }
 }
 
@@ -62,10 +54,10 @@
 
 .fabClockIcon {
   flex-shrink: 0;
-  color: #8b93a7;
+  color: var(--almanac-muted);
 
   &.running {
-    color: #2f6feb;
+    color: var(--almanac-accent);
   }
 }
 
@@ -81,10 +73,10 @@
   justify-content: center;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  background: #2f6feb;
+  background: var(--almanac-accent);
 
   &:hover {
-    background: #255ecb;
+    filter: brightness(0.9);
     transform: scale(1.05);
   }
 
@@ -93,8 +85,8 @@
   }
 
   &.musicPlaying {
-    background: rgba(47, 111, 235, 0.15);
-    color: #2f6feb;
+    background: var(--almanac-accent-soft);
+    color: var(--almanac-accent);
     box-shadow: none;
   }
 }
@@ -113,7 +105,7 @@
   height: 44px;
   border-radius: 50%;
   border: 0;
-  color: #8b93a7;
+  color: var(--almanac-ink-soft);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -123,7 +115,7 @@
   background: transparent;
 
   &:hover {
-    background: rgba(31, 41, 61, 0.08);
+    background: var(--almanac-card-border);
     transform: scale(1.05);
   }
 
@@ -132,8 +124,8 @@
   }
 
   &.musicPlaying {
-    background: rgba(47, 111, 235, 0.15);
-    color: #2f6feb;
+    background: var(--almanac-accent-soft);
+    color: var(--almanac-accent);
   }
 
   &.musicMuted {
@@ -147,17 +139,11 @@
   font-weight: 700;
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   letter-spacing: 0.3px;
-  color: #1c2333;
+  color: var(--almanac-ink);
   min-width: 76px;
   text-align: left;
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-[data-theme='dark'] {
-  .fabTime {
-    color: #eef1f7;
-  }
 }
 
 .fabHamburgerButton {

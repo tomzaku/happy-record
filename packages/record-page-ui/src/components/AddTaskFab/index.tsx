@@ -17,22 +17,6 @@ const AddTaskFab = ({ date }: Props) => {
   const intl = useIntl();
   const [visible, setVisible] = React.useState(false);
 
-  // BottomModal portals `content` straight to document.body (@moon-ui/provider's portal root),
-  // outside this page's own `.almanacScope` subtree — so the scoped cool/blue palette
-  // (index.mobile.module.scss) never reaches it through normal inheritance. Re-declaring the same
-  // handful of overrides here, inline, on this sheet's own root fixes that without reaching into
-  // the shared BottomModal/Modal primitives (used by plenty of other, unrelated sheets) or
-  // duplicating them into another real CSS file.
-  const scopedVars = {
-    '--almanac-accent': '#2f6feb',
-    '--almanac-accent-soft': 'rgba(47, 111, 235, 0.12)',
-    '--almanac-card-border': '#e8ecf3',
-    '--almanac-ink': '#1c2333',
-    '--almanac-muted': '#8a93a8',
-    '--text-color': '#1c2333',
-    '--text-description-color': '#8a93a8',
-  } as React.CSSProperties;
-
   return (
     <>
       <button
@@ -47,7 +31,7 @@ const AddTaskFab = ({ date }: Props) => {
         visible={visible}
         onDismiss={() => setVisible(false)}
         content={
-          <div className={styles.sheet} style={scopedVars}>
+          <div className={styles.sheet}>
             <div className={styles.sheetHandle} />
             <div className={styles.sheetHeader}>
               <Typography.Title level={4} noMargin className={styles.sheetTitle}>
