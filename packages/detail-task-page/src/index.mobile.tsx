@@ -228,11 +228,7 @@ const DetailTaskPageMobile = () => {
           Wrapped in a real Card here at the call site (same shape as the home page's own mobile
           `.card` — record-page-ui/index.mobile.module.scss) rather than baking Card-like styling
           into WeeklyRow itself, which stays plain content reusable in any container. */}
-      <Card className={styles.weeklyRowCard}>
-        <div className={styles.body}>
           <WeeklyRow currentDay={currentDay} />
-        </div>
-      </Card>
       {/* The template row still exists (soft-deleted, not removed — see
           20260905000000_checklist_templates_soft_delete.sql), so this page still resolves for a
           participant instead of just breaking; the owner already navigates away on their own

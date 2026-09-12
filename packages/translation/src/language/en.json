@@ -134,6 +134,7 @@
   "ParentTaskHeader.progress-value": "{{done}} / {{total}}",
   "ParentTaskHeader.started": "Started",
   "ParentTaskHeader.sub-tasks": "Sub Tasks",
+  "ParentTaskHeader.view-challenge-dashboard": "View Challenge Dashboard",
   "PregnantIntro.checklists-management": "Checklist Template Management",
   "PregnantIntro.repeat.everyday": "Every day",
   "RecordTaskSetting.add-note": "Add Note",
