@@ -18,11 +18,13 @@ import { BackHeader } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
 import Typography from '@moon-ui/typography';
+import Card from '@moon-ui/card';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
+import styles from './index.mobile.module.scss';
 import DeleteTaskModal from '@dreamer/record-page-ui/src/components/checklist-day/DeleteTaskModal';
 import { useDeleteTaskFlow } from '@dreamer/record-page-ui/src/components/checklist-day/useDeleteTaskFlow';
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
-import ChecklistTemplateCalendar from './components/ChecklistTemplateCalendar';
+import WeeklyRow from './components/WeeklyRow';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
 import AiChecklistGenerate from './components/AiChecklistGenerate';
 import CardShare from './components/CardShare';
@@ -217,6 +219,17 @@ const DetailTaskPageMobile = () => {
         )}
         onClickLeftButton={() => navigate('/')}
       />
+      {/* One page-level week-strip nav instead of each field group's own copy of it (see
+          ChecklistFieldGroupAdd's own `isMobile` gate) — they all read/write the same page
+          `currentDay` search param anyway, so showing it once at the very top avoids the same
+          card repeating once per field group. Replaces ChecklistTemplateCalendar here entirely —
+          mobile doesn't render that panel at all (desktop's own right column still does).
+          Wrapped in a real Card here at the call site (same shape as the home page's own mobile
+          `.card` — record-page-ui/index.mobile.module.scss) rather than baking Card-like styling
+          into WeeklyRow itself, which stays plain content reusable in any container. */}
+      <Card className={styles.weeklyRowCard}>
+        <WeeklyRow currentDay={currentDay} />
+      </Card>
       {/* Same widget/condition as index.desktop.tsx's own side column — owner
           or participant either way, replacing the header's plain dashboard
           icon (and CardShare's old link) with an actual leaderboard preview.
@@ -270,7 +283,6 @@ const DetailTaskPageMobile = () => {
           onDaySelect={handleCalendarDaySelect}
         />
       )}
-      <ChecklistTemplateCalendar checklistTemplateId={id} fields={fields} onDaySelect={handleCalendarDaySelect} />
       {/* General Settings — mobile's actual task content (the fields above)
           is what someone opens this page to see/do; the settings card is
           metadata about the task, not the task itself, so it reads better

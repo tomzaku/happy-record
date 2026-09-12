@@ -1,0 +1,143 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+// LEVEL 1 of the page's own title hierarchy — see this file's own top comment.
+.card {
+  margin: 0;
+  padding: $spacing-lg;
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: 0 6px 20px var(--almanac-shadow, var(--card-shadow));
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+
+.titleCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titleDisplay {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.titleInput {
+  width: 100%;
+  padding: 4px $spacing-sm;
+  border: 1px solid var(--almanac-accent, var(--input-border-focus));
+  border-radius: 8px;
+  background: var(--input-background);
+  color: var(--text-color);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.editTitleButton {
+  flex-shrink: 0;
+  padding: 4px !important;
+}
+
+.subTaskNames {
+  font-size: 13px;
+  color: var(--text-description-color);
+}
+
+.aiButton {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--almanac-accent, var(--button-default-background));
+  color: #fff;
+}
+
+.proBadge {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: $spacing-sm;
+  margin-top: $spacing-lg;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  min-width: 0;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+}
+
+.statIcon {
+  flex-shrink: 0;
+  color: var(--almanac-accent, var(--icon-primary));
+}
+
+.statLabel {
+  display: block;
+  font-size: 11px;
+  color: var(--text-description-color);
+}
+
+.statValue {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progressStatBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.progressStatHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $spacing-xs;
+}
+
+.progressTrack {
+  margin-top: 4px;
+  height: 4px;
+  border-radius: 100px;
+  background: var(--almanac-divider, var(--division-color));
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 100px;
+  background: var(--almanac-accent, var(--icon-primary));
+  transition: width 0.3s ease;
+}

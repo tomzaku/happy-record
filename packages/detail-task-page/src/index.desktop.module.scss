@@ -16,7 +16,10 @@
   @include almanac-scope;
 
   flex: 1;
-  padding-bottom: 190px;
+  // Left/right match the home page's own combined desktopBody + almanacScope padding
+  // (record-page-ui/index.desktop.module.scss) — bottom stays this page's own floating-timer
+  // clearance, unrelated to that match.
+  padding: 0 $spacing-xl 190px;
 }
 
 .content {
@@ -24,153 +27,43 @@
   margin: 0 auto;
 }
 
+// Just a plain back link now — title/edit, avatar, and "Add with AI" all moved down into
+// ParentTaskHeader (see index.desktop.tsx's own comment), the page's real LEVEL 1 header.
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: $spacing-md;
   padding: $spacing-md;
 }
 
-.titleDisplayContainer {
-  display: flex;
+.backLink {
+  display: inline-flex;
   align-items: center;
-  gap: $spacing-sm;
-}
-
-.editTitleButton {
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  padding: $spacing-xs;
-  border-radius: 6px;
-  
-  &:hover {
-    background: var(--button-action-background);
-    color: var(--button-action-color);
-  }
-}
-
-.titleDisplayContainer:hover .editTitleButton {
-  opacity: 1;
-}
-
-.titleEditContainer {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-sm;
-  width: 100%;
-}
-
-.titleInput {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-title-primary-color);
-  border: 2px solid var(--button-action-color);
-  border-radius: 8px;
-  padding: $spacing-sm;
-  background: var(--card-background);
-  
-  &:focus {
-    outline: none;
-    border-color: var(--button-action-color);
-    box-shadow: 0 0 0 3px var(--button-action-background);
-  }
-}
-
-.subtitle {
-  margin: 0;
-  color: var(--text-description-color);
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.headerActions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-// "Generate with AI" — deliberately not just another ghost button like Edit/Delete
-// elsewhere on this page: this is the one action on the page gated behind Pro (see
-// AiChecklistGenerate's own `!isPro` upsell branch), so it earns a distinct, eye-catching
-// treatment rather than blending into the row. Gradient + glow are plain hex/rgba, not
-// theme tokens — this is a one-off accent color, not a semantic color reused elsewhere,
-// so it doesn't need a light/dark pair the way the rest of this file's colors do.
-.aiButton {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
+  gap: 6px;
+  padding: 0;
   border: 0;
-  border-radius: 10px;
+  background: transparent;
+  color: var(--almanac-accent, var(--text-link));
+  font-size: 14px;
   font-weight: 600;
-  color: #fff;
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
-  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-
-  // A diagonal light sweep across the gradient — ::before instead of an actual
-  // extra element since it's pure decoration, not content. Sits above the
-  // gradient but below the button's own children (icon/label/badge stack on
-  // top via z-index) so the sweep never washes out the text mid-hover.
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.45) 50%, transparent 70%);
-    transform: translateX(-120%);
-  }
-
-  & > * {
-    position: relative;
-    z-index: 1;
-  }
+  cursor: pointer;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
-    filter: brightness(1.08);
-
-    &::before {
-      transform: translateX(120%);
-      transition: transform 0.6s ease;
-    }
+    text-decoration: underline;
   }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 3px 10px rgba(168, 85, 247, 0.4);
-  }
-}
-
-.aiIcon {
-  transition: transform 0.3s ease;
-
-  .aiButton:hover & {
-    transform: rotate(-15deg) scale(1.2);
-  }
-}
-
-.proBadge {
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.25);
-  color: #ffe27a;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
 }
 
 .mainContent {
   display: grid;
-  // minmax(0, ...), not plain fr — a grid track's implicit min width is its content's
-  // min-content by default (the same rule that made the Share row force its own row wide
-  // before its min-width: 0 fix), so any wide-enough content in either column could still
-  // force that whole track past its 2.5fr/1fr share instead of the column just clipping/
-  // wrapping it. minmax(0, ...) is what actually lets the fr sizing win.
-  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr);
+  // Matches the home page's own right column width (record-page-ui/index.desktop.module.scss),
+  // so the calendar/history panel reads as the same fixed-width surface on both pages.
+  // minmax(0, ...) on the left track only — its implicit min width is otherwise its content's
+  // min-content by default (the same rule that made the Share row force its own row wide before
+  // its min-width: 0 fix), which could still force that track past its 1fr share.
+  grid-template-columns: minmax(0, 1fr) 340px;
+  // Same $spacing-xl the home page uses for both its column gap and its own right-edge padding
+  // (record-page-ui/index.desktop.module.scss's `.desktopBody`/`.almanacScope`) — matched here via
+  // this grid gap plus .side's own padding-right below, so the right column's left margin (the
+  // gap from the left column) equals its right margin (the gap to the page edge).
+  gap: $spacing-xl;
   align-items: start;
 }
 
@@ -181,6 +74,11 @@
 }
 
 .main {
+  display: flex;
+  flex-direction: column;
+}
+
+.side {
   display: flex;
   flex-direction: column;
 }

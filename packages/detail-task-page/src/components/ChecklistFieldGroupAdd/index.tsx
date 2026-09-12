@@ -32,7 +32,6 @@ import {
 } from 'date-fns';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import { useIntl } from '@dreamer/translation';
-import WeeklyRow from '../WeeklyRow';
 import ChecklistFieldGroupAttachments from './ChecklistFieldGroupAttachments';
 import MediaFieldInput, { MediaFieldPreview } from './MediaFieldInput';
 
@@ -47,13 +46,10 @@ type Props = {
   // ChecklistFieldGroup's ref map) — lets someone filling out the Submit tab jump straight to
   // adding/removing fields without first finding the "⋮" settings menu on the group header.
   onOpenFieldSettings?: () => void;
-  /** Hides the week-strip nav (`WeeklyRow`, which reads/writes this *page's own* `currentDay`
-   * search param) and the collapsible History section below the fields — both assume they're
-   * sitting on the real `/task/:id` page. home-calendar's own `TaskDetailModal` embeds this same
-   * component for its calendar quick-look, outside that route entirely: `WeeklyRow`'s week
-   * nav would silently rewrite whatever page it's actually mounted on's own query string instead,
-   * and History duplicates the calendar already visible behind the modal. Defaults false —
-   * unchanged for every existing detail-task-page caller. */
+  /** Hides the collapsible Attachments section below the fields — assumes it's sitting on the
+   * real `/task/:id` page. home-calendar's own `TaskDetailModal` embeds this same component for
+   * its calendar quick-look, outside that route entirely, where today's attachments already show
+   * elsewhere. Defaults false — unchanged for every existing detail-task-page caller. */
   compact?: boolean;
 };
 
@@ -226,7 +222,6 @@ const ChecklistFieldGroupAdd = ({
     Object.values(noteTouched).some(Boolean);
   return (
     <>
-      {!compact && <WeeklyRow currentDay={currentDay} />}
       {numberFields.map(field => {
         // Today's total for this field, same sum renderCurrentDay used to show in its own
         // duplicate row below — rendered as this field's own List.ItemMeta `rightComponent`,

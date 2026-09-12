@@ -8,6 +8,7 @@ import {
   isFieldGroupActiveOnDay,
   useChecklist,
   useFieldGroups,
+  useIsMobile,
 } from '@dreamer/global';
 import { getEffectiveFieldDisplay, RecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
@@ -27,6 +28,9 @@ import ChecklistFieldGroupMenu, {
 } from '../ChecklistFieldGroupMenu';
 import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import ChecklistFieldGroupAddGroup from '../ChecklistFieldGroupAddGroup';
+import { Icon } from '@moon-ui/icon/Icon';
+import cx from 'classnames';
+import { useFieldGroupAccordion } from './useFieldGroupAccordion';
 
 type Props = {
   checklist: Checklist;
@@ -58,20 +62,26 @@ const ChecklistFieldGroup = ({
   const { updateChecklist } = useChecklist();
   const { addFieldGroup, updateFieldGroup } = useFieldGroups();
   const intl = useIntl();
+  // Desktop has real width to spare — Submit and Metrics sit side by side there instead of
+  // Metrics being one more collapsible section stacked under Submit, the shape mobile keeps
+  // (no room for two columns on a phone-width card).
+  const isMobile = useIsMobile();
   // Keyed by fieldGroup id — the Submit form's own "Select Fields" button (see
   // ChecklistFieldGroupAdd's onOpenFieldSettings) reaches into this same group's settings menu
   // rather than duplicating the Select Fields dialog, so it stays the one place that dialog
   // actually lives.
   const menuRefs = React.useRef<Record<string, ChecklistFieldGroupMenuHandle | null>>({});
-  const [collapsedGroups, setCollapsedGroups] = React.useState<
-    Record<string, boolean>
-  >(
-    getActiveFieldGroups(checklistTemplate.fieldGroups).reduce((acc, fieldGroup) => {
-      return {
-        ...acc,
-        [fieldGroup.id]: fieldGroup.collapseDefault ?? false,
-      };
-    }, {}),
+  // Groups scheduled today float to the top; a stable sort keeps everything else in its existing
+  // relative order. Shared between the accordion's own "which one is current" pick and the render
+  // order below, so the two never disagree about which group is first.
+  const sortedGroups = React.useMemo(
+    () =>
+      [...getActiveFieldGroups(checklistTemplate.fieldGroups)].sort((a, b) => {
+        const aActive = isFieldGroupActiveOnDay(a.repeat, new Date(currentDay));
+        const bActive = isFieldGroupActiveOnDay(b.repeat, new Date(currentDay));
+        return aActive === bActive ? 0 : aActive ? -1 : 1;
+      }),
+    [checklistTemplate.fieldGroups, currentDay],
   );
   // Clipped only while the height:0<->auto collapse animation below is actually running (see
   // .cardContainer's own history — it used to carry a permanent `overflow: hidden` to fix that
@@ -108,12 +118,15 @@ const ChecklistFieldGroup = ({
     return map;
   }, [checklistTemplate.fieldGroups, fields]);
 
-  const toggleCollapse = (fieldGroupId: string) => {
-    setCollapsedGroups(prev => ({
-      ...prev,
-      [fieldGroupId]: !prev[fieldGroupId],
-    }));
-  };
+  // Which sub-task card is expanded by default (the current/next incomplete one) and each one's
+  // own done-today state (drives the collapsed row's own indicator dot below) — see that hook's
+  // own comment for why this is a same-day record-presence check, not a real completion flag.
+  const { isCollapsed, toggleCollapse, hasSubmittedToday } = useFieldGroupAccordion({
+    checklistTemplateId: checklistTemplate.id,
+    currentDay,
+    sortedGroups,
+    fieldDetailsByGroup,
+  });
 
   // Plain title text only now — the schedule status used to be baked into this same return
   // value (a two-line flex-column sitting inside the header's Typography.Title), which put the
@@ -164,10 +177,10 @@ const ChecklistFieldGroup = ({
     updateFieldGroup(updatedGroup);
   };
 
-  // One stacked view per group now — Submit always open (that's the one thing a group's card
-  // exists to do), then Metrics/Note/History each tucked behind their own plain collapsible
-  // section header, closed by default — instead of four tabs nobody but the person who built it
-  // knew to click between.
+  // Submit always open (that's the one thing a group's card exists to do) — with Metrics beside
+  // it on desktop (see isMobile above), or folded into the same stack of collapsible sections as
+  // History/Note on mobile, closed by default — instead of four tabs nobody but the person who
+  // built it knew to click between.
   const renderGroupContent = ({
     fieldGroup,
     fieldDetails,
@@ -176,20 +189,32 @@ const ChecklistFieldGroup = ({
     fieldDetails: RecordField[];
   }) => (
     <>
-      <ChecklistFieldGroupAdd
-        fields={fieldDetails}
-        checklistTemplate={checklistTemplate}
-        fieldGroup={fieldGroup}
-        checklist={checklist}
-        currentDay={currentDay}
-        onOpenFieldSettings={() => menuRefs.current[fieldGroup.id]?.openFieldsDialog()}
-        onSubmit={() =>
-          updateChecklist({
-            id: checklist.id,
-            completedAt: new Date().toISOString(),
-          })
-        }
-      />
+      <div className={styles.submitMetricsRow}>
+        <div className={styles.submitColumn}>
+          <ChecklistFieldGroupAdd
+            fields={fieldDetails}
+            checklistTemplate={checklistTemplate}
+            fieldGroup={fieldGroup}
+            checklist={checklist}
+            currentDay={currentDay}
+            onOpenFieldSettings={() => menuRefs.current[fieldGroup.id]?.openFieldsDialog()}
+            onSubmit={() =>
+              updateChecklist({
+                id: checklist.id,
+                completedAt: new Date().toISOString(),
+              })
+            }
+          />
+        </div>
+        {!isMobile && (
+          <div className={styles.metricsColumn}>
+            <Typography.Text className={styles.metricsColumnLabel}>
+              {intl.formatMessage({ id: 'checklist-field-group.metrics-title', defaultMessage: 'Metrics' })}
+            </Typography.Text>
+            <ChecklistFieldMetric fields={fieldDetails} checklistTemplateId={checklistTemplate.id} />
+          </div>
+        )}
+      </div>
       <CollapsibleSection
         icon="solar:clock-square-broken"
         label={intl.formatMessage({ id: 'checklist-field-group.history-title', defaultMessage: 'History' })}
@@ -201,15 +226,22 @@ const ChecklistFieldGroup = ({
           onDaySelect={onDaySelect}
         />
       </CollapsibleSection>
-      <CollapsibleSection
-        icon="solar:chart-square-linear"
-        label={intl.formatMessage({ id: 'checklist-field-group.metrics-title', defaultMessage: 'Metrics' })}
-      >
-        <ChecklistFieldMetric fields={fieldDetails} checklistTemplateId={checklistTemplate.id} />
-      </CollapsibleSection>
+      {isMobile && (
+        <CollapsibleSection
+          icon="solar:chart-square-linear"
+          label={intl.formatMessage({ id: 'checklist-field-group.metrics-title', defaultMessage: 'Metrics' })}
+        >
+          <ChecklistFieldMetric fields={fieldDetails} checklistTemplateId={checklistTemplate.id} />
+        </CollapsibleSection>
+      )}
       <CollapsibleSection
         icon="solar:document-text-linear"
         label={intl.formatMessage({ id: 'checklist-field-group.note-title', defaultMessage: 'Note' })}
+        summary={
+          fieldGroup.noteId
+            ? undefined
+            : intl.formatMessage({ id: 'checklist-field-group.no-note-yet', defaultMessage: 'No note yet' })
+        }
       >
         <ChecklistFieldGroupView fieldGroup={fieldGroup} isOwner={!readOnly} />
       </CollapsibleSection>
@@ -219,96 +251,105 @@ const ChecklistFieldGroup = ({
     // Each group is its own row now (see useFieldGroups.tsx) — no more index bookkeeping to
     // keep an update aimed at the right array position, unlike the old jsonb-array splice this
     // replaced.
-    return getActiveFieldGroups(checklistTemplate.fieldGroups)
-      // Groups scheduled today float to the top; a stable sort keeps everything else in its
-      // existing relative order.
-      .sort((a, b) => {
-        const aActive = isFieldGroupActiveOnDay(a.repeat, new Date(currentDay));
-        const bActive = isFieldGroupActiveOnDay(b.repeat, new Date(currentDay));
-        return aActive === bActive ? 0 : aActive ? -1 : 1;
-      })
-      .map(fieldGroup => {
-        const fieldDetails = fieldDetailsByGroup[fieldGroup.id] ?? [];
-        const isCollapsed = collapsedGroups[fieldGroup.id] || false;
-        const isActiveToday = isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay));
+    return sortedGroups.map(fieldGroup => {
+      const fieldDetails = fieldDetailsByGroup[fieldGroup.id] ?? [];
+      const collapsed = isCollapsed(fieldGroup.id);
+      const isActiveToday = isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay));
+      const done = hasSubmittedToday(fieldGroup);
 
-        return (
-          <Card
-            key={fieldGroup.id}
-            className={[styles.cardContainer, !isActiveToday && styles.cardNotScheduled]
-              .filter(Boolean)
-              .join(' ')}
+      return (
+        <Card
+          key={fieldGroup.id}
+          className={cx(styles.cardContainer, !isActiveToday && styles.cardNotScheduled)}
+        >
+          <ChecklistFieldGroupHeader
+            renderIndicator={() => (
+              <span
+                className={cx(styles.doneIndicator, done && styles.doneIndicatorDone)}
+                title={
+                  done
+                    ? intl.formatMessage({ id: 'checklist-field-group.done-today', defaultMessage: 'Done today' })
+                    : intl.formatMessage({ id: 'checklist-field-group.not-done-today', defaultMessage: 'Not done yet' })
+                }
+              >
+                {done && <Icon width={12} icon="solar:check-read-linear" color="#fff" />}
+              </span>
+            )}
+            renderTitle={() => renderTitle(fieldGroup)}
+            renderStatus={() => renderScheduleStatus(fieldGroup)}
+            // The settings cog only matters once you're actually looking at this sub-task's own
+            // content — hidden on a collapsed row so the compact summary line stays uncluttered,
+            // same as the mockup's own collapsed rows never showing one.
+            renderMenu={
+              collapsed
+                ? undefined
+                : () => (
+                    <ChecklistFieldGroupMenu
+                      ref={handle => {
+                        menuRefs.current[fieldGroup.id] = handle;
+                      }}
+                      fieldGroup={fieldGroup}
+                      onUpdateFieldGroup={saveFieldGroupChange}
+                      availableFields={fields.map(f => f.id)}
+                      allRecordFields={fields}
+                      onFieldAdded={onFieldAdded}
+                    />
+                  )
+            }
+            isCollapsed={collapsed}
+            onToggleCollapse={() => toggleCollapse(fieldGroup.id)}
+          />
+          <motion.div
+            initial={false}
+            animate={{
+              height: collapsed ? 0 : 'auto',
+              opacity: collapsed ? 0 : 1,
+            }}
+            transition={{
+              height: {
+                type: 'spring',
+                stiffness: 300,
+                damping: 30,
+              },
+              opacity: {
+                duration: 0.2,
+              },
+            }}
+            onAnimationStart={() =>
+              setCollapseAnimating(prev => ({ ...prev, [fieldGroup.id]: true }))
+            }
+            onAnimationComplete={() =>
+              setCollapseAnimating(prev => ({ ...prev, [fieldGroup.id]: false }))
+            }
+            style={{
+              overflow: collapsed || collapseAnimating[fieldGroup.id] ? 'hidden' : 'visible',
+            }}
           >
-            <ChecklistFieldGroupHeader
-              renderTitle={() => renderTitle(fieldGroup)}
-              renderStatus={() => renderScheduleStatus(fieldGroup)}
-              renderMenu={() => (
-                <ChecklistFieldGroupMenu
-                  ref={handle => {
-                    menuRefs.current[fieldGroup.id] = handle;
-                  }}
-                  fieldGroup={fieldGroup}
-                  onUpdateFieldGroup={saveFieldGroupChange}
-                  availableFields={fields.map(f => f.id)}
-                  allRecordFields={fields}
-                  onFieldAdded={onFieldAdded}
-                />
-              )}
-              isCollapsed={isCollapsed}
-              onToggleCollapse={() => toggleCollapse(fieldGroup.id)}
-            />
-            <motion.div
-              initial={false}
-              animate={{
-                height: isCollapsed ? 0 : 'auto',
-                opacity: isCollapsed ? 0 : 1,
-              }}
-              transition={{
-                height: {
-                  type: 'spring',
-                  stiffness: 300,
-                  damping: 30,
-                },
-                opacity: {
-                  duration: 0.2,
-                },
-              }}
-              onAnimationStart={() =>
-                setCollapseAnimating(prev => ({ ...prev, [fieldGroup.id]: true }))
-              }
-              onAnimationComplete={() =>
-                setCollapseAnimating(prev => ({ ...prev, [fieldGroup.id]: false }))
-              }
-              style={{
-                overflow: isCollapsed || collapseAnimating[fieldGroup.id] ? 'hidden' : 'visible',
-              }}
-            >
-              <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
-              {renderGroupContent({ fieldGroup, fieldDetails })}
-            </motion.div>
-          </Card>
-        );
-      });
+            <Hr classes={{ hr: styles.hr, container: styles.hrContainer }} />
+            {renderGroupContent({ fieldGroup, fieldDetails })}
+          </motion.div>
+        </Card>
+      );
+    });
   }
   const handleAddFieldGroup = (newGroup: Omit<FieldGroup, 'checklistTemplateId' | 'position' | 'updatedAt'>) => {
     if (readOnly) return;
     // New groups go last — `position` on the existing ones is already gap-free from however they
     // were created, so the current count is the next free slot.
-    const created = addFieldGroup({
+    addFieldGroup({
       ...newGroup,
       checklistTemplateId: checklistTemplate.id,
       position: checklistTemplate.fieldGroups.length,
     });
-
-    // Update collapsedGroups state to include the new field group
-    setCollapsedGroups(prev => ({
-      ...prev,
-      [created.id]: created.collapseDefault ?? false,
-    }));
+    // No collapse-state bookkeeping needed here anymore — useFieldGroupAccordion derives a new
+    // group's own expanded/collapsed state the same way it does for every other group, live.
   };
 
   return (
     <>
+      <Typography.Text className={styles.subTasksLabel}>
+        {intl.formatMessage({ id: 'checklist-field-group.sub-tasks-title', defaultMessage: 'Sub Tasks' })}
+      </Typography.Text>
       {renderBody()}
       <ChecklistFieldGroupAddGroup
         fieldGroups={getActiveFieldGroups(checklistTemplate.fieldGroups)}

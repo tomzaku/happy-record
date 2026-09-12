@@ -1,8 +1,73 @@
 @use '@moon-ui/app-scss/metric' as *;
 @use 'include-media/dist/include-media' as media;
 
+// LEVEL 2 of the page's own title hierarchy (see the parent task header, one level up) — a plain
+// small label above the accordion list, same "uppercase, muted, letter-spaced" shape
+// .metricsColumnLabel below already uses for its own section label.
+.subTasksLabel {
+  display: block;
+  margin: $spacing-lg $spacing-sm $spacing-sm;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-description-color);
+}
+
 .cardContainer {
-  margin: $spacing-sm;
+  margin: 0 0 $spacing-sm;
+}
+
+// The accordion's own done/pending dot, at the row's own left edge (ChecklistFieldGroupHeader's
+// `renderIndicator` slot) — filled accent + checkmark once this sub-task has a record today,
+// otherwise an empty ring, same "is this handled yet" signal the collapsed row's whole point is
+// to answer before anyone has to expand it.
+.doneIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--card-border);
+}
+
+.doneIndicatorDone {
+  border-color: var(--almanac-accent);
+  background: var(--almanac-accent);
+}
+
+// Submit on the left, Metrics on the right — desktop only (see isMobile in index.tsx); mobile
+// renders Submit alone here, Metrics folded into the same collapsible-section stack as
+// History/Note below instead, since there's no room for two real columns on a phone-width card.
+.submitMetricsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-xl;
+}
+
+.submitColumn {
+  flex: 3;
+  min-width: 0;
+}
+
+.metricsColumn {
+  flex: 2;
+  min-width: 0;
+  padding-top: $spacing-sm;
+  border-left: 1px solid var(--card-border);
+  padding-left: $spacing-xl;
+}
+
+.metricsColumnLabel {
+  display: block;
+  margin-bottom: $spacing-sm;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-description-color);
 }
 
 // A group whose own schedule (FieldGroup.repeat) isn't due on the day being viewed — still

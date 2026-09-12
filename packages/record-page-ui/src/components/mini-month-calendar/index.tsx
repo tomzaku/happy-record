@@ -28,6 +28,11 @@ type Props = {
    * where a second one right beside it is redundant. Defaults to shown, matching every other
    * consumer of this panel. */
   showTodayButton?: boolean;
+  /** When set, a day's status dot reflects only this one template's own checklist instance that
+   * day, not every task scheduled — for a consumer scoped to one task (the task detail page's own
+   * ChecklistTemplateCalendar), which cares about "did I do this specific thing," not everything
+   * due that day. Takes precedence over `selectedTag` when both are somehow passed. */
+  checklistTemplateId?: string;
 };
 
 const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -36,7 +41,13 @@ const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 // distinct from CalendarDialogDesktop (a full modal "jump to a date"
 // picker reused elsewhere) since this one also needs to show which days
 // have anything recorded (the small dot), which that dialog never needed.
-const MiniMonthCalendar = ({ currentDate, onDateChange, selectedTag, showTodayButton = true }: Props) => {
+const MiniMonthCalendar = ({
+  currentDate,
+  onDateChange,
+  selectedTag,
+  showTodayButton = true,
+  checklistTemplateId,
+}: Props) => {
   const intl = useIntl();
   const { ensureChecklistsFetched, getChecklistForDateWithoutFetching } = useChecklist();
   const [visibleMonth, setVisibleMonth] = React.useState(() => startOfMonth(currentDate));
@@ -69,11 +80,13 @@ const MiniMonthCalendar = ({ currentDate, onDateChange, selectedTag, showTodayBu
         date,
         selectedTag: selectedTag === 'all' ? undefined : selectedTag,
       });
-      const items = Object.values(checklist);
+      const items = checklistTemplateId
+        ? Object.values(checklist).filter(item => item.checklistTemplateId === checklistTemplateId)
+        : Object.values(checklist);
       if (items.length === 0) return undefined;
       return items.every(item => item.completedAt) ? 'done' : 'pending';
     },
-    [getChecklistForDateWithoutFetching, selectedTag],
+    [getChecklistForDateWithoutFetching, selectedTag, checklistTemplateId],
   );
 
   return (

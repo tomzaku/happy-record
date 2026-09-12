@@ -13,12 +13,17 @@ export { ChecklistFieldGroupTab } from './enums';
 // someone noticed. The desktop/mobile split is for a genuine layout difference, not a default to
 // reach for on every component — this one never had one.
 const ChecklistFieldGroupHeader = ({
+  renderIndicator,
   renderTitle = () => null,
   renderMenu,
   renderStatus,
   isCollapsed = false,
   onToggleCollapse,
 }: {
+  /** A small done/pending marker at the row's own left edge, before the collapse chevron — the
+   * accordion's own "is this sub-task handled yet" signal (see useFieldGroupAccordion). Optional
+   * since a caller with no such concept (none, today) just omits it. */
+  renderIndicator?: () => React.ReactNode;
   renderTitle?: () => React.ReactNode;
   /** The group's own settings menu (ChecklistFieldGroupMenu) — pinned to the row's own right
    * edge (see .titleRow's `justify-content: space-between`), not vertically centered against the
@@ -34,6 +39,7 @@ const ChecklistFieldGroupHeader = ({
     <div className={styles.container}>
       <div className={styles.titleRow}>
         <div onClick={onToggleCollapse} className={styles.titleContainer}>
+          {renderIndicator?.()}
           {onToggleCollapse && (
             <motion.div
               initial={{ rotate: 0 }}

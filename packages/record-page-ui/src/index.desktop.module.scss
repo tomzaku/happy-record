@@ -23,7 +23,6 @@
   flex: 1;
   overflow: hidden;
   position: relative;
-  margin-left: 20px;
 }
 
 // See @moon-ui/app-scss/almanac-scope's own comment for why this is a
@@ -43,7 +42,7 @@
   --button-default-background: var(--almanac-accent);
   --text-color-invert: #ffffff;
 
-  padding: $spacing-xl $spacing-xl 0;
+  padding: 0px $spacing-xl 0;
   border-radius: 20px 0 0 0;
 }
 
@@ -323,7 +322,6 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  padding: 0 12px;
 }
 
 .taskTitle {

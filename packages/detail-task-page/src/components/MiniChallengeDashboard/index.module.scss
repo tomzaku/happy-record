@@ -5,7 +5,7 @@
 // own margin, not a `gap` on `.side` — matches that, not the gap-based spacing
 // challenge-dashboard-page-ui itself uses.
 .card {
-  margin: $spacing-sm;
+  margin: $spacing-sm 0;
   display: flex;
   flex-direction: column;
   gap: $spacing-sm;

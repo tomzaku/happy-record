@@ -1,0 +1,11 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+// Same shape as the home page's own mobile `.card` (record-page-ui/index.mobile.module.scss) —
+// a real moon-ui Card (@moon-ui/card) wrapping WeeklyRow's own plain content, reusing that
+// component's own 12px padding rather than WeeklyRow re-implementing a card of its own.
+.weeklyRowCard {
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: 0 6px 20px var(--card-shadow);
+  margin-bottom: $spacing-md;
+}

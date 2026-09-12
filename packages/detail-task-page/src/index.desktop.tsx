@@ -14,7 +14,7 @@ import {
   useSyncedSelector,
 } from '@dreamer/global';
 import { useRecordField } from '@dreamer/global/src/store/record-field';
-import { Breadcrumb, DesktopDrawer } from '@dreamer/header';
+import { DesktopDrawer } from '@dreamer/header';
 import { Icon } from '@moon-ui/icon/Icon';
 import { useIntl } from '@dreamer/translation';
 import DeleteTaskModal from '@dreamer/record-page-ui/src/components/checklist-day/DeleteTaskModal';
@@ -22,15 +22,14 @@ import { useDeleteTaskFlow } from '@dreamer/record-page-ui/src/components/checkl
 import ChecklistFieldGroup from './components/ChecklistFieldGroup';
 import ChecklistTemplateCalendar from './components/ChecklistTemplateCalendar';
 import ChecklistGenericInfo from './components/ChecklistGenericInfo';
+import ParentTaskHeader from './components/ParentTaskHeader';
 import CardShare from './components/CardShare';
 import AiChecklistGenerate from './components/AiChecklistGenerate';
 import MiniChallengeDashboard from './components/MiniChallengeDashboard';
 import { GenericInfoSkeleton } from './components/DetailTaskSkeleton';
 import ChecklistFieldGroupAddGroup from './components/ChecklistFieldGroupAddGroup';
-import Skeleton from '@moon-ui/skeleton';
 import styles from './index.desktop.module.scss';
 import Typography from '@moon-ui/typography';
-import Button from '@moon-ui/button/src/DefaultButton';
 import WarningModal from '@moon-ui/modal/src/WarningModal';
 
 const DetailTaskPageDesktop = () => {
@@ -283,67 +282,14 @@ const DetailTaskPageDesktop = () => {
       <DesktopDrawer />
       <div className={styles.desktopBody}>
         <div className={styles.content}>
-          {/* Header Section */}
+          {/* Header Section — just a plain back link now; everything that used to live here
+              (title/edit, avatar, "Add with AI") moved down into ParentTaskHeader, the page's own
+              LEVEL 1 (challenge-level) header, right above the sub-tasks accordion. */}
           <div className={styles.header}>
-            <Breadcrumb
-              items={[
-                { label: 'Task', to: '/' },
-                {
-                  icon: isTemplateReady
-                    ? { name: checklistTemplate.avatar?.name || 'solar:settings-linear', color: checklistTemplate.avatar?.color }
-                    // Same generic icon a template with no custom avatar already falls back
-                    // to, just muted — reads as "not decided yet" rather than a second,
-                    // differently-styled placeholder shape.
-                    : { name: 'solar:settings-linear', color: 'var(--text-description-color)' },
-                  label: !isTemplateReady ? (
-                    <Skeleton width={180} height={22} tone="page" />
-                  ) : isEditingTitle ? (
-                    <div className={styles.titleEditContainer}>
-                      <input
-                        type="text"
-                        value={editedTitle}
-                        onChange={(e) => setEditedTitle(e.target.value)}
-                        onKeyDown={handleKeyPress}
-                        className={styles.titleInput}
-                        autoFocus
-                      />
-                    </div>
-                  ) : (
-                    <div className={styles.titleDisplayContainer}>
-                      {checklistTemplate.title}
-                      {isOwner && (
-                        <Button
-                          type="ghost"
-                          size="sm"
-                          onClick={handleEditTitle}
-                          className={styles.editTitleButton}
-                          title={intl.formatMessage({ id: 'DetailTaskPage.edit-title', defaultMessage: 'Edit Title' })}
-                        >
-                          <Icon icon="solar:pen-new-square-linear" width={16} />
-                        </Button>
-                      )}
-                    </div>
-                  ),
-                },
-              ]}
-            />
-            {isOwner && (
-              <div className={styles.headerActions}>
-                <Button
-                  onClick={() => setIsAiModalVisible(true)}
-                  disabled={!isTemplateReady}
-                  className={styles.aiButton}
-                >
-                  <Icon icon="solar:magic-stick-3-bold-duotone" width={20} color="#fff" className={styles.aiIcon} />
-                  {intl.formatMessage({ id: 'DetailTaskPage.generate-with-ai', defaultMessage: 'Add with AI' })}
-                  {/* The button itself isn't the Pro gate — AiChecklistGenerate's own upsell
-                      screen is (see its `!isPro` branch). This is just a heads-up so a non-Pro
-                      user isn't surprised by the paywall a click away; hidden once they have
-                      access, since it'd just be redundant noise at that point. */}
-                  {!isPro && <span className={styles.proBadge}>PRO</span>}
-                </Button>
-              </div>
-            )}
+            <button type="button" className={styles.backLink} onClick={() => navigate(-1)}>
+              <Icon icon="solar:arrow-left-linear" width={18} />
+              {intl.formatMessage({ id: 'DetailTaskPage.back', defaultMessage: 'Back to Tasks' })}
+            </button>
           </div>
 
           {/* The template row still exists (soft-deleted, not removed — see
@@ -366,6 +312,19 @@ const DetailTaskPageDesktop = () => {
           {/* Main Content */}
           <div className={styles.mainContent}>
             <div className={styles.main}>
+              <ParentTaskHeader
+                checklistTemplate={checklistTemplate}
+                isTemplateReady={isTemplateReady}
+                isOwner={isOwner}
+                currentDay={currentDay}
+                isEditingTitle={isEditingTitle}
+                editedTitle={editedTitle}
+                setEditedTitle={setEditedTitle}
+                onStartEditTitle={handleEditTitle}
+                onKeyPressTitle={handleKeyPress}
+                onGenerateWithAi={() => setIsAiModalVisible(true)}
+                isPro={isPro}
+              />
               {!isTemplateReady || !isChecklistReady || allRecordFieldsLoading ? (
                 // Same "Field Groups" row ChecklistFieldGroup itself would render via its own
                 // ChecklistFieldGroupAddGroup once loaded — with no groups known yet, "No groups
@@ -382,15 +341,15 @@ const DetailTaskPageDesktop = () => {
                   onDaySelect={handleCalendarDaySelect}
                 />
               )}
-              {/* Shows immediately rather than waiting on `isTemplateReady` — nothing it
-                  renders actually needs the template itself (`id` is the only thing this
-                  page can't render without at all, guarded above), and HistoryList/
-                  CalendarEventsView each already show their own loading state for the one
-                  thing they do wait on: their own scoped fetch. */}
-              <ChecklistTemplateCalendar checklistTemplateId={id} fields={fields} onDaySelect={handleCalendarDaySelect} />
-
             </div>
             <div className={styles.side}>
+              {/* Pulled up to the right column, same side the home page's own calendar/history
+                  widgets live on — shows immediately rather than waiting on `isTemplateReady`
+                  (nothing it renders actually needs the template itself, and MiniMonthCalendar/
+                  HistoryList each already show their own loading state for the one thing they
+                  do wait on: their own scoped fetch), so it stays outside that ternary
+                  rather than moving inside it. */}
+              <ChecklistTemplateCalendar checklistTemplateId={id} fields={fields} onDaySelect={handleCalendarDaySelect} />
               {!isTemplateReady ? (
                 <GenericInfoSkeleton />
               ) : (
