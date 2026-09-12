@@ -177,10 +177,11 @@ const ChecklistFieldGroup = ({
     updateFieldGroup(updatedGroup);
   };
 
-  // Submit always open (that's the one thing a group's card exists to do) — with Metrics beside
-  // it on desktop (see isMobile above), or folded into the same stack of collapsible sections as
-  // History/Note on mobile, closed by default — instead of four tabs nobody but the person who
-  // built it knew to click between.
+  // Note and Submit are the two things worth seeing at a glance without a tap — paired side by
+  // side on desktop (6:4, Note wider since it's often the longer read); History and Metrics are
+  // both read occasionally rather than every day, so both are collapsible tabs, closed by default
+  // (CollapsibleSection's own default), on both platforms. Mobile has no room for a two-column
+  // row, so Note folds into the same tab stack there instead of sitting beside Submit.
   const renderGroupContent = ({
     fieldGroup,
     fieldDetails,
@@ -189,7 +190,21 @@ const ChecklistFieldGroup = ({
     fieldDetails: RecordField[];
   }) => (
     <>
-      <div className={styles.submitMetricsRow}>
+      <div className={styles.noteSubmitRow}>
+        {!isMobile && (
+          <div className={styles.noteColumn}>
+            {/* Absolutely positioned, not a normal-flow child — a long note's own content must
+                scroll within the column, not grow it: this row's height is meant to track
+                Submit's (see .noteColumn's own comment), so Note's real content height can't be
+                allowed to factor into that at all, only its 500px floor. */}
+            <div className={styles.noteColumnScroll}>
+              <Typography.Text className={styles.noteColumnLabel}>
+                {intl.formatMessage({ id: 'checklist-field-group.note-title', defaultMessage: 'Note' })}
+              </Typography.Text>
+              <ChecklistFieldGroupView fieldGroup={fieldGroup} isOwner={!readOnly} editInModal />
+            </div>
+          </div>
+        )}
         <div className={styles.submitColumn}>
           <ChecklistFieldGroupAdd
             fields={fieldDetails}
@@ -206,14 +221,6 @@ const ChecklistFieldGroup = ({
             }
           />
         </div>
-        {!isMobile && (
-          <div className={styles.metricsColumn}>
-            <Typography.Text className={styles.metricsColumnLabel}>
-              {intl.formatMessage({ id: 'checklist-field-group.metrics-title', defaultMessage: 'Metrics' })}
-            </Typography.Text>
-            <ChecklistFieldMetric fields={fieldDetails} checklistTemplateId={checklistTemplate.id} />
-          </div>
-        )}
       </div>
       <CollapsibleSection
         icon="solar:clock-square-broken"
@@ -226,25 +233,25 @@ const ChecklistFieldGroup = ({
           onDaySelect={onDaySelect}
         />
       </CollapsibleSection>
+      <CollapsibleSection
+        icon="solar:chart-square-linear"
+        label={intl.formatMessage({ id: 'checklist-field-group.metrics-title', defaultMessage: 'Metrics' })}
+      >
+        <ChecklistFieldMetric fields={fieldDetails} checklistTemplateId={checklistTemplate.id} />
+      </CollapsibleSection>
       {isMobile && (
         <CollapsibleSection
-          icon="solar:chart-square-linear"
-          label={intl.formatMessage({ id: 'checklist-field-group.metrics-title', defaultMessage: 'Metrics' })}
+          icon="solar:document-text-linear"
+          label={intl.formatMessage({ id: 'checklist-field-group.note-title', defaultMessage: 'Note' })}
+          summary={
+            fieldGroup.noteId
+              ? undefined
+              : intl.formatMessage({ id: 'checklist-field-group.no-note-yet', defaultMessage: 'No note yet' })
+          }
         >
-          <ChecklistFieldMetric fields={fieldDetails} checklistTemplateId={checklistTemplate.id} />
+          <ChecklistFieldGroupView fieldGroup={fieldGroup} isOwner={!readOnly} />
         </CollapsibleSection>
       )}
-      <CollapsibleSection
-        icon="solar:document-text-linear"
-        label={intl.formatMessage({ id: 'checklist-field-group.note-title', defaultMessage: 'Note' })}
-        summary={
-          fieldGroup.noteId
-            ? undefined
-            : intl.formatMessage({ id: 'checklist-field-group.no-note-yet', defaultMessage: 'No note yet' })
-        }
-      >
-        <ChecklistFieldGroupView fieldGroup={fieldGroup} isOwner={!readOnly} />
-      </CollapsibleSection>
     </>
   );
   const renderBody = () => {

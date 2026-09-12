@@ -3,7 +3,7 @@
 
 // LEVEL 2 of the page's own title hierarchy (see the parent task header, one level up) — a plain
 // small label above the accordion list, same "uppercase, muted, letter-spaced" shape
-// .metricsColumnLabel below already uses for its own section label.
+// .noteColumnLabel below already uses for its own section label.
 .subTasksLabel {
   display: block;
   margin: $spacing-lg $spacing-sm $spacing-sm;
@@ -41,26 +41,38 @@
 // Submit on the left, Metrics on the right — desktop only (see isMobile in index.tsx); mobile
 // renders Submit alone here, Metrics folded into the same collapsible-section stack as
 // History/Note below instead, since there's no room for two real columns on a phone-width card.
-.submitMetricsRow {
+.noteSubmitRow {
   display: flex;
-  align-items: flex-start;
+  // stretch, not flex-start — Note's own min-height is a floor, not a fixed height, so it should
+  // grow to match Submit whenever Submit's own form (more fields, validation messages, media
+  // previews) ends up taller than that floor.
+  align-items: stretch;
   gap: $spacing-xl;
 }
 
-.submitColumn {
-  flex: 3;
+// 6:4 — Note reads wider than Submit's own compact field inputs. 500px floor so a short/empty
+// note still reads as a real writing surface; taller than that only when Submit's own form is —
+// position:relative anchors .noteColumnScroll below, which is what actually keeps a long note's
+// own content from growing this past Submit's height (see that class's own comment).
+.noteColumn {
+  position: relative;
+  flex: 6;
   min-width: 0;
+  min-height: 500px;
+  border-right: 1px solid var(--card-border);
 }
 
-.metricsColumn {
-  flex: 2;
-  min-width: 0;
-  padding-top: $spacing-sm;
-  border-left: 1px solid var(--card-border);
-  padding-left: $spacing-xl;
+// Absolutely positioned inside .noteColumn (not padding/a normal child) specifically so its own
+// content height never contributes to .noteColumn's — a flex/grid child's box is still sized from
+// its content even with overflow:auto and min-height:0, the moment nothing definite constrains it
+// first; taking it out of flow entirely is what actually breaks that circular sizing.
+.noteColumnScroll {
+  position: absolute;
+  inset: $spacing-sm $spacing-xl 0 0;
+  overflow-y: auto;
 }
 
-.metricsColumnLabel {
+.noteColumnLabel {
   display: block;
   margin-bottom: $spacing-sm;
   font-size: 11px;
@@ -68,6 +80,11 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-description-color);
+}
+
+.submitColumn {
+  flex: 4;
+  min-width: 0;
 }
 
 // A group whose own schedule (FieldGroup.repeat) isn't due on the day being viewed — still

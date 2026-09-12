@@ -1,4 +1,5 @@
 import React from 'react';
+import { useIntl } from '@dreamer/translation';
 import { useFieldGroupNote, useFieldGroups, type FieldGroup } from '@dreamer/global';
 
 import styles from './index.module.scss';
@@ -6,6 +7,8 @@ import NoteEditor from '@moon-ui/note-editor';
 import Icon from '@moon-ui/icon/Icon';
 import Button from '@moon-ui/button/src/DefaultButton';
 import Skeleton from '@moon-ui/skeleton';
+import Typography from '@moon-ui/typography';
+import { Modal } from '@moon-ui/modal';
 
 type Props = {
   fieldGroup: FieldGroup;
@@ -13,18 +16,25 @@ type Props = {
    * their own copy of this group's note instead of the owner's, and gets the Original/Mine
    * switcher below (only once they actually have one — see useFieldGroupNote's own comment). */
   isOwner: boolean;
+  /** True where this view is rendered at a fixed/clipped height (detail-task-page's desktop Note
+   * column, capped to track Submit's own height) — Edit then opens a full-size modal instead of
+   * toggling the cramped inline editor open in place. Mobile's Note tab (a collapsible section
+   * that already grows to fit) leaves this off and keeps the plain inline toggle. */
+  editInModal?: boolean;
 };
 
 /** The group's own note only — a `type: 'note'` field's own value is a checklist journal entry
  * now (see ChecklistFieldGeneral's own comment), rendered alongside the other fields on Submit/
  * History, not here. Rendered as one section of the group's single stacked view now (see
  * ChecklistFieldGroup's own renderGroupContent) rather than behind its own Home tab. */
-const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
+const ChecklistFieldGroupView = ({ fieldGroup, isOwner, editInModal = false }: Props) => {
+  const intl = useIntl();
   const { updateFieldGroup } = useFieldGroups();
   // View mode by default — editable only once the user asks for it via the Edit button. Reset
   // to view whenever a different group's note is shown (e.g. switching field groups) rather
   // than leaving a stale edit session open on content that's no longer this group's.
   const [isEditing, setIsEditing] = React.useState(false);
+  const [modalVisible, setModalVisible] = React.useState(false);
   // A participant lands on the original by default every time — most participants never edit
   // this at all, so there's rarely anything of their own to default back to instead. The
   // Original/Mine tabs themselves only ever show once a personal copy actually exists (see the
@@ -32,6 +42,7 @@ const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
   const [view, setView] = React.useState<'public' | 'personal'>('public');
   React.useEffect(() => {
     setIsEditing(false);
+    setModalVisible(false);
     setView('public');
   }, [fieldGroup.id]);
 
@@ -54,12 +65,18 @@ const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
   };
 
   const handleEditClick = async () => {
+    if (editInModal) {
+      // First edit ever, as a participant: make their own copy now, then land on it already in
+      // edit mode — `startEditing` is a no-op past this point (once `hasPersonalCopy` is true).
+      await startEditing();
+      if (!isOwner) setView('personal');
+      setModalVisible(true);
+      return;
+    }
     if (isEditing) {
       setIsEditing(false);
       return;
     }
-    // First edit ever, as a participant: make their own copy now, then land on it already in
-    // edit mode — `startEditing` is a no-op past this point (once `hasPersonalCopy` is true).
     await startEditing();
     if (!isOwner) setView('personal');
     setIsEditing(true);
@@ -67,6 +84,18 @@ const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
 
   return (
     <div className={styles.container}>
+      {/* Placed first — a sticky element's "resting" position (before it engages) is wherever it
+          falls in normal flow, so this needs to start at the very top of .container to stay
+          pinned near .noteColumnScroll's own top edge throughout the scroll, not just once
+          scrolling reaches this point further down. */}
+      {editInModal && !loading && !editLocked && (
+        <div className={styles.editHoverButtonWrap}>
+          <Button type="dash" className={styles.editHoverButton} onClick={handleEditClick}>
+            <Icon width={18} icon="solar:pen-2-line-duotone" />
+            {intl.formatMessage({ id: 'checklist-field-group-view.edit', defaultMessage: 'Edit' })}
+          </Button>
+        </div>
+      )}
       {!isOwner && hasPersonalCopy && (
         <div className={styles.tabRow}>
           <button
@@ -87,7 +116,11 @@ const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
           </button>
         </div>
       )}
-      {!loading && (
+      {/* editInModal (desktop) drops this reserved row entirely — its Edit button is the
+          hover-revealed overlay further down instead, so the clipped preview isn't paying for a
+          toolbar row it doesn't need. Mobile keeps this — there's no hover to reveal anything on
+          a touch device. */}
+      {!loading && !editInModal && (
         <div className={styles.toolbar}>
           {!editLocked && (
             <Button
@@ -96,10 +129,7 @@ const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
               className={styles.editButton}
               onClick={handleEditClick}
             >
-              <Icon
-                width={14}
-                icon={isEditing ? 'material-symbols:check' : 'solar:pen-2-line-duotone'}
-              />
+              <Icon width={14} icon={isEditing ? 'material-symbols:check' : 'solar:pen-2-line-duotone'} />
               {isEditing ? 'Done' : 'Edit'}
             </Button>
           )}
@@ -130,11 +160,42 @@ const ChecklistFieldGroupView = ({ fieldGroup, isOwner }: Props) => {
             key={note?.id ?? 'empty'}
             value={note?.value}
             setValue={save}
-            readOnly={editLocked || !isEditing}
+            readOnly={editInModal || editLocked || !isEditing}
             withoutBorder
             ai={{ isPro, generate }}
           />
         </>
+      )}
+      {editInModal && (
+        <Modal
+          visible={modalVisible}
+          onDismiss={() => setModalVisible(false)}
+          className={styles.editModal}
+          content={
+            <div className={styles.editModalBody}>
+              <div className={styles.editModalHeader}>
+                <Typography.Title level={4} noMargin>
+                  {intl.formatMessage({ id: 'checklist-field-group-view.note-title', defaultMessage: 'Note' })}
+                </Typography.Title>
+                <Button type="ghost" size="sm" onClick={() => setModalVisible(false)}>
+                  <Icon width={18} icon="material-symbols:close" />
+                </Button>
+              </div>
+              <div className={styles.editModalEditor}>
+                {/* Same note/save/generate the clipped preview above reads — editing here writes
+                    straight back through the same useFieldGroupNote state, no separate copy. */}
+                <NoteEditor
+                  key={`${note?.id ?? 'empty'}-modal`}
+                  value={note?.value}
+                  setValue={save}
+                  readOnly={editLocked}
+                  withoutBorder
+                  ai={{ isPro, generate }}
+                />
+              </div>
+            </div>
+          }
+        />
       )}
     </div>
   );

@@ -90,3 +90,71 @@
   position: absolute;
   opacity: 0.4;
 }
+
+// Desktop-only (see ChecklistFieldGroupView's own editInModal prop) — replaces the always-visible
+// .toolbar row: hidden until .container itself is hovered, so the clipped note preview reads as
+// plain content until the user's actually looking at it. sticky (not absolute) so it stays at the
+// top of the scrollable note area instead of scrolling away with the note's own content.
+.editHoverButtonWrap {
+  position: sticky;
+  top: $spacing-sm;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  height: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+
+  .container:hover & {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+// Same look as the plain inline .editButton above (type="dash" — dashed border, transparent-ish
+// background, normal text color), just bigger and with its own translucent card-colored
+// background instead of fully transparent — it floats directly over the note's own text, not
+// beside it, so it still needs to stand off from whatever's behind it.
+.editHoverButton {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-md $spacing-lg;
+  font-size: 15px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card-background, #fff) 85%, transparent);
+  backdrop-filter: blur(3px);
+  box-shadow: 0 4px 14px var(--card-shadow);
+}
+
+// The "zoom to edit" modal (see ChecklistFieldGroupView's own editInModal prop) — sized well past
+// the clipped column it opens from, so the note actually gets room to write in.
+.editModal {
+  width: min(720px, 90vw);
+  height: min(720px, 85vh);
+  padding: 0;
+}
+
+.editModalBody {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.editModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.editModalEditor {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: $spacing-lg;
+}
