@@ -46,12 +46,16 @@ export const useFieldGroupAccordion = ({
   );
 
   const defaultExpandedId = React.useMemo(() => {
-    const nextIncomplete = sortedGroups.find(
+    // A group with no note and no fields yet has nothing to prioritize showing — it starts
+    // collapsed regardless of schedule/completion (see its own row's AI-nudge affordance instead,
+    // in ChecklistFieldGroup's own renderBody).
+    const eligible = sortedGroups.filter(group => group.fields.length > 0 || group.noteId);
+    const nextIncomplete = eligible.find(
       group => isFieldGroupActiveOnDay(group.repeat, day) && !hasSubmittedToday(group),
     );
     if (nextIncomplete) return nextIncomplete.id;
-    const firstActiveToday = sortedGroups.find(group => isFieldGroupActiveOnDay(group.repeat, day));
-    return (firstActiveToday ?? sortedGroups[0])?.id;
+    const firstActiveToday = eligible.find(group => isFieldGroupActiveOnDay(group.repeat, day));
+    return (firstActiveToday ?? eligible[0])?.id;
   }, [sortedGroups, day, hasSubmittedToday]);
 
   // Only ever holds ids a viewer has explicitly clicked — everything else defers to

@@ -2,6 +2,61 @@
 @use '@moon-ui/app-scss/function' as *;
 @use 'include-media/dist/include-media' as media;
 
+// The empty-group picker (desktop only — see index.tsx's own `fields.length === 0` early return).
+.emptyFieldsState {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-md 0;
+}
+
+.emptyFieldsMessage {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.availableFieldsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.availableFieldChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: $spacing-xs $spacing-sm;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  color: var(--text-color);
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--almanac-accent, var(--icon-primary));
+  }
+}
+
+.addNewFieldLink {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: $spacing-xs 0;
+  border: 0;
+  background: none;
+  color: var(--almanac-accent, var(--icon-primary));
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .input {
   width: 100%;
   padding: 0;

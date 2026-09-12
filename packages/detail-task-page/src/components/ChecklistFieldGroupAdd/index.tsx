@@ -19,7 +19,7 @@ import { parseMultiselect, serializeMultiselect } from '@dreamer/global/src/lib/
 import Checkbox from '@moon-ui/checkbox';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { showToast } from '@moon-ui/toast';
-import { Checklist, ChecklistTemplate, FieldGroup, useAiNoteGenerate } from '@dreamer/global';
+import { Checklist, ChecklistTemplate, FieldGroup, useAiNoteGenerate, useIsMobile } from '@dreamer/global';
 import {
   ChecklistRecord,
   useChecklistRecord,
@@ -34,6 +34,7 @@ import Hr from '@pregnant/create-checklist-page-ui/src/hr';
 import { useIntl } from '@dreamer/translation';
 import ChecklistFieldGroupAttachments from './ChecklistFieldGroupAttachments';
 import MediaFieldInput, { MediaFieldPreview } from './MediaFieldInput';
+import AddFieldRecordUi from '../../../../create-checklist-page-ui/src/RecordTaskSetting/AddFieldRecordUi';
 
 type Props = {
   fields: RecordField[];
@@ -46,6 +47,13 @@ type Props = {
   // ChecklistFieldGroup's ref map) — lets someone filling out the Submit tab jump straight to
   // adding/removing fields without first finding the "⋮" settings menu on the group header.
   onOpenFieldSettings?: () => void;
+  /** The account's whole field catalog — only used for the empty-group inline picker below (see
+   * `fields.length === 0`'s own early return): offered as one-tap options alongside "create a new
+   * field," instead of sending an empty group's first field through the Select Fields popup. */
+  availableFields?: RecordField[];
+  /** Attaches an existing (or newly created) field to this group directly — the empty-group
+   * picker's own equivalent of ChecklistFieldGroupMenu's checkbox toggle, without a popup. */
+  onAddExistingField?: (fieldId: string) => void;
   /** Hides the collapsible Attachments section below the fields — assumes it's sitting on the
    * real `/task/:id` page. home-calendar's own `TaskDetailModal` embeds this same component for
    * its calendar quick-look, outside that route entirely, where today's attachments already show
@@ -87,8 +95,12 @@ const ChecklistFieldGroupAdd = ({
   currentDay,
   onSubmit,
   onOpenFieldSettings,
+  availableFields = [],
+  onAddExistingField,
   compact = false,
 }: Props) => {
+  const isMobile = useIsMobile();
+  const [isAddingNewField, setIsAddingNewField] = React.useState(false);
   // A `type: 'note'` field's own value is a checklist journal entry (see ChecklistFieldGeneral's
   // own comment) — one new note per Submit click, same shape a number field's own record already
   // has. `fields` here is still this whole group's list (used elsewhere for override merging),
@@ -220,6 +232,63 @@ const ChecklistFieldGroupAdd = ({
     Object.values(fieldRecord).some(value => value !== undefined) ||
     Object.values(textFieldRecord).some(value => value !== undefined) ||
     Object.values(noteTouched).some(Boolean);
+
+  // A brand-new sub-task has nothing to submit yet — on desktop, skip straight to "what do you
+  // want to record" and let picking an existing field (or creating one) happen right here, not
+  // behind onOpenFieldSettings's popup. Mobile keeps that popup (no room for an inline catalog +
+  // create-field form on a phone-width card) — everything below this block is unreachable there
+  // until at least one field exists.
+  if (fields.length === 0 && !isMobile) {
+    return (
+      <div className={styles.emptyFieldsState}>
+        {isAddingNewField ? (
+          <AddFieldRecordUi
+            onSubmit={newField => {
+              onAddExistingField?.(newField.id);
+              setIsAddingNewField(false);
+            }}
+            onCancel={() => setIsAddingNewField(false)}
+          />
+        ) : (
+          <>
+            <Typography.Text className={styles.emptyFieldsMessage}>
+              {intl.formatMessage({
+                id: 'checklist-field-group-add.what-to-record',
+                defaultMessage: 'What do you want to record?',
+              })}
+            </Typography.Text>
+            {availableFields.length > 0 && (
+              <div className={styles.availableFieldsList}>
+                {availableFields.map(field => (
+                  <button
+                    key={field.id}
+                    type="button"
+                    className={styles.availableFieldChip}
+                    onClick={() => onAddExistingField?.(field.id)}
+                  >
+                    <Icon width={16} icon={field.icon} />
+                    {field.title}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              className={styles.addNewFieldLink}
+              onClick={() => setIsAddingNewField(true)}
+            >
+              <Icon width={16} icon="fe:plus" />
+              {intl.formatMessage({
+                id: 'checklist-field-group-add.create-new-field',
+                defaultMessage: 'Create a new field',
+              })}
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
       {numberFields.map(field => {

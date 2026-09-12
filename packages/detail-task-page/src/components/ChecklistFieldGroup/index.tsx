@@ -218,6 +218,10 @@ const ChecklistFieldGroup = ({
             checklist={checklist}
             currentDay={currentDay}
             onOpenFieldSettings={() => menuRefs.current[fieldGroup.id]?.openFieldsDialog()}
+            availableFields={fields}
+            onAddExistingField={fieldId =>
+              saveFieldGroupChange({ ...fieldGroup, fields: [...fieldGroup.fields, { fieldId }] })
+            }
             onSubmit={() =>
               updateChecklist({
                 id: checklist.id,
@@ -268,6 +272,10 @@ const ChecklistFieldGroup = ({
       const collapsed = isCollapsed(fieldGroup.id);
       const isActiveToday = isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay));
       const done = hasSubmittedToday(fieldGroup);
+      // Same "nothing to prioritize" check useFieldGroupAccordion's own default-expand logic
+      // uses — a freshly created sub-task with neither yet is what this row's AI shortcut below
+      // is for, instead of the settings cog (which has nothing to manage on an empty group either).
+      const isEmptyGroup = fieldGroup.fields.length === 0 && !fieldGroup.noteId;
 
       return (
         <Card
@@ -294,7 +302,21 @@ const ChecklistFieldGroup = ({
             // same as the mockup's own collapsed rows never showing one.
             renderMenu={
               collapsed
-                ? undefined
+                ? isEmptyGroup && onOpenAiGenerate
+                  ? () => (
+                      <button
+                        type="button"
+                        className={styles.aiRowButton}
+                        onClick={onOpenAiGenerate}
+                        aria-label={intl.formatMessage({
+                          id: 'checklist-field-group.add-with-ai',
+                          defaultMessage: 'Add with AI',
+                        })}
+                      >
+                        <Icon width={16} icon="solar:magic-stick-3-bold-duotone" />
+                      </button>
+                    )
+                  : undefined
                 : () => (
                     <ChecklistFieldGroupMenu
                       ref={handle => {
@@ -363,11 +385,7 @@ const ChecklistFieldGroup = ({
         {intl.formatMessage({ id: 'checklist-field-group.sub-tasks-title', defaultMessage: 'Sub Tasks' })}
       </Typography.Text>
       {renderBody()}
-      <ChecklistFieldGroupAddGroup
-        onAddFieldGroup={handleAddFieldGroup}
-        onOpenAiGenerate={onOpenAiGenerate}
-        disabled={readOnly}
-      />
+      <ChecklistFieldGroupAddGroup onAddFieldGroup={handleAddFieldGroup} disabled={readOnly} />
     </>
   )
 };
