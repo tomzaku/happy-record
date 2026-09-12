@@ -1,0 +1,42 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.container {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  background: var(--card-background);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.titleContainer {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  cursor: pointer;
+  padding: 0;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.collapseIcon {
+  cursor: pointer;
+  transition: color 0.2s ease;
+  color: var(--text-description-color);
+
+  &:hover {
+    color: var(--text-color);
+  }
+}
+
+.iconGroup {
+  display: flex;
+}

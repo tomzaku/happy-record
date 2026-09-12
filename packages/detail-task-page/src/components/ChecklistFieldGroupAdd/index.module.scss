@@ -128,15 +128,7 @@
 .numberFieldRow {
   display: flex;
   align-items: center;
-  gap: $spacing-sm;
   padding: 0 $spacing-sm $spacing-xs;
-
-  // The input wrapper itself, not `.input` (the `<input>` element inside it) — grows to fill the
-  // row now that it's on its own line, with `.sumValueText` trailing at a fixed width.
-  > :first-child {
-    flex: 1;
-    min-width: 0;
-  }
 }
 
 // Mirrors List.ItemMeta's own `noPaddingHorizontal` above it — this row sits directly under
@@ -146,9 +138,11 @@
   padding-right: 0;
 }
 
+// Rendered as the field's own List.ItemMeta `rightComponent` now — level with the field name,
+// right-aligned by that component's own layout, not trailing the input below it.
 .sumValueText {
-  flex-shrink: 0;
   color: var(--text-description-color);
+  white-space: nowrap;
 }
 
 .hr {

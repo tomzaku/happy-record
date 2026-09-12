@@ -11,6 +11,7 @@ import {
 } from '@dreamer/global';
 import { getEffectiveFieldDisplay, RecordField } from '@dreamer/global/src/store/record-field';
 import Card from '@moon-ui/card';
+import Typography from '@moon-ui/typography';
 import ChecklistFieldGroupHeader from '../ChecklistFieldGroupHeader';
 import { motion } from 'motion/react';
 import { useIntl } from '@dreamer/translation';
@@ -127,18 +128,18 @@ const ChecklistFieldGroup = ({
   const renderScheduleStatus = (fieldGroup: FieldGroup) => {
     if (isFieldGroupActiveOnDay(fieldGroup.repeat, new Date(currentDay))) {
       return (
-        <p className={styles.scheduledBadge}>
+        <Typography.Text className={styles.scheduledBadge}>
           {intl.formatMessage({
             id: 'checklist-field-group.scheduled-today',
             defaultMessage: 'Scheduled today',
           })}
-        </p>
+        </Typography.Text>
       );
     }
     // See scheduleUtils.ts's isFieldGroupActiveOnDay.
     const nextDayLabel = getNextScheduledDayLabel(fieldGroup.repeat, new Date(currentDay));
     return (
-      <p className={styles.notScheduledBadge}>
+      <Typography.Text className={styles.notScheduledBadge}>
         {nextDayLabel
           ? intl.formatMessage(
               {
@@ -151,7 +152,7 @@ const ChecklistFieldGroup = ({
               id: 'checklist-field-group.not-scheduled-today',
               defaultMessage: 'Not scheduled today',
             })}
-      </p>
+      </Typography.Text>
     );
   };
   // Shared by every place that changes one group in place (the settings menu's

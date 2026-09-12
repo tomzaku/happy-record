@@ -229,10 +229,8 @@ const ChecklistFieldGroupAdd = ({
       {!compact && <WeeklyRow currentDay={currentDay} />}
       {numberFields.map(field => {
         // Today's total for this field, same sum renderCurrentDay used to show in its own
-        // duplicate row below — rendered outside this row's own List.ItemMeta container
-        // (that row's `rightComponent` is only the input; the total sits underneath it,
-        // aligned to the bottom right) so it no longer stretches that row's own height and
-        // throws off the input's alignment.
+        // duplicate row below — rendered as this field's own List.ItemMeta `rightComponent`,
+        // level with the field name and right-aligned, not down next to the input itself.
         const recordValues = currentChecklistRecords.filter(record => record.fieldId === field.id);
         const sumValue = sum(recordValues.map(record => record.value));
         return (
@@ -241,6 +239,16 @@ const ChecklistFieldGroupAdd = ({
               logo={<Icon width={24} icon={field.icon} />}
               title={field.title}
               noPaddingHorizontal={compact}
+              rightComponent={
+                recordValues.length > 0 ? (
+                  <Typography.Text className={styles.sumValueText}>
+                    {intl.formatMessage(
+                      { id: 'checklist-field-group-add.total', defaultMessage: 'Total: {{value}}' },
+                      { value: String(sumValue) },
+                    )}
+                  </Typography.Text>
+                ) : undefined
+              }
             />
             <div className={cx(styles.numberFieldRow, compact && styles.numberFieldRowCompact)}>
               <Input
@@ -260,14 +268,6 @@ const ChecklistFieldGroupAdd = ({
                 // in ChecklistFieldGroup) — a field has no placeholder of its own.
                 placeholder={field.placeholder}
               />
-              {recordValues.length > 0 && (
-                <Typography.Text className={styles.sumValueText}>
-                  {intl.formatMessage(
-                    { id: 'checklist-field-group-add.total', defaultMessage: 'Total: {{value}}' },
-                    { value: String(sumValue) },
-                  )}
-                </Typography.Text>
-              )}
             </div>
           </div>
         );
