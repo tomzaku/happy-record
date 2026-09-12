@@ -89,6 +89,7 @@
   "ChecklistToday.lunar-subtitle": "Lunar day {{day}}, mo {{month}}",
   "ChecklistToday.no-record": "No tasks found!",
   "ChecklistToday.pending": "Pending",
+  "ChecklistToday.recurring": "Recurring",
   "ChecklistToday.shortcuts-add": "Add task",
   "ChecklistToday.shortcuts-clear": "Clear focus",
   "ChecklistToday.shortcuts-delete": "Delete task",
