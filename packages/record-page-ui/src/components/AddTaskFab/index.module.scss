@@ -1,0 +1,59 @@
+@use '@moon-ui/app-scss/metric' as *;
+
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 88px;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  background: #2f6feb;
+  box-shadow: 0 10px 24px rgba(47, 111, 235, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.94);
+  }
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-lg calc(#{$spacing-lg} + env(safe-area-inset-bottom, 0px));
+}
+
+.sheetHandle {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 100px;
+  background: var(--almanac-card-border);
+}
+
+.sheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sheetTitle {
+  color: var(--text-color);
+}
+
+.sheetClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text-description-color);
+  cursor: pointer;
+}

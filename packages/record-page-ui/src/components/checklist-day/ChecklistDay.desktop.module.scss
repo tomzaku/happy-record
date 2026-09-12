@@ -1,6 +1,7 @@
 @use '@moon-ui/app-scss/theme/light.scss' as *;
 @use '@moon-ui/app-scss/theme/dark.scss' as *;
 @use '@moon-ui/app-scss/metric' as *;
+@use 'include-media/dist/include-media' as media;
 
 .container {
   padding: 0;
@@ -89,6 +90,12 @@
   background: var(--card-background);
   border: 1px solid var(--card-border);
   box-shadow: 0 4px 14px var(--almanac-shadow);
+
+  // This header is shared by the mobile Today list (checklist-day/index.mobile.tsx) too, where
+  // there's no room for a fixed-width pill next to the date title — it should stretch instead.
+  @include media.media('<=tablet') {
+    width: 100%;
+  }
 }
 
 .progressLabel {
@@ -104,6 +111,11 @@
   border-radius: 100px;
   background: var(--almanac-divider);
   overflow: hidden;
+
+  @include media.media('<=tablet') {
+    width: auto;
+    flex: 1;
+  }
 }
 
 .progressFill {

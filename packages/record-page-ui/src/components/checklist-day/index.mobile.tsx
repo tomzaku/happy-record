@@ -1,211 +1,138 @@
 import React from 'react';
 import { useChecklist, useChecklistTemplates } from '@dreamer/global';
 import { Icon } from '@moon-ui/icon/Icon';
-import Checkbox from '@moon-ui/checkbox';
 import styles from './index.module.scss';
-import cx from 'classnames';
 import Typography from '@moon-ui/typography';
 import { useNavigate } from 'react-router-dom';
 import { useIntl } from '@dreamer/translation';
-import AddInlineTask, { PendingInlineTask } from '../AddInlineTask';
 import EmptyChecklistIllustration from './EmptyChecklistIllustration';
+import ChecklistDayHeader from './ChecklistDayHeader';
+import ChecklistDayMobileRow from './ChecklistDayMobileRow';
+import { getLunarDate } from '../../utils/lunarDate';
 
+// The mobile Today list — a header (date/lunar/progress, shared with desktop's own
+// ChecklistDayHeader) plus a flat Pending/Completed row list. Task creation lives entirely in
+// index.mobile.tsx's own floating "+" button/bottom sheet now, not inline here — see that file's
+// own comment on why.
 const ChecklistDay = ({
   date,
   selectedTag,
+  onGoToToday,
 }: {
   date: Date;
   selectedTag?: string;
+  onGoToToday?: () => void;
 }) => {
   const { getChecklistByGivingDate, updateChecklist, checklistsLoading } = useChecklist();
   const { checklistTemplate, templatesLoading } = useChecklistTemplates();
   const navigate = useNavigate();
   const intl = useIntl();
 
-  // See ChecklistDay.desktop.tsx's comment on the equivalent fix: this
-  // used to snapshot into local state from a `useEffect` keyed on
-  // `[date, selectedTag, checklistTemplate]`, which never noticed
-  // `selectedChecklistTemplates` changing — a template synced in for the
-  // first time updates that list a beat after `checklistTemplate` itself
-  // (useChecklistTemplates.tsx), and this component had no way to react to
-  // it. Depending on `getChecklistByGivingDate` directly instead threads
-  // through its whole underlying dependency chain correctly.
   const { checklist, checklistIds: checklistByGivingDateIds } = React.useMemo(
     () => getChecklistByGivingDate({ date, selectedTag }),
     [getChecklistByGivingDate, date, selectedTag],
   );
 
-  // Optimistic placeholders for tasks that are still saving — see
-  // AddInlineTask's and ChecklistDay.desktop.tsx's equivalent comments on
-  // why creating a task's real Checklist row can't appear until its
-  // template's own POST resolves.
-  const [pendingTasks, setPendingTasks] = React.useState<PendingInlineTask[]>([]);
-  const handleTaskCreateStart = React.useCallback((task: PendingInlineTask) => {
-    setPendingTasks(prev => [...prev, task]);
-  }, []);
-  const handleTaskCreateEnd = React.useCallback((id: string) => {
-    setPendingTasks(prev => prev.filter(task => task.id !== id));
-  }, []);
+  const lunar = React.useMemo(() => getLunarDate(date), [date]);
 
-  // See ChecklistDay.desktop.tsx's equivalent check: empty here means
-  // either "still fetching" or "genuinely nothing" — these flags are what
-  // tell the two apart, so a fresh page load doesn't flash "No tasks
-  // found!" before the real data has had a chance to arrive.
+  const pendingIds = checklistByGivingDateIds.filter(id => !checklist[id]?.completedAt);
+  const completedIds = checklistByGivingDateIds.filter(id => checklist[id]?.completedAt);
+  const completedPercent =
+    checklistByGivingDateIds.length > 0 ? Math.round((completedIds.length / checklistByGivingDateIds.length) * 100) : 0;
+
+  const header = (
+    <ChecklistDayHeader
+      date={date}
+      lunar={lunar}
+      completedCount={completedIds.length}
+      pendingCount={pendingIds.length}
+      completedPercent={completedPercent}
+      onGoToToday={onGoToToday}
+    />
+  );
+
+  const handleNavigate = (checklistTemplateId: string, checklistId: string, clientOnly?: boolean) => {
+    const baseUrl = `/task/${checklistTemplateId}?currentDay=${date.toISOString()}`;
+    navigate(baseUrl + (clientOnly ? '' : `&checklistId=${checklistId}`));
+  };
+
   if ((templatesLoading || checklistsLoading) && checklistByGivingDateIds.length === 0) {
     return (
-      <div className={styles.emptyContainer}>
-        <Icon
-          width={40}
-          icon="svg-spinners:180-ring"
-          className={styles.iconEmpty}
-        />
-        <Typography.Text>
-          {intl.formatMessage({
-            id: 'ChecklistToday.loading',
-            defaultMessage: 'Fetching your tasks…',
-          })}
-        </Typography.Text>
-      </div>
+      <>
+        {header}
+        <div className={styles.emptyContainer}>
+          <Icon width={40} icon="svg-spinners:180-ring" className={styles.iconEmpty} />
+          <Typography.Text>
+            {intl.formatMessage({ id: 'ChecklistToday.loading', defaultMessage: 'Fetching your tasks…' })}
+          </Typography.Text>
+        </div>
+      </>
     );
   }
 
-  // A pending optimistic task still counts as "something to show" even
-  // before any real Checklist row exists — see ChecklistDay.desktop.tsx's
-  // equivalent check.
-  if (checklistByGivingDateIds.length === 0 && pendingTasks.length === 0) {
+  if (checklistByGivingDateIds.length === 0) {
     return (
-      <div>
+      <>
+        {header}
         <div className={styles.emptyContainer}>
           <EmptyChecklistIllustration />
           <Typography.Title level={3} noMargin>
-            {intl.formatMessage({
-              id: 'ChecklistToday.no-record',
-              defaultMessage: 'No tasks found!',
-            })}
+            {intl.formatMessage({ id: 'ChecklistToday.no-record', defaultMessage: 'No tasks found!' })}
           </Typography.Title>
         </div>
-        <AddInlineTask
-          date={date}
-          className={styles.addTaskButton}
-          onTaskCreateStart={handleTaskCreateStart}
-          onTaskCreateEnd={handleTaskCreateEnd}
-        />
-      </div>
+      </>
     );
   }
 
-  // Same completion-based grouping as ChecklistDay.desktop.tsx — see that
-  // file's comment on why schedule *time* isn't a usable grouping key.
-  const pendingIds = checklistByGivingDateIds.filter(id => !checklist[id]?.completedAt);
-  const completedIds = checklistByGivingDateIds.filter(id => checklist[id]?.completedAt);
-
-  const renderPendingRow = (task: PendingInlineTask, isLast: boolean) => (
-    <div
-      key={task.id}
-      className={cx(styles.checklistItem, styles.pendingItem, isLast && styles.lastChecklistItem)}
-    >
-      <Icon width={32} height={32} icon="svg-spinners:180-ring" />
-      <div className={styles.titleRow}>
-        <Typography.Text className={styles.title}>{task.title}</Typography.Text>
-        <span className={styles.pendingLabel}>
-          {intl.formatMessage({ id: 'ChecklistToday.creating', defaultMessage: 'Creating…' })}
-        </span>
-      </div>
-    </div>
-  );
-
-  const renderRow = (id: string, isLast: boolean) => {
-    const currentChecklist = checklist[id];
-    const currentChecklistTemplate =
-      checklistTemplate[currentChecklist.checklistTemplateId];
-    return (
-      <div
-        key={id}
-        className={cx(
-          styles.checklistItem,
-          isLast && styles.lastChecklistItem,
-          currentChecklist?.completedAt && styles.completedItem,
-        )}
-      >
-        <Icon
-          color={currentChecklistTemplate?.avatar.color || '#8A8A8A'}
-          width={32}
-          height={32}
-          icon={currentChecklistTemplate?.avatar.name}
-        />
-        <div
-          onClick={() => {
-            const baseUrl = `/task/${currentChecklist.checklistTemplateId}?currentDay=${date.toISOString()}`;
-            const checklistIdParam = currentChecklist.clientOnly
-              ? ''
-              : `&checklistId=${currentChecklist.id}`;
-            navigate(baseUrl + checklistIdParam);
-          }}
-          className={styles.titleRow}
-        >
-          <Typography.Text className={styles.title}>
-            {currentChecklistTemplate?.title}
-          </Typography.Text>
-        </div>
-        {/* Same badge as ChecklistDay.desktop.tsx's own — mobile just
-            never got it, not a deliberate omission. */}
-        {currentChecklistTemplate?.visibility === 'public' && (
-          <Icon
-            className={styles.challengeBadge}
-            width={18}
-            height={18}
-            icon="solar:cup-star-bold-duotone"
-            title={intl.formatMessage({
-              id: 'ChecklistToday.challenge-badge',
-              defaultMessage: 'Challenge',
-            })}
-          />
-        )}
-        <Checkbox
-          defaultChecked={Boolean(currentChecklist?.completedAt)}
-          className={styles.checkbox}
-          onChange={event => {
-            event.stopPropagation();
-            updateChecklist({
-              ...currentChecklist,
-              completedAt: event.target.checked
-                ? new Date().toISOString()
-                : undefined,
-            });
-          }}
-        />
-      </div>
-    );
-  };
-
   return (
     <div className={styles.container}>
-      {pendingIds.map((id, index) =>
-        renderRow(id, completedIds.length === 0 && pendingTasks.length === 0 && index === pendingIds.length - 1),
-      )}
-      {pendingTasks.map((task, index) =>
-        renderPendingRow(task, completedIds.length === 0 && index === pendingTasks.length - 1),
-      )}
+      {header}
 
-      {completedIds.length > 0 && (
-        <div className={styles.groupLabel}>
-          <Typography.Text className={styles.groupLabelText}>
-            {intl.formatMessage({
-              id: 'ChecklistToday.completed',
-              defaultMessage: 'Completed',
-            })}
-          </Typography.Text>
-          <span className={styles.groupLabelLine} />
+      {pendingIds.length > 0 && (
+        <div className={styles.sectionHeader}>
+          <div className={styles.sectionHeaderLeft}>
+            <Icon width={20} icon="material-symbols:checklist" className={styles.sectionIcon} />
+            <Typography.Text className={styles.sectionLabel}>
+              {intl.formatMessage({ id: 'ChecklistToday.pending', defaultMessage: 'Pending' })}
+            </Typography.Text>
+            <Typography.Text className={styles.sectionCount}>{pendingIds.length}</Typography.Text>
+          </div>
         </div>
       )}
-      {completedIds.map((id, index) => renderRow(id, index === completedIds.length - 1))}
+      {pendingIds.map((id, index) => (
+        <ChecklistDayMobileRow
+          key={id}
+          id={id}
+          isLast={index === pendingIds.length - 1}
+          checklist={checklist}
+          checklistTemplate={checklistTemplate}
+          updateChecklist={updateChecklist}
+          onNavigate={handleNavigate}
+        />
+      ))}
 
-      <AddInlineTask
-        date={date}
-        className={styles.addTaskButtonBottom}
-        onTaskCreateStart={handleTaskCreateStart}
-        onTaskCreateEnd={handleTaskCreateEnd}
-      />
+      {completedIds.length > 0 && (
+        <div className={styles.sectionHeader}>
+          <div className={styles.sectionHeaderLeft}>
+            <Icon width={20} icon="material-symbols:task-alt" className={styles.sectionIcon} />
+            <Typography.Text className={styles.sectionLabel}>
+              {intl.formatMessage({ id: 'ChecklistToday.completed', defaultMessage: 'Completed' })}
+            </Typography.Text>
+            <Typography.Text className={styles.sectionCount}>{completedIds.length}</Typography.Text>
+          </div>
+        </div>
+      )}
+      {completedIds.map((id, index) => (
+        <ChecklistDayMobileRow
+          key={id}
+          id={id}
+          isLast={index === completedIds.length - 1}
+          checklist={checklist}
+          checklistTemplate={checklistTemplate}
+          updateChecklist={updateChecklist}
+          onNavigate={handleNavigate}
+        />
+      ))}
     </div>
   );
 };

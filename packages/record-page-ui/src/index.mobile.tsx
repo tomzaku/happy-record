@@ -8,6 +8,7 @@ import WeeklyProgressCard from './components/WeeklyProgressCard';
 import switcherStyles from './components/view-switcher/index.module.scss';
 import HomeCalendar from './components/home-calendar';
 import ChallengeQuickSubmit from './components/challenge-quick-submit';
+import AddTaskFab from './components/AddTaskFab';
 // import MusicAudioPlayer from '@pregnant/music-audio-player';
 import styles from './index.mobile.module.scss';
 import AppHeader from '@dreamer/header';
@@ -53,7 +54,7 @@ const TaskListPage = () => {
   }, [startDate]);
 
   return (
-    <div className={styles.container}>
+    <div className={cx(styles.container, styles.almanacScope)}>
       <AppHeader />
 
       <div className={styles.body}>
@@ -119,6 +120,7 @@ const TaskListPage = () => {
                           <ChecklistDay
                             date={startDate}
                             selectedTag={selectedTag === 'all' ? undefined : selectedTag}
+                            onGoToToday={() => setStartDate(new Date())}
                           />
                         </div>
                         {/* <CreateChecklist /> */}
@@ -139,6 +141,7 @@ const TaskListPage = () => {
 
         <WeeklyProgressCard />
       </div>
+      <AddTaskFab date={startDate} />
       {/* <MusicAudioPlayer className={styles.player} /> */}
     </div>
   );

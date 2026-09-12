@@ -11,17 +11,11 @@
 
 .checklistItem {
   display: flex;
-  border-bottom: 1px solid var(--card-border);
   align-items: center;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  gap: $spacing-sm;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--card-border);
   cursor: pointer;
-}
-
-.checklistItem {
-  display: flex;
-  border-bottom: 1px solid var(--card-border);
-  align-items: center;
 }
 
 .lastChecklistItem {
@@ -36,58 +30,32 @@
   }
 }
 
-// An optimistic placeholder for a task still saving — see
-// index.mobile.tsx's renderPendingRow. No onClick is wired up on this row,
-// but pointer-events/cursor are overridden too so it doesn't visually
-// invite a tap it can't act on.
-.pendingItem {
-  opacity: 0.6;
-  pointer-events: none;
-  cursor: default;
-}
-
-.pendingLabel {
-  flex-shrink: 0;
-  font-size: 12px;
-  color: var(--text-description-color);
-}
-
-.groupLabel {
+.rowCheckbox {
   display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  margin-top: 12px;
-  padding-top: 12px;
-}
-
-.groupLabelText {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-description-color);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.groupLabelLine {
-  flex: 1;
-  height: 1px;
-  background: var(--card-border);
+  flex-shrink: 0;
 }
 
 .checkbox {
-  height: 24px;
-  width: 24px;
+  height: 22px;
+  width: 22px;
+}
+
+.rowIconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
 }
 
 .titleRow {
   flex: 1;
   min-width: 0;
-  margin-left: 6px;
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .title {
@@ -95,24 +63,21 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
+}
+
+.rowSubtitle {
+  color: var(--text-description-color);
+  font-size: 13px;
 }
 
 .challengeBadge {
   flex-shrink: 0;
-  margin-left: 6px;
-  margin-right: $spacing-xs;
 }
 
-.editIcon {
-  margin-right: 8px;
-  cursor: pointer;
-  color: var(--text-color);
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-
-  &:hover {
-    opacity: 1;
-  }
+.rowChevron {
+  flex-shrink: 0;
+  color: var(--almanac-muted);
 }
 
 .emptyContainer {
@@ -129,38 +94,44 @@
   margin-bottom: $spacing-xs;
 }
 
-.addTaskButton {
-  margin-top: $spacing-xs;
-  padding: $spacing-xs $spacing-sm;
-  border-radius: 18px;
-}
-
-.addTaskButtonBottom {
-  box-sizing: border-box;
-  padding: 0 !important;
-  width: 100%;
+// Mirrors ChecklistDay.desktop.module.scss's own .sectionHeader/.sectionHeaderLeft/.sectionIcon/
+// .sectionLabel/.sectionCount — kept as a separate copy since desktop's own version lives in a
+// different CSS module file, scoped to desktop-only classes.
+.sectionHeader {
   display: flex;
   align-items: center;
-  padding: $spacing-sm $spacing-sm;
-  justify-content: center;
-  color: var(--text-description-color);
-  cursor: pointer;
-
-  &:hover {
-    color: var(--icon-primary);
-    border-color: var(--icon-primary);
-  }
-
-  &:hover .addIcon {
-    color: var(--icon-primary);
-  }
+  padding: $spacing-sm 4px;
 }
 
-.addIcon {
-  margin-right: $spacing-sm;
-  color: var(--text-description-color);
+.sectionHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
 
-  &:hover {
-    color: var(--icon-primary);
-  }
+.sectionIcon {
+  color: var(--almanac-accent);
+  flex-shrink: 0;
+}
+
+.sectionLabel {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--almanac-ink);
+}
+
+.sectionCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--almanac-accent-soft);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--almanac-accent);
 }
