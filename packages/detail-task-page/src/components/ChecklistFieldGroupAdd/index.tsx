@@ -19,7 +19,7 @@ import { parseMultiselect, serializeMultiselect } from '@dreamer/global/src/lib/
 import Checkbox from '@moon-ui/checkbox';
 import Button from '@moon-ui/button/src/DefaultButton';
 import { showToast } from '@moon-ui/toast';
-import { Checklist, ChecklistTemplate, FieldGroup, useAiNoteGenerate, useIsMobile } from '@dreamer/global';
+import { Checklist, ChecklistTemplate, FieldGroup, useAiNoteGenerate } from '@dreamer/global';
 import {
   ChecklistRecord,
   useChecklistRecord,
@@ -165,11 +165,6 @@ const ChecklistFieldGroupAdd = ({
   // "/ai" inside the note-type field editor below — see add-note-page-ui's own AddNotePage for
   // the same wiring (no real note/record yet to resolve context from, same as there).
   const { isPro, generate } = useAiNoteGenerate();
-  // On mobile, MediaFieldInput renders its own compact "Take Photo"/"Record Video" button (see
-  // MediaFieldInput.tsx's own MobileCapture) — small enough to sit in the same right column
-  // every other field's own input already uses, instead of the full-width row a desktop
-  // drag-and-drop dropzone genuinely needs room for.
-  const isMobile = useIsMobile();
 
   // Whether the Attachments section below is expanded — collapsed by default, toggled only by
   // its own header click.
@@ -405,15 +400,7 @@ const ChecklistFieldGroupAdd = ({
             }
           />
         );
-        return isMobile ? (
-          <List.ItemMeta
-            key={`${field.id}-${newNoteKey}`}
-            logo={<Icon width={24} icon={field.icon} />}
-            title={field.title}
-            noPaddingHorizontal={compact}
-            rightComponent={input}
-          />
-        ) : (
+        return (
           <div key={`${field.id}-${newNoteKey}`} className={styles.mediaField}>
             <List.ItemMeta
               logo={<Icon width={24} icon={field.icon} />}

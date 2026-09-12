@@ -132,47 +132,46 @@ const AddInlineTask = React.forwardRef<AddInlineTaskHandle, AddInlineTaskProps>(
         classes={{wrapper: styles.inputWrapper, input: styles.input, placeholder: styles.placeholder}}
         disabled={isSubmitting}
         border="solid"
-        renderRightInput={() => {
-          if (taskName.trim()) {
-            return (
-              <div className={styles.rightControls}>
-                <Dropdown
-                  trigger={
-                    <span className={styles.endDateTriggerLabel}>
-                      <Icon width={14} icon="solar:calendar-mark-line-duotone" />
-                      {noEndDate ? 'No end date' : 'Single day'}
-                    </span>
-                  }
-                  triggerClassName={styles.endDateTrigger}
-                  triggerAriaLabel="Choose end date"
-                  items={[
-                    // "Single day" not "Ends today" — `date` is whatever day the user is
-                    // currently viewing (the home calendar's selected day), not necessarily
-                    // today, so a fixed "today" label would misdescribe a task added for another
-                    // day.
-                    { key: 'end-of-day', label: 'Single day', onClick: () => setNoEndDate(false) },
-                    { key: 'no-end-date', label: 'No end date', onClick: () => setNoEndDate(true) },
-                  ]}
-                />
-                <Button
-                  type="primary"
-                  size="sm"
-                  onClick={submitTask}
-                  disabled={isSubmitting}
-                  className={styles.submitButton}
-                  aria-label="Add task"
-                >
-                  Submit
-                </Button>
-              </div>
-            );
-          }
-          return <></>;
-        }}
+        renderRightInput={() => <></>}
         renderLeftInput={() => (
           <Icon width={30} height={30} icon="solar:add-circle-bold" className={styles.addIcon} />
         )}
       />
+      {/* Below the input, not overlaid on top of it (renderRightInput's own absolute-positioned
+          slot) — that used to sit on top of whatever the user was typing, so a title long enough
+          to reach it scrolled underneath these controls instead of staying readable. A real
+          second line has nothing to overlap no matter how long the title gets. */}
+      {taskName.trim() && (
+        <div className={styles.rightControls}>
+          <Dropdown
+            trigger={
+              <span className={styles.endDateTriggerLabel}>
+                <Icon width={14} icon="solar:calendar-mark-line-duotone" />
+                {noEndDate ? 'No end date' : 'Single day'}
+              </span>
+            }
+            triggerClassName={styles.endDateTrigger}
+            triggerAriaLabel="Choose end date"
+            items={[
+              // "Single day" not "Ends today" — `date` is whatever day the user is currently
+              // viewing (the home calendar's selected day), not necessarily today, so a fixed
+              // "today" label would misdescribe a task added for another day.
+              { key: 'end-of-day', label: 'Single day', onClick: () => setNoEndDate(false) },
+              { key: 'no-end-date', label: 'No end date', onClick: () => setNoEndDate(true) },
+            ]}
+          />
+          <Button
+            type="primary"
+            size="sm"
+            onClick={submitTask}
+            disabled={isSubmitting}
+            className={styles.submitButton}
+            aria-label="Add task"
+          >
+            Submit
+          </Button>
+        </div>
+      )}
     </form>
   );
 });

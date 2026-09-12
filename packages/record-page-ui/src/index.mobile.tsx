@@ -7,7 +7,6 @@ import RecentHistory from './components/RecentHistory';
 import WeeklyProgressCard from './components/WeeklyProgressCard';
 import switcherStyles from './components/view-switcher/index.module.scss';
 import HomeCalendar from './components/home-calendar';
-import ChallengeQuickSubmit from './components/challenge-quick-submit';
 import AddTaskFab from './components/AddTaskFab';
 // import MusicAudioPlayer from '@pregnant/music-audio-player';
 import styles from './index.mobile.module.scss';
@@ -58,7 +57,6 @@ const TaskListPage = () => {
       <AppHeader />
 
       <div className={styles.body}>
-        <ChallengeQuickSubmit />
         <div className={styles.viewSwitcherContainer}>
           <div className={switcherStyles.container}>
             {MOBILE_VIEW_MODES.map(({ mode, id, defaultMessage }) => (
@@ -115,7 +113,7 @@ const TaskListPage = () => {
                         transformOrigin: 'top',
                       }}
                     >
-                      <Card className={cx(styles.cardFooter, styles.flipper)}>
+                      <div className={styles.flipper}>
                         <div className={styles.front} key={key}>
                           <ChecklistDay
                             date={startDate}
@@ -123,8 +121,7 @@ const TaskListPage = () => {
                             onGoToToday={() => setStartDate(new Date())}
                           />
                         </div>
-                        {/* <CreateChecklist /> */}
-                      </Card>
+                      </div>
                     </div>
                   );
                 }}

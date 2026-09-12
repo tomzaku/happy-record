@@ -9,17 +9,39 @@
   // }
 }
 
+.quickAddTask {
+  margin-bottom: $spacing-lg;
+}
+
+// Wraps just the Pending/Completed sections — not ChecklistDayHeader (rendered above this,
+// outside any card), matching desktop's own ChecklistDayHeader/ChecklistDayTaskList split.
+.rowsCard {
+  width: 100%;
+  margin-bottom: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid var(--almanac-card-border);
+  border-radius: 18px;
+  box-shadow: 0 6px 20px var(--almanac-shadow);
+}
+
+// Wraps one row's own clickable header line (.checklistItem) plus its expanded content
+// (ChecklistDayRowSubmit, when expanded), so the divider between rows sits after whichever of
+// those is actually showing rather than always right under the header line — same shape
+// ChecklistDay.desktop.module.scss's own .taskRowContainer follows.
+.taskRowContainer {
+  border-bottom: 1px solid var(--card-border);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
 .checklistItem {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
   padding: 12px 4px;
-  border-bottom: 1px solid var(--card-border);
   cursor: pointer;
-}
-
-.lastChecklistItem {
-  border-bottom: 0;
 }
 
 .completedItem {
@@ -75,9 +97,29 @@
   flex-shrink: 0;
 }
 
-.rowChevron {
+.rowExpandButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   color: var(--almanac-muted);
+  cursor: pointer;
+}
+
+.rowExpandIcon {
+  transition: transform 0.15s ease;
+}
+
+// Points up once expanded (the row's content already showing below) instead of down (more to
+// reveal) — same "rotate to say what happens next" any accordion chevron uses.
+.rowExpandIconOpen {
+  transform: rotate(180deg);
 }
 
 .emptyContainer {
@@ -100,6 +142,7 @@
 .sectionHeader {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: $spacing-sm 4px;
 }
 

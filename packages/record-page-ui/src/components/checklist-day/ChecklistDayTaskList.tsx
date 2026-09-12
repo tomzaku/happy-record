@@ -3,11 +3,11 @@ import { AnimatePresence } from 'framer-motion';
 import Card from '@moon-ui/card';
 import Typography from '@moon-ui/typography';
 import { Icon } from '@moon-ui/icon/Icon';
-import cx from 'classnames';
 import { useIntl } from '@dreamer/translation';
 import styles from './ChecklistDay.desktop.module.scss';
 import AddInlineTask, { AddInlineTaskHandle, PendingInlineTask } from '../AddInlineTask';
 import PendingTaskRow from './PendingTaskRow';
+import SectionExpandButton from './SectionExpandButton';
 
 type Props = {
   date: Date;
@@ -25,39 +25,6 @@ type Props = {
   completedExpandableIds: string[];
   isSectionExpanded: (ids: string[]) => boolean;
   onToggleSectionExpanded: (ids: string[]) => void;
-};
-
-const SectionExpandButton = ({
-  expandableIds,
-  isSectionExpanded,
-  onToggleSectionExpanded,
-}: {
-  expandableIds: string[];
-  isSectionExpanded: (ids: string[]) => boolean;
-  onToggleSectionExpanded: (ids: string[]) => void;
-}) => {
-  const intl = useIntl();
-  if (expandableIds.length === 0) return null;
-
-  const expanded = isSectionExpanded(expandableIds);
-  return (
-    <button
-      type="button"
-      className={styles.rowExpandButton}
-      onClick={() => onToggleSectionExpanded(expandableIds)}
-      aria-label={
-        expanded
-          ? intl.formatMessage({ id: 'ChecklistToday.collapse-all-tasks', defaultMessage: 'Collapse all' })
-          : intl.formatMessage({ id: 'ChecklistToday.expand-all-tasks', defaultMessage: 'Expand all' })
-      }
-    >
-      <Icon
-        width={16}
-        icon="solar:alt-arrow-down-linear"
-        className={cx(styles.rowExpandIcon, expanded && styles.rowExpandIconOpen)}
-      />
-    </button>
-  );
 };
 
 // The full-list branch's own two sections (Pending, Completed) plus the inline "Add a task" row —
@@ -104,6 +71,7 @@ const ChecklistDayTaskList = ({
               expandableIds={pendingExpandableIds}
               isSectionExpanded={isSectionExpanded}
               onToggleSectionExpanded={onToggleSectionExpanded}
+              styles={styles}
             />
           </div>
           <Card className={styles.sectionCard}>
@@ -136,6 +104,7 @@ const ChecklistDayTaskList = ({
               expandableIds={completedExpandableIds}
               isSectionExpanded={isSectionExpanded}
               onToggleSectionExpanded={onToggleSectionExpanded}
+              styles={styles}
             />
           </div>
           <Card className={styles.sectionCard}>

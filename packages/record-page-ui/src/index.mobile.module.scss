@@ -83,21 +83,17 @@
   margin-bottom: 0 !important;
 }
 
-// Plain, flat cards — the old "torn ticket stub" scooped/dashed mask joining `.card` and
-// `.cardFooter` into one shape was exactly the kind of decorative flourish this redesign's own
+// Plain, flat card — the old "torn ticket stub" scooped/dashed mask joining this and the task
+// list's own card into one shape was exactly the kind of decorative flourish this redesign's own
 // brief calls out to avoid; a clean rounded card with its own border/shadow reads calmer at a
 // glance and is far cheaper to render (no compound `filter: drop-shadow` needed to shadow the
-// cutout shape — see the old `.body` rule this replaces).
+// cutout shape — see the old `.body` rule this replaces). The task list's own card now lives
+// inside checklist-day/index.module.scss instead (its own `.rowsCard`), sized around just the
+// row list — not this whole flip container, so ChecklistDayHeader's date/progress header (see
+// that file) sits outside any card, same as desktop.
 .card {
   width: 100%;
   margin-bottom: $spacing-md;
-  border: 1px solid var(--almanac-card-border);
-  border-radius: 18px;
-  box-shadow: 0 6px 20px var(--almanac-shadow);
-}
-
-.cardFooter {
-  width: 100%;
   border: 1px solid var(--almanac-card-border);
   border-radius: 18px;
   box-shadow: 0 6px 20px var(--almanac-shadow);

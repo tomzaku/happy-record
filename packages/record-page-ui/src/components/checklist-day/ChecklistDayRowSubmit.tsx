@@ -15,11 +15,11 @@ type Props = {
   date: Date;
 };
 
-// A row's expanded content, behind its own expand button (see ChecklistDayRow) — reuses
-// TaskDetailModal's own data hook (useTaskDetailModalData) and submit form
-// (ChecklistFieldGroupAdd, compact), the same pair ChallengeQuickSubmitCard already wires up
-// elsewhere, so a check-in here goes through the exact "ensure today's real Checklist row exists
-// before submitting into it" path rather than a second copy of that logic. `relevantGroups` is
+// A row's expanded content, behind its own expand button (see ChecklistDayRow, and
+// ChecklistDayMobileRow for the mobile equivalent) — reuses TaskDetailModal's own data hook
+// (useTaskDetailModalData) and submit form (ChecklistFieldGroupAdd, compact), so a check-in here
+// goes through the exact "ensure today's real Checklist row exists before submitting into it"
+// path rather than a second copy of that logic. `relevantGroups` is
 // already narrowed to `date` (see that hook's own comment) — a multi-group task (Push/Diamond/
 // Wide push-ups on different days, say) only ever shows whichever group is actually due on this
 // row's day.

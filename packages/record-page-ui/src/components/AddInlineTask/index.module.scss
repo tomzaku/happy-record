@@ -29,10 +29,14 @@
   color: var(--almanac-accent);
 }
 
+// A real second line below the input now — see index.tsx's own comment on why this moved out of
+// Input's `renderRightInput` (an absolute-positioned overlay on top of the typed text).
 .rightControls {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: $spacing-xs;
+  margin-top: $spacing-sm;
 }
 
 .endDateTrigger {

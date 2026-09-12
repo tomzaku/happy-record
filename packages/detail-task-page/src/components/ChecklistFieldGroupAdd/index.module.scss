@@ -233,17 +233,15 @@
 .mediaCaptureButton {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: $spacing-sm;
+  width: 100%;
   padding: $spacing-sm $spacing-md;
   border: 1px dashed var(--input-border);
   border-radius: 8px;
   background: var(--input-background);
   color: var(--text-color);
   cursor: pointer;
-
-  @include media.media('<=tablet') {
-    width: 140px;
-  }
 
   &:disabled {
     opacity: 0.6;

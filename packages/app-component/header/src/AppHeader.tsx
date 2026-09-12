@@ -18,6 +18,10 @@ const navigationItems = [
   { id: 'dashboard', icon: 'solar:chart-square-line-duotone', path: '/dashboard' },
 ];
 
+// TaskSearch + AccountStatus are two more equal-width .navItem slots after the mapped
+// ones — the active-tab indicator's width/position math needs the real total.
+const SLOT_COUNT = navigationItems.length + 2;
+
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,6 +32,8 @@ const Header = () => {
     }
     return location.pathname.startsWith(path);
   };
+
+  const activeIndex = navigationItems.findIndex(item => isActivePath(item.path));
 
   return (
     <div className={styles.container}>
@@ -52,6 +58,17 @@ const Header = () => {
       <div className={styles.navItem}>
         <AccountStatus variant="header" className={styles.navIcon} />
       </div>
+      {/* Every .navItem is an equal 1/SLOT_COUNT share of the container's width (all
+          flex: 1), so sliding this by activeIndex * 100% of its own width lines it up
+          under whichever tab is active with no per-item measurement needed. */}
+      <div
+        className={styles.activeIndicator}
+        style={{
+          width: `${100 / SLOT_COUNT}%`,
+          transform: `translateX(${activeIndex * 100}%)`,
+          opacity: activeIndex === -1 ? 0 : 1,
+        }}
+      />
     </div>
   );
 };

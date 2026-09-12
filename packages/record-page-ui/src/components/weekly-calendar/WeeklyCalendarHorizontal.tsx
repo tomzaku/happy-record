@@ -3,11 +3,7 @@ import { Icon } from '@moon-ui/icon/Icon';
 import Typography from '@moon-ui/typography';
 import Card from '@moon-ui/card';
 import { useIntl } from '@dreamer/translation';
-import {
-  useChecklist,
-  useChecklistTemplates,
-  Checklist,
-} from '@dreamer/global';
+import { useChecklist } from '@dreamer/global';
 import { useNavigate } from 'react-router-dom';
 import {
   startOfWeek,
@@ -29,7 +25,6 @@ type Props = {
 
 const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Props) => {
   const { getChecklistForDateWithoutFetching, ensureChecklistsFetched } = useChecklist();
-  const { checklistTemplate } = useChecklistTemplates();
   const [showCalendarDialog, setShowCalendarDialog] = React.useState(false);
 
   // Get the week range for the current date
@@ -52,24 +47,30 @@ const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Pr
     ensureChecklistsFetched({ from: weekStart, to: weekEnd });
   }, [weekStart, weekEnd, ensureChecklistsFetched]);
 
-  // Memoize tasks for each day to prevent unnecessary re-renders
-  const tasksByDay = React.useMemo(() => {
-    const tasksMap = new Map();
+  // A day's status dot — 'done' (every task completed), 'pending' (at least one isn't), or
+  // `undefined` (nothing scheduled at all, no dot). Replaces this strip's old per-day mini task
+  // list (icon + title + "+N more") — showing 7 columns' worth of task titles at once was more
+  // noise than a glance actually needs; the dot is the same "is this day handled" signal
+  // mini-month-calendar's own day cells already give the right-sidebar/desktop calendar.
+  const dayStatusByDate = React.useMemo(() => {
+    const statusMap = new Map<string, 'done' | 'pending' | undefined>();
 
     weekDays.forEach(date => {
       const { checklist } = getChecklistForDateWithoutFetching({
         date,
         selectedTag: selectedTag === 'all' ? undefined : selectedTag,
       });
-      tasksMap.set(date.toISOString().split('T')[0], Object.values(checklist));
+      const items = Object.values(checklist);
+      const status = items.length === 0 ? undefined : items.every(item => item.completedAt) ? 'done' : 'pending';
+      statusMap.set(date.toISOString().split('T')[0], status);
     });
 
-    return tasksMap;
+    return statusMap;
     // `getChecklistTemplateIdsByGivingDate`/`getChecklistTemplate` aren't
     // actually called in this memo — `getChecklistForDateWithoutFetching` is,
     // and was missing here, which meant a checklist synced/edited elsewhere
     // (or even completed on this same device, in the same session) never
-    // refreshed this week's task list.
+    // refreshed this week's status.
   }, [weekDays, getChecklistForDateWithoutFetching, selectedTag]);
 
   const handlePrevWeek = React.useCallback(() => {
@@ -155,7 +156,7 @@ const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Pr
       <div className={styles.weekGrid}>
         {weekDays.map((date, index) => {
           const dateKey = date.toISOString().split('T')[0];
-          const dayTasks = tasksByDay.get(dateKey) || [];
+          const dayStatus = dayStatusByDate.get(dateKey);
           const isCurrentDay = isToday(date);
           const isSelected = isSameDay(date, currentDate);
 
@@ -173,33 +174,7 @@ const WeeklyCalendarHorizontal = ({ currentDate, onDateChange, selectedTag }: Pr
                   {format(date, 'd')}
                 </Typography.Text>
               </div>
-
-              <div className={styles.tasksContainer}>
-                {dayTasks.slice(0, 3).map((task: Checklist) => {
-                  const template = checklistTemplate[task.checklistTemplateId];
-                  return (
-                    <div key={task.id} className={styles.taskItem}>
-                      <Icon
-                        color={template?.avatar.color || '#8A8A8A'}
-                        width={16}
-                        height={16}
-                        icon={template?.avatar.name}
-                      />
-                      <Typography.Text className={styles.taskTitle}>
-                        {template?.title}
-                      </Typography.Text>
-                      {task.completedAt && (
-                        <div className={styles.completedIndicator} />
-                      )}
-                    </div>
-                  );
-                })}
-                {dayTasks.length > 3 && (
-                  <Typography.Text className={styles.moreTasks}>
-                    +{dayTasks.length - 3} more
-                  </Typography.Text>
-                )}
-              </div>
+              {dayStatus && <span className={styles.dayStatusDot} data-level={dayStatus} />}
             </div>
           );
         })}

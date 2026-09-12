@@ -65,6 +65,17 @@
   fill: var(--icon-primary) !important;
 }
 
+// Slides under whichever tab is active — width/position come from inline styles set in
+// AppHeader.tsx, since they depend on how many nav slots there are.
+.activeIndicator {
+  background: var(--icon-primary);
+  bottom: -1px;
+  height: 2px;
+  left: 0;
+  position: absolute;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
 // .menu {
 //   align-items: center;
 //   color: var(--text-color);

@@ -50,8 +50,8 @@
   transition: all 0.2s ease;
 
   &:hover {
-    color: var(--icon-primary);
-    background-color: rgba(11, 125, 194, 0.05);
+    color: var(--almanac-accent);
+    background-color: var(--almanac-accent-soft);
   }
 }
 
@@ -60,14 +60,15 @@
   grid-template-columns: repeat(7, 1fr);
   gap: $spacing-xs;
   width: 100%;
-  margin-bottom: $spacing-sm;
 }
 
 .dayColumn {
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
-  padding: $spacing-xs;
+  align-items: center;
+  gap: 6px;
+  border-radius: 12px;
+  padding: $spacing-sm $spacing-xs;
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;
@@ -75,17 +76,20 @@
   box-sizing: border-box;
 
   &:hover {
-    background-color: rgba(11, 125, 194, 0.05);
-    border-color: rgba(11, 125, 194, 0.2);
+    background-color: var(--almanac-accent-soft);
   }
 
   &.today {
-    border-color: #0b7dc2;
+    border-color: var(--almanac-accent);
   }
 
   &.selected {
-    background-color: rgba(11, 125, 194, 0.15);
-    border-color: #0b7dc2;
+    background-color: var(--almanac-accent);
+
+    .dayName,
+    .dayNumber {
+      color: #ffffff;
+    }
   }
 }
 
@@ -93,70 +97,35 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: $spacing-xs;
 }
 
 .dayName {
-  font-size: 12px;
-  color: var(--text-description-color);
-  font-weight: 500;
+  font-size: 11px;
+  color: var(--almanac-muted);
+  font-weight: 600;
   text-transform: uppercase;
 }
 
 .dayNumber {
   font-size: 16px;
-  font-weight: 600;
-  color: var(--text-color);
+  font-weight: 700;
+  color: var(--almanac-ink);
   margin-top: 2px;
 }
 
-.tasksContainer {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.taskItem {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  position: relative;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-  }
-}
-
-.taskTitle {
-  font-size: 11px;
-  color: var(--text-color);
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-.completedIndicator {
+// Replaces the old per-day mini task list (icon + title, up to 3, "+N more") — a single glance
+// signal (something's due, and whether it's all done) instead of 7 columns of small text.
+.dayStatusDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #219653;
-  flex-shrink: 0;
-}
+  background: var(--almanac-muted);
+  opacity: 0.5;
 
-.moreTasks {
-  font-size: 10px;
-  color: var(--text-description-color);
-  text-align: center;
-  padding: 2px;
-  font-style: italic;
+  &[data-level='done'] {
+    background: var(--almanac-status-done);
+    opacity: 1;
+  }
 }
 
 // Responsive design
@@ -166,15 +135,11 @@
   }
 
   .dayColumn {
-    padding: 4px;
+    padding: 6px 2px;
   }
 
   .dayNumber {
     font-size: 14px;
-  }
-
-  .taskTitle {
-    font-size: 10px;
   }
 
   .navigation {
@@ -187,7 +152,6 @@
   }
 }
 
-// Mobile responsive adjustments using standard media queries
 @media (max-width: 480px) {
   .header {
     flex-direction: column;
@@ -206,58 +170,11 @@
     flex: 0 1 auto;
   }
 
-  .weekGrid {
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    width: 100%;
-  }
-
-  .dayColumn {
-    padding: 2px;
-    min-width: 0;
-  }
-
   .dayName {
     font-size: 10px;
   }
 
   .dayNumber {
     font-size: 12px;
-  }
-
-  .taskItem {
-    padding: 2px 4px;
-    gap: 4px;
-  }
-
-  .taskTitle {
-    font-size: 9px;
-  }
-}
-
-// Extra small mobile devices
-@media (max-width: 360px) {
-  .container {
-    padding: $spacing-sm;
-  }
-
-  .dayColumn {
-    padding: 1px;
-  }
-
-  .dayName {
-    font-size: 9px;
-  }
-
-  .dayNumber {
-    font-size: 11px;
-  }
-
-  .taskTitle {
-    font-size: 8px;
-  }
-
-  .weekRange {
-    font-size: 11px;
   }
 }
